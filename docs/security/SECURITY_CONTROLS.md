@@ -143,3 +143,20 @@ Setiap pull request critical wajib melewati:
 - Secret scan.
 - Migration review.
 - Security reviewer untuk auth, permission, export, upload, atau AI.
+
+## 12. Bunny Stream Video Security
+
+- Bunny Stream menjadi provider video utama.
+- Bunny API key hanya tersedia pada NestJS backend dan authorised worker.
+- MediaCage Basic DRM aktif untuk protected video.
+- Token Authentication dan Allowed Domains wajib aktif.
+- Playback URL memiliki expiration singkat.
+- Playback dibuat hanya setelah enrollment validation.
+- Permanent public playback URL tidak disimpan.
+- Playback token tidak dicatat pada log.
+- Webhook diverifikasi dan replay-protected.
+- Dynamic user watermark ditampilkan.
+- Concurrent playback dapat dibatasi melalui playback session.
+- Account suspension dan enrollment expiry memblokir session baru.
+- Video tidak melewati bandwidth NestJS.
+- DRM mengurangi download umum tetapi tidak mencegah screen recording sepenuhnya.

@@ -147,3 +147,22 @@ Definition of done:
 Assigned agent:
 Reviewer:
 ```
+
+## Epic 10 — Bunny Stream Video
+
+| ID | Task | Owner | Dependency | Acceptance |
+|---|---|---|---|---|
+| LMS-VID-001 | Define VideoProviderPort | Architect/Backend | Catalog | Provider-independent contract |
+| LMS-VID-002 | Implement BunnyStreamAdapter | Backend | VID-001 | Create/read/delete provider video |
+| LMS-VID-003 | Add video asset schema | Database | ERD | Migration and constraints pass |
+| LMS-VID-004 | Implement direct upload intent | Backend | VID-002–003 | Authorised upload flow |
+| LMS-VID-005 | Implement Bunny webhook | Backend/Security | VID-002–003 | Verified and idempotent |
+| LMS-VID-006 | Implement playback session | Learning Backend | Enrollment | Access validated |
+| LMS-VID-007 | Enable Token Authentication | Backend/DevOps | VID-006 | Short-lived URL |
+| LMS-VID-008 | Configure Allowed Domains | DevOps | Deployment | Domains restricted |
+| LMS-VID-009 | Enable MediaCage Basic DRM | DevOps/Backend | VID-002 | Protected stream |
+| LMS-VID-010 | Add dynamic watermark | Frontend | VID-006 | Moving traceable watermark |
+| LMS-VID-011 | Add playback heartbeat | Frontend/Backend | VID-006 | Session tracked |
+| LMS-VID-012 | Add concurrent playback limit | Backend/Security | VID-011 | Policy enforced |
+| LMS-VID-013 | Add video security tests | QA/Security | VID-004–012 | Critical tests pass |
+| LMS-VID-014 | Add reconciliation job | Worker | VID-005 | Provider state reconciled |

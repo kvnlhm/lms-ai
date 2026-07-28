@@ -1198,3 +1198,97 @@ API contract siap jika:
 - Analytics membaca read model.
 - Security reviewer menyetujui auth dan authorization.
 - Frontend engineer dapat menghasilkan client tanpa menebak struktur data.
+
+## 31. Bunny Stream Video API
+
+### POST `/admin/videos/upload-intents`
+
+Requires `courses.manage`.
+
+```json
+{
+  "lessonId": "uuid",
+  "title": "Dasar Prompt Engineering",
+  "fileName": "lesson-01.mp4",
+  "sizeBytes": 104857600
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "videoAssetId": "uuid",
+    "provider": "BUNNY_STREAM",
+    "providerVideoId": "bunny-video-guid",
+    "uploadUrl": "temporary-upload-url",
+    "expiresAt": "2026-07-28T12:10:00Z"
+  }
+}
+```
+
+API key tidak pernah dikembalikan. File type, ukuran, lesson, dan permission harus divalidasi.
+
+### POST `/webhooks/bunny-stream`
+
+Menerima status `CREATED`, `UPLOADING`, `PROCESSING`, `AVAILABLE`, `FAILED`, atau `DELETED`.
+
+Webhook wajib diverifikasi, replay-protected, dan tidak boleh dipercaya untuk menentukan permission pengguna.
+
+### GET `/admin/videos/{videoAssetId}`
+
+Mengembalikan metadata processing untuk Master yang berwenang.
+
+### DELETE `/admin/videos/{videoAssetId}`
+
+Menghapus video provider dan menandai asset internal sebagai deleted sesuai retention rule.
+
+### POST `/learn/lessons/{lessonId}/playback-sessions`
+
+Requires active account, active enrollment, valid access period, published course, active lesson, completed prerequisite, dan video `AVAILABLE`.
+
+```json
+{
+  "deviceId": "opaque-device-id"
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "playbackSessionId": "uuid",
+    "provider": "BUNNY_STREAM",
+    "providerVideoId": "bunny-video-guid",
+    "playbackUrl": "temporary-tokenised-url",
+    "expiresAt": "2026-07-28T12:05:00Z",
+    "drm": {
+      "enabled": true,
+      "type": "MEDIACAGE_BASIC"
+    },
+    "watermark": {
+      "text": "user@example.com • 91BA",
+      "mode": "MOVING"
+    }
+  }
+}
+```
+
+Playback URL bersifat singkat, scoped ke video, dibuat server-side, tidak disimpan permanen, dan tidak dicatat pada log.
+
+### POST `/playback-sessions/{playbackSessionId}/heartbeat`
+
+```json
+{
+  "positionSeconds": 420,
+  "isPlaying": true
+}
+```
+
+Digunakan untuk memvalidasi sesi, mendeteksi concurrent playback, dan mencatat active learning seconds.
+
+### POST `/playback-sessions/{playbackSessionId}/end`
+
+Mengakhiri active playback session.

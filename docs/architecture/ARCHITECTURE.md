@@ -1350,3 +1350,49 @@ Monorepo
 ```
 
 Pola ini memberikan keseimbangan terbaik antara kecepatan development, skalabilitas, keamanan, dan kemudahan maintenance.
+
+## 30. Bunny Stream Video Architecture
+
+Bunny Stream menjadi provider video utama untuk MVP melalui abstraction:
+
+```text
+VideoProviderPort
+└── BunnyStreamAdapter
+```
+
+Bunny Stream menangani penyimpanan, direct upload, transcoding, adaptive streaming, CDN, Token Authentication, Allowed Domains, MediaCage Basic DRM, serta processing webhook.
+
+NestJS tetap menangani permission upload, enrollment validation, lesson access, playback session, token generation, watermark payload, webhook verification, metadata, audit, dan security event.
+
+### Upload Flow
+
+```text
+Master Browser
+→ NestJS membuat video object dan upload credential
+→ Browser upload langsung ke Bunny Stream
+→ Bunny melakukan transcoding dan proteksi
+→ Bunny webhook mengirim status
+→ NestJS memperbarui VIDEO_ASSETS
+```
+
+### Playback Flow
+
+```text
+Student meminta playback session
+→ NestJS memvalidasi account, enrollment, lesson, dan prerequisite
+→ NestJS membuat token singkat
+→ Player memutar DRM-protected stream
+```
+
+### Security Baseline
+
+- MediaCage Basic DRM aktif untuk video terlindungi.
+- Token Authentication aktif dengan TTL default 300 detik.
+- Allowed Domains dibatasi ke domain LMS.
+- Tidak ada permanent public playback URL.
+- API key dan token key hanya tersedia di backend.
+- Playback token tidak dicatat pada log.
+- Dynamic user watermark tampil selama playback.
+- Concurrent playback dapat dibatasi.
+- Video tidak di-stream melalui NestJS.
+- DRM mengurangi download tidak sah, tetapi tidak dapat mencegah kamera atau screen recording sepenuhnya.

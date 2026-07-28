@@ -168,3 +168,25 @@ Rollback feature:
 - Queue worker aktif.
 - Alert aktif.
 - Error page production tidak membocorkan stack.
+
+## 9. Bunny Stream External Service
+
+```text
+External Services
+├── Bunny Stream video library
+├── Bunny Stream CDN and player
+├── S3-compatible storage for PDF and images
+├── Email provider
+└── Observability backend
+```
+
+Requirements:
+
+- Bunny keys hanya diinjeksi ke API/worker.
+- Webhook endpoint dapat diakses publik melalui HTTPS.
+- Webhook memakai verification dan rate limit.
+- Allowed Domains mencakup hostname staging dan production yang disetujui.
+- Staging menggunakan library terpisah bila memungkinkan.
+- Production video tidak disimpan di disk VPS.
+- Provider health dimonitor sebagai non-core dependency.
+- Core LMS tetap dapat dibuka ketika video provider unavailable.

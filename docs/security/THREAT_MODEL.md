@@ -145,3 +145,18 @@ Feature tidak dapat release apabila:
 - File atau export belum memiliki security test.
 - Secret ditemukan di repository.
 - Dependency scan menemukan exploitable critical vulnerability.
+
+## 7. Bunny Stream Threats
+
+| ID | Threat | Scenario | Impact | Mitigation | Risk |
+|---|---|---|---|---|---|
+| V-01 | Playback URL sharing | User membagikan tokenised URL | Unauthorised viewing | Short TTL dan video scope | Medium |
+| V-02 | External embed | Video dipasang di luar LMS | Redistribution | Allowed Domains | High |
+| V-03 | IDM extraction | Downloader menangkap stream | Piracy | MediaCage DRM dan token auth | High |
+| V-04 | Screen recording | User merekam layar | Piracy | Moving user watermark | Medium |
+| V-05 | API key leakage | Secret muncul di bundle/log | Library takeover | Backend-only secret dan rotation | Critical |
+| V-06 | Fake webhook | Status video dimanipulasi | State corruption | Verification dan replay protection | High |
+| V-07 | Account sharing | Concurrent playback | Abuse | Device/session limit dan heartbeat | Medium |
+| V-08 | Permanent URL storage | URL tersimpan di DB/log | Long-term leakage | Generate on demand | High |
+| V-09 | Provider outage | Bunny unavailable | Playback failure | Graceful error dan monitoring | Medium |
+| V-10 | State mismatch | Provider dan LMS berbeda | Broken lesson | Reconciliation job | Medium |

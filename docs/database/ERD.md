@@ -731,3 +731,65 @@ ERD dianggap siap jika:
 - API contract dapat dipetakan ke entity.
 - Security reviewer menyetujui penyimpanan credential dan token.
 - Analytics engineer menyetujui raw event dan aggregate.
+
+## 12. Bunny Stream Video Assets
+
+```text
+VIDEO_ASSETS
+- id
+- lesson_id
+- created_by
+- provider
+- provider_video_id
+- title
+- status
+- duration_seconds
+- width
+- height
+- drm_enabled
+- drm_type
+- thumbnail_url
+- processing_error
+- created_at
+- updated_at
+- deleted_at
+
+VIDEO_PLAYBACK_SESSIONS
+- id
+- video_asset_id
+- user_id
+- enrollment_id
+- device_id
+- status
+- initial_ip
+- started_at
+- last_heartbeat_at
+- ended_at
+
+VIDEO_PROVIDER_EVENTS
+- id
+- video_asset_id
+- provider_event_id
+- event_type
+- payload_summary
+- received_at
+- processed_at
+- processing_error
+```
+
+Provider enum: `BUNNY_STREAM`.
+
+Video status: `CREATED`, `UPLOADING`, `PROCESSING`, `AVAILABLE`, `FAILED`, `DELETED`.
+
+DRM type: `NONE`, `MEDIACAGE_BASIC`, `MEDIACAGE_ENTERPRISE`.
+
+Playback status: `ACTIVE`, `ENDED`, `EXPIRED`, `REVOKED`.
+
+Constraints:
+
+- Satu active video asset per lesson untuk MVP.
+- `provider_video_id` unique.
+- `provider_event_id` unique untuk replay protection.
+- Playback session selalu terkait active enrollment.
+- Playback token dan permanent URL tidak pernah disimpan.
+- Bunny secrets tidak disimpan di database.

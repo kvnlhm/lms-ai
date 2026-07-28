@@ -195,3 +195,39 @@ Production release memerlukan:
 - Backup tersedia.
 - Rollback procedure tersedia.
 - Smoke test staging lulus.
+
+## 7. Bunny Stream Test Cases
+
+### Upload
+
+- Authorised Master dapat membuat upload intent.
+- Student ditolak.
+- Master tanpa course permission ditolak.
+- MIME dan ukuran invalid ditolak.
+- API key tidak muncul di response atau log.
+
+### Webhook
+
+- Webhook valid memperbarui status.
+- Webhook invalid ditolak.
+- Replay event idempotent.
+- Unknown provider video ID ditangani aman.
+- Processing failure menghasilkan status `FAILED`.
+
+### Playback
+
+- Active enrollment memperoleh short-lived URL.
+- No enrollment, expired enrollment, suspended account, locked lesson, dan processing video ditolak.
+- Token expiry tersedia.
+- Playback token tidak muncul di log.
+- Watermark traceable.
+- Concurrent policy dan heartbeat berjalan.
+- Revoked session tidak dapat dilanjutkan melalui API.
+
+### Security
+
+- Allowed Domains diverifikasi di staging.
+- MediaCage DRM aktif.
+- Direct permanent MP4 URL tidak dikembalikan.
+- Web bundle tidak mengandung Bunny secret.
+- Webhook secret dapat dirotasi.
