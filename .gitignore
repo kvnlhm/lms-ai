@@ -5,3 +5,7 @@
 *.log
 vendor/
 node_modules/
+.turbo/
+dist/
+.next/
+coverage/

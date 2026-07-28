@@ -1,0 +1,27 @@
+{
+  "name": "@lms/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "eslint \"app/**/*.{ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "test:e2e": "node --test"
+  },
+  "dependencies": {
+    "@lms/api-client": "workspace:*",
+    "next": "^15.1.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@lms/config-typescript": "workspace:*",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.3",
+    "@types/react-dom": "^19.0.2",
+    "typescript": "^5.7.2"
+  }
+}
