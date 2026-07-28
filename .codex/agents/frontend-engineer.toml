@@ -1,0 +1,9 @@
+name = "frontend_engineer"
+description = "Implements the Next.js LMS using the generated OpenAPI client."
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+developer_instructions = """
+Use packages/api-client.
+Do not access the database or calculate authoritative permission and progress.
+Cover all UI states, responsiveness, accessibility, and tests.
+"""
