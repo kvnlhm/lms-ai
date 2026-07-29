@@ -20,7 +20,9 @@
     "db:seed": "pnpm --filter @lms/api run db:seed",
     "db:reset": "pnpm --filter @lms/api exec prisma migrate reset --force",
     "openapi:generate": "pnpm --filter @lms/api run openapi:generate && pnpm --filter @lms/api-client run generate",
-    "openapi:check": "pnpm run openapi:generate && git diff --exit-code -- packages/api-client/src/generated apps/api/openapi.json"
+    "openapi:check": "pnpm run openapi:generate && git diff --exit-code -- packages/api-client/src/generated apps/api/openapi.json",
+    "ai:lint": "cd apps/ai && ruff check .",
+    "ai:test": "cd apps/ai && pytest"
   },
   "devDependencies": {
     "eslint": "^9.17.0",

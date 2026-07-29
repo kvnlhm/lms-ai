@@ -140,6 +140,181 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar kursus termasuk draf dan arsip */
+        get: operations["AdminCoursesController_list"];
+        put?: never;
+        /** Membuat kursus baru berstatus draf */
+        post: operations["AdminCoursesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/courses/{courseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail kursus lengkap dengan bagian dan pelajaran */
+        get: operations["AdminCoursesController_detail"];
+        put?: never;
+        post?: never;
+        /** Menghapus kursus yang belum pernah memiliki enrollment */
+        delete: operations["AdminCoursesController_remove"];
+        options?: never;
+        head?: never;
+        /** Memperbarui metadata kursus */
+        patch: operations["AdminCoursesController_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/courses/{courseId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Menerbitkan kursus bila memenuhi syarat */
+        post: operations["AdminCoursesController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/courses/{courseId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mengarsipkan kursus */
+        post: operations["AdminCoursesController_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/courses/{courseId}/modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Menambah bagian pada kursus */
+        post: operations["AdminCoursesController_addModule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/modules/{moduleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Menghapus bagian yang belum memiliki riwayat belajar */
+        delete: operations["AdminCoursesController_removeModule"];
+        options?: never;
+        head?: never;
+        /** Memperbarui bagian */
+        patch: operations["AdminCoursesController_updateModule"];
+        trace?: never;
+    };
+    "/api/v1/admin/courses/{courseId}/modules/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mengubah urutan bagian */
+        put: operations["AdminCoursesController_reorderModules"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/modules/{moduleId}/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Menambah pelajaran pada bagian */
+        post: operations["AdminCoursesController_addLesson"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lessons/{lessonId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Menghapus pelajaran yang belum memiliki riwayat belajar */
+        delete: operations["AdminCoursesController_removeLesson"];
+        options?: never;
+        head?: never;
+        /** Memperbarui pelajaran */
+        patch: operations["AdminCoursesController_updateLesson"];
+        trace?: never;
+    };
+    "/api/v1/admin/modules/{moduleId}/lessons/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mengubah urutan pelajaran */
+        put: operations["AdminCoursesController_reorderLessons"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/enrollments": {
         parameters: {
             query?: never;
@@ -151,6 +326,78 @@ export interface paths {
         get: operations["MyEnrollmentsController_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/courses/{courseId}/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar pelajar pada sebuah kursus */
+        get: operations["AdminEnrollmentsController_list"];
+        put?: never;
+        /**
+         * Memberi akses kursus ke sejumlah pelajar
+         * @description Mengembalikan hasil per pengguna. Satu pengguna yang gagal tidak membatalkan yang lain.
+         */
+        post: operations["AdminEnrollmentsController_grant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/enrollments/{enrollmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mengubah masa berlaku akses */
+        patch: operations["AdminEnrollmentsController_updateWindow"];
+        trace?: never;
+    };
+    "/api/v1/admin/enrollments/{enrollmentId}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mencabut akses tanpa menghapus riwayat belajar */
+        post: operations["AdminEnrollmentsController_revoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/enrollments/{enrollmentId}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mengembalikan akses yang sebelumnya dicabut */
+        post: operations["AdminEnrollmentsController_reactivate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -263,6 +510,39 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ApiErrorBodyDto: {
+            /** @enum {string} */
+            code: "AUTHENTICATION_REQUIRED" | "INVALID_CREDENTIALS" | "ACCOUNT_INACTIVE" | "ACCOUNT_SUSPENDED" | "MFA_REQUIRED" | "TOKEN_EXPIRED" | "PERMISSION_DENIED" | "RESOURCE_NOT_FOUND" | "VALIDATION_ERROR" | "EMAIL_ALREADY_USED" | "ENROLLMENT_ALREADY_EXISTS" | "ENROLLMENT_INACTIVE" | "COURSE_NOT_PUBLISHED" | "LESSON_LOCKED" | "LESSON_ALREADY_COMPLETED" | "IDEMPOTENCY_CONFLICT" | "DISCUSSION_LOCKED" | "FILE_NOT_AVAILABLE" | "REPORT_NOT_READY" | "RATE_LIMITED" | "CSRF_TOKEN_INVALID" | "INTERNAL_ERROR";
+            message: string;
+            fields?: {
+                [key: string]: string[];
+            };
+            /** Format: uuid */
+            requestId: string;
+        };
+        ApiErrorDto: {
+            error: components["schemas"]["ApiErrorBodyDto"];
+        };
+        ResponseMetaDto: {
+            /** Format: uuid */
+            requestId: string;
+        };
+        LoginUserDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            /** Format: email */
+            email: string;
+            /** @enum {string} */
+            role: "MASTER" | "STUDENT";
+            /** @enum {string} */
+            status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+            /** @description Benar bila login harus dilanjutkan dengan verifikasi MFA. */
+            requiresMfa: boolean;
+        };
+        LoginResponseDto: {
+            user: components["schemas"]["LoginUserDto"];
+        };
         LoginDto: {
             /** @example pelajar@akademionline.id */
             email: string;
@@ -271,8 +551,523 @@ export interface components {
             /** @example Chrome di macOS */
             deviceName?: string;
         };
+        LogoutAllResponseDto: {
+            /** @example 3 */
+            revokedSessions: number;
+        };
+        CurrentUserResponseDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            /** Format: email */
+            email: string;
+            avatarUrl?: string | null;
+            /** @enum {string} */
+            role: "MASTER" | "STUDENT";
+            /** @enum {string} */
+            status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+            permissions: ("users.read" | "users.manage" | "users.security.manage" | "courses.manage" | "enrollments.manage" | "discussions.moderate" | "analytics.read" | "reports.export" | "audit.read" | "roles.manage" | "announcements.manage")[];
+        };
+        DeviceSessionDto: {
+            /** Format: uuid */
+            id: string;
+            deviceName?: string | null;
+            /** Format: date-time */
+            lastUsedAt: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        PaginatedMetaDto: {
+            /** Format: uuid */
+            requestId: string;
+            /** @example 1 */
+            page: number;
+            /** @example 20 */
+            pageSize: number;
+            /** @example 125 */
+            total: number;
+            /** @example 7 */
+            totalPages: number;
+        };
+        CourseCategoryDto: {
+            name: string;
+            slug: string;
+        };
+        CourseEnrollmentSummaryDto: {
+            /** @enum {string} */
+            status: "ACTIVE" | "COMPLETED" | "REMOVED" | "EXPIRED";
+            /** @example 25.5 */
+            progressPercent: number;
+        };
+        CourseListItemDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            shortDescription?: string | null;
+            /** @enum {string} */
+            level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            estimatedMinutes: number;
+            category?: components["schemas"]["CourseCategoryDto"] | null;
+            moduleCount: number;
+            /** Format: date-time */
+            publishedAt?: string | null;
+            /** @description Null bila pengguna belum terdaftar pada kursus ini. */
+            enrollment?: components["schemas"]["CourseEnrollmentSummaryDto"] | null;
+        };
+        CourseSyllabusLessonDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            position: number;
+            estimatedMinutes: number;
+            /** @enum {string} */
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            isRequired: boolean;
+            isPreview: boolean;
+        };
+        CourseSyllabusModuleDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description?: string | null;
+            position: number;
+            estimatedMinutes: number;
+            lessonCount: number;
+            lessons: components["schemas"]["CourseSyllabusLessonDto"][];
+        };
+        CourseAccessDto: {
+            enrolled: boolean;
+            /** @enum {string|null} */
+            status?: "ACTIVE" | "COMPLETED" | "REMOVED" | "EXPIRED" | null;
+            progressPercent: number;
+            /** Format: uuid */
+            lastLessonId?: string | null;
+        };
+        CourseDetailDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            shortDescription?: string | null;
+            description?: string | null;
+            /** @enum {string} */
+            level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            estimatedMinutes: number;
+            category?: components["schemas"]["CourseCategoryDto"] | null;
+            /** Format: date-time */
+            publishedAt?: string | null;
+            modules: components["schemas"]["CourseSyllabusModuleDto"][];
+            access: components["schemas"]["CourseAccessDto"];
+        };
+        AdminCategoryDto: {
+            name: string;
+            slug: string;
+        };
+        AdminCourseListItemDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            shortDescription?: string | null;
+            /** @enum {string} */
+            level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+            estimatedMinutes: number;
+            category?: components["schemas"]["AdminCategoryDto"] | null;
+            moduleCount: number;
+            lessonCount: number;
+            enrollmentCount: number;
+            /** Format: date-time */
+            publishedAt?: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdminLessonDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            moduleId: string;
+            title: string;
+            description?: string | null;
+            /** @enum {string} */
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            textContent?: string | null;
+            externalUrl?: string | null;
+            position: number;
+            estimatedMinutes: number;
+            isRequired: boolean;
+            isPreview: boolean;
+            isActive: boolean;
+            /** @enum {string} */
+            completionRule: "MANUAL" | "OPENED" | "MINIMUM_ACTIVE_SECONDS" | "VIDEO_PERCENTAGE";
+        };
+        AdminModuleWithLessonsDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            courseId: string;
+            title: string;
+            description?: string | null;
+            position: number;
+            estimatedMinutes: number;
+            isActive: boolean;
+            lessons: components["schemas"]["AdminLessonDto"][];
+        };
+        AdminCourseDetailDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            shortDescription?: string | null;
+            description?: string | null;
+            /** @enum {string} */
+            level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+            estimatedMinutes: number;
+            /** Format: uuid */
+            categoryId?: string | null;
+            /** Format: date-time */
+            publishedAt?: string | null;
+            /** Format: date-time */
+            archivedAt?: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+            category?: components["schemas"]["AdminCategoryDto"] | null;
+            modules: components["schemas"]["AdminModuleWithLessonsDto"][];
+        };
+        AdminCourseDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            shortDescription?: string | null;
+            description?: string | null;
+            /** @enum {string} */
+            level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+            estimatedMinutes: number;
+            /** Format: uuid */
+            categoryId?: string | null;
+            /** Format: date-time */
+            publishedAt?: string | null;
+            /** Format: date-time */
+            archivedAt?: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CreateCourseDto: {
+            /** @example AI untuk Bisnis */
+            title: string;
+            /** @example ai-untuk-bisnis */
+            slug: string;
+            /** Format: uuid */
+            categoryId?: string;
+            shortDescription?: string;
+            description?: string;
+            /** @enum {string} */
+            level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            estimatedMinutes?: number;
+        };
+        UpdateCourseDto: {
+            title?: string;
+            slug?: string;
+            /** Format: uuid */
+            categoryId?: string;
+            shortDescription?: string;
+            description?: string;
+            /** @enum {string} */
+            level?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            estimatedMinutes?: number;
+        };
+        AdminModuleDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            courseId: string;
+            title: string;
+            description?: string | null;
+            position: number;
+            estimatedMinutes: number;
+            isActive: boolean;
+        };
+        CreateModuleDto: {
+            title: string;
+            description?: string;
+            estimatedMinutes?: number;
+            /** @default true */
+            isActive?: boolean;
+        };
+        UpdateModuleDto: {
+            title?: string;
+            description?: string;
+            estimatedMinutes?: number;
+            isActive?: boolean;
+        };
+        ReorderResultDto: {
+            /** @example 3 */
+            reordered: number;
+        };
+        ReorderDto: {
+            ids: string[];
+        };
+        CreateLessonDto: {
+            title: string;
+            description?: string;
+            /** @enum {string} */
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            textContent?: string;
+            externalUrl?: string;
+            estimatedMinutes?: number;
+            /** @default true */
+            isRequired?: boolean;
+            /** @default false */
+            isPreview?: boolean;
+            /** @default true */
+            isActive?: boolean;
+            /**
+             * @default MANUAL
+             * @enum {string}
+             */
+            completionRule?: "MANUAL" | "OPENED" | "MINIMUM_ACTIVE_SECONDS" | "VIDEO_PERCENTAGE";
+        };
+        UpdateLessonDto: {
+            title?: string;
+            description?: string;
+            /** @enum {string} */
+            contentType?: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            textContent?: string;
+            externalUrl?: string;
+            estimatedMinutes?: number;
+            /** @default true */
+            isRequired?: boolean;
+            /** @default false */
+            isPreview?: boolean;
+            /** @default true */
+            isActive?: boolean;
+            /**
+             * @default MANUAL
+             * @enum {string}
+             */
+            completionRule?: "MANUAL" | "OPENED" | "MINIMUM_ACTIVE_SECONDS" | "VIDEO_PERCENTAGE";
+        };
+        EnrolledCourseDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            shortDescription?: string | null;
+            /** @enum {string} */
+            level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+            estimatedMinutes: number;
+            category?: string | null;
+        };
+        EnrollmentProgressDto: {
+            percent: number;
+            requiredLessonsTotal: number;
+            requiredLessonsCompleted: number;
+            /** Format: uuid */
+            lastLessonId?: string | null;
+            /** Format: date-time */
+            lastActivityAt?: string | null;
+        };
+        MyEnrollmentDto: {
+            /** Format: uuid */
+            enrollmentId: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "COMPLETED" | "REMOVED" | "EXPIRED";
+            /** Format: date-time */
+            enrolledAt: string;
+            /** Format: date-time */
+            accessEndsAt?: string | null;
+            course: components["schemas"]["EnrolledCourseDto"];
+            progress: components["schemas"]["EnrollmentProgressDto"];
+        };
+        EnrolledLearnerDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            /** Format: email */
+            email: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+        };
+        EnrollmentProgressSummaryDto: {
+            percent: number;
+            requiredLessonsTotal: number;
+            requiredLessonsCompleted: number;
+            /** Format: date-time */
+            lastActivityAt?: string | null;
+        };
+        AdminEnrollmentDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "COMPLETED" | "REMOVED" | "EXPIRED";
+            /** Format: date-time */
+            enrolledAt: string;
+            /** Format: date-time */
+            accessStartsAt?: string | null;
+            /** Format: date-time */
+            accessEndsAt?: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+            user: components["schemas"]["EnrolledLearnerDto"];
+            progress: components["schemas"]["EnrollmentProgressSummaryDto"];
+        };
+        GrantResultDto: {
+            /** Format: uuid */
+            userId: string;
+            /**
+             * @description Hasil untuk pengguna ini. Kegagalan satu pengguna tidak membatalkan yang lain.
+             * @enum {string}
+             */
+            outcome: "ENROLLED" | "REACTIVATED" | "ALREADY_ENROLLED" | "USER_NOT_FOUND" | "USER_INACTIVE";
+            /** Format: uuid */
+            enrollmentId?: string | null;
+        };
+        GrantAccessResponseDto: {
+            results: components["schemas"]["GrantResultDto"][];
+        };
+        GrantAccessDto: {
+            userIds: string[];
+            /** Format: date-time */
+            accessStartsAt?: string;
+            /** Format: date-time */
+            accessEndsAt?: string;
+        };
+        EnrollmentMutationDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            courseId: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "COMPLETED" | "REMOVED" | "EXPIRED";
+            /** Format: date-time */
+            accessStartsAt?: string | null;
+            /** Format: date-time */
+            accessEndsAt?: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+        };
+        UpdateAccessWindowDto: {
+            /** Format: date-time */
+            accessStartsAt?: string;
+            /** Format: date-time */
+            accessEndsAt?: string | null;
+        };
+        LearnCourseSummaryDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            shortDescription?: string | null;
+            estimatedMinutes: number;
+        };
+        LearnLessonItemDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            position: number;
+            /** @enum {string} */
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            estimatedMinutes: number;
+            isRequired: boolean;
+            /** @enum {string} */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+            /** Format: date-time */
+            completedAt?: string | null;
+        };
+        LearnModuleDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description?: string | null;
+            position: number;
+            lessons: components["schemas"]["LearnLessonItemDto"][];
+        };
+        LearnProgressDto: {
+            /** @example 42.11 */
+            percent: number;
+            requiredLessonsTotal: number;
+            requiredLessonsCompleted: number;
+            /** Format: date-time */
+            lastActivityAt?: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+        };
+        LearnCourseResponseDto: {
+            course: components["schemas"]["LearnCourseSummaryDto"];
+            modules: components["schemas"]["LearnModuleDto"][];
+            progress: components["schemas"]["LearnProgressDto"];
+            /** Format: uuid */
+            lastLessonId?: string | null;
+            /**
+             * Format: uuid
+             * @description Pelajaran pertama yang belum selesai; null bila semua sudah selesai.
+             */
+            nextLessonId?: string | null;
+            totalLessons: number;
+        };
+        LessonContentDto: {
+            text?: string | null;
+            externalUrl?: string | null;
+            /** @description URL bertanda tangan untuk media; belum tersedia pada walking skeleton. */
+            streamUrl?: string | null;
+        };
+        LearnLessonResponseDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description?: string | null;
+            /** @enum {string} */
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            content: components["schemas"]["LessonContentDto"];
+            /** Format: uuid */
+            moduleId: string;
+            moduleTitle: string;
+            /** Format: uuid */
+            courseId: string;
+            isRequired: boolean;
+            /** @enum {string} */
+            completionRule: "MANUAL" | "OPENED" | "MINIMUM_ACTIVE_SECONDS" | "VIDEO_PERCENTAGE";
+            /** @enum {string} */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+            /** Format: uuid */
+            previousLessonId?: string | null;
+            /** Format: uuid */
+            nextLessonId?: string | null;
+            courseProgress: number;
+        };
+        OpenLessonResponseDto: {
+            /** @enum {string} */
+            status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+        };
         OpenLessonDto: {
             sessionId?: string;
+        };
+        CompleteLessonResponseDto: {
+            /**
+             * @example COMPLETED
+             * @enum {string}
+             */
+            lessonStatus: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+            /**
+             * @description Progres kursus setelah operasi ini, 0 sampai 100.
+             * @example 26.32
+             */
+            courseProgress: number;
+            /** @enum {string} */
+            courseStatus: "ACTIVE" | "COMPLETED" | "REMOVED" | "EXPIRED";
+            /** Format: uuid */
+            nextLessonId?: string | null;
         };
         CompletionEvidenceDto: {
             activeSeconds?: number;
@@ -305,11 +1100,49 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Berhasil masuk; cookie session dan CSRF disetel. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LoginResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -322,11 +1155,28 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Session dicabut. */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -343,7 +1193,28 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LogoutAllResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -360,7 +1231,20 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CurrentUserResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -377,7 +1261,20 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DeviceSessionDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -392,11 +1289,36 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Perangkat dicabut. */
             204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -419,7 +1341,28 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CourseListItemDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -438,7 +1381,857 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CourseDetailDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCourseListItemDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCourseDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCourseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCourseDetailDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kursus dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCourseDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCourseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCourseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCourseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_addModule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateModuleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminModuleDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_removeModule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moduleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bagian dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_updateModule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moduleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateModuleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminModuleDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_reorderModules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReorderResultDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_addLesson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moduleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateLessonDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminLessonDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_removeLesson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pelajaran dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_updateLesson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLessonDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminLessonDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_reorderLessons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moduleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReorderResultDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -455,7 +2248,298 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["MyEnrollmentDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminEnrollmentsController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                status?: "ACTIVE" | "COMPLETED" | "REMOVED" | "EXPIRED";
+                /** @description Cocokkan nama atau email pelajar */
+                search?: string;
+            };
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminEnrollmentDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminEnrollmentsController_grant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantAccessDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["GrantAccessResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminEnrollmentsController_updateWindow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccessWindowDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EnrollmentMutationDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminEnrollmentsController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EnrollmentMutationDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminEnrollmentsController_reactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EnrollmentMutationDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -474,7 +2558,36 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LearnCourseResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -493,7 +2606,36 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LearnLessonResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -516,17 +2658,45 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["OpenLessonResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
     LessonProgressController_complete: {
         parameters: {
             query?: never;
-            header: {
-                "idempotency-key": string;
+            header?: {
                 /** @description UUID. Percobaan ulang dengan kunci dan isi yang sama mengembalikan respons pertama. Bila tidak dikirim, operasi tetap aman diulang karena penyelesaian pelajaran bersifat idempotent. */
-                "Idempotency-Key"?: string;
+                "idempotency-key"?: string;
             };
             path: {
                 lessonId: string;
@@ -543,7 +2713,52 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CompleteLessonResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };

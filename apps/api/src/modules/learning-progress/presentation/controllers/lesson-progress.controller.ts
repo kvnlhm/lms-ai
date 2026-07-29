@@ -1,5 +1,7 @@
 import { Body, Controller, Headers, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiEnvelope, ApiErrors } from '../../../../shared/http/api-envelope';
+import { CompleteLessonResponseDto, OpenLessonResponseDto } from '../dto/progress.response';
 import { randomUUID } from 'node:crypto';
 import { AppError } from '../../../../shared/errors/app-error';
 import { IdempotencyService } from '../../../../shared/idempotency/idempotency.service';
@@ -21,6 +23,8 @@ export class LessonProgressController {
   @Post(':lessonId/open')
   @HttpCode(200)
   @ApiOperation({ summary: 'Mencatat bahwa pelajaran dibuka' })
+  @ApiEnvelope(OpenLessonResponseDto)
+  @ApiErrors(401, 403, 404)
   async open(
     @Param('lessonId', new ParseUUIDPipe()) lessonId: string,
     @Body() dto: OpenLessonDto,
@@ -31,14 +35,19 @@ export class LessonProgressController {
 
   @Post(':lessonId/complete')
   @HttpCode(200)
+  // Nama ditulis huruf kecil agar menyatu dengan parameter yang diturunkan
+  // otomatis dari @Headers('idempotency-key'); nama berbeda menghasilkan dua
+  // entri header di kontrak. HTTP tidak membedakan besar-kecil huruf header.
   @ApiHeader({
-    name: 'Idempotency-Key',
+    name: 'idempotency-key',
     required: false,
     description:
       'UUID. Percobaan ulang dengan kunci dan isi yang sama mengembalikan respons pertama. ' +
       'Bila tidak dikirim, operasi tetap aman diulang karena penyelesaian pelajaran bersifat idempotent.',
   })
   @ApiOperation({ summary: 'Menandai pelajaran selesai' })
+  @ApiEnvelope(CompleteLessonResponseDto)
+  @ApiErrors(401, 403, 404, 409, 422)
   async complete(
     @Param('lessonId', new ParseUUIDPipe()) lessonId: string,
     @Body() dto: CompleteLessonDto,

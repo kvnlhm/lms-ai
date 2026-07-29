@@ -370,6 +370,34 @@ model OutboxMessage {
   @@map("outbox_messages")
 }
 
+/// Fakta perilaku belajar, ditulis worker dari outbox.
+///
+/// `eventUuid` menyimpan `outbox_messages.event_id`. Constraint unik pada kolom
+/// itulah yang membuat konsumer idempotent: percobaan kedua atas event yang
+/// sama gagal pada level database, bukan bergantung pada disiplin kode.
+model LearningEvent {
+  id              BigInt   @id @default(autoincrement())
+  eventUuid       String   @unique @map("event_uuid") @db.Uuid
+  eventName       String   @map("event_name")
+  schemaVersion   Int      @default(1) @map("schema_version")
+  userId          String?  @map("user_id") @db.Uuid
+  learningSession String?  @map("session_id") @db.Uuid
+  courseId        String?  @map("course_id") @db.Uuid
+  moduleId        String?  @map("module_id") @db.Uuid
+  lessonId        String?  @map("lesson_id") @db.Uuid
+  occurredAt      DateTime @map("occurred_at") @db.Timestamptz(6)
+  durationSeconds Int?     @map("duration_seconds")
+  deviceType      String?  @map("device_type")
+  source          String?
+  metadata        Json?
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, occurredAt])
+  @@index([courseId, eventName, occurredAt])
+  @@index([lessonId, eventName])
+  @@map("learning_events")
+}
+
 /// Menyimpan hasil mutation idempotent supaya percobaan ulang dengan
 /// Idempotency-Key yang sama mengembalikan respons yang sama.
 model IdempotencyKey {

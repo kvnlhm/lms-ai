@@ -1,5 +1,16 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Req, Res } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiNoContentResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiEnvelope,
+  ApiEnvelopeArray,
+  ApiErrors,
+} from '../../../../shared/http/api-envelope';
+import {
+  CurrentUserResponseDto,
+  DeviceSessionDto,
+  LoginResponseDto,
+  LogoutAllResponseDto,
+} from '../dto/auth.response';
 import { ConfigService } from '@nestjs/config';
 import type { CookieOptions, Request, Response } from 'express';
 import type { AppConfig } from '../../../../config/configuration';
@@ -29,6 +40,8 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   @ApiOperation({ summary: 'Masuk dengan email dan kata sandi' })
+  @ApiEnvelope(LoginResponseDto, 'Berhasil masuk; cookie session dan CSRF disetel.')
+  @ApiErrors(401, 403, 422, 429)
   async login(@Body() dto: LoginDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
     // Session lama dibuang sebelum yang baru dibuat (rotasi, ADR-010).
     const existing = request.cookies?.[this.app.session.cookieName] as string | undefined;
@@ -49,6 +62,8 @@ export class AuthController {
   @Post('logout')
   @HttpCode(204)
   @ApiOperation({ summary: 'Mencabut session saat ini' })
+  @ApiNoContentResponse({ description: 'Session dicabut.' })
+  @ApiErrors(401, 403)
   async logout(@CurrentSession() session: ActiveSession & { deviceRecordId: string }, @Res({ passthrough: true }) response: Response) {
     await this.auth.logout(session.sessionId, session.deviceRecordId);
     this.clearSessionCookies(response);
@@ -57,6 +72,8 @@ export class AuthController {
   @Post('logout-all')
   @HttpCode(200)
   @ApiOperation({ summary: 'Mencabut seluruh session milik pengguna saat ini' })
+  @ApiEnvelope(LogoutAllResponseDto)
+  @ApiErrors(401, 403)
   async logoutAll(@CurrentUser() user: AuthenticatedUser, @Res({ passthrough: true }) response: Response) {
     const revoked = await this.auth.logoutAll(user.id);
     this.clearSessionCookies(response);
@@ -65,12 +82,16 @@ export class AuthController {
 
   @Get('me')
   @ApiOperation({ summary: 'Pengguna saat ini beserta permission efektifnya' })
+  @ApiEnvelope(CurrentUserResponseDto)
+  @ApiErrors(401)
   async me(@CurrentUser() user: AuthenticatedUser) {
     return this.auth.currentUser(user);
   }
 
   @Get('sessions')
   @ApiOperation({ summary: 'Perangkat aktif milik pengguna saat ini' })
+  @ApiEnvelopeArray(DeviceSessionDto)
+  @ApiErrors(401)
   async listSessions(@CurrentUser() user: AuthenticatedUser) {
     return this.auth.listDevices(user.id);
   }
@@ -78,6 +99,8 @@ export class AuthController {
   @Delete('sessions/:sessionId')
   @HttpCode(204)
   @ApiOperation({ summary: 'Mencabut satu perangkat milik sendiri' })
+  @ApiNoContentResponse({ description: 'Perangkat dicabut.' })
+  @ApiErrors(401, 403, 404)
   async revokeSession(
     @CurrentUser() user: AuthenticatedUser,
     @Param('sessionId', new ParseUUIDPipe()) sessionId: string,

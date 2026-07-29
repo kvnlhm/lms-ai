@@ -1,62 +1,64 @@
-import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
-import { Worker } from 'bullmq';
-import type { Job } from 'bullmq';
-import IORedis from 'ioredis';
+import { Inject, Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { Worker, type Job } from 'bullmq';
+import type IORedis from 'ioredis';
+import { loadWorkerConfig, type WorkerConfig } from './config';
+import { REDIS_CONNECTION } from './infrastructure/redis.provider';
+import { AnalyticsProcessor } from './processors/analytics.processor';
+import type { EventJob } from './processors/event-job';
+import { NotificationsProcessor } from './processors/notifications.processor';
 
+/**
+ * Menyalakan worker BullMQ untuk setiap antrean yang punya handler.
+ *
+ * Antrean lain pada ADR-012 (critical, reports, media, ai) belum memiliki
+ * konsumer; sengaja tidak dibuatkan worker kosong agar tidak terlihat seolah
+ * job di antrean itu sudah tertangani.
+ */
 @Injectable()
 export class WorkerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(WorkerService.name);
-  private readonly connection: IORedis;
-  private worker?: Worker;
+  private readonly config: WorkerConfig = loadWorkerConfig();
+  private readonly workers: Worker[] = [];
 
-  constructor() {
-    const redisUrl = required('REDIS_URL');
-    this.connection = new IORedis(redisUrl, {
-      maxRetriesPerRequest: null,
-      lazyConnect: true,
-    });
-  }
+  constructor(
+    @Inject(REDIS_CONNECTION) private readonly connection: IORedis,
+    private readonly analytics: AnalyticsProcessor,
+    private readonly notifications: NotificationsProcessor,
+  ) {}
 
-  async onModuleInit(): Promise<void> {
-    await this.connection.connect();
-    const pong = await this.connection.ping();
-    if (pong !== 'PONG') throw new Error('Redis worker tidak siap.');
-
-    this.worker = new Worker(
-      'maintenance',
-      async (job) => this.process(job),
-      {
-        connection: this.connection,
-        prefix: process.env.REDIS_QUEUE_PREFIX ?? 'lms:queue',
-        concurrency: positiveInt(process.env.QUEUE_CONCURRENCY_MAINTENANCE, 2),
-      },
+  onModuleInit(): void {
+    this.start('analytics', this.config.concurrency.analytics, (job) =>
+      this.analytics.handle(job.data as EventJob),
     );
-    this.worker.on('failed', (job, error) => {
-      this.logger.error(`Job ${job?.id ?? 'unknown'} gagal: ${error.message}`);
-    });
-    this.logger.log('Worker maintenance terhubung ke Redis dan siap menerima job.');
+
+    this.start('notifications', this.config.concurrency.notifications, (job) =>
+      Promise.resolve(this.notifications.handle(job.data as EventJob)),
+    );
+
+    this.logger.log('Worker analytics dan notifications siap.');
   }
 
   async onModuleDestroy(): Promise<void> {
-    await this.worker?.close();
-    await this.connection.quit();
+    await Promise.all(this.workers.map((worker) => worker.close()));
   }
 
-  private async process(job: Job): Promise<{ handledAt: string }> {
-    // Foundation hanya membuktikan boundary queue. Handler domain ditambahkan
-    // bersama outbox dispatcher pada fase Progress.
-    this.logger.log(`Memproses ${job.name} (${job.id ?? 'tanpa-id'}).`);
-    return { handledAt: new Date().toISOString() };
+  private start(
+    queue: string,
+    concurrency: number,
+    handler: (job: Job) => Promise<unknown>,
+  ): void {
+    const worker = new Worker(queue, handler, {
+      connection: this.connection,
+      prefix: this.config.queuePrefix,
+      concurrency,
+    });
+
+    worker.on('failed', (job, error) => {
+      this.logger.error(
+        `Job ${job?.name ?? 'unknown'} (${job?.id ?? 'tanpa-id'}) di ${queue} gagal: ${error.message}`,
+      );
+    });
+
+    this.workers.push(worker);
   }
-}
-
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Environment variable ${name} wajib diisi.`);
-  return value;
-}
-
-function positiveInt(raw: string | undefined, fallback: number): number {
-  const parsed = Number.parseInt(raw ?? '', 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }

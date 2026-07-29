@@ -13,6 +13,7 @@ import { SessionGuard } from './modules/identity/presentation/guards/session.gua
 import { LearningCatalogModule } from './modules/learning-catalog/learning-catalog.module';
 import { LearningDeliveryModule } from './modules/learning-delivery/learning-delivery.module';
 import { LearningProgressModule } from './modules/learning-progress/learning-progress.module';
+import { AuditModule } from './shared/audit/audit.module';
 import { AllExceptionsFilter } from './shared/http/all-exceptions.filter';
 import { RequestContextMiddleware } from './shared/http/request-context.middleware';
 import { ResponseInterceptor } from './shared/http/response.interceptor';
@@ -29,6 +30,7 @@ import { IdempotencyModule } from './shared/idempotency/idempotency.module';
     RedisModule,
     OutboxModule,
     IdempotencyModule,
+    AuditModule,
     IdentityModule,
     LearningCatalogModule,
     EnrollmentModule,

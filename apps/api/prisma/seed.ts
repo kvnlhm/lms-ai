@@ -35,7 +35,27 @@ const PERMISSIONS: Array<{ code: string; name: string }> = [
   { code: 'announcements.manage', name: 'Mengelola pengumuman' },
 ];
 
-const CURRICULUM: Array<{ title: string; lessons: string[] }> = [
+type Curriculum = Array<{ title: string; lessons: string[] }>;
+
+/**
+ * Kurikulum ringkas untuk kursus kedua.
+ *
+ * Kursus berstatus PUBLISHED wajib memiliki minimal satu modul aktif dan satu
+ * pelajaran wajib (API_CONTRACT bagian 9), jadi data seed tidak boleh
+ * menerbitkan kursus kosong.
+ */
+const AI_MASTERY_CURRICULUM: Curriculum = [
+  {
+    title: 'Fondasi AI untuk Kerja Harian',
+    lessons: ['Memetakan Pekerjaan yang Layak Diotomasi', 'Menyusun Prompt yang Dapat Diulang'],
+  },
+  {
+    title: 'Riset dan Analisis',
+    lessons: ['Riset Audiens dengan AI', 'Membaca Data Kampanye', 'Menyusun Ringkasan Temuan'],
+  },
+];
+
+const CURRICULUM: Curriculum = [
   {
     title: 'Instalasi & Setup Editor',
     lessons: [
@@ -200,31 +220,8 @@ async function main(): Promise<void> {
     update: {},
   });
 
-  await prisma.courseModule.deleteMany({ where: { courseId: course.id } });
-  for (const [moduleIndex, section] of CURRICULUM.entries()) {
-    const courseModule = await prisma.courseModule.create({
-      data: {
-        courseId: course.id,
-        title: section.title,
-        position: moduleIndex + 1,
-        estimatedMinutes: section.lessons.length * 6,
-      },
-    });
-
-    await prisma.lesson.createMany({
-      data: section.lessons.map((title, lessonIndex) => ({
-        moduleId: courseModule.id,
-        title,
-        position: lessonIndex + 1,
-        contentType: LessonContentType.VIDEO,
-        estimatedMinutes: 6,
-        isRequired: true,
-        isPreview: moduleIndex === 0 && lessonIndex === 0,
-        completionRule: CompletionRule.MANUAL,
-        description: `Materi ${title.toLowerCase()}.`,
-      })),
-    });
-  }
+  await seedCurriculum(course.id, CURRICULUM);
+  await seedCurriculum(secondCourse.id, AI_MASTERY_CURRICULUM);
 
   console.log('Menyiapkan enrollment…');
 
@@ -263,6 +260,36 @@ async function main(): Promise<void> {
   console.log(`    Master  → master@akademionline.id  / ${LOCAL_PASSWORDS.master}`);
   console.log(`    Pelajar → pelajar@akademionline.id / ${LOCAL_PASSWORDS.student}`);
   console.log('');
+}
+
+/** Menulis ulang modul dan pelajaran sebuah kursus agar seed dapat diulang. */
+async function seedCurriculum(courseId: string, curriculum: Curriculum): Promise<void> {
+  await prisma.courseModule.deleteMany({ where: { courseId } });
+
+  for (const [moduleIndex, section] of curriculum.entries()) {
+    const courseModule = await prisma.courseModule.create({
+      data: {
+        courseId,
+        title: section.title,
+        position: moduleIndex + 1,
+        estimatedMinutes: section.lessons.length * 6,
+      },
+    });
+
+    await prisma.lesson.createMany({
+      data: section.lessons.map((title, lessonIndex) => ({
+        moduleId: courseModule.id,
+        title,
+        position: lessonIndex + 1,
+        contentType: LessonContentType.VIDEO,
+        estimatedMinutes: 6,
+        isRequired: true,
+        isPreview: moduleIndex === 0 && lessonIndex === 0,
+        completionRule: CompletionRule.MANUAL,
+        description: `Materi ${title.toLowerCase()}.`,
+      })),
+    });
+  }
 }
 
 async function upsertUser(params: {
