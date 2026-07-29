@@ -131,14 +131,15 @@ services:
       retries: 20
 
   gateway:
-    image: nginx:1.27-alpine
+    build:
+      context: .
+      dockerfile: deploy/nginx/Dockerfile.coolify
     restart: unless-stopped
     environment:
       VIDEO_MAX_UPLOAD_BYTES: ${VIDEO_MAX_UPLOAD_BYTES:-2147483648}
     expose:
       - '8080'
     volumes:
-      - ./deploy/nginx/coolify.conf.template:/etc/nginx/templates/default.conf.template:ro
       - video-data:/data/videos:ro
     depends_on:
       web:
