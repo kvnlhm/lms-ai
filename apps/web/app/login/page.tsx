@@ -38,14 +38,6 @@ export default async function LoginPage({ searchParams }: Props) {
         <p className="authLead">Lanjutkan belajar dari pelajaran terakhir yang kamu buka.</p>
 
         <LoginForm nextPath={nextPath} />
-
-        <p className="authHint">
-          Akun contoh untuk pengembangan lokal:
-          <br />
-          Pelajar <code>pelajar@akademionline.id</code> / <code>Pelajar#Lokal12345</code>
-          <br />
-          Master <code>master@akademionline.id</code> / <code>Master#Lokal12345</code>
-        </p>
       </section>
     </main>
   );
