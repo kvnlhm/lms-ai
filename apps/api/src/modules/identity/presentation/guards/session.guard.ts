@@ -5,7 +5,7 @@ import type { Request } from 'express';
 import type { AppConfig } from '../../../../config/configuration';
 import { AppError } from '../../../../shared/errors/app-error';
 import { SessionService } from '../../application/session.service';
-import { IS_PUBLIC_KEY } from '../decorators';
+import { ALLOW_PENDING_MFA_KEY, IS_PUBLIC_KEY } from '../decorators';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -49,6 +49,21 @@ export class SessionGuard implements CanActivate {
       throw AppError.authenticationRequired();
     }
 
+    // Session yang belum melewati faktor kedua hanya boleh menyentuh alur MFA.
+    if (session.pendingMfa) {
+      const allowPending = this.reflector.getAllAndOverride<boolean>(ALLOW_PENDING_MFA_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]);
+      if (!allowPending) {
+        throw new AppError(
+          'MFA_REQUIRED',
+          403,
+          'Selesaikan verifikasi dua faktor terlebih dahulu.',
+        );
+      }
+    }
+
     if (MUTATING_METHODS.has(request.method)) {
       const header = request.header('x-csrf-token');
       if (!SessionService.csrfMatches(session.csrfToken, header)) {
@@ -63,6 +78,8 @@ export class SessionGuard implements CanActivate {
       permissions: session.permissions,
       csrfToken: session.csrfToken,
       deviceRecordId: session.deviceRecordId,
+      pendingMfa: session.pendingMfa === true,
+      mfaSetupRequired: session.mfaSetupRequired === true,
     };
 
     return true;

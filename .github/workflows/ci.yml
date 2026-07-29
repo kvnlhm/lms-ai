@@ -42,6 +42,8 @@ jobs:
       API_URL: http://localhost:3001
       NEXT_PUBLIC_API_URL: http://localhost:3001
       SESSION_COOKIE_SECURE: "false"
+      MFA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      VIDEO_STORAGE_PATH: /tmp/lms-ci-videos
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -59,6 +61,11 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # Test integrasi berjalan terhadap PostgreSQL dan Redis sungguhan.
+      # Worker tidak dinyalakan di CI, jadi relay-nya tidak berebut baris
+      # outbox dengan test relay.
+      - run: pnpm --filter @lms/api run test:e2e
+      - run: pnpm --filter @lms/worker run test:e2e
       - run: pnpm build
 
   ai:

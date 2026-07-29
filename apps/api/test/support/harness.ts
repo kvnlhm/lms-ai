@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
 import request from 'supertest';
+import * as OTPAuth from 'otpauth';
 import type { App } from 'supertest/types';
 import { API_PREFIX, createApp } from '../../src/bootstrap';
 
@@ -53,6 +54,16 @@ export async function login(
   email: string,
   password: string,
 ): Promise<Session> {
+  // Setiap login Master dalam test memulai dari setup MFA yang bersih. Ini
+  // membuat test saling independen sekaligus memastikan password saja tidak
+  // pernah menghasilkan session administratif penuh.
+  if (email === 'master@akademionline.id') {
+    const setupPrisma = new PrismaClient();
+    const master = await setupPrisma.user.findUnique({ where: { email }, select: { id: true } });
+    if (master) await setupPrisma.mfaMethod.deleteMany({ where: { userId: master.id } });
+    await setupPrisma.$disconnect();
+  }
+
   const response = await request(server)
     .post(`${prefix}/auth/login`)
     .send({ email, password })
@@ -61,9 +72,38 @@ export async function login(
   const setCookie = response.headers['set-cookie'] as unknown as string[] | undefined;
   if (!setCookie) throw new Error('Login tidak mengirim cookie.');
 
-  const cookie = setCookie.map((entry) => entry.split(';')[0]).join('; ');
+  let cookie = setCookie.map((entry) => entry.split(';')[0]).join('; ');
   const csrfRaw = setCookie.find((entry) => entry.startsWith('lms_csrf='));
-  const csrfToken = decodeURIComponent(csrfRaw?.split(';')[0]?.split('=')[1] ?? '');
+  let csrfToken = decodeURIComponent(csrfRaw?.split(';')[0]?.split('=')[1] ?? '');
+
+  if (response.body.data.user.mfaSetupRequired === true) {
+    const setup = await request(server)
+      .post(`${prefix}/auth/mfa/setup`)
+      .set('Cookie', cookie)
+      .set('X-CSRF-Token', csrfToken)
+      .send({})
+      .expect(201);
+    const secret = setup.body.data.secret as string;
+    const code = new OTPAuth.TOTP({
+      issuer: 'LMS Akademi Online',
+      label: email,
+      algorithm: 'SHA1',
+      digits: 6,
+      period: 30,
+      secret: OTPAuth.Secret.fromBase32(secret),
+    }).generate();
+    const confirmed = await request(server)
+      .post(`${prefix}/auth/mfa/setup/confirm`)
+      .set('Cookie', cookie)
+      .set('X-CSRF-Token', csrfToken)
+      .send({ code })
+      .expect(201);
+    const rotated = confirmed.headers['set-cookie'] as unknown as string[];
+    cookie = rotated.map((entry) => entry.split(';')[0]).join('; ');
+    csrfToken = decodeURIComponent(
+      rotated.find((entry) => entry.startsWith('lms_csrf='))?.split(';')[0]?.split('=')[1] ?? '',
+    );
+  }
 
   return { cookie, csrfToken, userId: response.body.data.user.id as string };
 }

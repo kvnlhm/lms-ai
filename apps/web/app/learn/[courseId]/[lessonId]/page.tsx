@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../../../components/app-shell';
-import { ArrowLeft, ArrowRight, Play } from '../../../components/icons';
+import { ArrowLeft, ArrowRight } from '../../../components/icons';
 import { ApiError, serverClient, unwrap } from '../../../lib/api';
 import { requireUser } from '../../../lib/session';
 import { CompleteButton } from './complete-button';
+import { VideoPlayer } from './video-player';
 
 export const dynamic = 'force-dynamic';
 
@@ -167,13 +168,6 @@ function NavArrow({
   );
 }
 
-/**
- * Area materi.
- *
- * URL media bertanda tangan belum tersedia pada walking skeleton, jadi status
- * itu dinyatakan terbuka alih-alih menampilkan pemutar palsu yang tidak
- * memutar apa pun.
- */
 function LessonStage({ lesson, position }: { lesson: LearnLesson; position: number }) {
   if (lesson.contentType === 'EXTERNAL_LINK' && lesson.content.externalUrl) {
     return (
@@ -194,6 +188,17 @@ function LessonStage({ lesson, position }: { lesson: LearnLesson; position: numb
     return null;
   }
 
+  if (lesson.contentType === 'VIDEO') {
+    return (
+      <div className="stage">
+        <div className="stageLabel">
+          <h2>{position}. {lesson.title}</h2>
+        </div>
+        <VideoPlayer lessonId={lesson.id} />
+      </div>
+    );
+  }
+
   return (
     <div className="stage">
       <div className="stageLabel">
@@ -201,26 +206,7 @@ function LessonStage({ lesson, position }: { lesson: LearnLesson; position: numb
           {position}. {lesson.title}
         </h2>
       </div>
-      <div style={{ display: 'grid', justifyItems: 'center', gap: 14 }}>
-        <span
-          style={{
-            width: 62,
-            height: 62,
-            borderRadius: 999,
-            background: 'rgba(255,255,255,.9)',
-            color: '#111',
-            display: 'grid',
-            placeItems: 'center',
-          }}
-          aria-hidden="true"
-        >
-          <Play size={24} />
-        </span>
-        <p className="stageNote">
-          Pemutar video akan aktif setelah modul media menyediakan URL bertanda tangan. Progres
-          pelajaran sudah dapat dicatat sekarang.
-        </p>
-      </div>
+      <p className="stageNote">Materi file belum tersedia.</p>
     </div>
   );
 }

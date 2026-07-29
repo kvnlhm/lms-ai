@@ -103,6 +103,15 @@ export class SessionService {
     await this.redis.client.del(this.key(sessionId));
   }
 
+  /** Mengganti session setelah MFA agar identifier sebelum MFA tidak dapat dipakai lagi. */
+  async rotateAfterMfa(
+    sessionId: string,
+    data: Pick<SessionData, 'userId' | 'roleCode' | 'permissions' | 'deviceRecordId'>,
+  ): Promise<{ sessionId: string; csrfToken: string }> {
+    await this.destroy(sessionId);
+    return this.create(data);
+  }
+
   /** Dipakai oleh logout-all dan pencabutan session oleh Master. */
   async destroyAllForUser(userId: string): Promise<number> {
     const sessionIds = await this.redis.client.smembers(this.userIndexKey(userId));

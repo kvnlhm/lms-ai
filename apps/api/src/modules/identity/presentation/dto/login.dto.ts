@@ -19,3 +19,11 @@ export class LoginDto {
   @MaxLength(120)
   deviceName?: string;
 }
+
+export class MfaCodeDto {
+  @ApiProperty({ example: '123456', minLength: 6, maxLength: 6 })
+  @IsString()
+  @MinLength(6)
+  @MaxLength(6)
+  code!: string;
+}

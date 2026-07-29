@@ -19,11 +19,11 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
   return (
     <>
       <header className="topbar">
-        <Link href="/" className="brand" aria-label="LMS Akademi Online, ke beranda">
+        <Link href="/" className="brand" aria-label="LMS AIPrenuer, ke beranda">
           <span className="brandMark" aria-hidden="true">
             AO
           </span>
-          <span>Akademi Online</span>
+          <span>AIPrenuer</span>
         </Link>
 
         <nav className="mainNav" aria-label="Navigasi utama">

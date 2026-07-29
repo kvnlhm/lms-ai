@@ -153,6 +153,20 @@ Setiap pull request critical wajib melewati:
 - Playback URL memiliki expiration singkat.
 - Playback dibuat hanya setelah enrollment validation.
 - Permanent public playback URL tidak disimpan.
+
+## 13. Self-hosted Video Security
+
+Saat `VIDEO_PROVIDER=SELF_HOSTED` sesuai ADR-014:
+
+- Video berada pada volume private di luar web root.
+- Object key acak; nama file asli hanya menjadi metadata yang disanitasi.
+- Upload memerlukan `courses.manage`, CSRF, MIME/extension/magic-byte check,
+  size limit, dan rate limit.
+- Playback memerlukan validasi enrollment dan lesson access di backend.
+- Reverse proxy hanya membaca volume dan hanya melalui internal location.
+- URL atau playback session berumur singkat dan tidak dicatat pada log.
+- Tidak ada klaim DRM atau anti-download.
+- Backup video terenkripsi disimpan di luar failure domain VPS.
 - Playback token tidak dicatat pada log.
 - Webhook diverifikasi dan replay-protected.
 - Dynamic user watermark ditampilkan.

@@ -11,6 +11,7 @@
     "test": "jest --config jest.config.js",
     "test:e2e": "jest --config jest.e2e.config.js --runInBand",
     "db:seed": "ts-node --files --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/seed.ts",
+    "db:bootstrap-master": "ts-node --files --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/bootstrap-master.ts",
     "openapi:generate": "ts-node --files --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} src/openapi.ts",
     "postinstall": "prisma generate"
   },
@@ -31,6 +32,7 @@
     "cookie-parser": "^1.4.7",
     "helmet": "^8.0.0",
     "ioredis": "^5.4.2",
+    "otpauth": "^9.5.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },

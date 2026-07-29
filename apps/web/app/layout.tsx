@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import './styles.css';
 
 export const metadata: Metadata = {
-  title: 'LMS Akademi Online',
+  title: 'LMS AIPrenuer',
   description: 'Platform pembelajaran coding, AI, bisnis, marketing, dan kesiapan kerja.',
 };
 

@@ -5,6 +5,7 @@ import type { ActiveSession, AuthenticatedUser } from '../../domain/session';
 
 export const IS_PUBLIC_KEY = 'lms:isPublic';
 export const PERMISSIONS_KEY = 'lms:permissions';
+export const ALLOW_PENDING_MFA_KEY = 'lms:allowPendingMfa';
 
 /**
  * Menandai endpoint yang boleh diakses tanpa session.
@@ -12,6 +13,14 @@ export const PERMISSIONS_KEY = 'lms:permissions';
  * lupa memberi anotasi berakibat endpoint tertutup, bukan terbuka.
  */
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+
+/**
+ * Mengizinkan endpoint diakses oleh session yang belum melewati MFA.
+ *
+ * Hanya untuk endpoint yang memang bagian dari alur MFA itu sendiri.
+ * Tanpa penanda ini, session tertunda ditolak di mana pun.
+ */
+export const AllowPendingMfa = () => SetMetadata(ALLOW_PENDING_MFA_KEY, true);
 
 /** Semua permission yang disebut wajib dimiliki, bukan salah satu. */
 export const RequirePermissions = (...permissions: PermissionCode[]) =>

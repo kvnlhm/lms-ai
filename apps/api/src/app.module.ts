@@ -13,6 +13,7 @@ import { SessionGuard } from './modules/identity/presentation/guards/session.gua
 import { LearningCatalogModule } from './modules/learning-catalog/learning-catalog.module';
 import { LearningDeliveryModule } from './modules/learning-delivery/learning-delivery.module';
 import { LearningProgressModule } from './modules/learning-progress/learning-progress.module';
+import { VideoModule } from './modules/video/video.module';
 import { AuditModule } from './shared/audit/audit.module';
 import { AllExceptionsFilter } from './shared/http/all-exceptions.filter';
 import { RequestContextMiddleware } from './shared/http/request-context.middleware';
@@ -36,6 +37,7 @@ import { IdempotencyModule } from './shared/idempotency/idempotency.module';
     EnrollmentModule,
     LearningDeliveryModule,
     LearningProgressModule,
+    VideoModule,
     HealthModule,
   ],
   providers: [

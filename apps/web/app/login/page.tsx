@@ -4,7 +4,7 @@ import { getCurrentUser } from '../lib/session';
 import { ThemeToggle } from '../components/theme-toggle';
 import { LoginForm } from './login-form';
 
-export const metadata: Metadata = { title: 'Masuk · LMS Akademi Online' };
+export const metadata: Metadata = { title: 'Masuk · LMS AIPrenuer' };
 export const dynamic = 'force-dynamic';
 
 interface Props {
@@ -27,7 +27,7 @@ export default async function LoginPage({ searchParams }: Props) {
             <span className="brandMark" aria-hidden="true">
               AO
             </span>
-            <span>Akademi Online</span>
+            <span>AIPrenuer</span>
           </span>
           <ThemeToggle />
         </div>

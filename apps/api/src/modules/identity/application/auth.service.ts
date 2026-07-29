@@ -9,6 +9,7 @@ import type { AuthenticatedUser } from '../domain/session';
 import { LoginRateLimiter } from './login-rate-limiter';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
+import { MfaService } from './mfa.service';
 
 export interface LoginCommand {
   email: string;
@@ -28,6 +29,7 @@ export interface LoginResult {
     role: RoleCode;
     status: UserStatus;
     requiresMfa: boolean;
+    mfaSetupRequired: boolean;
   };
 }
 
@@ -41,6 +43,7 @@ export class AuthService {
     private readonly passwords: PasswordService,
     private readonly sessions: SessionService,
     private readonly rateLimiter: LoginRateLimiter,
+    private readonly mfa: MfaService,
     config: ConfigService<{ app: AppConfig }, true>,
   ) {
     this.app = config.get('app', { infer: true });
@@ -82,6 +85,8 @@ export class AuthService {
 
     const roleCode = assignment.role.code as RoleCode;
     const permissions = assignment.role.permissions.map((rp) => rp.permission.code as PermissionCode);
+    const isMaster = roleCode === 'MASTER';
+    const mfaEnabled = isMaster ? await this.mfa.isEnabled(user.id) : false;
 
     const expiresAt = new Date(Date.now() + this.app.session.absoluteTtlSeconds * 1000);
     const deviceRecord = await this.prisma.authSession.create({
@@ -99,6 +104,8 @@ export class AuthService {
       roleCode,
       permissions,
       deviceRecordId: deviceRecord.id,
+      pendingMfa: isMaster && mfaEnabled,
+      mfaSetupRequired: isMaster && !mfaEnabled,
     });
 
     await this.prisma.user.update({
@@ -116,9 +123,8 @@ export class AuthService {
         email: user.email,
         role: roleCode,
         status: user.status,
-        // MFA wajib untuk Master menurut ERD, tetapi alurnya belum
-        // diimplementasikan; flag ini sudah ada di kontrak sejak awal.
-        requiresMfa: false,
+        requiresMfa: isMaster,
+        mfaSetupRequired: isMaster && !mfaEnabled,
       },
     };
   }

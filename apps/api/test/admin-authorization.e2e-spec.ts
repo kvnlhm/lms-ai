@@ -27,6 +27,8 @@ const ADMIN_ENDPOINTS: Array<{ method: 'get' | 'post' | 'patch' | 'put' | 'delet
   { method: 'post', path: '/admin/courses/00000000-0000-4000-8000-000000000000/enrollments' },
   { method: 'post', path: '/admin/enrollments/00000000-0000-4000-8000-000000000000/remove' },
   { method: 'post', path: '/admin/enrollments/00000000-0000-4000-8000-000000000000/reactivate' },
+  { method: 'post', path: '/admin/videos/upload-intents' },
+  { method: 'put', path: '/admin/videos/00000000-0000-4000-8000-000000000000/content' },
 ];
 
 describe('Otorisasi endpoint Master', () => {

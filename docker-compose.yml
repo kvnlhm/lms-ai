@@ -45,6 +45,8 @@ services:
       REDIS_URL: redis://redis:6379
       SESSION_COOKIE_SECURE: 'false'
       SESSION_COOKIE_DOMAIN: localhost
+      # Hanya untuk local Compose. Production wajib memakai secret acak.
+      MFA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     command: ['pnpm', '--filter', '@lms/api', 'exec', 'prisma', 'migrate', 'deploy']
     depends_on:
       postgres:
@@ -80,9 +82,12 @@ services:
       context: .
       dockerfile: apps/worker/Dockerfile
     environment:
+      DATABASE_URL: postgresql://lms:lms_local_password@postgres:5432/lms?schema=public
       REDIS_URL: redis://redis:6379
       REDIS_QUEUE_PREFIX: lms:queue
       QUEUE_CONCURRENCY_MAINTENANCE: 2
+      QUEUE_CONCURRENCY_ANALYTICS: 4
+      QUEUE_CONCURRENCY_NOTIFICATIONS: 4
     depends_on:
       migrate:
         condition: service_completed_successfully

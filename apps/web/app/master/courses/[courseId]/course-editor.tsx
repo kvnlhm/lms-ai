@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
-import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
+import { ApiError, browserClient, readCsrfToken, unwrap } from '../../../lib/browser-api';
 import { StatusPill } from '../../../components/status-pill';
 
 type CourseDetail = Schemas['AdminCourseDetailDto'];
@@ -109,6 +109,35 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
         params: { path: { lessonId } },
       });
       if (result.error) throw result.error;
+    });
+
+  const uploadVideo = (lessonId: string, title: string, file: File) =>
+    run(`upload-video-${lessonId}`, async () => {
+      if (file.type !== 'video/mp4' || !file.name.toLowerCase().endsWith('.mp4')) {
+        throw new ApiError('VALIDATION_ERROR', 422, 'Pilih file MP4.');
+      }
+      const intent = unwrap(
+        await client().POST('/api/v1/admin/videos/upload-intents', {
+          body: {
+            lessonId,
+            title,
+            fileName: file.name,
+            mimeType: file.type,
+            sizeBytes: file.size,
+          },
+        }),
+      ) as unknown as { uploadUrl: string; method: string };
+      const csrf = readCsrfToken();
+      const response = await fetch(intent.uploadUrl, {
+        method: intent.method,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'video/mp4',
+          ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+        },
+        body: file,
+      });
+      if (!response.ok) throw new Error('Upload video gagal.');
     });
 
   const moveModule = (index: number, direction: -1 | 1) => {
@@ -261,6 +290,22 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                       ) : (
                         <span className="pill">Opsional</span>
                       )}
+                      {lesson.contentType === 'VIDEO' ? (
+                        <label className="btnTiny">
+                          {busy === `upload-video-${lesson.id}` ? 'Mengunggah…' : 'Unggah MP4'}
+                          <input
+                            type="file"
+                            accept="video/mp4,.mp4"
+                            hidden
+                            disabled={busy !== null}
+                            onChange={(event) => {
+                              const file = event.currentTarget.files?.[0];
+                              if (file) void uploadVideo(lesson.id, lesson.title, file);
+                              event.currentTarget.value = '';
+                            }}
+                          />
+                        </label>
+                      ) : null}
                       <span className="inlineActions">
                         <button
                           className="btnTiny"

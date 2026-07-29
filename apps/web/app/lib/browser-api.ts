@@ -4,7 +4,10 @@ import { ApiError, createApiClient, unwrap } from '@lms/api-client';
 
 /** Basis URL yang dipakai browser; harus dapat dijangkau dari perangkat pengguna. */
 export function browserApiUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  // Production memakai same-origin reverse proxy. Fallback localhost hanya
+  // dipakai saat fungsi dievaluasi di luar browser (misalnya unit test).
+  return process.env.NEXT_PUBLIC_API_URL ??
+    (typeof window === 'undefined' ? 'http://localhost:3001' : window.location.origin);
 }
 
 const CSRF_COOKIE = process.env.NEXT_PUBLIC_CSRF_COOKIE_NAME ?? 'lms_csrf';

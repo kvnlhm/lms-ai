@@ -60,10 +60,43 @@ enum CompletionRule {
   VIDEO_PERCENTAGE
 }
 
+/// Satu mekanisme token untuk dua keperluan: undangan akun baru dan
+/// pemulihan kata sandi. Keduanya sama-sama sekali pakai, di-hash, dan
+/// kedaluwarsa, jadi memisahkannya hanya akan menduplikasi aturan.
+enum CredentialTokenPurpose {
+  INVITATION
+  PASSWORD_RESET
+}
+
+enum MfaMethodType {
+  TOTP
+}
+
 enum LessonProgressStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+enum VideoProvider {
+  SELF_HOSTED
+  BUNNY_STREAM
+}
+
+enum VideoStatus {
+  CREATED
+  UPLOADING
+  PROCESSING
+  AVAILABLE
+  FAILED
+  DELETED
+}
+
+enum PlaybackStatus {
+  ACTIVE
+  ENDED
+  EXPIRED
+  REVOKED
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -84,13 +117,16 @@ model User {
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt       DateTime?  @map("deleted_at") @db.Timestamptz(6)
 
-  roles           UserRole[]
-  sessions        AuthSession[]
-  resetTokens     PasswordResetToken[]
-  enrollments     Enrollment[]         @relation("EnrollmentOwner")
-  enrollmentsMade Enrollment[]         @relation("EnrollmentActor")
-  createdCourses  Course[]
-  auditLogs       AuditLog[]
+  roles            UserRole[]
+  sessions         AuthSession[]
+  resetTokens      PasswordResetToken[]
+  mfaMethods       MfaMethod[]
+  enrollments      Enrollment[]           @relation("EnrollmentOwner")
+  enrollmentsMade  Enrollment[]           @relation("EnrollmentActor")
+  createdCourses   Course[]
+  auditLogs        AuditLog[]
+  videoAssets      VideoAsset[]           @relation("VideoAssetCreator")
+  playbackSessions VideoPlaybackSession[]
 
   @@index([status])
   @@map("users")
@@ -163,17 +199,40 @@ model AuthSession {
 }
 
 model PasswordResetToken {
-  id        String    @id @default(uuid()) @db.Uuid
-  userId    String    @map("user_id") @db.Uuid
-  tokenHash String    @unique @map("token_hash")
-  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
-  usedAt    DateTime? @map("used_at") @db.Timestamptz(6)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  id        String                 @id @default(uuid()) @db.Uuid
+  userId    String                 @map("user_id") @db.Uuid
+  /// Hanya hash yang disimpan; token asli tidak pernah ada di database.
+  tokenHash String                 @unique @map("token_hash")
+  purpose   CredentialTokenPurpose @default(PASSWORD_RESET)
+  expiresAt DateTime               @map("expires_at") @db.Timestamptz(6)
+  usedAt    DateTime?              @map("used_at") @db.Timestamptz(6)
+  createdAt DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([userId, purpose])
+  @@index([expiresAt])
   @@map("password_reset_tokens")
+}
+
+/// Faktor kedua untuk autentikasi.
+///
+/// Rahasianya disimpan terenkripsi (AES-256-GCM) memakai kunci dari
+/// environment, sehingga bocornya dump database saja tidak cukup untuk
+/// membangkitkan kode yang sah.
+model MfaMethod {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  type            MfaMethodType @default(TOTP)
+  encryptedSecret Bytes         @map("encrypted_secret")
+  isPrimary       Boolean       @default(true) @map("is_primary")
+  verifiedAt      DateTime?     @map("verified_at") @db.Timestamptz(6)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@map("mfa_methods")
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -259,6 +318,7 @@ model Lesson {
   lastForCourse CourseProgress[]     @relation("LastLesson")
   prerequisites LessonPrerequisite[] @relation("LessonSide")
   requiredBy    LessonPrerequisite[] @relation("PrerequisiteSide")
+  videoAssets   VideoAsset[]
 
   @@unique([moduleId, position])
   @@index([moduleId, isActive])
@@ -294,15 +354,62 @@ model Enrollment {
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  user           User             @relation("EnrollmentOwner", fields: [userId], references: [id], onDelete: Cascade)
-  course         Course           @relation(fields: [courseId], references: [id], onDelete: Restrict)
-  actor          User?            @relation("EnrollmentActor", fields: [enrolledBy], references: [id], onDelete: SetNull)
-  courseProgress CourseProgress?
-  lessonProgress LessonProgress[]
+  user             User                   @relation("EnrollmentOwner", fields: [userId], references: [id], onDelete: Cascade)
+  course           Course                 @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  actor            User?                  @relation("EnrollmentActor", fields: [enrolledBy], references: [id], onDelete: SetNull)
+  courseProgress   CourseProgress?
+  lessonProgress   LessonProgress[]
+  playbackSessions VideoPlaybackSession[]
 
   @@unique([userId, courseId])
   @@index([courseId, status])
   @@map("enrollments")
+}
+
+model VideoAsset {
+  id              String        @id @default(uuid()) @db.Uuid
+  lessonId        String        @map("lesson_id") @db.Uuid
+  createdBy       String        @map("created_by") @db.Uuid
+  provider        VideoProvider @default(SELF_HOSTED)
+  providerVideoId String        @unique @map("provider_video_id")
+  objectKey       String?       @map("object_key")
+  originalName    String        @map("original_name")
+  title           String
+  mimeType        String        @map("mime_type")
+  sizeBytes       BigInt        @map("size_bytes")
+  status          VideoStatus   @default(CREATED)
+  processingError String?       @map("processing_error")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz(6)
+
+  lesson           Lesson                 @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  creator          User                   @relation("VideoAssetCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  playbackSessions VideoPlaybackSession[]
+
+  @@index([lessonId, status])
+  @@map("video_assets")
+}
+
+model VideoPlaybackSession {
+  id              String         @id @default(uuid()) @db.Uuid
+  videoAssetId    String         @map("video_asset_id") @db.Uuid
+  userId          String         @map("user_id") @db.Uuid
+  enrollmentId    String         @map("enrollment_id") @db.Uuid
+  deviceId        String?        @map("device_id")
+  status          PlaybackStatus @default(ACTIVE)
+  expiresAt       DateTime       @map("expires_at") @db.Timestamptz(6)
+  startedAt       DateTime       @default(now()) @map("started_at") @db.Timestamptz(6)
+  lastHeartbeatAt DateTime?      @map("last_heartbeat_at") @db.Timestamptz(6)
+  endedAt         DateTime?      @map("ended_at") @db.Timestamptz(6)
+
+  videoAsset VideoAsset @relation(fields: [videoAssetId], references: [id], onDelete: Restrict)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, expiresAt])
+  @@index([videoAssetId, status])
+  @@map("video_playback_sessions")
 }
 
 model CourseProgress {

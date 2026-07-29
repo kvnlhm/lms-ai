@@ -49,6 +49,15 @@ export interface AppConfig {
     rateLimitWindowSeconds: number;
     rateLimitMax: number;
     passwordResetTtlMinutes: number;
+    mfaIssuer: string;
+    /** Kunci AES-256 dalam base64 untuk rahasia TOTP. */
+    mfaEncryptionKey: string;
+  };
+  video: {
+    provider: 'SELF_HOSTED' | 'BUNNY_STREAM';
+    storagePath: string;
+    maxUploadBytes: number;
+    playbackTtlSeconds: number;
   };
 }
 
@@ -56,6 +65,10 @@ export function loadConfig(): AppConfig {
   const sameSite = (process.env.SESSION_COOKIE_SAME_SITE ?? 'lax') as SameSite;
   if (!['lax', 'strict', 'none'].includes(sameSite)) {
     throw new Error('SESSION_COOKIE_SAME_SITE harus lax, strict, atau none.');
+  }
+  const videoProvider = process.env.VIDEO_PROVIDER ?? 'SELF_HOSTED';
+  if (!['SELF_HOSTED', 'BUNNY_STREAM'].includes(videoProvider)) {
+    throw new Error('VIDEO_PROVIDER harus SELF_HOSTED atau BUNNY_STREAM.');
   }
 
   return {
@@ -83,6 +96,14 @@ export function loadConfig(): AppConfig {
       rateLimitWindowSeconds: int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 300),
       rateLimitMax: int('AUTH_RATE_LIMIT_MAX', 10),
       passwordResetTtlMinutes: int('PASSWORD_RESET_TTL_MINUTES', 30),
+      mfaIssuer: process.env.MFA_ISSUER ?? 'LMS Akademi Online',
+      mfaEncryptionKey: required('MFA_ENCRYPTION_KEY'),
+    },
+    video: {
+      provider: videoProvider as 'SELF_HOSTED' | 'BUNNY_STREAM',
+      storagePath: process.env.VIDEO_STORAGE_PATH ?? '/data/videos',
+      maxUploadBytes: int('VIDEO_MAX_UPLOAD_BYTES', 2_147_483_648),
+      playbackTtlSeconds: int('VIDEO_PLAYBACK_TTL_SECONDS', 300),
     },
   };
 }

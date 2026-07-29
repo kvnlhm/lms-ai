@@ -5,7 +5,7 @@ import { ArrowLeft } from '../../../components/icons';
 import { requirePermission } from '../../../lib/session';
 import { CourseForm } from './course-form';
 
-export const metadata: Metadata = { title: 'Kursus baru · LMS Akademi Online' };
+export const metadata: Metadata = { title: 'Kursus baru · LMS AIPrenuer' };
 export const dynamic = 'force-dynamic';
 
 export default async function NewCoursePage() {

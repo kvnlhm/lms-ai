@@ -732,7 +732,7 @@ ERD dianggap siap jika:
 - Security reviewer menyetujui penyimpanan credential dan token.
 - Analytics engineer menyetujui raw event dan aggregate.
 
-## 12. Bunny Stream Video Assets
+## 12. Video Assets
 
 ```text
 VIDEO_ASSETS
@@ -741,6 +741,10 @@ VIDEO_ASSETS
 - created_by
 - provider
 - provider_video_id
+- object_key
+- original_name
+- mime_type
+- size_bytes
 - title
 - status
 - duration_seconds
@@ -777,7 +781,7 @@ VIDEO_PROVIDER_EVENTS
 - processing_error
 ```
 
-Provider enum: `BUNNY_STREAM`.
+Provider enum: `SELF_HOSTED`, `BUNNY_STREAM`.
 
 Video status: `CREATED`, `UPLOADING`, `PROCESSING`, `AVAILABLE`, `FAILED`, `DELETED`.
 
@@ -792,4 +796,5 @@ Constraints:
 - `provider_event_id` unique untuk replay protection.
 - Playback session selalu terkait active enrollment.
 - Playback token dan permanent URL tidak pernah disimpan.
-- Bunny secrets tidak disimpan di database.
+- Provider secrets dan permanent playback URL tidak disimpan di database.
+- `object_key` hanya diisi untuk provider self-hosted dan bukan public URL.

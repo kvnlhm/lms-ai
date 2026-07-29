@@ -6,7 +6,7 @@ import { StatusPill } from '../components/status-pill';
 import { serverClient, unwrapList } from '../lib/api';
 import { requirePermission } from '../lib/session';
 
-export const metadata: Metadata = { title: 'Kelola Kursus · LMS Akademi Online' };
+export const metadata: Metadata = { title: 'Kelola Kursus · LMS AIPrenuer' };
 export const dynamic = 'force-dynamic';
 
 type AdminCourse = Schemas['AdminCourseListItemDto'];

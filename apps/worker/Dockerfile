@@ -3,6 +3,9 @@ FROM node:22-bookworm-slim
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json eslint.config.mjs ./
@@ -13,10 +16,13 @@ COPY apps/web/package.json apps/web/package.json
 COPY packages/api-client/package.json packages/api-client/package.json
 COPY packages/config-typescript/package.json packages/config-typescript/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store \
+    && pnpm install --frozen-lockfile --filter @lms/worker... --filter @lms/api...
 
 COPY apps/worker apps/worker
 COPY packages/config-typescript packages/config-typescript
-RUN pnpm --filter @lms/worker build
+RUN pnpm --filter @lms/api exec prisma generate \
+    && pnpm --filter @lms/worker build
 
 CMD ["pnpm", "--filter", "@lms/worker", "start"]

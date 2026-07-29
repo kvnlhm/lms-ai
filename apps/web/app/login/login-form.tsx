@@ -15,6 +15,9 @@ export function LoginForm({ nextPath }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string[]>>({});
+  const [mfaMode, setMfaMode] = useState<'setup' | 'verify' | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaSecret, setMfaSecret] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,11 +30,25 @@ export function LoginForm({ nextPath }: Props) {
 
     try {
       const client = browserClient();
-      unwrap(
+      const login = unwrap(
         await client.POST('/api/v1/auth/login', {
           body: { email, password, deviceName: describeDevice() },
         }),
       );
+
+      if (login.user.requiresMfa) {
+        if (login.user.mfaSetupRequired) {
+          const setup = unwrap(
+            await browserClient().POST('/api/v1/auth/mfa/setup', {}),
+          ) as unknown as { secret: string; otpauthUrl: string };
+          setMfaSecret(setup.secret);
+          setMfaMode('setup');
+        } else {
+          setMfaMode('verify');
+        }
+        setBusy(false);
+        return;
+      }
 
       // Cookie session sudah dipasang browser dari respons ini.
       // `refresh()` membuat Server Component mengambil ulang data dengan
@@ -49,8 +66,75 @@ export function LoginForm({ nextPath }: Props) {
     }
   }
 
+  async function handleMfa(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || !mfaMode) return;
+    setBusy(true);
+    setMessage(null);
+    setFields({});
+    try {
+      const client = browserClient();
+      if (mfaMode === 'setup') {
+        unwrap(
+          await client.POST('/api/v1/auth/mfa/setup/confirm', { body: { code: mfaCode } }),
+        );
+      } else {
+        unwrap(await client.POST('/api/v1/auth/mfa/verify', { body: { code: mfaCode } }));
+      }
+      router.replace(nextPath);
+      router.refresh();
+    } catch (error) {
+      setBusy(false);
+      if (error instanceof ApiError) {
+        setMessage(error.message);
+        if (error.fields) setFields(error.fields);
+        return;
+      }
+      setMessage('Tidak dapat memverifikasi autentikator. Coba lagi.');
+    }
+  }
+
   const emailErrors = fields.email ?? [];
   const passwordErrors = fields.password ?? [];
+
+  if (mfaMode) {
+    const codeErrors = fields.code ?? [];
+    return (
+      <form onSubmit={handleMfa} noValidate>
+        {message ? <p className="notice noticeError" role="alert">{message}</p> : null}
+        {mfaMode === 'setup' ? (
+          <div className="notice">
+            <p>Tambahkan akun ini ke aplikasi autentikator, lalu masukkan kode 6 digit.</p>
+            <p><strong>Kunci setup:</strong> <code>{mfaSecret}</code></p>
+            <p>Simpan kunci ini di tempat aman sampai setup berhasil.</p>
+          </div>
+        ) : (
+          <p className="authLead">Masukkan kode dari aplikasi autentikator.</p>
+        )}
+        <div className="field">
+          <label htmlFor="mfa-code">Kode autentikator</label>
+          <input
+            id="mfa-code"
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]{6}"
+            minLength={6}
+            maxLength={6}
+            required
+            value={mfaCode}
+            onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+            aria-invalid={codeErrors.length > 0 || undefined}
+            disabled={busy}
+          />
+          {codeErrors.length > 0 ? <span className="fieldError">{codeErrors.join(' ')}</span> : null}
+        </div>
+        <button type="submit" className="btn btnBlock" disabled={busy || mfaCode.length !== 6}>
+          {busy ? 'Memverifikasi…' : mfaMode === 'setup' ? 'Aktifkan MFA' : 'Verifikasi'}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} noValidate>

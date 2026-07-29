@@ -1,0 +1,155 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD:?}']
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?}
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    # Coolify extension: the one-shot migration must not count as an unhealthy service.
+    exclude_from_hc: true
+    environment: &api-environment
+      APP_ENV: production
+      NODE_ENV: production
+      APP_NAME: ${APP_NAME:-LMS Akademi Online}
+      PORT: 3001
+      WEB_URL: ${WEB_URL:?}
+      DATABASE_URL: ${DATABASE_URL:?}
+      REDIS_URL: ${REDIS_URL:?}
+      REDIS_SESSION_PREFIX: ${REDIS_SESSION_PREFIX:-lms:session:}
+      REDIS_CACHE_PREFIX: ${REDIS_CACHE_PREFIX:-lms:cache:}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-lms_session}
+      SESSION_COOKIE_SECURE: 'true'
+      SESSION_COOKIE_SAME_SITE: lax
+      CSRF_COOKIE_NAME: ${CSRF_COOKIE_NAME:-lms_csrf}
+      SESSION_IDLE_TTL_SECONDS: ${SESSION_IDLE_TTL_SECONDS:-1800}
+      SESSION_ABSOLUTE_TTL_SECONDS: ${SESSION_ABSOLUTE_TTL_SECONDS:-43200}
+      MFA_ISSUER: ${MFA_ISSUER:-LMS Akademi Online}
+      MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?}
+      AUTH_RATE_LIMIT_WINDOW_SECONDS: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:-300}
+      AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-10}
+      VIDEO_PROVIDER: SELF_HOSTED
+      VIDEO_STORAGE_PATH: /data/videos
+      VIDEO_MAX_UPLOAD_BYTES: ${VIDEO_MAX_UPLOAD_BYTES:-2147483648}
+      VIDEO_PLAYBACK_TTL_SECONDS: ${VIDEO_PLAYBACK_TTL_SECONDS:-300}
+    command: ['pnpm', '--filter', '@lms/api', 'exec', 'prisma', 'migrate', 'deploy']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment: *api-environment
+    volumes:
+      - video-data:/data/videos
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:3001/api/v1/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?}
+      REDIS_URL: ${REDIS_URL:?}
+      REDIS_QUEUE_PREFIX: ${REDIS_QUEUE_PREFIX:-lms:queue}
+      QUEUE_CONCURRENCY_MAINTENANCE: ${QUEUE_CONCURRENCY_MAINTENANCE:-2}
+      QUEUE_CONCURRENCY_ANALYTICS: ${QUEUE_CONCURRENCY_ANALYTICS:-4}
+      QUEUE_CONCURRENCY_NOTIFICATIONS: ${QUEUE_CONCURRENCY_NOTIFICATIONS:-4}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  ai:
+    build:
+      context: .
+      dockerfile: apps/ai/Dockerfile
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:3001
+    depends_on:
+      api:
+        condition: service_healthy
+      ai:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    environment:
+      VIDEO_MAX_UPLOAD_BYTES: ${VIDEO_MAX_UPLOAD_BYTES:-2147483648}
+    expose:
+      - '8080'
+    volumes:
+      - ./deploy/nginx/coolify.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - video-data:/data/videos:ro
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--spider', 'http://localhost:8080/api/v1/health/live']
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres-data:
+  redis-data:
+  video-data:

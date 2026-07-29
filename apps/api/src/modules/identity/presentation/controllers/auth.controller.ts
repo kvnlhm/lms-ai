@@ -17,10 +17,11 @@ import type { AppConfig } from '../../../../config/configuration';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../../shared/errors/app-error';
 import { AuthService } from '../../application/auth.service';
+import { MfaService } from '../../application/mfa.service';
 import { SessionService } from '../../application/session.service';
 import type { ActiveSession, AuthenticatedUser } from '../../domain/session';
-import { CurrentSession, CurrentUser, Public } from '../decorators';
-import { LoginDto } from '../dto/login.dto';
+import { AllowPendingMfa, CurrentSession, CurrentUser, Public } from '../decorators';
+import { LoginDto, MfaCodeDto } from '../dto/login.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -30,10 +31,72 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly sessions: SessionService,
+    private readonly mfa: MfaService,
     private readonly prisma: PrismaService,
     config: ConfigService<{ app: AppConfig }, true>,
   ) {
     this.app = config.get('app', { infer: true });
+  }
+
+  @Post('mfa/setup')
+  @AllowPendingMfa()
+  @ApiOperation({ summary: 'Menyiapkan TOTP pertama untuk Master' })
+  @ApiErrors(401, 403)
+  async setupMfa(@CurrentSession() session: ActiveSession) {
+    if (session.roleCode !== 'MASTER' || !session.mfaSetupRequired) {
+      throw AppError.permissionDenied();
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: session.id },
+      select: { email: true },
+    });
+    if (!user) throw AppError.authenticationRequired();
+    return this.mfa.beginSetup(session.id, user.email);
+  }
+
+  @Post('mfa/setup/confirm')
+  @AllowPendingMfa()
+  @ApiOperation({ summary: 'Mengonfirmasi TOTP dan merotasi session Master' })
+  @ApiErrors(401, 403, 404, 422)
+  async confirmMfaSetup(
+    @Body() dto: MfaCodeDto,
+    @CurrentSession() session: ActiveSession & { deviceRecordId: string },
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    if (session.roleCode !== 'MASTER' || !session.mfaSetupRequired) {
+      throw AppError.permissionDenied();
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: session.id },
+      select: { email: true },
+    });
+    if (!user) throw AppError.authenticationRequired();
+    await this.mfa.confirm(session.id, user.email, dto.code);
+    await this.rotateMfaSession(session, response);
+    return { verified: true };
+  }
+
+  @Post('mfa/verify')
+  @AllowPendingMfa()
+  @ApiOperation({ summary: 'Memverifikasi TOTP saat login dan merotasi session' })
+  @ApiErrors(401, 403, 422)
+  async verifyMfa(
+    @Body() dto: MfaCodeDto,
+    @CurrentSession() session: ActiveSession & { deviceRecordId: string },
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    if (session.roleCode !== 'MASTER' || !session.pendingMfa || session.mfaSetupRequired) {
+      throw AppError.permissionDenied();
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: session.id },
+      select: { email: true },
+    });
+    if (!user || !(await this.mfa.verifyForLogin(session.id, user.email, dto.code))) {
+      throw AppError.validation({ code: ['Kode autentikator tidak valid.'] });
+    }
+    await this.rotateMfaSession(session, response);
+    return { verified: true };
   }
 
   @Public()
@@ -147,6 +210,19 @@ export class AuthController {
   private clearSessionCookies(response: Response): void {
     response.clearCookie(this.app.session.cookieName, this.baseCookie());
     response.clearCookie(this.app.session.csrfCookieName, this.baseCookie());
+  }
+
+  private async rotateMfaSession(
+    session: ActiveSession & { deviceRecordId: string },
+    response: Response,
+  ): Promise<void> {
+    const rotated = await this.sessions.rotateAfterMfa(session.sessionId, {
+      userId: session.id,
+      roleCode: session.roleCode,
+      permissions: session.permissions,
+      deviceRecordId: session.deviceRecordId,
+    });
+    this.setSessionCookies(response, rotated.sessionId, rotated.csrfToken);
   }
 }
 

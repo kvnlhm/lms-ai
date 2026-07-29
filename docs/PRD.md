@@ -4,7 +4,7 @@
 
 | Informasi | Detail |
 |---|---|
-| Nama Produk | LMS Akademi Online |
+| Nama Produk | LMS AIPrenuer |
 | Versi Dokumen | 1.1 |
 | Status | Draft MVP |
 | Platform | Responsive Web Application |

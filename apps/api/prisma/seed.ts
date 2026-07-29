@@ -117,7 +117,7 @@ async function main(): Promise<void> {
   const masterRole = await prisma.role.upsert({
     where: { code: 'MASTER' },
     create: { code: 'MASTER', name: 'Master' },
-    update: {},
+    update: { name: 'Master' },
   });
   const studentRole = await prisma.role.upsert({
     where: { code: 'STUDENT' },
@@ -217,7 +217,7 @@ async function main(): Promise<void> {
       categoryId: category.id,
       createdBy: master.id,
     },
-    update: {},
+    update: { status: PublicationStatus.DRAFT, publishedAt: null },
   });
 
   await seedCurriculum(course.id, CURRICULUM);

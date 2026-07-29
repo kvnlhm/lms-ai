@@ -169,7 +169,27 @@ Rollback feature:
 - Alert aktif.
 - Error page production tidak membocorkan stack.
 
-## 9. Bunny Stream External Service
+## 9. Video Provider
+
+Rollout awal dapat menggunakan mode `SELF_HOSTED` sesuai ADR-014:
+
+```text
+Nginx internal media location (tidak public secara langsung)
+  └── read-only persistent video volume
+        ↑
+NestJS authorised streaming upload
+```
+
+Release blocker mode self-hosted:
+
+- volume video tidak diekspos oleh container atau port terpisah;
+- playback selalu melewati authorization API;
+- HTTP Range terverifikasi;
+- disk dan bandwidth alert aktif;
+- backup encrypted ke lokasi di luar VPS berhasil dan restore sample diuji;
+- hanya port SSH, HTTP, dan HTTPS yang dibuka pada Hostinger dan OS firewall.
+
+## 10. Bunny Stream External Service
 
 ```text
 External Services
@@ -187,6 +207,6 @@ Requirements:
 - Webhook memakai verification dan rate limit.
 - Allowed Domains mencakup hostname staging dan production yang disetujui.
 - Staging menggunakan library terpisah bila memungkinkan.
-- Production video tidak disimpan di disk VPS.
+- Saat `VIDEO_PROVIDER=BUNNY_STREAM`, production video tidak disimpan di disk VPS.
 - Provider health dimonitor sebagai non-core dependency.
 - Core LMS tetap dapat dibuka ketika video provider unavailable.

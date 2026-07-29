@@ -4,6 +4,9 @@
 
 Accepted.
 
+Pilihan provider utama untuk rollout awal diubah oleh ADR-014. Provider
+abstraction dan Bunny Stream sebagai jalur migrasi tetap berlaku.
+
 ## Context
 
 LMS membutuhkan video storage, transcoding, adaptive streaming, CDN delivery, tokenised playback, domain restriction, dan perlindungan terhadap downloader umum. Streaming melalui NestJS atau direct MP4 URL akan membebani server dan mudah diunduh.

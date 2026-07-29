@@ -1199,7 +1199,7 @@ API contract siap jika:
 - Security reviewer menyetujui auth dan authorization.
 - Frontend engineer dapat menghasilkan client tanpa menebak struktur data.
 
-## 31. Bunny Stream Video API
+## 31. Video API
 
 ### POST `/admin/videos/upload-intents`
 
@@ -1220,15 +1220,23 @@ Response:
 {
   "data": {
     "videoAssetId": "uuid",
-    "provider": "BUNNY_STREAM",
-    "providerVideoId": "bunny-video-guid",
-    "uploadUrl": "temporary-upload-url",
-    "expiresAt": "2026-07-28T12:10:00Z"
+    "provider": "SELF_HOSTED",
+    "providerVideoId": "provider-video-guid",
+    "uploadUrl": "/api/v1/admin/videos/uuid/content",
+    "method": "PUT",
+    "headers": {
+      "Content-Type": "video/mp4",
+      "Content-Length": "104857600"
+    }
   }
 }
 ```
 
 API key tidak pernah dikembalikan. File type, ukuran, lesson, dan permission harus divalidasi.
+
+Untuk `SELF_HOSTED`, klien mengirim body MP4 mentah ke `uploadUrl`. Upload
+bersifat streaming, wajib menyertakan `Content-Length`, dan hanya menerima MP4
+browser-compatible. Tidak ada transcoding atau DRM.
 
 ### POST `/webhooks/bunny-stream`
 
@@ -1260,13 +1268,13 @@ Response:
 {
   "data": {
     "playbackSessionId": "uuid",
-    "provider": "BUNNY_STREAM",
-    "providerVideoId": "bunny-video-guid",
-    "playbackUrl": "temporary-tokenised-url",
+    "provider": "SELF_HOSTED",
+    "providerVideoId": "provider-video-guid",
+    "playbackUrl": "/api/v1/playback-sessions/uuid/content",
     "expiresAt": "2026-07-28T12:05:00Z",
     "drm": {
-      "enabled": true,
-      "type": "MEDIACAGE_BASIC"
+      "enabled": false,
+      "type": "NONE"
     },
     "watermark": {
       "text": "user@example.com • 91BA",

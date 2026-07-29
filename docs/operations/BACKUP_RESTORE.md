@@ -62,6 +62,15 @@ Retention final disesuaikan compliance dan biaya.
 - Report export memiliki expiry.
 - Malware/quarantine object mengikuti policy terpisah.
 
+### Self-hosted video (ADR-014)
+
+- Persistent video volume termasuk backup scope.
+- Backup harus encrypted dan berada di failure domain berbeda dari VPS.
+- Database dan video volume diambil dalam checkpoint yang dapat direkonsiliasi
+  menggunakan `video_asset_id` dan object key.
+- Minimal satu asset acak direstore dan diputar pada setiap restore drill.
+- Snapshot Hostinger pada VPS yang sama bukan satu-satunya salinan backup.
+
 ---
 
 ## 5. Restore Procedure

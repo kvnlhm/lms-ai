@@ -12,6 +12,8 @@ export class LoginUserDto {
   @ApiProperty({ enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED'] }) status!: string;
   @ApiProperty({ description: 'Benar bila login harus dilanjutkan dengan verifikasi MFA.' })
   requiresMfa!: boolean;
+  @ApiProperty({ description: 'Benar bila Master harus mendaftarkan TOTP terlebih dahulu.' })
+  mfaSetupRequired!: boolean;
 }
 
 export class LoginResponseDto {
