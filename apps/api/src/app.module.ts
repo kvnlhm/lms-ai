@@ -14,6 +14,7 @@ import { LearningCatalogModule } from './modules/learning-catalog/learning-catal
 import { LearningDeliveryModule } from './modules/learning-delivery/learning-delivery.module';
 import { LearningProgressModule } from './modules/learning-progress/learning-progress.module';
 import { VideoModule } from './modules/video/video.module';
+import { UsersModule } from './modules/users/users.module';
 import { AuditModule } from './shared/audit/audit.module';
 import { AllExceptionsFilter } from './shared/http/all-exceptions.filter';
 import { RequestContextMiddleware } from './shared/http/request-context.middleware';
@@ -33,6 +34,7 @@ import { IdempotencyModule } from './shared/idempotency/idempotency.module';
     IdempotencyModule,
     AuditModule,
     IdentityModule,
+    UsersModule,
     LearningCatalogModule,
     EnrollmentModule,
     LearningDeliveryModule,

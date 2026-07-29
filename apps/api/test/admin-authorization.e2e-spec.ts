@@ -10,6 +10,7 @@ const MASTER = { email: 'master@akademionline.id', password: 'Master#Lokal12345'
  * permission dipasang per controller dan mudah terlewat pada endpoint baru.
  */
 const ADMIN_ENDPOINTS: Array<{ method: 'get' | 'post' | 'patch' | 'put' | 'delete'; path: string }> = [
+  { method: 'get', path: '/admin/users' },
   { method: 'get', path: '/admin/courses' },
   { method: 'post', path: '/admin/courses' },
   { method: 'get', path: '/admin/courses/00000000-0000-4000-8000-000000000000' },
@@ -74,6 +75,20 @@ describe('Otorisasi endpoint Master', () => {
     const slugs = (response.body.data as Array<{ slug: string; status: string }>).map((c) => c.slug);
     // Berbeda dari katalog publik, daftar ini memuat kursus draf.
     expect(slugs).toContain('generative-ai-mastery');
+  });
+
+  it('memberi Master akses mencari Pelajar tanpa membocorkan password', async () => {
+    const response = await request(h.server)
+      .get(`${prefix}/admin/users?search=pelajar&role=STUDENT`)
+      .set('Cookie', master.cookie)
+      .expect(200);
+
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ email: STUDENT.email, role: 'STUDENT', status: 'ACTIVE' }),
+      ]),
+    );
+    expect(JSON.stringify(response.body)).not.toContain('passwordHash');
   });
 
   it('tidak memberi Pelajar permission apa pun pada /auth/me', async () => {

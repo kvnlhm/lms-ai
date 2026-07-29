@@ -157,6 +157,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mencari dan memfilter pengguna untuk pengelolaan Master */
+        get: operations["AdminUsersController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/courses": {
         parameters: {
             query?: never;
@@ -715,6 +732,22 @@ export interface components {
             total: number;
             /** @example 7 */
             totalPages: number;
+        };
+        AdminUserListItemDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            /** Format: email */
+            email: string;
+            phone?: Record<string, never> | null;
+            /** @enum {string} */
+            status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+            /** @enum {string} */
+            role: "MASTER" | "STUDENT";
+            /** Format: date-time */
+            lastLoginAt?: Record<string, never> | null;
+            /** Format: date-time */
+            createdAt: string;
         };
         CourseCategoryDto: {
             name: string;
@@ -1564,6 +1597,58 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminUsersController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                search?: string;
+                status?: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+                role?: "MASTER" | "STUDENT";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminUserListItemDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

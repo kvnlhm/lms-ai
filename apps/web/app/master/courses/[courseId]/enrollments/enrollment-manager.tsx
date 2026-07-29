@@ -8,6 +8,7 @@ import { StatusPill } from '../../../../components/status-pill';
 
 type Enrollment = Schemas['AdminEnrollmentDto'];
 type GrantResult = Schemas['GrantResultDto'];
+type User = Schemas['AdminUserListItemDto'];
 
 const OUTCOME_LABELS: Record<string, string> = {
   ENROLLED: 'didaftarkan',
@@ -25,7 +26,9 @@ export function EnrollmentManager({
   enrollments: Enrollment[];
 }) {
   const router = useRouter();
-  const [userIds, setUserIds] = useState('');
+  const [search, setSearch] = useState('');
+  const [matches, setMatches] = useState<User[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<GrantResult[] | null>(null);
@@ -51,24 +54,39 @@ export function EnrollmentManager({
 
   async function grant(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const ids = userIds
-      .split(/[\s,]+/)
-      .map((value) => value.trim())
-      .filter(Boolean);
-    if (ids.length === 0) return;
+    if (selectedIds.length === 0) return;
 
     setResults(null);
     await run('grant', async () => {
       const response = unwrap(
         await browserClient().POST('/api/v1/admin/courses/{courseId}/enrollments', {
           params: { path: { courseId } },
-          body: { userIds: ids },
+          body: { userIds: selectedIds },
         }),
       );
       // Hasil ditampilkan per pengguna: satu ID yang salah tidak membatalkan
       // pendaftaran yang lain, jadi Master perlu melihat rinciannya.
       setResults(response.results);
-      setUserIds('');
+      setSelectedIds([]);
+      setMatches([]);
+      setSearch('');
+    });
+  }
+
+  async function findUsers(): Promise<void> {
+    const term = search.trim();
+    if (term.length < 2) {
+      setError('Ketik minimal 2 karakter nama atau email.');
+      return;
+    }
+    await run('search', async () => {
+      const users = unwrap(
+        await browserClient().GET('/api/v1/admin/users', {
+          params: { query: { page: 1, pageSize: 20, search: term, role: 'STUDENT', status: 'ACTIVE' } },
+        }),
+      ) as User[];
+      const enrolled = new Set(enrollments.map((item) => item.user.id));
+      setMatches(users.filter((item) => !enrolled.has(item.id)));
     });
   }
 
@@ -104,21 +122,46 @@ export function EnrollmentManager({
         </div>
         <form onSubmit={grant}>
           <div className="field">
-            <label htmlFor="userIds">ID pengguna</label>
-            <textarea
-              id="userIds"
-              value={userIds}
-              onChange={(event) => setUserIds(event.target.value)}
-              placeholder="Tempel satu atau beberapa UUID, dipisah baris baru atau koma"
-              disabled={busy !== null}
-              aria-describedby="userIds-help"
-            />
-            <span className="fieldError" id="userIds-help" style={{ color: 'var(--muted)' }}>
-              Pencarian pengguna belum tersedia; sementara ini akses diberikan
-              berdasarkan ID.
-            </span>
+            <label htmlFor="userSearch">Cari Pelajar</label>
+            <div className="inlineActions">
+              <input
+                id="userSearch"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Nama atau email Pelajar"
+                disabled={busy !== null}
+              />
+              <button className="btn btnGhost" type="button" onClick={findUsers} disabled={busy !== null}>
+                {busy === 'search' ? 'Mencari…' : 'Cari'}
+              </button>
+            </div>
           </div>
-          <button className="btn" type="submit" disabled={busy !== null || userIds.trim() === ''}>
+
+          {matches.length > 0 ? (
+            <div className="card" style={{ padding: 12, marginBottom: 14 }}>
+              {matches.map((item) => (
+                <label key={item.id} style={{ display: 'flex', gap: 10, padding: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(item.id)}
+                    onChange={(event) =>
+                      setSelectedIds((current) =>
+                        event.target.checked
+                          ? [...current, item.id]
+                          : current.filter((id) => id !== item.id),
+                      )
+                    }
+                  />
+                  <span>
+                    <span className="cellTitle">{item.fullName}</span>
+                    <span className="cellSub">{item.email}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          ) : null}
+
+          <button className="btn" type="submit" disabled={busy !== null || selectedIds.length === 0}>
             {busy === 'grant' ? 'Memproses…' : 'Beri akses'}
           </button>
         </form>

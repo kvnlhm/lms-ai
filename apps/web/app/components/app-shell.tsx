@@ -11,8 +11,10 @@ const LEARNER_NAV = [
   { href: '/courses', label: 'Kursus' },
 ];
 
-/** Hanya muncul bagi pemegang `courses.manage`. */
-const MASTER_NAV = [{ href: '/master', label: 'Kelola' }];
+const MASTER_NAV = [
+  { href: '/master', label: 'Kelola', permission: 'courses.manage' },
+  { href: '/master/users', label: 'Pengguna', permission: 'users.read' },
+] as const;
 
 /** Kerangka halaman untuk area yang membutuhkan autentikasi. */
 export function AppShell({ user, children }: { user: CurrentUser; children: ReactNode }) {
@@ -27,7 +29,10 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
         </Link>
 
         <nav className="mainNav" aria-label="Navigasi utama">
-          {[...LEARNER_NAV, ...(can(user, 'courses.manage') ? MASTER_NAV : [])].map((item) => (
+          {[
+            ...LEARNER_NAV,
+            ...MASTER_NAV.filter((item) => can(user, item.permission)),
+          ].map((item) => (
             <NavLink key={item.href} href={item.href}>
               {item.label}
             </NavLink>
