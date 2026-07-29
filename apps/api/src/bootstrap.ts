@@ -50,7 +50,7 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
   const builder = new DocumentBuilder()
     .setTitle('LMS API')
     .setDescription(
-      'REST API LMS Akademi Online. Autentikasi memakai session opaque pada cookie HttpOnly; ' +
+      'REST API LMS AIPreneur. Autentikasi memakai session opaque pada cookie HttpOnly; ' +
         'mutation memerlukan header X-CSRF-Token.',
     )
     .setVersion('1.0.0')

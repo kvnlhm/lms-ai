@@ -4,7 +4,7 @@
 
 | Informasi | Detail |
 |---|---|
-| Nama Produk | LMS AIPrenuer |
+| Nama Produk | LMS AIPreneur |
 | Versi Dokumen | 1.1 |
 | Status | Draft MVP |
 | Platform | Responsive Web Application |
