@@ -7,6 +7,7 @@ import {
   ApiError,
   browserApiUrl,
   browserClient,
+  ensureSuccess,
   readCsrfToken,
   unwrap,
 } from '../../../lib/browser-api';
@@ -120,13 +121,22 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       ),
     );
 
-  const removeModule = (moduleId: string) =>
-    run(`del-module-${moduleId}`, async () => {
-      const result = await client().DELETE('/api/v1/admin/modules/{moduleId}', {
-        params: { path: { moduleId } },
-      });
-      if (result.error) throw result.error;
-    });
+  const removeModule = (moduleId: string, title: string, lessonCount: number) => {
+    const detail =
+      lessonCount > 0
+        ? ` Bagian ini berisi ${lessonCount} pelajaran yang juga akan dihapus.`
+        : '';
+    if (!window.confirm(`Hapus bagian “${title}”?${detail} Tindakan ini tidak dapat dibatalkan.`)) {
+      return Promise.resolve(false);
+    }
+    return run(`del-module-${moduleId}`, async () =>
+      ensureSuccess(
+        await client().DELETE('/api/v1/admin/modules/{moduleId}', {
+          params: { path: { moduleId } },
+        }),
+      ),
+    );
+  };
 
   const addLesson = (
     moduleId: string,
@@ -141,13 +151,18 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       ),
     );
 
-  const removeLesson = (lessonId: string) =>
-    run(`del-lesson-${lessonId}`, async () => {
-      const result = await client().DELETE('/api/v1/admin/lessons/{lessonId}', {
-        params: { path: { lessonId } },
-      });
-      if (result.error) throw result.error;
-    });
+  const removeLesson = (lessonId: string, title: string) => {
+    if (!window.confirm(`Hapus pelajaran “${title}”? Tindakan ini tidak dapat dibatalkan.`)) {
+      return Promise.resolve(false);
+    }
+    return run(`del-lesson-${lessonId}`, async () =>
+      ensureSuccess(
+        await client().DELETE('/api/v1/admin/lessons/{lessonId}', {
+          params: { path: { lessonId } },
+        }),
+      ),
+    );
+  };
 
   const updateLesson = (
     lessonId: string,
@@ -356,7 +371,13 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                   </button>
                   <button
                     className="iconAction btnDanger"
-                    onClick={() => removeModule(courseModule.id)}
+                    onClick={() =>
+                      removeModule(
+                        courseModule.id,
+                        courseModule.title,
+                        courseModule.lessons.length,
+                      )
+                    }
                     disabled={busy !== null}
                     aria-label={`Hapus bagian ${courseModule.title}`}
                   >
@@ -437,7 +458,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                           </button>
                           <button
                             className="iconAction btnDanger"
-                            onClick={() => removeLesson(lesson.id)}
+                            onClick={() => removeLesson(lesson.id, lesson.title)}
                             disabled={busy !== null}
                             aria-label={`Hapus pelajaran ${lesson.title}`}
                           >

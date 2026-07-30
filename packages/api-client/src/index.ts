@@ -62,6 +62,11 @@ interface EnvelopeResult<T> {
   response: Response;
 }
 
+interface EmptyResult {
+  error?: unknown;
+  response: Response;
+}
+
 /**
  * Membuka amplop `{ data, meta }` dan mengubah badan error menjadi `ApiError`.
  * Pemanggil bekerja dengan payload, bukan dengan bentuk transport.
@@ -90,6 +95,22 @@ export function unwrapList<T>(
     throw new ApiError('INTERNAL_ERROR', result.response.status, 'Respons kosong dari server.');
   }
   return { items: result.data.data, meta: result.data.meta };
+}
+
+/**
+ * Memvalidasi mutation dengan respons kosong seperti HTTP 204.
+ *
+ * Error dari openapi-fetch masih berbentuk amplop API mentah. Fungsi ini
+ * mengubahnya menjadi ApiError agar UI dapat menampilkan pesan server alih-alih
+ * salah menganggapnya sebagai kegagalan jaringan.
+ */
+export function ensureSuccess(result: EmptyResult): void {
+  if (result.error !== undefined) {
+    throw toApiError(result.error, result.response.status);
+  }
+  if (!result.response.ok) {
+    throw new ApiError('INTERNAL_ERROR', result.response.status, 'Terjadi kesalahan pada server.');
+  }
 }
 
 function toApiError(payload: unknown, status: number): ApiError {
