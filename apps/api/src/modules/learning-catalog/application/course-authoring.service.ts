@@ -1,7 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Prisma, PublicationStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
+import {
+  LESSON_VIDEO_CLEANUP,
+  type LessonVideoCleanupPort,
+} from './lesson-video-cleanup.port';
 import { checkPublishable } from './publication-rules';
 
 export interface CreateCourseInput {
@@ -105,7 +109,10 @@ function toLesson(row: {
 
 @Injectable()
 export class CourseAuthoringService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(LESSON_VIDEO_CLEANUP) private readonly videos: LessonVideoCleanupPort,
+  ) {}
 
   // ── Kursus ──────────────────────────────────────────────────
 
@@ -243,6 +250,11 @@ export class CourseAuthoringService {
       );
     }
 
+    const lessons = await this.prisma.lesson.findMany({
+      where: { module: { courseId } },
+      select: { id: true },
+    });
+    await this.videos.removeForLessons(lessons.map(({ id }) => id));
     await this.prisma.course.delete({ where: { id: courseId } });
   }
 
@@ -322,6 +334,11 @@ export class CourseAuthoringService {
       );
     }
 
+    const lessons = await this.prisma.lesson.findMany({
+      where: { moduleId },
+      select: { id: true },
+    });
+    await this.videos.removeForLessons(lessons.map(({ id }) => id));
     await this.prisma.courseModule.delete({ where: { id: moduleId } });
     await this.compactModulePositions(courseModule.courseId);
   }
@@ -409,6 +426,7 @@ export class CourseAuthoringService {
       );
     }
 
+    await this.videos.removeForLessons([lessonId]);
     await this.prisma.lesson.delete({ where: { id: lessonId } });
     await this.compactLessonPositions(lesson.moduleId);
   }

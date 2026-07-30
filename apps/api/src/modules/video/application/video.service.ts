@@ -12,6 +12,7 @@ import type { AppConfig } from '../../../config/configuration';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
+import type { LessonVideoCleanupPort } from '../../learning-catalog/application/lesson-video-cleanup.port';
 
 interface UploadIntent {
   lessonId: string;
@@ -22,7 +23,7 @@ interface UploadIntent {
 }
 
 @Injectable()
-export class VideoService {
+export class VideoService implements LessonVideoCleanupPort {
   private readonly config: AppConfig['video'];
 
   constructor(
@@ -215,5 +216,36 @@ export class VideoService {
     }
     await this.access.assertLessonAccess(userId, playback.videoAsset.lessonId);
     return playback.videoAsset.objectKey;
+  }
+
+  async removeForLessons(lessonIds: string[]): Promise<void> {
+    if (lessonIds.length === 0) return;
+    const assets = await this.prisma.videoAsset.findMany({
+      where: { lessonId: { in: lessonIds } },
+      select: { id: true, objectKey: true, status: true },
+    });
+    const pendingStatuses = new Set<VideoStatus>([
+      VideoStatus.CREATED,
+      VideoStatus.UPLOADING,
+      VideoStatus.PROCESSING,
+    ]);
+    if (assets.some(({ status }) => pendingStatuses.has(status))) {
+      throw AppError.validation({
+        video: ['Tunggu upload video selesai sebelum menghapus pelajaran.'],
+      });
+    }
+    const assetIds = assets.map(({ id }) => id);
+    await this.prisma.$transaction(async (tx) => {
+      if (assetIds.length > 0) {
+        await tx.videoPlaybackSession.deleteMany({ where: { videoAssetId: { in: assetIds } } });
+        await tx.videoAsset.deleteMany({ where: { id: { in: assetIds } } });
+      }
+    });
+    await Promise.allSettled(
+      assets
+        .map(({ objectKey }) => objectKey)
+        .filter((objectKey): objectKey is string => Boolean(objectKey))
+        .map((objectKey) => rm(join(this.config.storagePath, objectKey), { force: true })),
+    );
   }
 }

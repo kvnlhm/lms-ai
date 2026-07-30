@@ -53,6 +53,10 @@ type UploadState = {
   message: string;
 };
 
+type DeleteConfirmation =
+  | { kind: 'MODULE'; id: string; title: string; lessonCount: number }
+  | { kind: 'LESSON'; id: string; title: string };
+
 export function CourseEditor({ course }: { course: CourseDetail }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -60,6 +64,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   const [reasons, setReasons] = useState<string[]>([]);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [upload, setUpload] = useState<UploadState | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation | null>(null);
 
   /**
    * Menjalankan satu mutation.
@@ -121,22 +126,14 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       ),
     );
 
-  const removeModule = (moduleId: string, title: string, lessonCount: number) => {
-    const detail =
-      lessonCount > 0
-        ? ` Bagian ini berisi ${lessonCount} pelajaran yang juga akan dihapus.`
-        : '';
-    if (!window.confirm(`Hapus bagian “${title}”?${detail} Tindakan ini tidak dapat dibatalkan.`)) {
-      return Promise.resolve(false);
-    }
-    return run(`del-module-${moduleId}`, async () =>
+  const removeModule = (moduleId: string) =>
+    run(`del-module-${moduleId}`, async () =>
       ensureSuccess(
         await client().DELETE('/api/v1/admin/modules/{moduleId}', {
           params: { path: { moduleId } },
         }),
       ),
     );
-  };
 
   const addLesson = (
     moduleId: string,
@@ -151,18 +148,25 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       ),
     );
 
-  const removeLesson = (lessonId: string, title: string) => {
-    if (!window.confirm(`Hapus pelajaran “${title}”? Tindakan ini tidak dapat dibatalkan.`)) {
-      return Promise.resolve(false);
-    }
-    return run(`del-lesson-${lessonId}`, async () =>
+  const removeLesson = (lessonId: string) =>
+    run(`del-lesson-${lessonId}`, async () =>
       ensureSuccess(
         await client().DELETE('/api/v1/admin/lessons/{lessonId}', {
           params: { path: { lessonId } },
         }),
       ),
     );
-  };
+
+  async function confirmDelete() {
+    if (!deleteConfirmation) return;
+    const target = deleteConfirmation;
+    setDeleteConfirmation(null);
+    if (target.kind === 'MODULE') {
+      await removeModule(target.id);
+    } else {
+      await removeLesson(target.id);
+    }
+  }
 
   const updateLesson = (
     lessonId: string,
@@ -372,11 +376,12 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                   <button
                     className="iconAction btnDanger"
                     onClick={() =>
-                      removeModule(
-                        courseModule.id,
-                        courseModule.title,
-                        courseModule.lessons.length,
-                      )
+                      setDeleteConfirmation({
+                        kind: 'MODULE',
+                        id: courseModule.id,
+                        title: courseModule.title,
+                        lessonCount: courseModule.lessons.length,
+                      })
                     }
                     disabled={busy !== null}
                     aria-label={`Hapus bagian ${courseModule.title}`}
@@ -458,7 +463,13 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                           </button>
                           <button
                             className="iconAction btnDanger"
-                            onClick={() => removeLesson(lesson.id, lesson.title)}
+                            onClick={() =>
+                              setDeleteConfirmation({
+                                kind: 'LESSON',
+                                id: lesson.id,
+                                title: lesson.title,
+                              })
+                            }
                             disabled={busy !== null}
                             aria-label={`Hapus pelajaran ${lesson.title}`}
                           >
@@ -533,6 +544,57 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
           <button type="button" onClick={() => setUpload(null)} aria-label="Tutup notifikasi">
             ×
           </button>
+        </div>
+      ) : null}
+
+      {deleteConfirmation ? (
+        <div
+          className="confirmOverlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !busy) setDeleteConfirmation(null);
+          }}
+        >
+          <section
+            className="confirmDialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-dialog-title"
+            aria-describedby="delete-dialog-description"
+          >
+            <span className="confirmDangerIcon" aria-hidden="true">
+              <Trash size={22} />
+            </span>
+            <h2 id="delete-dialog-title">
+              Hapus {deleteConfirmation.kind === 'MODULE' ? 'bagian' : 'pelajaran'}?
+            </h2>
+            <p id="delete-dialog-description">
+              <strong>“{deleteConfirmation.title}”</strong> akan dihapus permanen.
+              {deleteConfirmation.kind === 'MODULE' && deleteConfirmation.lessonCount > 0
+                ? ` ${deleteConfirmation.lessonCount} pelajaran di dalamnya juga akan dihapus.`
+                : ''}
+              {' '}Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div className="confirmActions">
+              <button
+                className="btnSecondary"
+                type="button"
+                onClick={() => setDeleteConfirmation(null)}
+                disabled={busy !== null}
+                autoFocus
+              >
+                Batal
+              </button>
+              <button
+                className="btnDangerSolid"
+                type="button"
+                onClick={() => void confirmDelete()}
+                disabled={busy !== null}
+              >
+                Hapus permanen
+              </button>
+            </div>
+          </section>
         </div>
       ) : null}
     </>

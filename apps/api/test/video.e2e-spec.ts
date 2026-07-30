@@ -1,4 +1,4 @@
-import { rm } from 'node:fs/promises';
+import { access, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import request from 'supertest';
 import { firstLessonOf, login, prefix, startHarness, type Harness } from './support/harness';
@@ -141,5 +141,72 @@ describe('Video self-hosted', () => {
     expect(replacementPlayback.body.data.providerVideoId).toBe(
       replacementIntent.body.data.providerVideoId,
     );
+  });
+
+  it('menghapus aset dan file video saat lesson tanpa riwayat dihapus', async () => {
+    const master = await login(h.server, MASTER.email, MASTER.password);
+    const slug = `hapus-video-${Date.now()}`;
+    const course = await request(h.server)
+      .post(`${prefix}/admin/courses`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .send({ title: 'Uji hapus video', slug, level: 'BEGINNER' })
+      .expect(201);
+    const courseId = course.body.data.id as string;
+    const module = await request(h.server)
+      .post(`${prefix}/admin/courses/${courseId}/modules`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .send({ title: 'Bagian video' })
+      .expect(201);
+    const lesson = await request(h.server)
+      .post(`${prefix}/admin/modules/${module.body.data.id as string}/lessons`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .send({ title: 'Video sekali pakai', contentType: 'VIDEO', isRequired: true })
+      .expect(201);
+    const lessonId = lesson.body.data.id as string;
+    const mp4 = Buffer.concat([
+      Buffer.from([0, 0, 0, 24]),
+      Buffer.from('ftyp'),
+      Buffer.from('isom'),
+      Buffer.alloc(12),
+    ]);
+    const intent = await request(h.server)
+      .post(`${prefix}/admin/videos/upload-intents`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .send({
+        lessonId,
+        title: 'Video sekali pakai',
+        fileName: 'sekali-pakai.mp4',
+        mimeType: 'video/mp4',
+        sizeBytes: mp4.length,
+      })
+      .expect(201);
+    const assetId = intent.body.data.videoAssetId as string;
+
+    await request(h.server)
+      .put(`${prefix}/admin/videos/${assetId}/content`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .set('Content-Type', 'video/mp4')
+      .set('Content-Length', String(mp4.length))
+      .send(mp4)
+      .expect(200);
+
+    await request(h.server)
+      .delete(`${prefix}/admin/lessons/${lessonId}`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .expect(204);
+
+    expect(await h.prisma.videoAsset.findUnique({ where: { id: assetId } })).toBeNull();
+    await expect(access(join(storage, `${assetId}.mp4`))).rejects.toThrow();
+    await request(h.server)
+      .delete(`${prefix}/admin/courses/${courseId}`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .expect(204);
   });
 });
