@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PlaybackStatus, Prisma, VideoProvider, VideoStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { mkdir, rename, rm } from 'node:fs/promises';
+import { chmod, mkdir, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -102,7 +102,11 @@ export class VideoService implements LessonVideoCleanupPort {
     const objectKey = `${asset.id}.mp4`;
     const tempPath = join(this.config.storagePath, `${objectKey}.uploading`);
     const finalPath = join(this.config.storagePath, objectKey);
-    await mkdir(this.config.storagePath, { recursive: true, mode: 0o750 });
+    // Gateway Nginx berjalan dengan user berbeda dan memasang volume ini
+    // read-only. Direktori perlu dapat dilintasi dan MP4 perlu dapat dibaca,
+    // sementara mutation tetap hanya tersedia pada volume milik API.
+    await mkdir(this.config.storagePath, { recursive: true, mode: 0o755 });
+    await chmod(this.config.storagePath, 0o755);
     await this.prisma.videoAsset.update({
       where: { id: asset.id },
       data: { status: VideoStatus.UPLOADING },
@@ -120,7 +124,7 @@ export class VideoService implements LessonVideoCleanupPort {
     });
 
     try {
-      await pipeline(stream, validator, createWriteStream(tempPath, { flags: 'wx', mode: 0o640 }));
+      await pipeline(stream, validator, createWriteStream(tempPath, { flags: 'wx', mode: 0o644 }));
       if (bytes !== contentLength || header.length < 12 || header.toString('ascii', 4, 8) !== 'ftyp') {
         throw new Error('Konten bukan MP4 yang valid atau ukurannya tidak lengkap.');
       }

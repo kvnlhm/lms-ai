@@ -1,4 +1,4 @@
-import { access, rm } from 'node:fs/promises';
+import { access, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import request from 'supertest';
 import { firstLessonOf, login, prefix, startHarness, type Harness } from './support/harness';
@@ -68,6 +68,9 @@ describe('Video self-hosted', () => {
       .set('Content-Length', String(mp4.length))
       .send(mp4)
       .expect(200);
+
+    expect((await stat(storage)).mode & 0o777).toBe(0o755);
+    expect((await stat(join(storage, `${videoAssetId}.mp4`))).mode & 0o777).toBe(0o644);
 
     const playback = await request(h.server)
       .post(`${prefix}/learn/lessons/${lessonId}/playback-sessions`)
