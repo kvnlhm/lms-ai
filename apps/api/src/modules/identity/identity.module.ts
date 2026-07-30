@@ -8,9 +8,10 @@ import { MfaService } from './application/mfa.service';
 import { CredentialTokenService } from './application/credential-token.service';
 import { UserCredentialService } from './application/user-credential.service';
 import { AvatarService } from './application/avatar.service';
+import { ProfilePreferencesController } from './presentation/controllers/profile-preferences.controller';
 
 @Module({
-  controllers: [AuthController],
+  controllers: [AuthController, ProfilePreferencesController],
   providers: [
     AuthService,
     PasswordService,

@@ -33,6 +33,7 @@ erDiagram
     USERS ||--o{ AUTH_SESSIONS : owns
     USERS ||--o{ PASSWORD_RESET_TOKENS : requests
     USERS ||--o{ MFA_METHODS : configures
+    USERS ||--o| NOTIFICATION_PREFERENCES : configures
 
     USERS {
         uuid id PK
@@ -117,6 +118,14 @@ erDiagram
         boolean is_primary
         timestamptz verified_at
         timestamptz created_at
+    }
+
+    NOTIFICATION_PREFERENCES {
+        uuid user_id PK,FK
+        boolean announcements_enabled
+        boolean course_updates_enabled
+        boolean learning_reminders_enabled
+        timestamptz updated_at
     }
 ```
 

@@ -850,6 +850,14 @@ table.data tbody tr:hover { background: var(--raised); }
 .profileSectionHead h2 { margin: 0; font-size: 18px; }
 .profileSectionHead p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 .profileSessionNotice { margin: 18px 24px 0; }
+.preferenceForm { padding: 4px 24px 24px; }
+.preferenceList { display: grid; }
+.preferenceRow { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--line-soft); cursor: pointer; }
+.preferenceRow:last-child { border-bottom: 0; }
+.preferenceRow strong, .preferenceRow small { display: block; }
+.preferenceRow strong { font-size: 14px; }
+.preferenceRow small { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.preferenceRow input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--accent); }
 .sessionList { padding: 0 24px; }
 .sessionRow { display: flex; align-items: center; gap: 13px; padding: 17px 0; border-top: 1px solid var(--line-soft); }
 .sessionRow:first-child { border-top: 0; }

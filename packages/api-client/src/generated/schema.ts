@@ -243,6 +243,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/notifications/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Melihat preferensi notifikasi sendiri */
+        get: operations["ProfilePreferencesController_get"];
+        /** Memperbarui preferensi notifikasi sendiri */
+        put: operations["ProfilePreferencesController_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -922,6 +940,19 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             expiresAt: string;
+        };
+        NotificationPreferenceDto: {
+            /** @default true */
+            announcementsEnabled: boolean;
+            /** @default true */
+            courseUpdatesEnabled: boolean;
+            /** @default true */
+            learningRemindersEnabled: boolean;
+        };
+        UpdateNotificationPreferenceDto: {
+            announcementsEnabled: boolean;
+            courseUpdatesEnabled: boolean;
+            learningRemindersEnabled: boolean;
         };
         PaginatedMetaDto: {
             /** Format: uuid */
@@ -2085,6 +2116,62 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    ProfilePreferencesController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["NotificationPreferenceDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+        };
+    };
+    ProfilePreferencesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNotificationPreferenceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["NotificationPreferenceDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -118,19 +118,32 @@ model User {
   updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt       DateTime?  @map("deleted_at") @db.Timestamptz(6)
 
-  roles            UserRole[]
-  sessions         AuthSession[]
-  resetTokens      PasswordResetToken[]
-  mfaMethods       MfaMethod[]
-  enrollments      Enrollment[]           @relation("EnrollmentOwner")
-  enrollmentsMade  Enrollment[]           @relation("EnrollmentActor")
-  createdCourses   Course[]
-  auditLogs        AuditLog[]
-  videoAssets      VideoAsset[]           @relation("VideoAssetCreator")
-  playbackSessions VideoPlaybackSession[]
+  roles                  UserRole[]
+  sessions               AuthSession[]
+  resetTokens            PasswordResetToken[]
+  mfaMethods             MfaMethod[]
+  enrollments            Enrollment[]            @relation("EnrollmentOwner")
+  enrollmentsMade        Enrollment[]            @relation("EnrollmentActor")
+  createdCourses         Course[]
+  auditLogs              AuditLog[]
+  videoAssets            VideoAsset[]            @relation("VideoAssetCreator")
+  playbackSessions       VideoPlaybackSession[]
+  notificationPreference NotificationPreference?
 
   @@index([status])
   @@map("users")
+}
+
+model NotificationPreference {
+  userId                   String   @id @map("user_id") @db.Uuid
+  announcementsEnabled     Boolean  @default(true) @map("announcements_enabled")
+  courseUpdatesEnabled     Boolean  @default(true) @map("course_updates_enabled")
+  learningRemindersEnabled Boolean  @default(true) @map("learning_reminders_enabled")
+  updatedAt                DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }
 
 model Role {

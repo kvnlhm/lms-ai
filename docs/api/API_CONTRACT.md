@@ -321,7 +321,20 @@ Requires the old password. A successful change revokes all active sessions.
 
 ## GET `/me/notifications/preferences`
 
+Returns the current user's preferences. Users without a stored row receive
+secure defaults with all relevant in-app notifications enabled.
+
 ## PUT `/me/notifications/preferences`
+
+```json
+{
+  "announcementsEnabled": true,
+  "courseUpdatesEnabled": true,
+  "learningRemindersEnabled": false
+}
+```
+
+The payload is a full replacement and only affects the authenticated user.
 
 ---
 

@@ -785,6 +785,92 @@
         ]
       }
     },
+    "/api/v1/me/notifications/preferences": {
+      "get": {
+        "operationId": "ProfilePreferencesController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/NotificationPreferenceDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Melihat preferensi notifikasi sendiri",
+        "tags": [
+          "profile"
+        ]
+      },
+      "put": {
+        "operationId": "ProfilePreferencesController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationPreferenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/NotificationPreferenceDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Memperbarui preferensi notifikasi sendiri",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "AdminUsersController_list",
@@ -4322,6 +4408,47 @@
           "lastUsedAt",
           "createdAt",
           "expiresAt"
+        ]
+      },
+      "NotificationPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "announcementsEnabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "courseUpdatesEnabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "learningRemindersEnabled": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "announcementsEnabled",
+          "courseUpdatesEnabled",
+          "learningRemindersEnabled"
+        ]
+      },
+      "UpdateNotificationPreferenceDto": {
+        "type": "object",
+        "properties": {
+          "announcementsEnabled": {
+            "type": "boolean"
+          },
+          "courseUpdatesEnabled": {
+            "type": "boolean"
+          },
+          "learningRemindersEnabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "announcementsEnabled",
+          "courseUpdatesEnabled",
+          "learningRemindersEnabled"
         ]
       },
       "PaginatedMetaDto": {

@@ -83,6 +83,48 @@ describe('Autentikasi dan session', () => {
     expect(response.body.data).not.toHaveProperty('passwordHash');
   });
 
+  it('menampilkan dan memperbarui preferensi notifikasi milik sendiri', async () => {
+    const session = await login(h.server, STUDENT.email, STUDENT.password);
+    await h.prisma.notificationPreference.deleteMany({ where: { userId: session.userId } });
+
+    const defaults = await request(h.server)
+      .get(`${prefix}/me/notifications/preferences`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+
+    expect(defaults.body.data).toEqual({
+      announcementsEnabled: true,
+      courseUpdatesEnabled: true,
+      learningRemindersEnabled: true,
+    });
+
+    const updated = await request(h.server)
+      .put(`${prefix}/me/notifications/preferences`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .send({
+        announcementsEnabled: true,
+        courseUpdatesEnabled: false,
+        learningRemindersEnabled: false,
+      })
+      .expect(200);
+
+    expect(updated.body.data).toMatchObject({
+      announcementsEnabled: true,
+      courseUpdatesEnabled: false,
+      learningRemindersEnabled: false,
+    });
+
+    await request(h.server)
+      .put(`${prefix}/me/notifications/preferences`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .send({ announcementsEnabled: 'yes' })
+      .expect(422);
+
+    await h.prisma.notificationPreference.deleteMany({ where: { userId: session.userId } });
+  });
+
   it('memperbarui profil sendiri tanpa dapat mengubah role atau status', async () => {
     const session = await login(h.server, STUDENT.email, STUDENT.password);
     const before = await request(h.server)
