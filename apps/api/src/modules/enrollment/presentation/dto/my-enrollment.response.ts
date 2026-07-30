@@ -7,6 +7,7 @@ export class EnrolledCourseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() slug!: string;
   @ApiProperty() title!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) thumbnailUrl!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) shortDescription!: string | null;
   @ApiProperty({ enum: LEVELS }) level!: string;
   @ApiProperty() estimatedMinutes!: number;

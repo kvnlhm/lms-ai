@@ -60,7 +60,9 @@ export default async function MasterDashboardPage() {
             <div className="courseQuickList">
               {courseList.items.slice(0, 5).map((course) => (
                 <Link key={course.id} href={`/master/courses/${course.id}`} className="courseQuickRow">
-                  <span className="courseThumb" aria-hidden="true">{course.title.slice(0, 1)}</span>
+                  <span className={`courseThumb${course.thumbnailUrl ? ' hasImage' : ''}`} aria-hidden="true">
+                    {course.thumbnailUrl ? <img src={course.thumbnailUrl} alt="" /> : course.title.slice(0, 1)}
+                  </span>
                   <span className="courseQuickMain">
                     <strong>{course.title}</strong>
                     <small>{course.lessonCount} materi · {course.enrollmentCount} peserta</small>

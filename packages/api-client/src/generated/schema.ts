@@ -1407,6 +1407,7 @@ export interface components {
             id: string;
             slug: string;
             title: string;
+            thumbnailUrl?: string | null;
             shortDescription?: string | null;
             /** @enum {string} */
             level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
@@ -1628,6 +1629,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             title: string;
+            thumbnailUrl?: string | null;
             shortDescription?: string | null;
         };
         ContinueLessonDto: {

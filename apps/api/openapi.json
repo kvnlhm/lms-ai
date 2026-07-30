@@ -6037,6 +6037,10 @@
           "title": {
             "type": "string"
           },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "shortDescription": {
             "type": "string",
             "nullable": true
@@ -6745,6 +6749,10 @@
           },
           "title": {
             "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
           },
           "shortDescription": {
             "type": "string",

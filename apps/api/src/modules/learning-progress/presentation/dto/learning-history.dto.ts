@@ -12,6 +12,7 @@ export class LearningHistoryQueryDto {
 export class ContinueCourseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() title!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) thumbnailUrl!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) shortDescription!: string | null;
 }
 

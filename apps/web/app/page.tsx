@@ -82,7 +82,11 @@ function ContinueCard({ item }: { item: ContinueLearning }) {
     ? `/learn/${item.course.id}/${item.lesson.id}`
     : `/courses/${item.course.id}`;
   return (
-    <article className="card progressCard">
+    <article className={`card progressCard${item.course.thumbnailUrl ? ' withThumbnail' : ''}`}>
+      {item.course.thumbnailUrl ? (
+        <img className="continueThumbnail" src={item.course.thumbnailUrl} alt="" />
+      ) : null}
+      <div className="continueContent">
       <div className="progressTop">
         <div>
           <span className="eyebrow">{item.lesson?.moduleTitle ?? 'Kursus aktif'}</span>
@@ -101,6 +105,7 @@ function ContinueCard({ item }: { item: ContinueLearning }) {
           {item.lastActivityAt ? 'Lanjutkan' : 'Mulai belajar'} <ArrowRight size={16} />
         </Link>
       </div>
+      </div>
     </article>
   );
 }
@@ -110,8 +115,12 @@ function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
 
   return (
     <Link href={`/courses/${course.id}`} className="card courseCard">
-      <span className="cover">
-        <span className="coverText">{course.title}</span>
+      <span className={`cover${course.thumbnailUrl ? ' hasImage' : ''}`}>
+        {course.thumbnailUrl ? (
+          <img src={course.thumbnailUrl} alt="" />
+        ) : (
+          <span className="coverText">{course.title}</span>
+        )}
       </span>
       <span className="courseBody">
         <span className="courseName">{course.title}</span>

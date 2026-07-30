@@ -212,6 +212,11 @@ svg { display: block; }
 }
 .field input:focus { outline: none; border-color: var(--accent); }
 .field input[aria-invalid='true'] { border-color: var(--danger); }
+.visuallyHidden {
+  position: absolute !important; width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+}
 .fieldError { font-size: 12.5px; color: var(--danger); }
 .authHint {
   margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line-soft);
@@ -849,6 +854,13 @@ table.data tbody tr:hover { background: var(--raised); }
 .courseThumb.hasImage { overflow: hidden; padding: 0; }
 .courseHeroVisual.hasImage { padding: 0; overflow: hidden; }
 .courseHeroVisual.hasImage img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.progressCard.withThumbnail { display: grid; grid-template-columns: minmax(180px, 280px) 1fr; overflow: hidden; padding: 0; }
+.continueThumbnail { width: 100%; height: 100%; min-height: 190px; display: block; object-fit: cover; }
+.continueContent { padding: 22px; min-width: 0; }
+@media (max-width: 680px) {
+  .progressCard.withThumbnail { grid-template-columns: 1fr; }
+  .continueThumbnail { aspect-ratio: 16 / 9; min-height: 0; }
+}
 @media (max-width: 720px) { .courseThumbnailEditor { grid-template-columns: 1fr; } }
 .profileForm { padding: 24px; }
 .profileGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }

@@ -11,6 +11,7 @@ export interface MyEnrollmentItem {
     id: string;
     slug: string;
     title: string;
+    thumbnailUrl: string | null;
     shortDescription: string | null;
     level: string;
     estimatedMinutes: number;
@@ -48,6 +49,7 @@ export class MyEnrollmentsService {
         id: enrollment.course.id,
         slug: enrollment.course.slug,
         title: enrollment.course.title,
+        thumbnailUrl: enrollment.course.thumbnailUrl,
         shortDescription: enrollment.course.shortDescription,
         level: enrollment.course.level,
         estimatedMinutes: enrollment.course.estimatedMinutes,

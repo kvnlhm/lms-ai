@@ -63,6 +63,7 @@ export class LearningHistoryService {
       course: {
         id: enrollment.course.id,
         title: enrollment.course.title,
+        thumbnailUrl: enrollment.course.thumbnailUrl,
         shortDescription: enrollment.course.shortDescription,
       },
       lesson: lesson
