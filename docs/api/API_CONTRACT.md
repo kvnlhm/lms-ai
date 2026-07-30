@@ -1669,3 +1669,68 @@ Klasifikasi risiko bersifat rule-based, bukan skoring, sesuai PRD 8.6:
 | `HIGH` | Tidak aktif ≥ 14 hari, atau belum pernah mulai padahal terdaftar ≥ 14 hari |
 | `MEDIUM` | Tidak aktif 7–13 hari, atau progres kurang dari separuh rata-rata kohort |
 | `LOW` | Selain itu, termasuk pelajar yang baru terdaftar |
+
+---
+
+## 34. Live Session API
+
+Mengikuti PRD 7.16 dan ADR-019. LMS tidak memanggil API penyedia rapat mana pun.
+
+### GET `/learn/courses/{courseId}/live-sessions`
+
+Pelajar dengan enrollment aktif. Kursus yang tidak dimiliki dijawab `404`.
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Bedah studi kasus",
+      "description": null,
+      "startsAt": "2026-08-05T13:00:00Z",
+      "endsAt": "2026-08-05T14:00:00Z",
+      "durationMinutes": 60,
+      "status": "UPCOMING",
+      "joinUrl": null
+    }
+  ]
+}
+```
+
+`status` bernilai `UPCOMING`, `LIVE`, atau `ENDED`. `joinUrl` hanya terisi
+selama sesi belum berakhir; setelah itu bernilai null agar tautan lama tidak
+terus beredar. Sesi yang dibatalkan tidak muncul sama sekali.
+
+### Endpoint Master
+
+Seluruhnya memerlukan permission `courses.manage`.
+
+| Metode | Path | Keterangan |
+| --- | --- | --- |
+| GET | `/admin/live-sessions` | Semua sesi termasuk yang dibatalkan; filter `courseId` |
+| POST | `/admin/live-sessions` | Menjadwalkan sesi |
+| PATCH | `/admin/live-sessions/{sessionId}` | Mengubah jadwal, durasi, atau tautan |
+| DELETE | `/admin/live-sessions/{sessionId}` | Membatalkan sesi |
+
+```json
+{
+  "courseId": "uuid",
+  "title": "Bedah studi kasus",
+  "description": "Bawa pertanyaanmu.",
+  "joinUrl": "https://zoom.us/j/1234567890",
+  "startsAt": "2026-08-05T13:00:00Z",
+  "durationMinutes": 60
+}
+```
+
+`joinUrl` wajib `https` dan berasal dari host berikut atau subdomainnya:
+`zoom.us`, `zoomgov.com`, `meet.google.com`, `teams.microsoft.com`,
+`teams.live.com`, `whereby.com`, `meet.jit.si`. Selain itu dijawab `422`.
+
+Daftar tertutup ini adalah kontrol keamanan: tautannya disiarkan ke seluruh
+peserta kursus, sehingga kolom bebas akan menjadi sarana menyebar tautan apa
+pun dengan kredibilitas akademi. Pencocokan dilakukan persis atau lewat akhiran
+`.host`, sehingga `zoom.us.phishing.test` ditolak.
+
+`durationMinutes` menerima 5 sampai 600. Pembatalan mengisi `cancelledAt` dan
+tidak menghapus barisnya.

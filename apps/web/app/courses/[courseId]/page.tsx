@@ -5,6 +5,7 @@ import { AppShell } from '../../components/app-shell';
 import { ArrowRight, Check } from '../../components/icons';
 import { ApiError, serverClient, unwrap } from '../../lib/api';
 import { requireUser } from '../../lib/session';
+import { LiveSessions } from './live-sessions';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,6 +83,8 @@ export default async function CourseDetailPage({ params }: Props) {
             pelajaran hanya terbuka setelah Master memberi akses.
           </p>
         ) : null}
+
+        {course.access.enrolled ? <LiveSessions courseId={course.id} /> : null}
 
         {progress ? (
           <>

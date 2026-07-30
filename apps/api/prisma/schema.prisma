@@ -157,6 +157,7 @@ model User {
   forumReports           ForumReport[]           @relation("ForumReportReporter")
   forumBans              ForumBan[]              @relation("ForumBanUser")
   forumBansIssued        ForumBan[]              @relation("ForumBanIssuer")
+  liveSessions           LiveSession[]           @relation("LiveSessionCreator")
 
   @@index([status])
   @@map("users")
@@ -314,8 +315,9 @@ model Course {
   modules     CourseModule[]
   enrollments Enrollment[]
   accessTiers AccessTierCourse[]
-  forumTopics ForumTopic[]
-  forumBans   ForumBan[]
+  forumTopics  ForumTopic[]
+  forumBans    ForumBan[]
+  liveSessions LiveSession[]
 
   @@index([status, publishedAt])
   @@index([categoryId])
@@ -813,4 +815,27 @@ model ForumBan {
   @@index([userId, revokedAt])
   @@index([courseId, revokedAt])
   @@map("forum_bans")
+}
+
+/// Sesi belajar langsung. Tautannya ditempel Master secara manual (ADR-019),
+/// jadi LMS tidak memanggil API penyedia apa pun dan tidak menyimpan kredensial
+/// Zoom maupun Meet.
+model LiveSession {
+  id              String    @id @default(uuid()) @db.Uuid
+  courseId        String    @map("course_id") @db.Uuid
+  title           String
+  description     String?
+  joinUrl         String    @map("join_url")
+  startsAt        DateTime  @map("starts_at") @db.Timestamptz(6)
+  durationMinutes Int       @default(60) @map("duration_minutes")
+  createdBy       String    @map("created_by") @db.Uuid
+  cancelledAt     DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  creator User   @relation("LiveSessionCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([courseId, startsAt])
+  @@map("live_sessions")
 }

@@ -15,6 +15,7 @@ import { LearningCatalogModule } from './modules/learning-catalog/learning-catal
 import { LearningDeliveryModule } from './modules/learning-delivery/learning-delivery.module';
 import { LearningProgressModule } from './modules/learning-progress/learning-progress.module';
 import { ForumModule } from './modules/forum/forum.module';
+import { LiveSessionModule } from './modules/live-session/live-session.module';
 import { VideoModule } from './modules/video/video.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuditModule } from './shared/audit/audit.module';
@@ -45,6 +46,7 @@ import { CommerceModule } from './modules/commerce/commerce.module';
     LearningProgressModule,
     VideoModule,
     ForumModule,
+    LiveSessionModule,
     CommerceModule,
     HealthModule,
   ],

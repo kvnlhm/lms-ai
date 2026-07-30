@@ -260,8 +260,9 @@ Master dapat:
 - Marketplace kursus.
 - Subscription management.
 - Role mentor atau instruktur.
-- Live class.
-- Integrasi Zoom atau Google Meet.
+- Integrasi Zoom atau Google Meet, yaitu pembuatan rapat otomatis lewat API
+  penyedia. Penjadwalan sesi langsung dengan tautan yang ditempel Master
+  termasuk dalam cakupan; lihat 7.16 dan ADR-019.
 - Sertifikat otomatis.
 - Quiz dan ujian.
 - Assignment dan penilaian manual.
@@ -827,6 +828,45 @@ materi kursusnya, dan melaporkan konten.
 - Pelajar yang hak berpartisipasinya dicabut ditolak saat menulis, dengan
   alasan pencabutan disertakan, tetapi tetap dapat membaca dan melapor.
 - Pengembalian hak tidak menghapus riwayat pencabutan.
+
+---
+
+## 7.16 Live Session
+
+Master menjadwalkan sesi belajar langsung dan menempelkan tautan rapat yang ia
+buat sendiri. LMS tidak memanggil API penyedia; keputusannya dicatat pada
+ADR-019.
+
+### Data Sesi
+
+- Kursus.
+- Judul.
+- Keterangan.
+- Tautan rapat.
+- Waktu mulai.
+- Durasi.
+- Status pembatalan.
+
+### Fitur Master
+
+- Menjadwalkan sesi.
+- Mengubah jadwal, durasi, dan tautan.
+- Membatalkan sesi.
+- Melihat seluruh sesi termasuk yang dibatalkan.
+
+### Fitur Pelajar
+
+- Melihat jadwal sesi pada kursus yang dimiliki.
+- Bergabung lewat tombol yang terbuka menjelang sesi.
+
+### Acceptance Criteria
+
+- Pelajar hanya melihat jadwal kursus yang dimiliki.
+- Tautan wajib https dan berasal dari penyedia rapat yang didukung.
+- Tombol gabung terbuka lima belas menit sebelum sesi dimulai.
+- Tautan tidak lagi dikirim setelah sesi berakhir.
+- Sesi yang dibatalkan hilang dari jadwal Pelajar tetapi tetap tersimpan
+  sebagai riwayat Master.
 
 ---
 
