@@ -7525,13 +7525,14 @@
         "properties": {
           "participationRate": {
             "type": "number",
-            "description": "Persen pelajar aktif yang ikut menulis di forum"
+            "description": "Persen pelajar berhak yang ikut menulis di forum"
           },
           "contributors": {
             "type": "number"
           },
-          "activeLearners": {
-            "type": "number"
+          "eligibleLearners": {
+            "type": "number",
+            "description": "Pelajar dengan enrollment aktif, yaitu yang boleh menulis"
           },
           "topics": {
             "type": "number"
@@ -7549,7 +7550,7 @@
         "required": [
           "participationRate",
           "contributors",
-          "activeLearners",
+          "eligibleLearners",
           "topics",
           "replies",
           "topContributors"

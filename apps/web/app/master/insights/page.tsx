@@ -124,7 +124,7 @@ export default async function InsightsPage({
             <Metric
               label="Ikut menulis di forum"
               value={`${forum.participationRate}%`}
-              hint={`${forum.contributors} dari ${forum.activeLearners} pelajar aktif`}
+              hint={`${forum.contributors} dari ${forum.eligibleLearners} pelajar terdaftar`}
             />
             <Metric
               label="Diskusi baru"

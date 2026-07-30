@@ -1632,10 +1632,11 @@ export interface components {
             replies: number;
         };
         ForumInsightDto: {
-            /** @description Persen pelajar aktif yang ikut menulis di forum */
+            /** @description Persen pelajar berhak yang ikut menulis di forum */
             participationRate: number;
             contributors: number;
-            activeLearners: number;
+            /** @description Pelajar dengan enrollment aktif, yaitu yang boleh menulis */
+            eligibleLearners: number;
             topics: number;
             replies: number;
             topContributors: components["schemas"]["ForumContributorDto"][];

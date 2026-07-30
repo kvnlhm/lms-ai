@@ -31,10 +31,11 @@ export class ForumContributorDto {
 }
 
 export class ForumInsightDto {
-  @ApiProperty({ description: 'Persen pelajar aktif yang ikut menulis di forum' })
+  @ApiProperty({ description: 'Persen pelajar berhak yang ikut menulis di forum' })
   participationRate!: number;
   @ApiProperty() contributors!: number;
-  @ApiProperty() activeLearners!: number;
+  @ApiProperty({ description: 'Pelajar dengan enrollment aktif, yaitu yang boleh menulis' })
+  eligibleLearners!: number;
   @ApiProperty() topics!: number;
   @ApiProperty() replies!: number;
   @ApiProperty({ type: [ForumContributorDto] }) topContributors!: ForumContributorDto[];

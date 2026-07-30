@@ -1620,7 +1620,7 @@ Requires `analytics.read`. Query `days` menerima 7–90, default 30.
     "forum": {
       "participationRate": 21.4,
       "contributors": 9,
-      "activeLearners": 42,
+      "eligibleLearners": 42,
       "topics": 15,
       "replies": 61,
       "topContributors": [{ "userId": "uuid", "fullName": "…", "topics": 3, "replies": 12 }]
@@ -1656,8 +1656,11 @@ Definisi yang dipakai, agar angkanya tidak ditafsirkan keliru:
   pada periode sebelumnya kembali aktif pada periode terakhir. Definisi ini
   dipilih karena dapat dihitung tanpa tabel kohort terpisah.
 - **`busiestHour`** memakai zona waktu server.
-- **`participationRate`** membandingkan penulis forum dengan pelajar aktif pada
-  periode yang sama, sesuai PRD 8.3.
+- **`participationRate`** membandingkan penulis forum dengan `eligibleLearners`,
+  yaitu semua pelajar berenrollment aktif — bukan hanya yang tercatat membuka
+  materi. Seseorang dapat berdiskusi tanpa memicu satu pun `learning_event`,
+  sehingga penyebut berbasis aktivitas dapat lebih kecil daripada pembilangnya
+  dan menghasilkan angka yang mustahil.
 - **`risk.learners`** hanya memuat level `MEDIUM` dan `HIGH`, maksimal 50 baris,
   diurutkan dari yang paling lama tidak aktif. Setiap baris wajib menyertakan
   `reason` sesuai PRD 8.6 acceptance criteria.

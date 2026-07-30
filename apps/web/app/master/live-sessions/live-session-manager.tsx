@@ -197,7 +197,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
         <small className="muted">
           Didukung: Zoom, Google Meet, Microsoft Teams, Whereby, dan Jitsi. Tautan wajib https.
         </small>
-        <div className="rowBetween">
+        <div className="fieldRow">
           <label className="field">
             <span>Mulai</span>
             <input

@@ -1230,3 +1230,44 @@ table.data tbody tr:hover { background: var(--raised); }
   .profileGrid { grid-template-columns: 1fr; }
   .profileFull { grid-column: auto; }
 }
+
+/* ── Utilitas forum, insight, dan sesi langsung ────────────── */
+.stack { display: grid; gap: 14px; }
+ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
+.stack > .card { display: grid; gap: 8px; align-content: start; }
+
+.rowBetween { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.rowBetween > * { min-width: 0; }
+/* Judul dan metadatanya menumpuk, bukan berdempet dalam satu baris. */
+.rowBetween > div { display: grid; gap: 3px; }
+
+.muted { color: var(--muted); }
+
+.tabRow { display: flex; gap: 8px; flex-wrap: wrap; }
+.btnActive { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
+
+/* Jawaban terbaik ditandai garis tepi, bukan warna latar, agar teksnya
+   tetap sekontras balasan lain. */
+.cardAccent { border-color: var(--accent); }
+
+.stack blockquote {
+  margin: 0; padding: 8px 12px; border-left: 3px solid var(--line);
+  color: var(--text-2); font-size: 14px;
+}
+
+/* `.btnSecondary` dan `.btnSmall` sudah dipakai di beberapa halaman tanpa
+   pernah didefinisikan, termasuk tombol "Coba lagi" pemutar video dan tombol
+   di halaman histori. Keduanya kerap dipakai tanpa `.btn`, jadi harus mandiri
+   dan tidak boleh mengandalkan kelas dasar untuk tata letaknya. */
+.btnSecondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 20px; border-radius: var(--r-pill);
+  background: var(--raised); color: var(--text); border: 1px solid var(--line);
+  font-size: 14px; font-weight: 600; transition: background 0.15s;
+}
+.btnSecondary:hover:not(:disabled) { background: var(--raised-2); }
+.btnSmall {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 6px 14px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 600;
+}

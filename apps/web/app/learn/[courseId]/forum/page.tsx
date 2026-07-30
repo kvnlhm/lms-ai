@@ -37,7 +37,7 @@ export default async function CourseForumPage({ params }: Props) {
 
   return (
     <AppShell user={user}>
-      <main className="learnContent">
+      <main className="wrap wrapNarrow">
         <Link className="btnGhost btnSmall" href={`/courses/${courseId}`}>
           <ArrowLeft size={16} /> Kembali ke kursus
         </Link>

@@ -36,7 +36,7 @@ interface RetentionRow {
 
 interface ForumRow {
   contributors: bigint;
-  active_learners: bigint;
+  eligible_learners: bigint;
   topics: bigint;
   replies: bigint;
 }
@@ -156,7 +156,7 @@ export class LearnerInsightsService {
       forum: {
         participationRate: forum.rate,
         contributors: Number(forum.raw.contributors),
-        activeLearners: Number(forum.raw.active_learners),
+        eligibleLearners: Number(forum.raw.eligible_learners),
         topics: Number(forum.raw.topics),
         replies: Number(forum.raw.replies),
         topContributors: contributors.map((row) => ({
@@ -256,15 +256,18 @@ export class LearnerInsightsService {
       )
       SELECT
         (SELECT COUNT(*) FROM authors)::bigint AS contributors,
-        (SELECT COUNT(DISTINCT "user_id") FROM "learning_events"
-          WHERE "occurred_at" >= ${since} AND "user_id" IS NOT NULL)::bigint AS active_learners,
+        -- Penyebutnya adalah semua yang BOLEH menulis, bukan yang tercatat
+        -- membuka materi: seseorang dapat berdiskusi tanpa memicu satu pun
+        -- learning event, sehingga pembilang bisa melampaui penyebut.
+        (SELECT COUNT(DISTINCT "user_id") FROM "enrollments"
+          WHERE "status" = 'ACTIVE')::bigint AS eligible_learners,
         (SELECT COUNT(*) FROM "forum_topics"
           WHERE "created_at" >= ${since} AND "deleted_at" IS NULL)::bigint AS topics,
         (SELECT COUNT(*) FROM "forum_replies"
           WHERE "created_at" >= ${since} AND "deleted_at" IS NULL)::bigint AS replies
     `);
-    const active = Number(raw.active_learners);
-    return { raw, rate: active ? round((Number(raw.contributors) / active) * 100, 1) : 0 };
+    const eligible = Number(raw.eligible_learners);
+    return { raw, rate: eligible ? round((Number(raw.contributors) / eligible) * 100, 1) : 0 };
   }
 
   private async topContributors(since: Date): Promise<ContributorRow[]> {
