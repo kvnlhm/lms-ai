@@ -86,22 +86,32 @@ function CourseCard({ course }: { course: CourseItem }) {
           <span className="coverText">{course.title}</span>
         )}
       </span>
-      <span className="courseBody">
+      <div className="courseBody">
         <span className="courseName">{course.title}</span>
         <span className="eyebrow" style={{ marginTop: 4 }}>
           {course.category?.name ?? 'Tanpa kategori'}
         </span>
         {course.shortDescription ? <span className="courseDesc">{course.shortDescription}</span> : null}
-        <span className="courseFoot">
-          <span className="progress" role="img" aria-label={`Progres ${percent} persen`}>
+        <div className="courseFoot">
+          <div className="courseProgressLabel">
+            <span>{course.enrollment ? 'Progres belajar' : 'Status akses'}</span>
+            <strong>{course.enrollment ? `${percent}%` : 'Belum terdaftar'}</strong>
+          </div>
+          <div className="progress" role="img" aria-label={`Progres ${percent} persen`}>
             <span style={{ width: `${percent}%` }} />
-          </span>
-          <span className="courseStats">
-            <span>{course.enrollment ? `${percent}% selesai` : 'Belum terdaftar'}</span>
+          </div>
+          <div className="courseStats">
             <span>{course.moduleCount} bagian</span>
-          </span>
-        </span>
-      </span>
+            <span>
+              {course.enrollment?.status === 'COMPLETED'
+                ? 'Selesai'
+                : course.enrollment
+                  ? 'Sedang berjalan'
+                  : 'Lihat silabus'}
+            </span>
+          </div>
+        </div>
+      </div>
     </Link>
   );
 }
