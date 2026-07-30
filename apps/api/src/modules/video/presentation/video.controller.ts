@@ -6,7 +6,11 @@ import { ApiErrors } from '../../../shared/http/api-envelope';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { VideoService } from '../application/video.service';
-import { CreatePlaybackSessionDto, CreateVideoUploadIntentDto } from './video.dto';
+import {
+  CreatePlaybackSessionDto,
+  CreateVideoUploadIntentDto,
+  CreateYoutubeVideoDto,
+} from './video.dto';
 
 @ApiTags('video')
 @Controller()
@@ -19,6 +23,15 @@ export class VideoController {
   @ApiErrors(401, 403, 404, 422)
   createIntent(@Body() dto: CreateVideoUploadIntentDto, @CurrentUser() user: AuthenticatedUser) {
     return this.videos.createUploadIntent(dto, user.id);
+  }
+
+  @Post('admin/videos/youtube')
+  @HttpCode(201)
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({ summary: 'Menautkan lesson ke video YouTube unlisted' })
+  @ApiErrors(401, 403, 404, 422)
+  createYoutube(@Body() dto: CreateYoutubeVideoDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.videos.createYoutubeVideo(dto, user.id);
   }
 
   @Put('admin/videos/:videoAssetId/content')

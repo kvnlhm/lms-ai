@@ -66,6 +66,8 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [upload, setUpload] = useState<UploadState | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation | null>(null);
+  const [youtubeLessonId, setYoutubeLessonId] = useState<string | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
 
   /**
    * Menjalankan satu mutation.
@@ -191,6 +193,42 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
         }),
       ),
     );
+
+  async function linkYoutube(lessonId: string, title: string) {
+    if (busy) return;
+    const url = youtubeUrl.trim();
+    if (!url) {
+      setError('Tempel tautan YouTube terlebih dahulu.');
+      return;
+    }
+    setBusy(`youtube-${lessonId}`);
+    setError(null);
+    setReasons([]);
+    try {
+      unwrap(
+        await client().POST('/api/v1/admin/videos/youtube', {
+          body: { lessonId, title, url },
+        }),
+      );
+      setYoutubeLessonId(null);
+      setYoutubeUrl('');
+      setUpload({
+        lessonId,
+        fileName: url,
+        percent: 100,
+        status: 'SUCCESS',
+        message: 'Video YouTube tertaut dan siap diputar.',
+      });
+      router.refresh();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Tautan YouTube gagal disimpan.');
+      if (caught instanceof ApiError) {
+        setReasons(Object.values(caught.fields ?? {}).flat());
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function uploadVideo(lessonId: string, title: string, file: File) {
     if (busy) return;
@@ -467,6 +505,22 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             />
                           </label>
                         ) : null}
+                        {lesson.contentType === 'VIDEO' ? (
+                          <button
+                            className="btnTiny"
+                            type="button"
+                            disabled={busy !== null}
+                            onClick={() => {
+                              setYoutubeUrl('');
+                              setYoutubeLessonId((current) =>
+                                current === lesson.id ? null : lesson.id,
+                              );
+                            }}
+                            aria-expanded={youtubeLessonId === lesson.id}
+                          >
+                            Tautkan YouTube
+                          </button>
+                        ) : null}
                         <span className="inlineActions lessonActions">
                           <button
                             className="iconAction"
@@ -515,6 +569,52 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                           </button>
                         </span>
                       </div>
+                      {youtubeLessonId === lesson.id ? (
+                        <div className="videoUploadProgress">
+                          <label className="field">
+                            <span>Tautan YouTube (unlisted atau publik)</span>
+                            <input
+                              type="url"
+                              inputMode="url"
+                              placeholder="https://www.youtube.com/watch?v=…"
+                              value={youtubeUrl}
+                              disabled={busy !== null}
+                              onChange={(event) => setYoutubeUrl(event.currentTarget.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault();
+                                  void linkYoutube(lesson.id, lesson.title);
+                                }
+                              }}
+                            />
+                          </label>
+                          <small>
+                            Video unlisted tidak muncul di pencarian YouTube, tetapi siapa pun yang
+                            memegang tautannya tetap dapat menontonnya tanpa membeli kursus.
+                          </small>
+                          <span className="inlineActions">
+                            <button
+                              className="btnSecondary btnSmall"
+                              type="button"
+                              disabled={busy !== null}
+                              onClick={() => void linkYoutube(lesson.id, lesson.title)}
+                            >
+                              {busy === `youtube-${lesson.id}` ? 'Menyimpan…' : 'Simpan tautan'}
+                            </button>
+                            <button
+                              className="btnGhost btnSmall"
+                              type="button"
+                              disabled={busy !== null}
+                              onClick={() => {
+                                setYoutubeLessonId(null);
+                                setYoutubeUrl('');
+                              }}
+                            >
+                              Batal
+                            </button>
+                          </span>
+                        </div>
+                      ) : null}
                       {upload?.lessonId === lesson.id &&
                       (upload.status === 'UPLOADING' || upload.status === 'PROCESSING') ? (
                         <div className="videoUploadProgress" role="status" aria-live="polite">

@@ -22,6 +22,51 @@ interface UploadIntent {
   sizeBytes: number;
 }
 
+interface YoutubeVideoInput {
+  lessonId: string;
+  title: string;
+  url: string;
+}
+
+const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
+const YOUTUBE_HOSTS = new Set(['youtube.com', 'm.youtube.com', 'youtube-nocookie.com']);
+
+/**
+ * Mengambil ID video dari berbagai bentuk tautan YouTube yang biasa disalin
+ * orang: `watch?v=`, `youtu.be/`, `/embed/`, dan `/shorts/`.
+ *
+ * Mengembalikan `null` bila tautan bukan YouTube atau ID-nya tidak berbentuk
+ * sah, sehingga pemanggil dapat menolak masukan alih-alih menyimpan tautan
+ * yang nantinya gagal diputar.
+ */
+export function parseYoutubeVideoId(rawUrl: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(rawUrl.trim());
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+
+  const host = url.hostname.replace(/^www\./, '').toLowerCase();
+  let candidate: string | null = null;
+
+  if (host === 'youtu.be') {
+    candidate = url.pathname.split('/').filter(Boolean)[0] ?? null;
+  } else if (YOUTUBE_HOSTS.has(host)) {
+    if (url.pathname === '/watch') {
+      candidate = url.searchParams.get('v');
+    } else {
+      const [segment, value] = url.pathname.split('/').filter(Boolean);
+      if (segment === 'embed' || segment === 'shorts' || segment === 'live') {
+        candidate = value ?? null;
+      }
+    }
+  }
+
+  return candidate && YOUTUBE_ID_PATTERN.test(candidate) ? candidate : null;
+}
+
 @Injectable()
 export class VideoService implements LessonVideoCleanupPort {
   private readonly config: AppConfig['video'];
@@ -162,7 +207,8 @@ export class VideoService implements LessonVideoCleanupPort {
         videoAssetId: asset.id,
         provider: asset.provider,
         status: VideoStatus.AVAILABLE,
-        sizeBytes: asset.sizeBytes.toString(),
+        // Sudah diverifikasi sama dengan `asset.sizeBytes` di awal metode ini.
+        sizeBytes: String(contentLength),
       };
     } catch (error) {
       await rm(tempPath, { force: true });
@@ -176,6 +222,76 @@ export class VideoService implements LessonVideoCleanupPort {
       });
       throw AppError.validation({ file: ['Upload MP4 gagal atau konten tidak valid.'] });
     }
+  }
+
+  /**
+   * Menautkan lesson ke video YouTube alih-alih berkas yang diunggah ke sini.
+   *
+   * Tidak digandengkan ke `VIDEO_PROVIDER`: setelan itu menentukan ke mana
+   * berkas diunggah untuk seluruh deployment, sedangkan YouTube adalah pilihan
+   * per pelajaran yang tidak memakai penyimpanan kita sama sekali.
+   */
+  async createYoutubeVideo(input: YoutubeVideoInput, userId: string) {
+    const youtubeVideoId = parseYoutubeVideoId(input.url);
+    if (!youtubeVideoId) {
+      throw AppError.validation({
+        url: ['Tautan YouTube tidak dikenali. Gunakan tautan watch, youtu.be, embed, atau shorts.'],
+      });
+    }
+
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: input.lessonId },
+      select: { id: true, contentType: true },
+    });
+    if (!lesson) throw AppError.notFound();
+    if (lesson.contentType !== 'VIDEO') {
+      throw AppError.validation({ lessonId: ['Lesson bukan bertipe VIDEO.'] });
+    }
+
+    const { asset, replaced } = await this.prisma.$transaction(async (tx) => {
+      const previous = await tx.videoAsset.findMany({
+        where: { lessonId: input.lessonId, status: VideoStatus.AVAILABLE, deletedAt: null },
+        select: { id: true, objectKey: true },
+      });
+      const replacedAt = new Date();
+      if (previous.length > 0) {
+        await tx.videoAsset.updateMany({
+          where: { id: { in: previous.map(({ id }) => id) } },
+          data: { status: VideoStatus.DELETED, deletedAt: replacedAt },
+        });
+      }
+      const created = await tx.videoAsset.create({
+        data: {
+          lessonId: input.lessonId,
+          createdBy: userId,
+          provider: VideoProvider.YOUTUBE,
+          // Pegangan internal, bukan ID YouTube: kolomnya unik global, sehingga
+          // memakai ID YouTube akan melarang satu video dipakai di dua lesson.
+          providerVideoId: randomUUID(),
+          sourceUrl: `https://www.youtube.com/watch?v=${youtubeVideoId}`,
+          title: input.title,
+          // Tidak ada berkas yang kita kuasai, jadi metadata berkas dibiarkan kosong.
+          status: VideoStatus.AVAILABLE,
+        },
+      });
+      return { asset: created, replaced: previous };
+    });
+
+    // Berkas self-hosted yang digantikan tidak lagi punya perujuk.
+    await Promise.allSettled(
+      replaced
+        .map(({ objectKey }) => objectKey)
+        .filter((objectKey): objectKey is string => Boolean(objectKey))
+        .map((objectKey) => rm(join(this.config.storagePath, objectKey), { force: true })),
+    );
+
+    return {
+      videoAssetId: asset.id,
+      provider: asset.provider,
+      status: asset.status,
+      youtubeVideoId,
+      sourceUrl: asset.sourceUrl,
+    };
   }
 
   async createPlaybackSession(lessonId: string, userId: string, deviceId?: string) {
@@ -195,11 +311,21 @@ export class VideoService implements LessonVideoCleanupPort {
         expiresAt,
       },
     });
+    // Video sematan diputar oleh penyedia luar, jadi tidak ada berkas yang
+    // boleh dialirkan lewat endpoint konten kita.
+    const embedded = asset.provider === VideoProvider.YOUTUBE;
+    const youtubeVideoId = embedded && asset.sourceUrl ? parseYoutubeVideoId(asset.sourceUrl) : null;
+
     return {
       playbackSessionId: playback.id,
       provider: asset.provider,
       providerVideoId: asset.providerVideoId,
-      playbackUrl: `/api/v1/playback-sessions/${playback.id}/content`,
+      kind: embedded ? ('EMBED' as const) : ('FILE' as const),
+      playbackUrl: embedded ? null : `/api/v1/playback-sessions/${playback.id}/content`,
+      // `youtube-nocookie` supaya pelajar tidak dilacak sebelum menekan putar.
+      embedUrl: youtubeVideoId
+        ? `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0&modestbranding=1`
+        : null,
       expiresAt: expiresAt.toISOString(),
       drm: { enabled: false, type: 'NONE' },
     };

@@ -9,6 +9,15 @@ export class CreateVideoUploadIntentDto {
   @ApiProperty() @IsInt() @Min(1) sizeBytes!: number;
 }
 
+export class CreateYoutubeVideoDto {
+  @ApiProperty({ format: 'uuid' }) @IsUUID() lessonId!: string;
+  @ApiProperty() @IsString() @MinLength(1) @MaxLength(200) title!: string;
+  @ApiProperty({ example: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })
+  @IsString()
+  @MaxLength(500)
+  url!: string;
+}
+
 export class CreatePlaybackSessionDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(200) deviceId?: string;
 }

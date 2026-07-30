@@ -659,6 +659,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/videos/youtube": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Menautkan lesson ke video YouTube unlisted */
+        post: operations["VideoController_createYoutube"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/videos/{videoAssetId}/content": {
         parameters: {
             query?: never;
@@ -1566,6 +1583,13 @@ export interface components {
             mimeType: string;
             sizeBytes: number;
         };
+        CreateYoutubeVideoDto: {
+            /** Format: uuid */
+            lessonId: string;
+            title: string;
+            /** @example https://www.youtube.com/watch?v=dQw4w9WgXcQ */
+            url: string;
+        };
         CreatePlaybackSessionDto: {
             deviceId?: string;
         };
@@ -1885,7 +1909,6 @@ export interface components {
             /** @example true */
             accepted: boolean;
         };
-        MidtransNotificationDto: Record<string, never>;
         CreateAccessTierDto: {
             /** @example Pro 12 Bulan */
             name: string;
@@ -4094,6 +4117,53 @@ export interface operations {
             };
         };
     };
+    VideoController_createYoutube: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateYoutubeVideoDto"];
+            };
+        };
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     VideoController_upload: {
         parameters: {
             query?: never;
@@ -4934,11 +5004,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MidtransNotificationDto"];
-            };
-        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

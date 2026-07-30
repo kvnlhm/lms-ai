@@ -1400,6 +1400,38 @@ Untuk `SELF_HOSTED`, klien mengirim body MP4 mentah ke `uploadUrl`. Upload
 bersifat streaming, wajib menyertakan `Content-Length`, dan hanya menerima MP4
 browser-compatible. Tidak ada transcoding atau DRM.
 
+### POST `/admin/videos/youtube`
+
+Requires `courses.manage`. Menautkan pelajaran ke video YouTube alih-alih
+mengunggah berkas. Lihat ADR-017.
+
+```json
+{
+  "lessonId": "uuid",
+  "title": "Dasar Prompt Engineering",
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "videoAssetId": "uuid",
+    "provider": "YOUTUBE",
+    "status": "AVAILABLE",
+    "youtubeVideoId": "dQw4w9WgXcQ",
+    "sourceUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  }
+}
+```
+
+Bentuk tautan yang diterima: `watch?v=`, `youtu.be/`, `/embed/`, `/shorts/`, dan
+`/live/`, pada host YouTube yang dikenal. Selain itu dijawab `422`. Video
+menjadi `AVAILABLE` seketika karena tidak ada berkas yang perlu diproses, dan
+video yang sedang aktif pada pelajaran tersebut ditandai `DELETED`.
+
 ### POST `/webhooks/bunny-stream`
 
 Menerima status `CREATED`, `UPLOADING`, `PROCESSING`, `AVAILABLE`, `FAILED`, atau `DELETED`.
@@ -1432,7 +1464,9 @@ Response:
     "playbackSessionId": "uuid",
     "provider": "SELF_HOSTED",
     "providerVideoId": "provider-video-guid",
+    "kind": "FILE",
     "playbackUrl": "/api/v1/playback-sessions/uuid/content",
+    "embedUrl": null,
     "expiresAt": "2026-07-28T12:05:00Z",
     "drm": {
       "enabled": false,
@@ -1445,6 +1479,13 @@ Response:
   }
 }
 ```
+
+`kind` menentukan cara memutar dan hanya satu URL yang terisi:
+
+- `FILE` — video dialirkan oleh server ini. `playbackUrl` terisi, `embedUrl` null.
+- `EMBED` — video diputar penyedia luar di dalam iframe. `embedUrl` terisi
+  (`youtube-nocookie.com/embed/...`), `playbackUrl` null. Endpoint konten tidak
+  pernah melayani aset semacam ini.
 
 Playback URL bersifat singkat, scoped ke video, dibuat server-side, tidak disimpan permanen, dan tidak dicatat pada log.
 

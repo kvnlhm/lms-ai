@@ -586,6 +586,15 @@ Contoh tindakan:
 - Wajib atau opsional.
 - Preview tersedia atau tidak.
 
+### Sumber Materi Video
+
+Materi video dapat berasal dari dua sumber, dipilih per pelajaran:
+
+- Unggahan MP4 ke penyimpanan LMS.
+- Tautan video YouTube, termasuk unlisted.
+
+Keputusan dan batasannya dicatat pada ADR-017.
+
 ### Fitur
 
 - Menambah materi.
@@ -595,6 +604,7 @@ Contoh tindakan:
 - Mengatur status.
 - Mengunggah file.
 - Menambahkan video.
+- Menautkan video YouTube.
 - Menentukan syarat penyelesaian.
 
 ### Acceptance Criteria
@@ -605,6 +615,10 @@ Contoh tindakan:
 - Sistem mencatat saat materi diselesaikan.
 - Materi yang dihapus tidak boleh merusak histori progres.
 - File harus melalui validasi jenis dan ukuran.
+- Tautan YouTube harus divalidasi dan ditolak bila bukan tautan video YouTube.
+- Menautkan video YouTube menggantikan video yang sedang aktif pada pelajaran itu.
+- Master diberi tahu bahwa tautan unlisted tetap dapat ditonton siapa pun yang
+  memegang tautannya.
 
 ---
 

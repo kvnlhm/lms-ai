@@ -3255,6 +3255,68 @@
         ]
       }
     },
+    "/api/v1/admin/videos/youtube": {
+      "post": {
+        "operationId": "VideoController_createYoutube",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateYoutubeVideoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menautkan lesson ke video YouTube unlisted",
+        "tags": [
+          "video"
+        ]
+      }
+    },
     "/api/v1/admin/videos/{videoAssetId}/content": {
       "put": {
         "operationId": "VideoController_upload",
@@ -4571,16 +4633,6 @@
       "post": {
         "operationId": "CommerceController_midtransWebhook",
         "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MidtransNotificationDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "",
@@ -6712,6 +6764,27 @@
           "sizeBytes"
         ]
       },
+      "CreateYoutubeVideoDto": {
+        "type": "object",
+        "properties": {
+          "lessonId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+          }
+        },
+        "required": [
+          "lessonId",
+          "title",
+          "url"
+        ]
+      },
       "CreatePlaybackSessionDto": {
         "type": "object",
         "properties": {
@@ -7764,10 +7837,6 @@
         "required": [
           "accepted"
         ]
-      },
-      "MidtransNotificationDto": {
-        "type": "object",
-        "properties": {}
       },
       "CreateAccessTierDto": {
         "type": "object",

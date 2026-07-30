@@ -81,6 +81,7 @@ enum LessonProgressStatus {
 enum VideoProvider {
   SELF_HOSTED
   BUNNY_STREAM
+  YOUTUBE
 }
 
 enum VideoStatus {
@@ -495,10 +496,14 @@ model VideoAsset {
   provider        VideoProvider @default(SELF_HOSTED)
   providerVideoId String        @unique @map("provider_video_id")
   objectKey       String?       @map("object_key")
-  originalName    String        @map("original_name")
+  // Kosong untuk video yang tidak diunggah ke sini, misalnya YOUTUBE:
+  // tidak ada berkas, tipe MIME, maupun ukuran yang kita kuasai.
+  originalName    String?       @map("original_name")
   title           String
-  mimeType        String        @map("mime_type")
-  sizeBytes       BigInt        @map("size_bytes")
+  mimeType        String?       @map("mime_type")
+  sizeBytes       BigInt?       @map("size_bytes")
+  // URL kanonis di penyedia eksternal. Hanya terisi untuk provider eksternal.
+  sourceUrl       String?       @map("source_url")
   status          VideoStatus   @default(CREATED)
   processingError String?       @map("processing_error")
   createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)

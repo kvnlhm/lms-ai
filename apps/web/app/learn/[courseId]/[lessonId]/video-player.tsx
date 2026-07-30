@@ -3,14 +3,24 @@
 import { useEffect, useState } from 'react';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 
+/**
+ * Respons playback belum dideskripsikan sebagai DTO di OpenAPI, jadi bentuknya
+ * ditegaskan di sini seperti pemanggil lain di aplikasi ini.
+ */
+interface PlaybackSession {
+  kind: 'FILE' | 'EMBED';
+  playbackUrl: string | null;
+  embedUrl: string | null;
+}
+
 export function VideoPlayer({ lessonId }: { lessonId: string }) {
-  const [url, setUrl] = useState<string | null>(null);
+  const [session, setSession] = useState<PlaybackSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
-    setUrl(null);
+    setSession(null);
     setError(null);
     void (async () => {
       try {
@@ -19,8 +29,8 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
             params: { path: { lessonId } },
             body: { deviceId: navigator.userAgent.slice(0, 200) },
           }),
-        ) as unknown as { playbackUrl: string };
-        if (active) setUrl(playback.playbackUrl);
+        ) as unknown as PlaybackSession;
+        if (active) setSession(playback);
       } catch (caught) {
         if (active) {
           setError(caught instanceof ApiError ? caught.message : 'Video tidak dapat dimuat.');
@@ -42,15 +52,44 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
       </div>
     );
   }
-  if (!url) return <p className="stageNote">Menyiapkan video…</p>;
+  if (!session) return <p className="stageNote">Menyiapkan video…</p>;
+
+  if (session.kind === 'EMBED') {
+    if (!session.embedUrl) {
+      return (
+        <div className="notice noticeError" role="alert">
+          <p>Tautan video tidak valid. Minta Master memperbarui tautannya.</p>
+        </div>
+      );
+    }
+    return (
+      <iframe
+        src={session.embedUrl}
+        title="Video pelajaran"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+        referrerPolicy="strict-origin-when-cross-origin"
+        style={{
+          width: '100%',
+          aspectRatio: '16 / 9',
+          maxHeight: '70vh',
+          border: 0,
+          background: '#000',
+          borderRadius: 12,
+        }}
+      />
+    );
+  }
+
+  if (!session.playbackUrl) return <p className="stageNote">Menyiapkan video…</p>;
 
   return (
     <video
       controls
       preload="metadata"
-      src={url}
+      src={session.playbackUrl}
       onError={() => {
-        setUrl(null);
+        setSession(null);
         setError(
           'Video tersedia di kursus, tetapi file tidak dapat diputar. Minta Master mengunggah ulang video MP4.',
         );

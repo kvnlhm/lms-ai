@@ -33,3 +33,7 @@
 | ADR-011 | Accepted | Prisma |
 | ADR-012 | Accepted | BullMQ |
 | ADR-013 | Accepted | Video provider adapter |
+| ADR-014 | Accepted | Validasi biaya video self-hosted |
+| ADR-015 | Accepted | Gambar publik self-hosted |
+| ADR-016 | Accepted | Registration commerce dan access tier |
+| ADR-017 | Accepted | YouTube sebagai sumber video opsional |
