@@ -43,39 +43,51 @@ export default async function MasterUsersPage({ searchParams }: Props) {
         <div className="pageHead">
           <div className="pageHeadMain">
             <h1 className="pageTitle">Pengguna</h1>
-            <p className="pageSub">{list.meta.total} akun ditemukan.</p>
+            <p className="pageSub">
+              Kelola akun, undangan, status akses, dan pemulihan akun pengguna.
+            </p>
           </div>
         </div>
 
-        <form className="toolbar" action="/master/users">
-          <input
-            className="input"
-            type="search"
-            name="search"
-            defaultValue={params.search}
-            placeholder="Cari nama atau email"
-            aria-label="Cari pengguna"
-          />
-          <select className="input" name="role" defaultValue={role ?? ''} aria-label="Filter role">
-            <option value="">Semua role</option>
-            <option value="STUDENT">Pelajar</option>
-            <option value="MASTER">Master</option>
-          </select>
-          <select
-            className="input"
-            name="status"
-            defaultValue={status ?? ''}
-            aria-label="Filter status"
-          >
-            <option value="">Semua status</option>
-            <option value="ACTIVE">Aktif</option>
-            <option value="INACTIVE">Tidak aktif</option>
-            <option value="SUSPENDED">Ditangguhkan</option>
-          </select>
-          <button className="btn" type="submit">Terapkan</button>
-        </form>
+        <section className="card userFilterCard" aria-label="Filter pengguna">
+          <form className="userFilterBar" action="/master/users">
+            <label className="userSearch">
+              <span className="srOnly">Cari pengguna</span>
+              <span aria-hidden="true">⌕</span>
+              <input
+                type="search"
+                name="search"
+                defaultValue={params.search}
+                placeholder="Cari nama atau email"
+              />
+            </label>
+            <label>
+              <span className="srOnly">Filter role</span>
+              <select name="role" defaultValue={role ?? ''}>
+                <option value="">Semua role</option>
+                <option value="STUDENT">Pelajar</option>
+                <option value="MASTER">Master</option>
+              </select>
+            </label>
+            <label>
+              <span className="srOnly">Filter status</span>
+              <select name="status" defaultValue={status ?? ''}>
+                <option value="">Semua status</option>
+                <option value="ACTIVE">Aktif</option>
+                <option value="INACTIVE">Tidak aktif</option>
+                <option value="SUSPENDED">Ditangguhkan</option>
+              </select>
+            </label>
+            <button className="btn" type="submit">Terapkan</button>
+            {params.search || role || status ? (
+              <Link className="btn btnGhost" href="/master/users">
+                Reset
+              </Link>
+            ) : null}
+          </form>
+        </section>
 
-        <UserManager users={list.items} />
+        <UserManager users={list.items} total={list.meta.total} />
 
         {list.meta.totalPages > 1 ? (
           <nav aria-label="Navigasi halaman" className="toolbar" style={{ justifyContent: 'center' }}>

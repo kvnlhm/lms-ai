@@ -3,16 +3,18 @@
 import type { Schemas } from '@lms/api-client';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { StatusPill } from '../../components/status-pill';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 
 type User = Schemas['AdminUserListItemDto'];
 
-export function UserManager({ users }: { users: User[] }) {
+export function UserManager({ users, total }: { users: User[]; total: number }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [credentialUrl, setCredentialUrl] = useState<string | null>(null);
   const [credentialLabel, setCredentialLabel] = useState('Tautan');
+  const [showCreate, setShowCreate] = useState(false);
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,6 +36,7 @@ export function UserManager({ users }: { users: User[] }) {
         `${window.location.origin}/accept-invitation?token=${encodeURIComponent(created.invitationToken)}`,
       );
       event.currentTarget.reset();
+      setShowCreate(false);
     });
   }
 
@@ -90,44 +93,115 @@ export function UserManager({ users }: { users: User[] }) {
 
   return (
     <>
-      <section className="card" style={{ marginBottom: 18 }}>
-        <h2 className="sectionTitle">Tambah pengguna</h2>
-        <form onSubmit={create}>
-          <div className="formGrid">
-            <div className="field">
-              <label htmlFor="fullName">Nama lengkap</label>
-              <input id="fullName" name="fullName" required minLength={2} disabled={busy !== null} />
-            </div>
-            <div className="field">
-              <label htmlFor="email">Email</label>
-              <input id="email" name="email" type="email" required disabled={busy !== null} />
-            </div>
-            <div className="field">
-              <label htmlFor="phone">Nomor telepon (opsional)</label>
-              <input id="phone" name="phone" disabled={busy !== null} />
-            </div>
-            <div className="field">
-              <label>Role</label>
-              <input value="Pelajar" readOnly aria-label="Role pengguna baru" />
-            </div>
-          </div>
-          <button className="btn" type="submit" disabled={busy !== null}>
-            {busy === 'create' ? 'Membuat…' : 'Buat dan terbitkan undangan'}
-          </button>
-        </form>
-        {error ? <p className="fieldError" role="alert">{error}</p> : null}
-        {credentialUrl ? (
-          <div className="notice" role="status" style={{ marginTop: 14 }}>
-            <strong>{credentialLabel} hanya ditampilkan kali ini.</strong>
-            <input value={credentialUrl} readOnly aria-label={credentialLabel} />
-            <button className="btn btnGhost" type="button" onClick={() => navigator.clipboard.writeText(credentialUrl)}>
-              Salin tautan
-            </button>
-          </div>
-        ) : null}
-      </section>
+      <div className="userListHead">
+        <div>
+          <h2>Daftar pengguna</h2>
+          <p>{total.toLocaleString('id-ID')} akun ditemukan</p>
+        </div>
+        <button
+          className="btn"
+          type="button"
+          aria-expanded={showCreate}
+          aria-controls="create-user-panel"
+          onClick={() => {
+            setShowCreate((value) => !value);
+            setError(null);
+          }}
+        >
+          <span aria-hidden="true">＋</span>
+          {showCreate ? 'Tutup formulir' : 'Tambah pengguna'}
+        </button>
+      </div>
 
-      <section className="card" style={{ padding: '6px 0' }}>
+      {showCreate ? (
+        <section className="card userCreateCard" id="create-user-panel">
+          <div className="panelHead">
+            <div>
+              <h2>Undang pengguna baru</h2>
+              <p className="pageSub">
+                Akun dibuat sebagai Pelajar aktif. Bagikan tautan undangan secara aman.
+              </p>
+            </div>
+          </div>
+          <form onSubmit={create}>
+            <div className="userCreateGrid">
+              <div className="field">
+                <label htmlFor="fullName">Nama lengkap</label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  placeholder="Nama pengguna"
+                  required
+                  minLength={2}
+                  disabled={busy !== null}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="email">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="nama@contoh.com"
+                  required
+                  disabled={busy !== null}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="phone">Nomor telepon <span>(opsional)</span></label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="+62"
+                  disabled={busy !== null}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="newUserRole">Role</label>
+                <input id="newUserRole" value="Pelajar" readOnly aria-label="Role pengguna baru" />
+              </div>
+            </div>
+            <div className="userCreateActions">
+              <button
+                className="btn btnGhost"
+                type="button"
+                disabled={busy !== null}
+                onClick={() => setShowCreate(false)}
+              >
+                Batal
+              </button>
+              <button className="btn" type="submit" disabled={busy !== null}>
+                {busy === 'create' ? 'Membuat…' : 'Buat undangan'}
+              </button>
+            </div>
+          </form>
+        </section>
+      ) : null}
+
+      {error ? <p className="notice noticeError userManagerNotice" role="alert">{error}</p> : null}
+
+      {credentialUrl ? (
+        <div className="notice noticeInfo credentialNotice" role="status">
+          <span aria-hidden="true">✓</span>
+          <div>
+            <strong>{credentialLabel} hanya ditampilkan kali ini.</strong>
+            <p>Simpan atau bagikan kepada pengguna melalui saluran yang aman.</p>
+            <div className="credentialRow">
+              <input value={credentialUrl} readOnly aria-label={credentialLabel} />
+              <button
+                className="btn btnGhost"
+                type="button"
+                onClick={() => navigator.clipboard.writeText(credentialUrl)}
+              >
+                Salin tautan
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <section className="card userTableCard">
         <div className="tableWrap">
           <table className="data">
             <thead>
@@ -144,24 +218,29 @@ export function UserManager({ users }: { users: User[] }) {
               {users.map((item) => (
                 <tr key={item.id}>
                   <td>
-                    <span className="cellTitle">{item.fullName}</span>
-                    <span className="cellSub">{item.email}</span>
+                    <span className="userIdentity">
+                      <span className="userAvatar" aria-hidden="true">{initials(item.fullName)}</span>
+                      <span>
+                        <span className="cellTitle">{item.fullName}</span>
+                        <span className="cellSub">{item.email}</span>
+                      </span>
+                    </span>
                   </td>
-                  <td>{item.role === 'MASTER' ? 'Master' : 'Pelajar'}</td>
-                  <td>{statusLabel(item.status)}</td>
+                  <td><span className="roleBadge">{item.role === 'MASTER' ? 'Master' : 'Pelajar'}</span></td>
+                  <td><StatusPill status={item.status} /></td>
                   <td>{formatDate(item.lastLoginAt)}</td>
                   <td>{formatDate(item.createdAt)}</td>
                   <td>
                     <div className="inlineActions">
-                      <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => issuePasswordReset(item)}>
+                      <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => issuePasswordReset(item)}>
                         Reset password
                       </button>
                       {item.status === 'SUSPENDED' ? (
-                        <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => activate(item)}>
+                        <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => activate(item)}>
                           Aktifkan
                         </button>
                       ) : (
-                        <button className="btn btnDanger" type="button" disabled={busy !== null} onClick={() => suspend(item)}>
+                        <button className="btnTiny userDangerAction" type="button" disabled={busy !== null} onClick={() => suspend(item)}>
                           Tangguhkan
                         </button>
                       )}
@@ -171,17 +250,27 @@ export function UserManager({ users }: { users: User[] }) {
               ))}
             </tbody>
           </table>
+          {users.length === 0 ? (
+            <div className="empty">
+              Tidak ada pengguna yang sesuai dengan pencarian atau filter ini.
+            </div>
+          ) : null}
         </div>
       </section>
     </>
   );
 }
 
-function statusLabel(status: string): string {
-  return { ACTIVE: 'Aktif', INACTIVE: 'Tidak aktif', SUSPENDED: 'Ditangguhkan' }[status] ?? status;
-}
-
 function formatDate(value: unknown): string {
   if (!value) return 'Belum pernah';
   return new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(String(value)));
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
 }
