@@ -1503,3 +1503,91 @@ Digunakan untuk memvalidasi sesi, mendeteksi concurrent playback, dan mencatat a
 ### POST `/playback-sessions/{playbackSessionId}/end`
 
 Mengakhiri active playback session.
+
+---
+
+## 32. Discussion Forum API
+
+Mengikuti PRD 7.12. Pencabutan hak berpartisipasi mengikuti ADR-018.
+
+Dua lapis pemeriksaan berlaku dan tidak boleh tertukar:
+
+1. **Akses kursus** — Pelajar wajib punya enrollment aktif pada kursus pemilik
+   forum. Gagal menghasilkan `404`, bukan `403`, agar keberadaan forum kursus
+   lain tidak dapat disimpulkan.
+2. **Hak berpartisipasi** — Pelajar yang haknya dicabut tetap boleh membaca dan
+   melapor, tetapi ditolak `403` saat menulis, dengan alasan pencabutan
+   disertakan pada pesan.
+
+Konten berstatus `HIDDEN` dan balasan `isHidden` tidak pernah muncul pada
+endpoint Pelajar, termasuk bagi penulisnya sendiri.
+
+### Endpoint Pelajar
+
+| Metode | Path | Keterangan |
+| --- | --- | --- |
+| GET | `/learn/courses/{courseId}/forum/topics` | Daftar topik; filter `lessonId`, `status`, `search`, `page`, `pageSize` |
+| POST | `/learn/courses/{courseId}/forum/topics` | Membuat topik |
+| GET | `/learn/forum/topics/{topicId}` | Detail topik beserta balasan |
+| PATCH | `/learn/forum/topics/{topicId}` | Mengubah topik milik sendiri |
+| DELETE | `/learn/forum/topics/{topicId}` | Menghapus topik milik sendiri |
+| POST | `/learn/forum/topics/{topicId}/replies` | Membalas |
+| PATCH | `/learn/forum/replies/{replyId}` | Mengubah balasan milik sendiri |
+| DELETE | `/learn/forum/replies/{replyId}` | Menghapus balasan milik sendiri |
+| POST | `/learn/forum/topics/{topicId}/reactions` | Menyalakan atau mematikan reaksi |
+| POST | `/learn/forum/replies/{replyId}/reactions` | Menyalakan atau mematikan reaksi |
+| POST | `/learn/forum/reports` | Melaporkan topik atau balasan |
+
+Mengubah atau menghapus milik orang lain dijawab `403`. Menulis pada topik
+berstatus `LOCKED` dijawab `409` dengan kode `DISCUSSION_LOCKED`.
+
+Detail topik menyertakan dua medan bantu antarmuka:
+
+```json
+{
+  "data": {
+    "canParticipate": false,
+    "participationBlockedReason": "Berkomentar kasar berulang kali."
+  }
+}
+```
+
+Keduanya hanya untuk menyembunyikan kotak balasan lebih awal. Server tetap
+memeriksa ulang setiap permintaan tulis dan tidak pernah memercayai nilai ini.
+
+### Endpoint Master
+
+Seluruhnya memerlukan permission `discussions.moderate`.
+
+| Metode | Path | Keterangan |
+| --- | --- | --- |
+| GET | `/admin/forum/topics` | Seluruh topik termasuk yang disembunyikan |
+| PATCH | `/admin/forum/topics/{topicId}/status` | `OPEN`, `RESOLVED`, `LOCKED`, `HIDDEN` |
+| PATCH | `/admin/forum/topics/{topicId}/pin` | Menyematkan |
+| PATCH | `/admin/forum/topics/{topicId}/best-reply` | Menandai jawaban terbaik; `replyId` kosong membatalkan |
+| POST | `/admin/forum/topics/{topicId}/replies` | Master ikut menjawab |
+| PATCH | `/admin/forum/replies/{replyId}/hidden` | Menyembunyikan balasan |
+| DELETE | `/admin/forum/topics/{topicId}` | Menghapus topik |
+| DELETE | `/admin/forum/replies/{replyId}` | Menghapus balasan |
+| GET | `/admin/forum/reports` | Daftar laporan; filter `status` |
+| PATCH | `/admin/forum/reports/{reportId}` | Menutup laporan: `ACTIONED` atau `DISMISSED` |
+| GET | `/admin/forum/bans` | Daftar pencabutan; `activeOnly` default true |
+| POST | `/admin/forum/bans` | Mencabut hak berpartisipasi |
+| DELETE | `/admin/forum/bans/{banId}` | Mengembalikan hak |
+
+Menandai jawaban terbaik sekaligus mengubah status topik menjadi `RESOLVED`.
+
+Mencabut hak berpartisipasi:
+
+```json
+{
+  "userId": "uuid",
+  "courseId": "uuid",
+  "reason": "Berkomentar kasar berulang kali.",
+  "expiresAt": "2026-08-30T00:00:00Z"
+}
+```
+
+`courseId` kosong berarti seluruh forum. `expiresAt` kosong berarti berlaku
+sampai dikembalikan. Mencabut dua kali pada cakupan yang sama dijawab `422`.
+Pengembalian hak mengisi `revokedAt` dan tidak pernah menghapus barisnya.

@@ -797,6 +797,7 @@ Forum dapat dikaitkan dengan:
 - Menghapus konten.
 - Melihat laporan konten.
 - Menandai jawaban terbaik.
+- Mencabut dan mengembalikan hak berpartisipasi seorang Pelajar.
 
 ### Status Diskusi
 
@@ -804,6 +805,15 @@ Forum dapat dikaitkan dengan:
 - Resolved.
 - Locked.
 - Hidden.
+
+### Pencabutan Hak Berpartisipasi
+
+Master dapat mencabut hak menulis seorang Pelajar, pada satu kursus atau di
+seluruh forum, dengan batas waktu atau sampai dikembalikan. Keputusan dan
+batasannya dicatat pada ADR-018.
+
+Yang dicabut hanya hak menulis. Pelajar tetap dapat membaca forum, mengikuti
+materi kursusnya, dan melaporkan konten.
 
 ### Acceptance Criteria
 
@@ -813,6 +823,10 @@ Forum dapat dikaitkan dengan:
 - Konten yang dilaporkan masuk daftar review.
 - Semua postingan memiliki timestamp.
 - Konten hidden tidak terlihat oleh Pelajar.
+- Diskusi yang dikunci menolak balasan baru dari Pelajar.
+- Pelajar yang hak berpartisipasinya dicabut ditolak saat menulis, dengan
+  alasan pencabutan disertakan, tetapi tetap dapat membaca dan melapor.
+- Pengembalian hak tidak menghapus riwayat pencabutan.
 
 ---
 

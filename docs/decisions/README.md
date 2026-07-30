@@ -37,3 +37,4 @@
 | ADR-015 | Accepted | Gambar publik self-hosted |
 | ADR-016 | Accepted | Registration commerce dan access tier |
 | ADR-017 | Accepted | YouTube sebagai sumber video opsional |
+| ADR-018 | Accepted | Pencabutan hak berpartisipasi di forum |

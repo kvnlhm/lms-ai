@@ -151,6 +151,12 @@ model User {
   playbackSessions       VideoPlaybackSession[]
   notificationPreference NotificationPreference?
   registrationOrders     RegistrationOrder[]     @relation("ProvisionedRegistrationUser")
+  forumTopics            ForumTopic[]            @relation("ForumTopicAuthor")
+  forumReplies           ForumReply[]            @relation("ForumReplyAuthor")
+  forumReactions         ForumReaction[]         @relation("ForumReactionUser")
+  forumReports           ForumReport[]           @relation("ForumReportReporter")
+  forumBans              ForumBan[]              @relation("ForumBanUser")
+  forumBansIssued        ForumBan[]              @relation("ForumBanIssuer")
 
   @@index([status])
   @@map("users")
@@ -308,6 +314,8 @@ model Course {
   modules     CourseModule[]
   enrollments Enrollment[]
   accessTiers AccessTierCourse[]
+  forumTopics ForumTopic[]
+  forumBans   ForumBan[]
 
   @@index([status, publishedAt])
   @@index([categoryId])
@@ -325,8 +333,9 @@ model CourseModule {
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons Lesson[]
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  forumTopics ForumTopic[]
 
   @@unique([courseId, position])
   @@index([courseId, isActive])
@@ -357,6 +366,7 @@ model Lesson {
   prerequisites LessonPrerequisite[] @relation("LessonSide")
   requiredBy    LessonPrerequisite[] @relation("PrerequisiteSide")
   videoAssets   VideoAsset[]
+  forumTopics   ForumTopic[]
 
   @@unique([moduleId, position])
   @@index([moduleId, isActive])
@@ -667,4 +677,140 @@ model AuditLog {
   @@index([actorUserId, createdAt])
   @@index([targetType, targetId])
   @@map("audit_logs")
+}
+
+enum ForumTopicStatus {
+  OPEN
+  RESOLVED
+  LOCKED
+  HIDDEN
+}
+
+enum ForumReportStatus {
+  PENDING
+  ACTIONED
+  DISMISSED
+}
+
+/// Topik diskusi. Selalu terikat ke satu kursus karena hak akses forum
+/// diturunkan dari enrollment kursus tersebut; modul dan pelajaran hanya
+/// mempersempit konteksnya.
+model ForumTopic {
+  id               String           @id @default(uuid()) @db.Uuid
+  courseId         String           @map("course_id") @db.Uuid
+  moduleId         String?          @map("module_id") @db.Uuid
+  lessonId         String?          @map("lesson_id") @db.Uuid
+  authorId         String           @map("author_id") @db.Uuid
+  title            String
+  body             String
+  status           ForumTopicStatus @default(OPEN)
+  isPinned         Boolean          @default(false) @map("is_pinned")
+  bestReplyId      String?          @unique @map("best_reply_id") @db.Uuid
+  replyCount       Int              @default(0) @map("reply_count")
+  lastActivityAt   DateTime         @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  // Identitas moderator disimpan untuk jejak singkat; audit_logs tetap otoritas.
+  moderatedBy      String?          @map("moderated_by") @db.Uuid
+  moderatedAt      DateTime?        @map("moderated_at") @db.Timestamptz(6)
+  moderationReason String?          @map("moderation_reason")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?        @map("deleted_at") @db.Timestamptz(6)
+
+  course    Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module    CourseModule?   @relation(fields: [moduleId], references: [id], onDelete: SetNull)
+  lesson    Lesson?         @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  author    User            @relation("ForumTopicAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  bestReply ForumReply?     @relation("ForumTopicBestReply", fields: [bestReplyId], references: [id], onDelete: SetNull)
+  replies   ForumReply[]    @relation("ForumTopicReplies")
+  reactions ForumReaction[]
+  reports   ForumReport[]
+
+  @@index([courseId, status, isPinned, lastActivityAt])
+  @@index([lessonId])
+  @@index([authorId])
+  @@map("forum_topics")
+}
+
+model ForumReply {
+  id               String    @id @default(uuid()) @db.Uuid
+  topicId          String    @map("topic_id") @db.Uuid
+  authorId         String    @map("author_id") @db.Uuid
+  body             String
+  isHidden         Boolean   @default(false) @map("is_hidden")
+  moderatedBy      String?   @map("moderated_by") @db.Uuid
+  moderatedAt      DateTime? @map("moderated_at") @db.Timestamptz(6)
+  moderationReason String?   @map("moderation_reason")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  topic        ForumTopic      @relation("ForumTopicReplies", fields: [topicId], references: [id], onDelete: Cascade)
+  bestForTopic ForumTopic?     @relation("ForumTopicBestReply")
+  author       User            @relation("ForumReplyAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  reactions    ForumReaction[]
+  reports      ForumReport[]
+
+  @@index([topicId, createdAt])
+  @@index([authorId])
+  @@map("forum_replies")
+}
+
+/// Reaksi menempel pada topik atau balasan, tidak pernah keduanya.
+model ForumReaction {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  topicId   String?  @map("topic_id") @db.Uuid
+  replyId   String?  @map("reply_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user  User        @relation("ForumReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  topic ForumTopic? @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  reply ForumReply? @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
+  @@unique([userId, replyId])
+  @@map("forum_reactions")
+}
+
+/// Laporan konten dari pelajar. Masuk daftar review Master (PRD 7.12).
+model ForumReport {
+  id         String            @id @default(uuid()) @db.Uuid
+  reporterId String            @map("reporter_id") @db.Uuid
+  topicId    String?           @map("topic_id") @db.Uuid
+  replyId    String?           @map("reply_id") @db.Uuid
+  reason     String
+  status     ForumReportStatus @default(PENDING)
+  reviewedBy String?           @map("reviewed_by") @db.Uuid
+  reviewedAt DateTime?         @map("reviewed_at") @db.Timestamptz(6)
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  reporter User        @relation("ForumReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  topic    ForumTopic? @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  reply    ForumReply? @relation(fields: [replyId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@map("forum_reports")
+}
+
+/// Pencabutan hak berpartisipasi di forum. `courseId` null berarti berlaku di
+/// seluruh forum. Blokir dicabut dengan mengisi `revokedAt`, bukan menghapus
+/// barisnya, agar riwayat moderasi tetap utuh.
+model ForumBan {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  courseId  String?   @map("course_id") @db.Uuid
+  reason    String
+  issuedBy  String    @map("issued_by") @db.Uuid
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedBy String?   @map("revoked_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user   User    @relation("ForumBanUser", fields: [userId], references: [id], onDelete: Cascade)
+  issuer User    @relation("ForumBanIssuer", fields: [issuedBy], references: [id], onDelete: Restrict)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([courseId, revokedAt])
+  @@map("forum_bans")
 }
