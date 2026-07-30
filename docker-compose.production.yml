@@ -50,6 +50,7 @@ services:
     restart: unless-stopped
     volumes:
       - video-data:/data/videos
+      - avatar-data:/data/avatars
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -129,5 +130,6 @@ volumes:
   postgres-data:
   redis-data:
   video-data:
+  avatar-data:
   letsencrypt:
   certbot-webroot:

@@ -40,6 +40,10 @@ export class PasswordChangedResponseDto {
   @ApiProperty({ example: true }) changed!: boolean;
 }
 
+export class AvatarUploadResponseDto {
+  @ApiProperty() avatarUrl!: string;
+}
+
 export class DeviceSessionDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiPropertyOptional({ type: String, nullable: true }) deviceName!: string | null;

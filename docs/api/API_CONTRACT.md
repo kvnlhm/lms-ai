@@ -266,6 +266,20 @@ Returns the current user profile and effective permissions.
 Only `fullName`, `phone`, and `bio` are accepted. Email, role, status, and
 permissions cannot be changed through this endpoint.
 
+## PUT `/auth/me/avatar`
+
+Uploads a raw JPEG, PNG, or WebP body. Maximum size defaults to 5 MiB.
+The API validates both the declared content type and file signature.
+
+## DELETE `/auth/me/avatar`
+
+Removes the current profile photo.
+
+## GET `/auth/avatars/{filename}`
+
+Returns an immutable public profile photo. Filenames are generated randomly
+by the server and cannot be selected by the client.
+
 ## PUT `/me/learning-profile`
 
 ```json

@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req, Res } from '@nestjs/common';
-import { ApiNoContentResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Header, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put, Req, Res } from '@nestjs/common';
+import { ApiBody, ApiConsumes, ApiNoContentResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   ApiEnvelope,
   ApiEnvelopeArray,
@@ -11,6 +11,7 @@ import {
   LoginResponseDto,
   LogoutAllResponseDto,
   PasswordChangedResponseDto,
+  AvatarUploadResponseDto,
 } from '../dto/auth.response';
 import { ConfigService } from '@nestjs/config';
 import type { CookieOptions, Request, Response } from 'express';
@@ -19,6 +20,7 @@ import { PrismaService } from '../../../../infrastructure/prisma/prisma.service'
 import { AuditService } from '../../../../shared/audit/audit.service';
 import { AppError } from '../../../../shared/errors/app-error';
 import { AuthService } from '../../application/auth.service';
+import { AvatarService } from '../../application/avatar.service';
 import { MfaService } from '../../application/mfa.service';
 import { SessionService } from '../../application/session.service';
 import { UserCredentialService } from '../../application/user-credential.service';
@@ -45,6 +47,7 @@ export class AuthController {
     private readonly credentials: UserCredentialService,
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly avatars: AvatarService,
     config: ConfigService<{ app: AppConfig }, true>,
   ) {
     this.app = config.get('app', { infer: true });
@@ -230,6 +233,65 @@ export class AuthController {
       userAgent: request.header('user-agent') ?? undefined,
     });
     return { changed: true };
+  }
+
+  @Put('me/avatar')
+  @HttpCode(200)
+  @ApiConsumes('image/jpeg', 'image/png', 'image/webp')
+  @ApiBody({ schema: { type: 'string', format: 'binary' } })
+  @ApiOperation({ summary: 'Mengunggah atau mengganti foto profil sendiri' })
+  @ApiEnvelope(AvatarUploadResponseDto)
+  @ApiErrors(401, 422)
+  async uploadAvatar(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const rawLength = request.header('content-length');
+    const result = await this.avatars.upload(
+      user.id,
+      request,
+      request.header('content-type'),
+      rawLength ? Number.parseInt(rawLength, 10) : undefined,
+    );
+    await this.audit.record({
+      actorUserId: user.id,
+      action: 'user.avatar_updated',
+      targetType: 'user',
+      targetId: user.id,
+      requestId: request.requestId,
+      ipAddress: request.ip,
+      userAgent: request.header('user-agent') ?? undefined,
+    });
+    return result;
+  }
+
+  @Delete('me/avatar')
+  @HttpCode(204)
+  @ApiNoContentResponse({ description: 'Foto profil dihapus.' })
+  @ApiErrors(401)
+  async removeAvatar(@CurrentUser() user: AuthenticatedUser, @Req() request: Request) {
+    await this.avatars.remove(user.id);
+    await this.audit.record({
+      actorUserId: user.id,
+      action: 'user.avatar_removed',
+      targetType: 'user',
+      targetId: user.id,
+      requestId: request.requestId,
+      ipAddress: request.ip,
+      userAgent: request.header('user-agent') ?? undefined,
+    });
+  }
+
+  @Public()
+  @Get('avatars/:filename')
+  @Header('Cache-Control', 'public, max-age=31536000, immutable')
+  @ApiOperation({ summary: 'Menyajikan foto profil publik berdasarkan nama file acak' })
+  @ApiErrors(404)
+  async avatar(@Param('filename') filename: string, @Res() response: Response) {
+    const file = await this.avatars.open(filename);
+    response.setHeader('Content-Type', file.mimeType);
+    response.setHeader('Content-Length', String(file.size));
+    file.stream.pipe(response);
   }
 
   @Get('sessions')

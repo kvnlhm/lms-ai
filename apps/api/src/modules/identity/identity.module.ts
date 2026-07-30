@@ -7,6 +7,7 @@ import { AuthController } from './presentation/controllers/auth.controller';
 import { MfaService } from './application/mfa.service';
 import { CredentialTokenService } from './application/credential-token.service';
 import { UserCredentialService } from './application/user-credential.service';
+import { AvatarService } from './application/avatar.service';
 
 @Module({
   controllers: [AuthController],
@@ -18,6 +19,7 @@ import { UserCredentialService } from './application/user-credential.service';
     MfaService,
     CredentialTokenService,
     UserCredentialService,
+    AvatarService,
   ],
   // Facade credential diekspor agar Users tidak mengakses persistence identity.
   exports: [SessionService, UserCredentialService],

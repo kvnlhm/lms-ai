@@ -59,6 +59,10 @@ export interface AppConfig {
     maxUploadBytes: number;
     playbackTtlSeconds: number;
   };
+  avatar: {
+    storagePath: string;
+    maxUploadBytes: number;
+  };
 }
 
 export function loadConfig(): AppConfig {
@@ -104,6 +108,10 @@ export function loadConfig(): AppConfig {
       storagePath: process.env.VIDEO_STORAGE_PATH ?? '/data/videos',
       maxUploadBytes: int('VIDEO_MAX_UPLOAD_BYTES', 2_147_483_648),
       playbackTtlSeconds: int('VIDEO_PLAYBACK_TTL_SECONDS', 300),
+    },
+    avatar: {
+      storagePath: process.env.AVATAR_STORAGE_PATH ?? '/data/avatars',
+      maxUploadBytes: int('AVATAR_MAX_UPLOAD_BYTES', 5_242_880),
     },
   };
 }

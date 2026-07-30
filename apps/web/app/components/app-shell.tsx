@@ -52,7 +52,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
 
           <div className="sideProfile">
             <Link href="/profile" className="sideProfileLink" aria-label="Buka profil">
-              <span className="avatar"><span aria-hidden="true">{initials(user.fullName)}</span></span>
+              <UserAvatar user={user} />
               <span className="sideProfileText">
                 <strong>{user.fullName}</strong>
                 <small>Master</small>
@@ -98,7 +98,11 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           <ThemeToggle />
           <LogoutButton />
           <Link href="/profile" className="avatar" title={`Profil ${user.fullName}`}>
-            <span aria-hidden="true">{initials(user.fullName)}</span>
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt="" />
+            ) : (
+              <span aria-hidden="true">{initials(user.fullName)}</span>
+            )}
             <span className="srOnly">
               Buka profil {user.fullName}, peran {user.role}
             </span>
@@ -107,5 +111,17 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       </header>
       {children}
     </>
+  );
+}
+
+function UserAvatar({ user }: { user: CurrentUser }) {
+  return (
+    <span className="avatar">
+      {user.avatarUrl ? (
+        <img src={user.avatarUrl} alt="" />
+      ) : (
+        <span aria-hidden="true">{initials(user.fullName)}</span>
+      )}
+    </span>
   );
 }

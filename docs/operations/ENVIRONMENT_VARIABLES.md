@@ -86,6 +86,16 @@ VIDEO_WEBHOOK_SECRET
 VIDEO_PLAYBACK_TOKEN_TTL_SECONDS
 ```
 
+## Avatar
+
+```text
+AVATAR_STORAGE_PATH
+AVATAR_MAX_UPLOAD_BYTES
+```
+
+Default produksi menyimpan avatar pada volume persisten terpisah di
+`/data/avatars` dengan batas 5 MiB.
+
 ## Queue
 
 ```text

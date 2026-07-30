@@ -173,6 +173,44 @@ describe('Autentikasi dan session', () => {
       .expect(200);
   });
 
+  it('mengunggah, menyajikan, dan menghapus foto profil tervalidasi', async () => {
+    const session = await login(h.server, STUDENT.email, STUDENT.password);
+    const png = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.from('avatar-test-content'),
+    ]);
+
+    const uploaded = await request(h.server)
+      .put(`${prefix}/auth/me/avatar`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(200);
+
+    expect(uploaded.body.data.avatarUrl).toMatch(/^\/api\/v1\/auth\/avatars\/.+\.png$/);
+    const avatarPath = uploaded.body.data.avatarUrl as string;
+    const image = await request(h.server).get(avatarPath).expect(200);
+    expect(image.headers['content-type']).toMatch(/^image\/png/);
+    expect(image.body).toEqual(png);
+
+    await request(h.server)
+      .put(`${prefix}/auth/me/avatar`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .set('Content-Type', 'image/png')
+      .send(Buffer.from('bukan-png'))
+      .expect(422);
+
+    await request(h.server)
+      .delete(`${prefix}/auth/me/avatar`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .expect(204);
+
+    await request(h.server).get(avatarPath).expect(404);
+  });
+
   it('mencabut session di sisi server saat keluar', async () => {
     const session = await login(h.server, STUDENT.email, STUDENT.password);
 
