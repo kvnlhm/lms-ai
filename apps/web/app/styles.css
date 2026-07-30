@@ -429,6 +429,17 @@ table.data tbody tr:hover { background: var(--raised); }
   padding: 13px 16px; background: var(--raised); border-bottom: 1px solid var(--line);
 }
 .moduleHead h3 { flex: 1; margin: 0; font-size: 15px; font-weight: 600; min-width: 160px; }
+.moduleTitleForm {
+  display: grid; grid-template-columns: auto minmax(180px, 1fr) auto auto;
+  align-items: center; gap: 8px; flex: 1; min-width: 260px;
+}
+.moduleTitleForm > span { color: var(--text-2); font-size: 14px; font-weight: 650; }
+.moduleTitleForm input {
+  width: 100%; min-height: 34px; padding: 7px 10px;
+  border: 1px solid var(--line-strong); border-radius: 8px;
+  background: var(--surface); color: var(--text);
+}
+.moduleTitleForm input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .moduleBody { padding: 4px 0; }
 .lessonLine {
   display: flex; align-items: center; gap: 12px;
@@ -1127,6 +1138,10 @@ table.data tbody tr:hover { background: var(--raised); }
   .lessonEditForm { margin-left: 10px; margin-right: 10px; padding: 16px; }
   .lessonEditGrid { grid-template-columns: 1fr; }
   .lessonEditFull { grid-column: auto; }
+  .moduleTitleForm { grid-template-columns: auto minmax(0, 1fr); width: 100%; min-width: 0; }
+  .moduleTitleForm .btnTiny { grid-row: 2; }
+  .moduleTitleForm .btnTiny:first-of-type { grid-column: 2; justify-self: end; margin-right: 58px; }
+  .moduleTitleForm .btnTiny:last-of-type { grid-column: 2; justify-self: end; }
   .videoUploadProgress { margin-left: 10px; margin-right: 10px; }
   .uploadToast { right: 16px; bottom: 80px; }
   .userFilterCard { padding: 10px; margin-top: 20px; }

@@ -62,6 +62,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reasons, setReasons] = useState<string[]>([]);
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [upload, setUpload] = useState<UploadState | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation | null>(null);
@@ -131,6 +132,16 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       ensureSuccess(
         await client().DELETE('/api/v1/admin/modules/{moduleId}', {
           params: { path: { moduleId } },
+        }),
+      ),
+    );
+
+  const updateModule = (moduleId: string, title: string) =>
+    run(`edit-module-${moduleId}`, async () =>
+      unwrap(
+        await client().PATCH('/api/v1/admin/modules/{moduleId}', {
+          params: { path: { moduleId } },
+          body: { title },
         }),
       ),
     );
@@ -349,14 +360,41 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
           course.modules.map((courseModule, moduleIndex) => (
             <article key={courseModule.id} className="moduleCard">
               <div className="moduleHead">
-                <h3>
-                  {moduleIndex + 1}. {courseModule.title}
-                </h3>
+                {editingModuleId === courseModule.id ? (
+                  <ModuleTitleForm
+                    courseModule={courseModule}
+                    moduleNumber={moduleIndex + 1}
+                    disabled={busy !== null}
+                    onCancel={() => setEditingModuleId(null)}
+                    onSave={async (title) => {
+                      const ok = await updateModule(courseModule.id, title);
+                      if (ok) setEditingModuleId(null);
+                      return ok;
+                    }}
+                  />
+                ) : (
+                  <h3>
+                    {moduleIndex + 1}. {courseModule.title}
+                  </h3>
+                )}
                 {!courseModule.isActive ? <StatusPill status="INACTIVE" /> : null}
                 <span className="cellSub" style={{ margin: 0 }}>
                   {courseModule.lessons.length} pelajaran
                 </span>
                 <span className="inlineActions">
+                  <button
+                    className="iconAction"
+                    onClick={() =>
+                      setEditingModuleId((current) =>
+                        current === courseModule.id ? null : courseModule.id,
+                      )
+                    }
+                    disabled={busy !== null}
+                    aria-label={`Edit nama bagian ${courseModule.title}`}
+                    aria-expanded={editingModuleId === courseModule.id}
+                  >
+                    <Edit size={16} />
+                  </button>
                   <button
                     className="iconAction"
                     onClick={() => moveModule(moduleIndex, -1)}
@@ -598,6 +636,62 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
         </div>
       ) : null}
     </>
+  );
+}
+
+function ModuleTitleForm({
+  courseModule,
+  moduleNumber,
+  disabled,
+  onCancel,
+  onSave,
+}: {
+  courseModule: Module;
+  moduleNumber: number;
+  disabled: boolean;
+  onCancel: () => void;
+  onSave: (title: string) => Promise<boolean>;
+}) {
+  const [title, setTitle] = useState(courseModule.title);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalized = title.trim();
+    if (normalized.length < 3 || normalized === courseModule.title) return;
+    await onSave(normalized);
+  }
+
+  return (
+    <form className="moduleTitleForm" onSubmit={submit}>
+      <span aria-hidden="true">{moduleNumber}.</span>
+      <label className="srOnly" htmlFor={`module-title-${courseModule.id}`}>
+        Nama bagian
+      </label>
+      <input
+        id={`module-title-${courseModule.id}`}
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        minLength={3}
+        maxLength={160}
+        required
+        disabled={disabled}
+        autoFocus
+      />
+      <button
+        className="btnTiny"
+        type="submit"
+        disabled={
+          disabled ||
+          title.trim().length < 3 ||
+          title.trim() === courseModule.title
+        }
+      >
+        {disabled ? 'Menyimpan…' : 'Simpan'}
+      </button>
+      <button className="btnTiny" type="button" onClick={onCancel} disabled={disabled}>
+        Batal
+      </button>
+    </form>
   );
 }
 
