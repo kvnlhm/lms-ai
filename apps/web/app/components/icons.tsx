@@ -57,3 +57,70 @@ export const BookOpen = (props: IconProps) => (
     <path d="M12 7v14M12 7a5 5 0 00-5-5H3v14h4a5 5 0 015 5M12 7a5 5 0 015-5h4v14h-4a5 5 0 00-5 5" />
   </Base>
 );
+
+export const Dashboard = (props: IconProps) => (
+  <Base {...props}>
+    <rect x="3" y="3" width="7" height="7" rx="1.5" />
+    <rect x="14" y="3" width="7" height="7" rx="1.5" />
+    <rect x="3" y="14" width="7" height="7" rx="1.5" />
+    <rect x="14" y="14" width="7" height="7" rx="1.5" />
+  </Base>
+);
+
+export const Courses = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M4 5.5A2.5 2.5 0 016.5 3H20v15H6.5A2.5 2.5 0 004 20.5z" />
+    <path d="M4 5.5v15A2.5 2.5 0 016.5 18M8 7h8M8 11h6" />
+  </Base>
+);
+
+export const Users = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+  </Base>
+);
+
+export const ExternalLink = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M15 3h6v6M10 14L21 3M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+  </Base>
+);
+
+export const Plus = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M12 5v14M5 12h14" />
+  </Base>
+);
+
+export const Edit = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L8 18l-4 1 1-4z" />
+  </Base>
+);
+
+export const Trash = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6" />
+  </Base>
+);
+
+export const ChevronUp = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M18 15l-6-6-6 6" />
+  </Base>
+);
+
+export const ChevronDown = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M6 9l6 6 6-6" />
+  </Base>
+);
+
+export const Search = (props: IconProps) => (
+  <Base {...props}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M20 20l-4-4" />
+  </Base>
+);

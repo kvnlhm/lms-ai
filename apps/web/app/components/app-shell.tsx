@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { CurrentUser } from '../lib/session';
 import { can, initials } from '../lib/session';
+import { Courses, Dashboard, ExternalLink, Users } from './icons';
 import { LogoutButton } from './logout-button';
 import { NavLink } from './nav-link';
 import { ThemeToggle } from './theme-toggle';
@@ -12,9 +13,9 @@ const LEARNER_NAV = [
 ];
 
 const MASTER_NAV = [
-  { href: '/master', label: 'Dashboard', icon: '◉', permission: 'courses.manage' },
-  { href: '/master/courses', label: 'Kursus', icon: '◇', permission: 'courses.manage' },
-  { href: '/master/users', label: 'Pengguna', icon: '◎', permission: 'users.read' },
+  { href: '/master', label: 'Dashboard', icon: Dashboard, permission: 'courses.manage' },
+  { href: '/master/courses', label: 'Kursus', icon: Courses, permission: 'courses.manage' },
+  { href: '/master/users', label: 'Pengguna', icon: Users, permission: 'users.read' },
 ] as const;
 
 /** Kerangka halaman untuk area yang membutuhkan autentikasi. */
@@ -33,15 +34,18 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
 
           <nav className="sideNav" aria-label="Navigasi Master">
             <span className="sideLabel">Kelola</span>
-            {MASTER_NAV.filter((item) => can(user, item.permission)).map((item) => (
-              <NavLink key={item.href} href={item.href}>
-                <span className="sideIcon" aria-hidden="true">{item.icon}</span>
-                {item.label}
-              </NavLink>
-            ))}
+            {MASTER_NAV.filter((item) => can(user, item.permission)).map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink key={item.href} href={item.href}>
+                  <span className="sideIcon"><Icon size={18} /></span>
+                  {item.label}
+                </NavLink>
+              );
+            })}
             <span className="sideLabel sideLabelSpace">Lihat akademi</span>
             <Link className="navLink" href="/courses">
-              <span className="sideIcon" aria-hidden="true">↗</span>
+              <span className="sideIcon"><ExternalLink size={18} /></span>
               Katalog Pelajar
             </Link>
           </nav>

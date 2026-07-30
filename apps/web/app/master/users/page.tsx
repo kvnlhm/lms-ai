@@ -1,6 +1,7 @@
 import type { Schemas } from '@lms/api-client';
 import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
+import { Search } from '../../components/icons';
 import { serverClient, unwrapList } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
 import { UserManager } from './user-manager';
@@ -53,7 +54,7 @@ export default async function MasterUsersPage({ searchParams }: Props) {
           <form className="userFilterBar" action="/master/users">
             <label className="userSearch">
               <span className="srOnly">Cari pengguna</span>
-              <span aria-hidden="true">⌕</span>
+              <span aria-hidden="true"><Search size={17} /></span>
               <input
                 type="search"
                 name="search"

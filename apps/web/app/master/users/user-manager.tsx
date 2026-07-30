@@ -3,6 +3,7 @@
 import type { Schemas } from '@lms/api-client';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { Plus } from '../../components/icons';
 import { StatusPill } from '../../components/status-pill';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 
@@ -108,7 +109,7 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
             setError(null);
           }}
         >
-          <span aria-hidden="true">＋</span>
+          <Plus size={16} />
           {showCreate ? 'Tutup formulir' : 'Tambah pengguna'}
         </button>
       </div>

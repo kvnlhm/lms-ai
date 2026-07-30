@@ -309,7 +309,15 @@ svg { display: block; }
 .stageLabel { position: absolute; top: 20px; left: 24px; right: 24px; text-align: left; }
 .stageLabel h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
 .stageNote { color: rgba(255, 255, 255, 0.62); font-size: 14px; max-width: 46ch; }
-.lessonText { margin-top: 24px; color: var(--text-2); font-size: 15px; line-height: 1.7; max-width: 65ch; }
+.lessonText {
+  margin-top: 24px;
+  max-width: 65ch;
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
 .playerFoot {
   position: sticky; bottom: 0;
   display: grid; place-items: center; gap: 10px;
@@ -427,6 +435,19 @@ table.data tbody tr:hover { background: var(--raised); }
 }
 .btnTiny:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
 .btnTiny:disabled { opacity: 0.4; cursor: not-allowed; }
+.iconAction {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-2);
+}
+.iconAction:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
+.iconAction:disabled { opacity: .35; cursor: not-allowed; }
 .btnDanger { color: var(--danger); }
 .btnDanger:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
 
@@ -436,6 +457,65 @@ table.data tbody tr:hover { background: var(--raised); }
   background: var(--surface); border: 1px solid var(--line); color: var(--text); font: inherit; font-size: 13.5px;
 }
 .addForm input:focus, .addForm select:focus { outline: none; border-color: var(--accent); }
+
+.lessonAdminItem { border-top: 1px solid var(--line-soft); }
+.lessonAdminItem:first-child { border-top: 0; }
+.lessonAdminItem .lessonLine { border-top: 0; }
+.lessonIndex {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 8px;
+  background: var(--raised);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.lessonLine .lessonTitle { display: grid; min-width: 180px; }
+.lessonTitle strong { font-size: 13.5px; }
+.lessonTitle small {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lessonEditForm {
+  margin: 0 14px 14px 54px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--raised) 58%, var(--surface));
+}
+.lessonEditHead { margin-bottom: 18px; }
+.lessonEditHead strong { font-size: 15px; }
+.lessonEditHead p { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
+.lessonEditGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+}
+.lessonEditGrid .field input,
+.lessonEditGrid .field select,
+.lessonEditGrid .field textarea { width: 100%; background: var(--surface); }
+.lessonEditFull { grid-column: 1 / -1; }
+.lessonEditGrid .lessonContentInput {
+  min-height: 260px;
+  line-height: 1.65;
+  resize: vertical;
+}
+.fieldHint { color: var(--muted); font-size: 11.5px; }
+.lessonOptions {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding: 4px 0 18px;
+}
+.lessonEditActions { display: flex; justify-content: flex-end; gap: 8px; }
 
 .reasonList { margin: 8px 0 0; padding-left: 20px; }
 .reasonList li { margin-top: 4px; }
@@ -485,7 +565,7 @@ table.data tbody tr:hover { background: var(--raised); }
 :root[data-theme='dark'] .sideNav .navLink { color: var(--text-2); }
 :root[data-theme='dark'] .sideNav .navLink:hover,
 :root[data-theme='dark'] .sideNav .navLink[aria-current='page'] { background: var(--raised); color: var(--text); }
-.sideIcon { width: 20px; text-align: center; font-size: 17px; }
+.sideIcon { width: 20px; display: grid; place-items: center; }
 .sideProfile {
   margin-top: auto; display: flex; align-items: center; gap: 8px;
   padding: 12px 5px 2px; border-top: 1px solid #e0e3e7;
@@ -741,6 +821,12 @@ table.data tbody tr:hover { background: var(--raised); }
   .metricCard > strong { font-size: 24px; }
   .courseHeroAdmin { align-items: stretch; flex-direction: column; }
   .courseHeroVisual { width: 100%; }
+  .lessonLine { align-items: flex-start; flex-wrap: wrap; }
+  .lessonLine .lessonTitle { min-width: calc(100% - 46px); }
+  .lessonActions { width: 100%; justify-content: flex-end; }
+  .lessonEditForm { margin-left: 10px; margin-right: 10px; padding: 16px; }
+  .lessonEditGrid { grid-template-columns: 1fr; }
+  .lessonEditFull { grid-column: auto; }
   .userFilterCard { padding: 10px; margin-top: 20px; }
   .userFilterBar { grid-template-columns: 1fr 1fr; }
   .userSearch { grid-column: 1 / -1; }

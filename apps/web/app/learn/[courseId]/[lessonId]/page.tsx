@@ -169,7 +169,10 @@ function NavArrow({
 }
 
 function LessonStage({ lesson, position }: { lesson: LearnLesson; position: number }) {
-  if (lesson.contentType === 'EXTERNAL_LINK' && lesson.content.externalUrl) {
+  if (
+    (lesson.contentType === 'EXTERNAL_LINK' || lesson.contentType === 'PDF') &&
+    lesson.content.externalUrl
+  ) {
     return (
       <div className="stage">
         <div className="stageLabel">
@@ -178,7 +181,7 @@ function LessonStage({ lesson, position }: { lesson: LearnLesson; position: numb
           </h2>
         </div>
         <a className="btn" href={lesson.content.externalUrl} target="_blank" rel="noreferrer noopener">
-          Buka materi eksternal
+          {lesson.contentType === 'PDF' ? 'Buka dokumen PDF' : 'Buka materi eksternal'}
         </a>
       </div>
     );

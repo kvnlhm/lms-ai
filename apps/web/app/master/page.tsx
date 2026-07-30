@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../components/app-shell';
+import { Courses, Plus, Users } from '../components/icons';
 import { serverClient, unwrapList } from '../lib/api';
 import { requirePermission } from '../lib/session';
 
@@ -73,15 +74,15 @@ export default async function MasterDashboardPage() {
 
           <aside className="dashboardActions">
             <Link href="/master/courses/new" className="card actionCard">
-              <span className="actionIcon">＋</span>
+              <span className="actionIcon"><Plus size={20} /></span>
               <span><strong>Buat kursus baru</strong><small>Susun materi pembelajaran.</small></span>
             </Link>
             <Link href="/master/users" className="card actionCard">
-              <span className="actionIcon">◎</span>
+              <span className="actionIcon"><Users size={20} /></span>
               <span><strong>Kelola pengguna</strong><small>Undang dan atur akses Pelajar.</small></span>
             </Link>
             <Link href="/master/courses" className="card actionCard">
-              <span className="actionIcon">↗</span>
+              <span className="actionIcon"><Courses size={20} /></span>
               <span><strong>Lihat semua kursus</strong><small>Periksa status dan performa.</small></span>
             </Link>
           </aside>
