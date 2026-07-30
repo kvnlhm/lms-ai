@@ -32,9 +32,9 @@ services:
       retries: 20
 
   migrate:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
+    # Memakai image runtime API yang sama agar Docker tidak membangun dan
+    # mengekspor image besar kedua kali hanya untuk migration one-shot.
+    image: ${COOLIFY_RESOURCE_UUID:-lms}_api-runtime
     # Coolify extension: the one-shot migration must not count as an unhealthy service.
     exclude_from_hc: true
     environment: &api-environment
@@ -72,6 +72,7 @@ services:
     restart: 'no'
 
   api:
+    image: ${COOLIFY_RESOURCE_UUID:-lms}_api-runtime
     build:
       context: .
       dockerfile: apps/api/Dockerfile

@@ -33,9 +33,7 @@ services:
     networks: [backend]
 
   migrate:
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
+    image: lms-api-runtime
     env_file: ${ENV_FILE:-.env.production}
     command: ['pnpm', '--filter', '@lms/api', 'exec', 'prisma', 'migrate', 'deploy']
     depends_on:
@@ -45,6 +43,7 @@ services:
     restart: 'no'
 
   api:
+    image: lms-api-runtime
     build:
       context: .
       dockerfile: apps/api/Dockerfile
