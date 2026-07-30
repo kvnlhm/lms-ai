@@ -3,7 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
-import { ApiError, browserClient, readCsrfToken, unwrap } from '../../../lib/browser-api';
+import {
+  ApiError,
+  browserApiUrl,
+  browserClient,
+  readCsrfToken,
+  unwrap,
+} from '../../../lib/browser-api';
 import { ChevronDown, ChevronUp, Edit, Trash } from '../../../components/icons';
 import { StatusPill } from '../../../components/status-pill';
 
@@ -38,12 +44,21 @@ type LessonUpdateInput = {
   completionRule: (typeof COMPLETION_RULES)[number]['value'];
 };
 
+type UploadState = {
+  lessonId: string;
+  fileName: string;
+  percent: number;
+  status: 'UPLOADING' | 'PROCESSING' | 'SUCCESS' | 'ERROR';
+  message: string;
+};
+
 export function CourseEditor({ course }: { course: CourseDetail }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reasons, setReasons] = useState<string[]>([]);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [upload, setUpload] = useState<UploadState | null>(null);
 
   /**
    * Menjalankan satu mutation.
@@ -147,34 +162,74 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       ),
     );
 
-  const uploadVideo = (lessonId: string, title: string, file: File) =>
-    run(`upload-video-${lessonId}`, async () => {
-      if (file.type !== 'video/mp4' || !file.name.toLowerCase().endsWith('.mp4')) {
-        throw new ApiError('VALIDATION_ERROR', 422, 'Pilih file MP4.');
+  async function uploadVideo(lessonId: string, title: string, file: File) {
+    if (busy) return;
+    const action = `upload-video-${lessonId}`;
+    setBusy(action);
+    setError(null);
+    setReasons([]);
+    setUpload({
+      lessonId,
+      fileName: file.name,
+      percent: 0,
+      status: 'UPLOADING',
+      message: 'Menyiapkan upload…',
+    });
+
+    try {
+      if (!file.name.toLowerCase().endsWith('.mp4')) {
+        throw new ApiError('VALIDATION_ERROR', 422, 'Pilih file dengan ekstensi .mp4.');
       }
+      if (file.size < 1) {
+        throw new ApiError('VALIDATION_ERROR', 422, 'File video kosong.');
+      }
+
+      // Sebagian browser/OS memberi `file.type` kosong atau `application/octet-stream`
+      // untuk MP4. Ekstensi dinormalisasi di sini; server tetap memeriksa signature
+      // ISO-BMFF `ftyp` sebelum menandai video tersedia.
       const intent = unwrap(
         await client().POST('/api/v1/admin/videos/upload-intents', {
           body: {
             lessonId,
             title,
             fileName: file.name,
-            mimeType: file.type,
+            mimeType: 'video/mp4',
             sizeBytes: file.size,
           },
         }),
       ) as unknown as { uploadUrl: string; method: string };
-      const csrf = readCsrfToken();
-      const response = await fetch(intent.uploadUrl, {
-        method: intent.method,
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'video/mp4',
-          ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
-        },
-        body: file,
+
+      await uploadFile(intent.uploadUrl, intent.method, file, (percent) => {
+        setUpload({
+          lessonId,
+          fileName: file.name,
+          percent,
+          status: percent >= 100 ? 'PROCESSING' : 'UPLOADING',
+          message: percent >= 100 ? 'Memvalidasi dan menyimpan video…' : `Mengunggah ${percent}%`,
+        });
       });
-      if (!response.ok) throw new Error('Upload video gagal.');
-    });
+
+      setUpload({
+        lessonId,
+        fileName: file.name,
+        percent: 100,
+        status: 'SUCCESS',
+        message: 'Video berhasil diunggah dan siap diputar.',
+      });
+      router.refresh();
+    } catch (caught) {
+      const message = uploadErrorMessage(caught);
+      setUpload({
+        lessonId,
+        fileName: file.name,
+        percent: 0,
+        status: 'ERROR',
+        message,
+      });
+    } finally {
+      setBusy(null);
+    }
+  }
 
   const moveModule = (index: number, direction: -1 | 1) => {
     const ids = course.modules.map((m) => m.id);
@@ -334,7 +389,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                         )}
                         {lesson.contentType === 'VIDEO' ? (
                           <label className="btnTiny">
-                            {busy === `upload-video-${lesson.id}` ? 'Mengunggah…' : 'Unggah MP4'}
+                            {busy === `upload-video-${lesson.id}` ? 'Sedang mengunggah…' : 'Unggah MP4'}
                             <input
                               type="file"
                               accept="video/mp4,.mp4"
@@ -390,6 +445,26 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                           </button>
                         </span>
                       </div>
+                      {upload?.lessonId === lesson.id &&
+                      (upload.status === 'UPLOADING' || upload.status === 'PROCESSING') ? (
+                        <div className="videoUploadProgress" role="status" aria-live="polite">
+                          <div className="videoUploadMeta">
+                            <span>{upload.fileName}</span>
+                            <strong>{upload.status === 'PROCESSING' ? 'Memproses' : `${upload.percent}%`}</strong>
+                          </div>
+                          <div
+                            className="videoUploadTrack"
+                            role="progressbar"
+                            aria-label={`Upload ${upload.fileName}`}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                            aria-valuenow={upload.percent}
+                          >
+                            <span style={{ width: `${upload.percent}%` }} />
+                          </div>
+                          <small>{upload.message}</small>
+                        </div>
+                      ) : null}
                       {editingLessonId === lesson.id ? (
                         <LessonEditForm
                           lesson={lesson}
@@ -417,8 +492,101 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
 
         <AddModuleForm disabled={busy !== null} onAdd={addModule} />
       </section>
+
+      {upload && (upload.status === 'SUCCESS' || upload.status === 'ERROR') ? (
+        <div
+          className={`uploadToast ${
+            upload.status === 'SUCCESS' ? 'uploadToastSuccess' : 'uploadToastError'
+          }`}
+          role={upload.status === 'ERROR' ? 'alert' : 'status'}
+          aria-live="polite"
+        >
+          <span className="uploadToastIcon" aria-hidden="true">
+            {upload.status === 'SUCCESS' ? '✓' : '!'}
+          </span>
+          <div>
+            <strong>{upload.status === 'SUCCESS' ? 'Upload selesai' : 'Upload gagal'}</strong>
+            <p>{upload.message}</p>
+            <small>{upload.fileName}</small>
+          </div>
+          <button type="button" onClick={() => setUpload(null)} aria-label="Tutup notifikasi">
+            ×
+          </button>
+        </div>
+      ) : null}
     </>
   );
+}
+
+function uploadFile(
+  uploadUrl: string,
+  method: string,
+  file: File,
+  onProgress: (percent: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    const absoluteUrl = new URL(uploadUrl, `${browserApiUrl().replace(/\/$/, '')}/`).toString();
+    request.open(method, absoluteUrl);
+    request.withCredentials = true;
+    request.setRequestHeader('Content-Type', 'video/mp4');
+    const csrf = readCsrfToken();
+    if (csrf) request.setRequestHeader('X-CSRF-Token', csrf);
+
+    request.upload.addEventListener('progress', (event) => {
+      if (!event.lengthComputable || event.total < 1) return;
+      onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)));
+    });
+    request.addEventListener('load', () => {
+      if (request.status >= 200 && request.status < 300) {
+        onProgress(100);
+        resolve();
+        return;
+      }
+      reject(xhrApiError(request));
+    });
+    request.addEventListener('error', () => {
+      reject(new ApiError('NETWORK_ERROR', 0, 'Koneksi terputus saat mengunggah video.'));
+    });
+    request.addEventListener('abort', () => {
+      reject(new ApiError('NETWORK_ERROR', 0, 'Upload video dibatalkan.'));
+    });
+    request.send(file);
+  });
+}
+
+function xhrApiError(request: XMLHttpRequest): ApiError {
+  try {
+    const payload = JSON.parse(request.responseText) as {
+      error?: {
+        code?: string;
+        message?: string;
+        fields?: Record<string, string[]>;
+        requestId?: string;
+      };
+    };
+    const body = payload.error;
+    if (body) {
+      return new ApiError(
+        (body.code ?? 'INTERNAL_ERROR') as ConstructorParameters<typeof ApiError>[0],
+        request.status,
+        body.message ?? 'Upload video gagal.',
+        body.fields,
+        body.requestId,
+      );
+    }
+  } catch {
+    // Respons non-JSON ditangani dengan pesan generik di bawah.
+  }
+  return new ApiError('INTERNAL_ERROR', request.status, 'Server menolak upload video.');
+}
+
+function uploadErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    return 'Upload gagal. Periksa koneksi dan coba lagi.';
+  }
+  const details = error.fields ? Object.values(error.fields).flat().filter(Boolean) : [];
+  return details.length > 0 ? details.join(' ') : error.message;
 }
 
 function LessonEditForm({
