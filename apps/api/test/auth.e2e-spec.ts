@@ -128,6 +128,51 @@ describe('Autentikasi dan session', () => {
       .expect(200);
   });
 
+  it('menandai session perangkat saat ini', async () => {
+    const session = await login(h.server, STUDENT.email, STUDENT.password);
+    const response = await request(h.server)
+      .get(`${prefix}/auth/sessions`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: expect.any(String), isCurrent: true }),
+      ]),
+    );
+  });
+
+  it('mengganti password dengan password lama dan mencabut seluruh session', async () => {
+    const session = await login(h.server, STUDENT.email, STUDENT.password);
+    const temporaryPassword = 'Pelajar#PasswordBaru12345';
+
+    await request(h.server)
+      .patch(`${prefix}/auth/me/password`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .send({
+        currentPassword: STUDENT.password,
+        newPassword: temporaryPassword,
+        newPasswordConfirmation: temporaryPassword,
+      })
+      .expect(200);
+
+    await request(h.server).get(`${prefix}/auth/me`).set('Cookie', session.cookie).expect(401);
+    await request(h.server).post(`${prefix}/auth/login`).send(STUDENT).expect(401);
+
+    const replacement = await login(h.server, STUDENT.email, temporaryPassword);
+    await request(h.server)
+      .patch(`${prefix}/auth/me/password`)
+      .set('Cookie', replacement.cookie)
+      .set('X-CSRF-Token', replacement.csrfToken)
+      .send({
+        currentPassword: temporaryPassword,
+        newPassword: STUDENT.password,
+        newPasswordConfirmation: STUDENT.password,
+      })
+      .expect(200);
+  });
+
   it('mencabut session di sisi server saat keluar', async () => {
     const session = await login(h.server, STUDENT.email, STUDENT.password);
 

@@ -293,9 +293,17 @@ LEARN_AI
 AI_JOB_READINESS
 ```
 
-## PATCH `/me/password`
+## PATCH `/auth/me/password`
 
-Requires old password or recent authentication.
+Requires the old password. A successful change revokes all active sessions.
+
+```json
+{
+  "currentPassword": "old-password",
+  "newPassword": "new-password",
+  "newPasswordConfirmation": "new-password"
+}
+```
 
 ## GET `/me/notifications/preferences`
 

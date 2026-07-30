@@ -70,3 +70,23 @@ export class UpdateCurrentUserDto {
   @MaxLength(500)
   bio?: string | null;
 }
+
+export class ChangePasswordDto {
+  @ApiProperty({ minLength: 12 })
+  @IsString()
+  @MinLength(12, { message: 'currentPassword minimal 12 karakter' })
+  @MaxLength(128)
+  currentPassword!: string;
+
+  @ApiProperty({ minLength: 12 })
+  @IsString()
+  @MinLength(12, { message: 'newPassword minimal 12 karakter' })
+  @MaxLength(128)
+  newPassword!: string;
+
+  @ApiProperty({ minLength: 12 })
+  @IsString()
+  @MinLength(12)
+  @MaxLength(128)
+  newPasswordConfirmation!: string;
+}

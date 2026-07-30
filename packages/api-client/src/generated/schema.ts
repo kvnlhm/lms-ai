@@ -158,6 +158,23 @@ export interface paths {
         patch: operations["AuthController_updateMe"];
         trace?: never;
     };
+    "/api/v1/auth/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Mengganti password sendiri dan mencabut seluruh session */
+        patch: operations["AuthController_changePassword"];
+        trace?: never;
+    };
     "/api/v1/auth/sessions": {
         parameters: {
             query?: never;
@@ -848,10 +865,20 @@ export interface components {
             phone?: string | null;
             bio?: string | null;
         };
+        PasswordChangedResponseDto: {
+            /** @example true */
+            changed: boolean;
+        };
+        ChangePasswordDto: {
+            currentPassword: string;
+            newPassword: string;
+            newPasswordConfirmation: string;
+        };
         DeviceSessionDto: {
             /** Format: uuid */
             id: string;
             deviceName?: string | null;
+            isCurrent: boolean;
             /** Format: date-time */
             lastUsedAt: string;
             /** Format: date-time */
@@ -1801,6 +1828,48 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["CurrentUserResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PasswordChangedResponseDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
                 };

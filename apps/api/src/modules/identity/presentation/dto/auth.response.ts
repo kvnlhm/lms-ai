@@ -36,9 +36,14 @@ export class LogoutAllResponseDto {
   @ApiProperty({ example: 3 }) revokedSessions!: number;
 }
 
+export class PasswordChangedResponseDto {
+  @ApiProperty({ example: true }) changed!: boolean;
+}
+
 export class DeviceSessionDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiPropertyOptional({ type: String, nullable: true }) deviceName!: string | null;
+  @ApiProperty() isCurrent!: boolean;
   @ApiProperty({ format: 'date-time' }) lastUsedAt!: string;
   @ApiProperty({ format: 'date-time' }) createdAt!: string;
   @ApiProperty({ format: 'date-time' }) expiresAt!: string;

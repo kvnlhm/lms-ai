@@ -10,11 +10,13 @@ import {
   DeviceSessionDto,
   LoginResponseDto,
   LogoutAllResponseDto,
+  PasswordChangedResponseDto,
 } from '../dto/auth.response';
 import { ConfigService } from '@nestjs/config';
 import type { CookieOptions, Request, Response } from 'express';
 import type { AppConfig } from '../../../../config/configuration';
 import { PrismaService } from '../../../../infrastructure/prisma/prisma.service';
+import { AuditService } from '../../../../shared/audit/audit.service';
 import { AppError } from '../../../../shared/errors/app-error';
 import { AuthService } from '../../application/auth.service';
 import { MfaService } from '../../application/mfa.service';
@@ -22,7 +24,14 @@ import { SessionService } from '../../application/session.service';
 import { UserCredentialService } from '../../application/user-credential.service';
 import type { ActiveSession, AuthenticatedUser } from '../../domain/session';
 import { AllowPendingMfa, CurrentSession, CurrentUser, Public } from '../decorators';
-import { AcceptInvitationDto, LoginDto, MfaCodeDto, ResetPasswordDto, UpdateCurrentUserDto } from '../dto/login.dto';
+import {
+  AcceptInvitationDto,
+  ChangePasswordDto,
+  LoginDto,
+  MfaCodeDto,
+  ResetPasswordDto,
+  UpdateCurrentUserDto,
+} from '../dto/login.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -35,6 +44,7 @@ export class AuthController {
     private readonly mfa: MfaService,
     private readonly credentials: UserCredentialService,
     private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
     config: ConfigService<{ app: AppConfig }, true>,
   ) {
     this.app = config.get('app', { infer: true });
@@ -179,16 +189,58 @@ export class AuthController {
   @ApiOperation({ summary: 'Memperbarui profil pengguna saat ini' })
   @ApiEnvelope(CurrentUserResponseDto)
   @ApiErrors(401, 422)
-  async updateMe(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateCurrentUserDto) {
-    return this.auth.updateCurrentUser(user, dto);
+  async updateMe(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateCurrentUserDto,
+    @Req() request: Request,
+  ) {
+    const updated = await this.auth.updateCurrentUser(user, dto);
+    await this.audit.record({
+      actorUserId: user.id,
+      action: 'user.profile_updated',
+      targetType: 'user',
+      targetId: user.id,
+      after: { changedFields: Object.keys(dto) },
+      requestId: request.requestId,
+      ipAddress: request.ip,
+      userAgent: request.header('user-agent') ?? undefined,
+    });
+    return updated;
+  }
+
+  @Patch('me/password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Mengganti password sendiri dan mencabut seluruh session' })
+  @ApiEnvelope(PasswordChangedResponseDto)
+  @ApiErrors(401, 422)
+  async changePassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ChangePasswordDto,
+    @Req() request: Request,
+  ) {
+    this.assertPasswordConfirmation(dto.newPassword, dto.newPasswordConfirmation, 'newPasswordConfirmation');
+    await this.credentials.changePassword(user.id, dto.currentPassword, dto.newPassword);
+    await this.audit.record({
+      actorUserId: user.id,
+      action: 'user.password_changed',
+      targetType: 'user',
+      targetId: user.id,
+      requestId: request.requestId,
+      ipAddress: request.ip,
+      userAgent: request.header('user-agent') ?? undefined,
+    });
+    return { changed: true };
   }
 
   @Get('sessions')
   @ApiOperation({ summary: 'Perangkat aktif milik pengguna saat ini' })
   @ApiEnvelopeArray(DeviceSessionDto)
   @ApiErrors(401)
-  async listSessions(@CurrentUser() user: AuthenticatedUser) {
-    return this.auth.listDevices(user.id);
+  async listSessions(
+    @CurrentUser() user: AuthenticatedUser,
+    @CurrentSession() session: ActiveSession & { deviceRecordId: string },
+  ) {
+    return this.auth.listDevices(user.id, session.deviceRecordId);
   }
 
   @Delete('sessions/:sessionId')
@@ -244,10 +296,14 @@ export class AuthController {
     response.clearCookie(this.app.session.csrfCookieName, this.baseCookie());
   }
 
-  private assertPasswordConfirmation(password: string, confirmation: string): void {
+  private assertPasswordConfirmation(
+    password: string,
+    confirmation: string,
+    field = 'passwordConfirmation',
+  ): void {
     if (password !== confirmation) {
       throw AppError.validation({
-        passwordConfirmation: ['Konfirmasi password tidak sama.'],
+        [field]: ['Konfirmasi password tidak sama.'],
       });
     }
   }

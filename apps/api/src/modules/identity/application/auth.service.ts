@@ -203,19 +203,24 @@ export class AuthService {
     return this.currentUser(user);
   }
 
-  async listDevices(userId: string): Promise<
+  async listDevices(userId: string, currentDeviceRecordId: string): Promise<
     Array<{
       id: string;
       deviceName: string | null;
+      isCurrent: boolean;
       lastUsedAt: Date;
       createdAt: Date;
       expiresAt: Date;
     }>
   > {
-    return this.prisma.authSession.findMany({
+    const sessions = await this.prisma.authSession.findMany({
       where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
       select: { id: true, deviceName: true, lastUsedAt: true, createdAt: true, expiresAt: true },
       orderBy: { lastUsedAt: 'desc' },
     });
+    return sessions.map((session) => ({
+      ...session,
+      isCurrent: session.id === currentDeviceRecordId,
+    }));
   }
 }

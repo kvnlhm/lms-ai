@@ -194,6 +194,7 @@ svg { display: block; }
 }
 .noticeError { background: var(--danger-soft); color: var(--danger); }
 .noticeInfo { background: var(--accent-soft); color: var(--accent-text); }
+.noticeSuccess { background: var(--good-soft); color: var(--good); }
 .empty { padding: 48px 24px; text-align: center; color: var(--muted); font-size: 14px; }
 
 /* ── Login ─────────────────────────────────────────────────── */
@@ -835,6 +836,18 @@ table.data tbody tr:hover { background: var(--raised); }
 .profileForm textarea { width: 100%; resize: vertical; min-height: 120px; }
 .profileForm .field small { color: var(--muted); font-size: 12px; }
 .profileActions { display: flex; justify-content: flex-end; margin-top: 22px; }
+.profileSection { margin-top: 18px; overflow: hidden; }
+.profileSectionHead { padding: 22px 24px; border-bottom: 1px solid var(--line-soft); }
+.profileSectionHead h2 { margin: 0; font-size: 18px; }
+.profileSectionHead p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.profileSessionNotice { margin: 18px 24px 0; }
+.sessionList { padding: 0 24px; }
+.sessionRow { display: flex; align-items: center; gap: 13px; padding: 17px 0; border-top: 1px solid var(--line-soft); }
+.sessionRow:first-child { border-top: 0; }
+.sessionRow > div { display: grid; flex: 1; min-width: 0; }
+.sessionRow strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.sessionRow small { margin-top: 3px; color: var(--muted); font-size: 12px; }
+.sessionIcon { color: var(--good); font-size: 10px; }
 
 /* ── Manajemen pengguna Master ────────────────────────────── */
 .userFilterCard { margin: 26px 0 28px; padding: 12px; }
@@ -1010,6 +1023,10 @@ table.data tbody tr:hover { background: var(--raised); }
   .credentialRow { align-items: stretch; flex-direction: column; }
   .profilePage { padding-top: 24px; padding-bottom: 88px; }
   .profileIdentity, .profileForm { padding: 18px; }
+  .profileSectionHead { padding: 18px; }
+  .sessionList { padding: 0 18px; }
+  .sessionRow { align-items: flex-start; flex-wrap: wrap; }
+  .sessionRow .btn { margin-left: 23px; }
   .profileGrid { grid-template-columns: 1fr; }
   .profileFull { grid-column: auto; }
 }

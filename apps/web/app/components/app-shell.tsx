@@ -51,11 +51,11 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           </nav>
 
           <div className="sideProfile">
-            <Link href="/profile" className="sideProfileLink" aria-label="Edit profil">
+            <Link href="/profile" className="sideProfileLink" aria-label="Buka profil">
               <span className="avatar"><span aria-hidden="true">{initials(user.fullName)}</span></span>
               <span className="sideProfileText">
                 <strong>{user.fullName}</strong>
-                <small>Master · Edit profil</small>
+                <small>Master</small>
               </span>
             </Link>
             <ThemeToggle />
@@ -97,10 +97,10 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
         <div className="topbarRight">
           <ThemeToggle />
           <LogoutButton />
-          <Link href="/profile" className="avatar" title={`Edit profil ${user.fullName}`}>
+          <Link href="/profile" className="avatar" title={`Profil ${user.fullName}`}>
             <span aria-hidden="true">{initials(user.fullName)}</span>
             <span className="srOnly">
-              Edit profil {user.fullName}, peran {user.role}
+              Buka profil {user.fullName}, peran {user.role}
             </span>
           </Link>
         </div>

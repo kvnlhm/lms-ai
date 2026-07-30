@@ -61,6 +61,25 @@ export class UserCredentialService {
     await this.revokeSessions(consumed.userId);
   }
 
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { passwordHash: true },
+    });
+    if (!user || !(await this.passwords.verify(user.passwordHash, currentPassword))) {
+      throw AppError.validation({ currentPassword: ['Password lama tidak sesuai.'] });
+    }
+    if (await this.passwords.verify(user.passwordHash, newPassword)) {
+      throw AppError.validation({ newPassword: ['Password baru harus berbeda dari password lama.'] });
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: await this.passwords.hash(newPassword) },
+    });
+    await this.revokeSessions(userId);
+  }
+
   async revokeSessions(userId: string): Promise<number> {
     const revoked = await this.sessions.destroyAllForUser(userId);
     await this.prisma.authSession.updateMany({
