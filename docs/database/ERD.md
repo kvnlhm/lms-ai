@@ -40,6 +40,7 @@ erDiagram
         varchar password_hash
         varchar full_name
         varchar phone
+        text bio
         varchar avatar_url
         varchar status
         timestamptz email_verified_at

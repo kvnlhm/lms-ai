@@ -109,6 +109,7 @@ model User {
   passwordHash    String     @map("password_hash")
   fullName        String     @map("full_name")
   phone           String?
+  bio             String?
   avatarUrl       String?    @map("avatar_url")
   status          UserStatus @default(ACTIVE)
   emailVerifiedAt DateTime?  @map("email_verified_at") @db.Timestamptz(6)

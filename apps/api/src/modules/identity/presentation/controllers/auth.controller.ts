@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req, Res } from '@nestjs/common';
 import { ApiNoContentResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   ApiEnvelope,
@@ -22,7 +22,7 @@ import { SessionService } from '../../application/session.service';
 import { UserCredentialService } from '../../application/user-credential.service';
 import type { ActiveSession, AuthenticatedUser } from '../../domain/session';
 import { AllowPendingMfa, CurrentSession, CurrentUser, Public } from '../decorators';
-import { AcceptInvitationDto, LoginDto, MfaCodeDto, ResetPasswordDto } from '../dto/login.dto';
+import { AcceptInvitationDto, LoginDto, MfaCodeDto, ResetPasswordDto, UpdateCurrentUserDto } from '../dto/login.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -173,6 +173,14 @@ export class AuthController {
   @ApiErrors(401)
   async me(@CurrentUser() user: AuthenticatedUser) {
     return this.auth.currentUser(user);
+  }
+
+  @Patch('me')
+  @ApiOperation({ summary: 'Memperbarui profil pengguna saat ini' })
+  @ApiEnvelope(CurrentUserResponseDto)
+  @ApiErrors(401, 422)
+  async updateMe(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateCurrentUserDto) {
+    return this.auth.updateCurrentUser(user, dto);
   }
 
   @Get('sessions')

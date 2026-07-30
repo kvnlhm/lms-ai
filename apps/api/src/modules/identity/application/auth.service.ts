@@ -150,6 +150,8 @@ export class AuthService {
     id: string;
     fullName: string;
     email: string;
+    phone: string | null;
+    bio: string | null;
     avatarUrl: string | null;
     role: RoleCode;
     status: UserStatus;
@@ -157,7 +159,15 @@ export class AuthService {
   }> {
     const record = await this.prisma.user.findFirst({
       where: { id: user.id, deletedAt: null },
-      select: { id: true, fullName: true, email: true, avatarUrl: true, status: true },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        bio: true,
+        avatarUrl: true,
+        status: true,
+      },
     });
     if (!record) throw AppError.authenticationRequired();
 
@@ -166,6 +176,31 @@ export class AuthService {
       role: user.roleCode,
       permissions: user.permissions,
     };
+  }
+
+  async updateCurrentUser(
+    user: AuthenticatedUser,
+    input: { fullName?: string; phone?: string | null; bio?: string | null },
+  ): Promise<{
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string | null;
+    bio: string | null;
+    avatarUrl: string | null;
+    role: RoleCode;
+    status: UserStatus;
+    permissions: PermissionCode[];
+  }> {
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        ...(input.fullName !== undefined ? { fullName: input.fullName.trim() } : {}),
+        ...(input.phone !== undefined ? { phone: input.phone?.trim() || null } : {}),
+        ...(input.bio !== undefined ? { bio: input.bio?.trim() || null } : {}),
+      },
+    });
+    return this.currentUser(user);
   }
 
   async listDevices(userId: string): Promise<

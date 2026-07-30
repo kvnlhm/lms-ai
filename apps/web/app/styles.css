@@ -716,6 +716,8 @@ table.data tbody tr:hover { background: var(--raised); }
   margin-top: auto; display: flex; align-items: center; gap: 8px;
   padding: 12px 5px 2px; border-top: 1px solid #e0e3e7;
 }
+.sideProfileLink { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; border-radius: 8px; }
+.sideProfileLink:hover .sideProfileText strong { color: var(--accent); }
 :root[data-theme='dark'] .sideProfile { border-color: var(--line); }
 .sideProfileText { display: grid; min-width: 0; flex: 1; line-height: 1.15; }
 .sideProfileText strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
@@ -811,6 +813,28 @@ table.data tbody tr:hover { background: var(--raised); }
 .settingsCard { width: min(780px, 100%); margin: 0 auto; padding: 24px; }
 .settingsCard .field input { width: 100%; }
 .courseMembers { width: min(1040px, 100%); margin: 0 auto; }
+
+/* ── Profil pengguna ──────────────────────────────────────── */
+.profilePage { width: min(880px, calc(100% - 32px)); margin: 0 auto; padding: 40px 0 72px; }
+.profileCard { overflow: hidden; }
+.profileIdentity {
+  display: flex; align-items: center; gap: 18px;
+  padding: 24px; border-bottom: 1px solid var(--line-soft);
+  background: color-mix(in srgb, var(--raised) 52%, var(--surface));
+}
+.profileAvatar {
+  width: 64px; height: 64px; flex: none; display: grid; place-items: center;
+  border-radius: 18px; background: linear-gradient(145deg, #2563eb, #4b86f5);
+  color: white; font-size: 20px; font-weight: 750;
+}
+.profileIdentity h2 { margin: 0; font-size: 20px; }
+.profileIdentity p { margin: 2px 0 8px; color: var(--muted); font-size: 13px; }
+.profileForm { padding: 24px; }
+.profileGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.profileFull { grid-column: 1 / -1; }
+.profileForm textarea { width: 100%; resize: vertical; min-height: 120px; }
+.profileForm .field small { color: var(--muted); font-size: 12px; }
+.profileActions { display: flex; justify-content: flex-end; margin-top: 22px; }
 
 /* ── Manajemen pengguna Master ────────────────────────────── */
 .userFilterCard { margin: 26px 0 28px; padding: 12px; }
@@ -984,4 +1008,8 @@ table.data tbody tr:hover { background: var(--raised); }
   .userCreateCard { padding: 18px; }
   .userCreateGrid { grid-template-columns: 1fr; }
   .credentialRow { align-items: stretch; flex-direction: column; }
+  .profilePage { padding-top: 24px; padding-bottom: 88px; }
+  .profileIdentity, .profileForm { padding: 18px; }
+  .profileGrid { grid-template-columns: 1fr; }
+  .profileFull { grid-column: auto; }
 }

@@ -24,6 +24,8 @@ export class CurrentUserResponseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() fullName!: string;
   @ApiProperty({ format: 'email' }) email!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) phone!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) bio!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) avatarUrl!: string | null;
   @ApiProperty({ enum: ROLE_CODES }) role!: string;
   @ApiProperty({ enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED'] }) status!: string;

@@ -51,11 +51,13 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           </nav>
 
           <div className="sideProfile">
-            <span className="avatar"><span aria-hidden="true">{initials(user.fullName)}</span></span>
-            <span className="sideProfileText">
-              <strong>{user.fullName}</strong>
-              <small>Master</small>
-            </span>
+            <Link href="/profile" className="sideProfileLink" aria-label="Edit profil">
+              <span className="avatar"><span aria-hidden="true">{initials(user.fullName)}</span></span>
+              <span className="sideProfileText">
+                <strong>{user.fullName}</strong>
+                <small>Master · Edit profil</small>
+              </span>
+            </Link>
             <ThemeToggle />
             <LogoutButton />
           </div>
@@ -95,12 +97,12 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
         <div className="topbarRight">
           <ThemeToggle />
           <LogoutButton />
-          <span className="avatar" title={`${user.fullName} (${user.role})`}>
+          <Link href="/profile" className="avatar" title={`Edit profil ${user.fullName}`}>
             <span aria-hidden="true">{initials(user.fullName)}</span>
             <span className="srOnly">
-              Masuk sebagai {user.fullName}, peran {user.role}
+              Edit profil {user.fullName}, peran {user.role}
             </span>
-          </span>
+          </Link>
         </div>
       </header>
       {children}

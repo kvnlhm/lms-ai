@@ -83,6 +83,51 @@ describe('Autentikasi dan session', () => {
     expect(response.body.data).not.toHaveProperty('passwordHash');
   });
 
+  it('memperbarui profil sendiri tanpa dapat mengubah role atau status', async () => {
+    const session = await login(h.server, STUDENT.email, STUDENT.password);
+    const before = await request(h.server)
+      .get(`${prefix}/auth/me`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+
+    const updated = await request(h.server)
+      .patch(`${prefix}/auth/me`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .send({
+        fullName: 'Pelajar Uji Profil',
+        phone: '+628123456789',
+        bio: 'Bio pengujian profil.',
+      })
+      .expect(200);
+
+    expect(updated.body.data).toMatchObject({
+      fullName: 'Pelajar Uji Profil',
+      phone: '+628123456789',
+      bio: 'Bio pengujian profil.',
+      role: 'STUDENT',
+      status: 'ACTIVE',
+    });
+
+    await request(h.server)
+      .patch(`${prefix}/auth/me`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .send({ role: 'MASTER' })
+      .expect(422);
+
+    await request(h.server)
+      .patch(`${prefix}/auth/me`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .send({
+        fullName: before.body.data.fullName,
+        phone: before.body.data.phone,
+        bio: before.body.data.bio,
+      })
+      .expect(200);
+  });
+
   it('mencabut session di sisi server saat keluar', async () => {
     const session = await login(h.server, STUDENT.email, STUDENT.password);
 

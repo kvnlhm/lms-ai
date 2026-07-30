@@ -249,19 +249,22 @@ Revokes owned session.
 
 ## 6. Current User Profile
 
-## GET `/me`
+## GET `/auth/me`
 
-Returns profile and learning goal.
+Returns the current user profile and effective permissions.
 
-## PATCH `/me`
+## PATCH `/auth/me`
 
 ```json
 {
   "fullName": "Freddie",
   "phone": "+62...",
-  "avatarAssetId": "uuid"
+  "bio": "Membangun bisnis dengan AI."
 }
 ```
+
+Only `fullName`, `phone`, and `bio` are accepted. Email, role, status, and
+permissions cannot be changed through this endpoint.
 
 ## PUT `/me/learning-profile`
 

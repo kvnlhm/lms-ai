@@ -49,3 +49,24 @@ export class AcceptInvitationDto {
 }
 
 export class ResetPasswordDto extends AcceptInvitationDto {}
+
+export class UpdateCurrentUserDto {
+  @ApiPropertyOptional({ minLength: 2, maxLength: 120 })
+  @IsOptional()
+  @IsString()
+  @MinLength(2, { message: 'fullName minimal 2 karakter' })
+  @MaxLength(120)
+  fullName?: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 30 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  phone?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true, maxLength: 500 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  bio?: string | null;
+}
