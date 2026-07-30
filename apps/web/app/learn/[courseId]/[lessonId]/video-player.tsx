@@ -6,9 +6,12 @@ import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 export function VideoPlayer({ lessonId }: { lessonId: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setUrl(null);
+    setError(null);
     void (async () => {
       try {
         const playback = unwrap(
@@ -27,9 +30,18 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
     return () => {
       active = false;
     };
-  }, [lessonId]);
+  }, [attempt, lessonId]);
 
-  if (error) return <p className="notice noticeError">{error}</p>;
+  if (error) {
+    return (
+      <div className="notice noticeError" role="alert">
+        <p>{error}</p>
+        <button className="btnSecondary btnSmall" type="button" onClick={() => setAttempt((value) => value + 1)}>
+          Coba lagi
+        </button>
+      </div>
+    );
+  }
   if (!url) return <p className="stageNote">Menyiapkan video…</p>;
 
   return (
@@ -37,6 +49,12 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
       controls
       preload="metadata"
       src={url}
+      onError={() => {
+        setUrl(null);
+        setError(
+          'Video tersedia di kursus, tetapi file tidak dapat diputar. Minta Master mengunggah ulang video MP4.',
+        );
+      }}
       style={{ width: '100%', maxHeight: '70vh', background: '#000', borderRadius: 12 }}
     >
       Browser kamu tidak mendukung pemutar video HTML5.

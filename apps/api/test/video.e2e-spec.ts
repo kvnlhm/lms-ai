@@ -8,7 +8,7 @@ const STUDENT = { email: 'pelajar@akademionline.id', password: 'Pelajar#Lokal123
 
 describe('Video self-hosted', () => {
   let h: Harness;
-  let videoAssetId: string | undefined;
+  const videoAssetIds: string[] = [];
   const storage = process.env.VIDEO_STORAGE_PATH ?? '/tmp/lms-test-videos';
 
   beforeAll(async () => {
@@ -16,10 +16,16 @@ describe('Video self-hosted', () => {
   });
 
   afterAll(async () => {
-    if (videoAssetId) {
-      await h.prisma.videoPlaybackSession.deleteMany({ where: { videoAssetId } });
-      await h.prisma.videoAsset.deleteMany({ where: { id: videoAssetId } });
-      await rm(join(storage, `${videoAssetId}.mp4`), { force: true });
+    if (videoAssetIds.length > 0) {
+      await h.prisma.videoPlaybackSession.deleteMany({
+        where: { videoAssetId: { in: videoAssetIds } },
+      });
+      await h.prisma.videoAsset.deleteMany({ where: { id: { in: videoAssetIds } } });
+      await Promise.all(
+        videoAssetIds.map((videoAssetId) =>
+          rm(join(storage, `${videoAssetId}.mp4`), { force: true }),
+        ),
+      );
     }
     await h.close();
   });
@@ -51,7 +57,8 @@ describe('Video self-hosted', () => {
       })
       .expect(201);
 
-    videoAssetId = intent.body.data.videoAssetId as string;
+    const videoAssetId = intent.body.data.videoAssetId as string;
+    videoAssetIds.push(videoAssetId);
 
     await request(h.server)
       .put(`${prefix}/admin/videos/${videoAssetId}/content`)
@@ -85,5 +92,54 @@ describe('Video self-hosted', () => {
       .get(`${prefix}/playback-sessions/${playbackId}/content`)
       .set('Cookie', master.cookie)
       .expect(404);
+
+    const replacementIntent = await request(h.server)
+      .post(`${prefix}/admin/videos/upload-intents`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .send({
+        lessonId,
+        title: 'Video pengganti',
+        fileName: 'video-pengganti.mp4',
+        mimeType: 'video/mp4',
+        sizeBytes: mp4.length,
+      })
+      .expect(201);
+
+    const replacementId = replacementIntent.body.data.videoAssetId as string;
+    videoAssetIds.push(replacementId);
+
+    // Video lama tetap tersedia sampai upload pengganti selesai divalidasi.
+    expect(
+      await h.prisma.videoAsset.count({
+        where: { id: videoAssetId, status: 'AVAILABLE', deletedAt: null },
+      }),
+    ).toBe(1);
+
+    await request(h.server)
+      .put(`${prefix}/admin/videos/${replacementId}/content`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .set('Content-Type', 'video/mp4')
+      .set('Content-Length', String(mp4.length))
+      .send(mp4)
+      .expect(200);
+
+    const assets = await h.prisma.videoAsset.findMany({
+      where: { id: { in: [videoAssetId, replacementId] } },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(assets.map(({ status }) => status)).toEqual(['DELETED', 'AVAILABLE']);
+
+    const replacementPlayback = await request(h.server)
+      .post(`${prefix}/learn/lessons/${lessonId}/playback-sessions`)
+      .set('Cookie', student.cookie)
+      .set('X-CSRF-Token', student.csrfToken)
+      .send({ deviceId: 'e2e-device-replacement' })
+      .expect(201);
+
+    expect(replacementPlayback.body.data.providerVideoId).toBe(
+      replacementIntent.body.data.providerVideoId,
+    );
   });
 });

@@ -78,7 +78,9 @@ export class VideoService {
       };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw AppError.validation({ lessonId: ['Lesson sudah memiliki video aktif.'] });
+        throw AppError.validation({
+          lessonId: ['Upload video lain untuk lesson ini sedang berlangsung. Tunggu hingga selesai.'],
+        });
       }
       throw error;
     }
@@ -122,18 +124,44 @@ export class VideoService {
         throw new Error('Konten bukan MP4 yang valid atau ukurannya tidak lengkap.');
       }
       await rename(tempPath, finalPath);
-      const available = await this.prisma.videoAsset.update({
-        where: { id: asset.id },
-        data: { objectKey, status: VideoStatus.AVAILABLE, processingError: null },
+      const replacedAssets = await this.prisma.$transaction(async (tx) => {
+        const previous = await tx.videoAsset.findMany({
+          where: {
+            lessonId: asset.lessonId,
+            id: { not: asset.id },
+            status: VideoStatus.AVAILABLE,
+            deletedAt: null,
+          },
+          select: { id: true, objectKey: true },
+        });
+        const replacedAt = new Date();
+        if (previous.length > 0) {
+          await tx.videoAsset.updateMany({
+            where: { id: { in: previous.map(({ id }) => id) } },
+            data: { status: VideoStatus.DELETED, deletedAt: replacedAt },
+          });
+        }
+        await tx.videoAsset.update({
+          where: { id: asset.id },
+          data: { objectKey, status: VideoStatus.AVAILABLE, processingError: null },
+        });
+        return previous;
       });
+      await Promise.allSettled(
+        replacedAssets
+          .map(({ objectKey: previousObjectKey }) => previousObjectKey)
+          .filter((previousObjectKey): previousObjectKey is string => Boolean(previousObjectKey))
+          .map((previousObjectKey) => rm(join(this.config.storagePath, previousObjectKey), { force: true })),
+      );
       return {
-        videoAssetId: available.id,
-        provider: available.provider,
-        status: available.status,
-        sizeBytes: available.sizeBytes.toString(),
+        videoAssetId: asset.id,
+        provider: asset.provider,
+        status: VideoStatus.AVAILABLE,
+        sizeBytes: asset.sizeBytes.toString(),
       };
     } catch (error) {
       await rm(tempPath, { force: true });
+      await rm(finalPath, { force: true });
       await this.prisma.videoAsset.update({
         where: { id: asset.id },
         data: {
