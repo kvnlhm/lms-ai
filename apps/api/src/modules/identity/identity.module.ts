@@ -5,12 +5,21 @@ import { PasswordService } from './application/password.service';
 import { SessionService } from './application/session.service';
 import { AuthController } from './presentation/controllers/auth.controller';
 import { MfaService } from './application/mfa.service';
+import { CredentialTokenService } from './application/credential-token.service';
+import { UserCredentialService } from './application/user-credential.service';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, SessionService, LoginRateLimiter, MfaService],
-  // Hanya SessionService yang diekspor: modul lain butuh guard, bukan akses
-  // ke persistence identity.
-  exports: [SessionService],
+  providers: [
+    AuthService,
+    PasswordService,
+    SessionService,
+    LoginRateLimiter,
+    MfaService,
+    CredentialTokenService,
+    UserCredentialService,
+  ],
+  // Facade credential diekspor agar Users tidak mengakses persistence identity.
+  exports: [SessionService, UserCredentialService],
 })
 export class IdentityModule {}

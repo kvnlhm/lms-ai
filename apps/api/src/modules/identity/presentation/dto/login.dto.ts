@@ -27,3 +27,23 @@ export class MfaCodeDto {
   @MaxLength(6)
   code!: string;
 }
+
+export class AcceptInvitationDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(32)
+  @MaxLength(200)
+  token!: string;
+
+  @ApiProperty({ minLength: 12 })
+  @IsString()
+  @MinLength(12, { message: 'password minimal 12 karakter' })
+  @MaxLength(128)
+  password!: string;
+
+  @ApiProperty({ minLength: 12 })
+  @IsString()
+  @MinLength(12)
+  @MaxLength(128)
+  passwordConfirmation!: string;
+}

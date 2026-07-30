@@ -217,6 +217,22 @@ Response must not reveal whether email exists.
 }
 ```
 
+## POST `/auth/accept-invitation`
+
+Public. Token bersifat sekali pakai, disimpan sebagai hash, dan berlaku tujuh hari.
+
+```json
+{
+  "token": "single-use-token",
+  "password": "new-password",
+  "passwordConfirmation": "new-password"
+}
+```
+
+Pada fase sebelum provider email tersedia, `POST /admin/users` mengembalikan
+token undangan satu kali kepada Master agar tautan dapat disampaikan secara
+manual. Token tidak boleh dicatat ke audit log maupun application log.
+
 ## GET `/auth/sessions`
 
 Returns active devices for current user.
@@ -314,6 +330,9 @@ sort
   "sendInvitation": true
 }
 ```
+
+Response pembuatan memuat profil pengguna, `invitationToken`, dan
+`invitationExpiresAt`. Nilai token mentah hanya dikembalikan sekali.
 
 ## GET `/admin/users/{userId}`
 

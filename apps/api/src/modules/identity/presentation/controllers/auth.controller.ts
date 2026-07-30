@@ -19,9 +19,10 @@ import { AppError } from '../../../../shared/errors/app-error';
 import { AuthService } from '../../application/auth.service';
 import { MfaService } from '../../application/mfa.service';
 import { SessionService } from '../../application/session.service';
+import { UserCredentialService } from '../../application/user-credential.service';
 import type { ActiveSession, AuthenticatedUser } from '../../domain/session';
 import { AllowPendingMfa, CurrentSession, CurrentUser, Public } from '../decorators';
-import { LoginDto, MfaCodeDto } from '../dto/login.dto';
+import { AcceptInvitationDto, LoginDto, MfaCodeDto } from '../dto/login.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -32,10 +33,26 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly sessions: SessionService,
     private readonly mfa: MfaService,
+    private readonly credentials: UserCredentialService,
     private readonly prisma: PrismaService,
     config: ConfigService<{ app: AppConfig }, true>,
   ) {
     this.app = config.get('app', { infer: true });
+  }
+
+  @Public()
+  @Post('accept-invitation')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Menetapkan password dari undangan sekali pakai' })
+  @ApiErrors(422)
+  async acceptInvitation(@Body() dto: AcceptInvitationDto) {
+    if (dto.password !== dto.passwordConfirmation) {
+      throw AppError.validation({
+        passwordConfirmation: ['Konfirmasi password tidak sama.'],
+      });
+    }
+    await this.credentials.acceptInvitation(dto.token, dto.password);
+    return { accepted: true };
   }
 
   @Post('mfa/setup')

@@ -1,4 +1,6 @@
 import request from 'supertest';
+import { randomUUID } from 'node:crypto';
+import { PrismaClient } from '@prisma/client';
 import { login, prefix, startHarness, type Harness } from './support/harness';
 
 const STUDENT = { email: 'pelajar@akademionline.id', password: 'Pelajar#Lokal12345' };
@@ -11,6 +13,11 @@ const MASTER = { email: 'master@akademionline.id', password: 'Master#Lokal12345'
  */
 const ADMIN_ENDPOINTS: Array<{ method: 'get' | 'post' | 'patch' | 'put' | 'delete'; path: string }> = [
   { method: 'get', path: '/admin/users' },
+  { method: 'post', path: '/admin/users' },
+  { method: 'patch', path: '/admin/users/00000000-0000-4000-8000-000000000000' },
+  { method: 'post', path: '/admin/users/00000000-0000-4000-8000-000000000000/suspend' },
+  { method: 'post', path: '/admin/users/00000000-0000-4000-8000-000000000000/activate' },
+  { method: 'post', path: '/admin/users/00000000-0000-4000-8000-000000000000/reset-mfa' },
   { method: 'get', path: '/admin/courses' },
   { method: 'post', path: '/admin/courses' },
   { method: 'get', path: '/admin/courses/00000000-0000-4000-8000-000000000000' },
@@ -89,6 +96,52 @@ describe('Otorisasi endpoint Master', () => {
       ]),
     );
     expect(JSON.stringify(response.body)).not.toContain('passwordHash');
+  });
+
+  it('membuat Pelajar lewat undangan sekali pakai dan dapat menetapkan password', async () => {
+    const email = `undangan-${randomUUID()}@example.com`;
+    const created = await request(h.server)
+      .post(`${prefix}/admin/users`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .send({
+        fullName: 'Pelajar Undangan',
+        email,
+        phone: null,
+        role: 'STUDENT',
+        status: 'ACTIVE',
+      })
+      .expect(201);
+
+    expect(created.body.data.invitationToken).toEqual(expect.any(String));
+    expect(JSON.stringify(created.body)).not.toContain('passwordHash');
+
+    await request(h.server)
+      .post(`${prefix}/auth/accept-invitation`)
+      .send({
+        token: created.body.data.invitationToken,
+        password: 'Password#Undangan123',
+        passwordConfirmation: 'Password#Undangan123',
+      })
+      .expect(200);
+
+    await request(h.server)
+      .post(`${prefix}/auth/accept-invitation`)
+      .send({
+        token: created.body.data.invitationToken,
+        password: 'Password#Undangan123',
+        passwordConfirmation: 'Password#Undangan123',
+      })
+      .expect(422);
+
+    await login(h.server, email, 'Password#Undangan123');
+
+    const prisma = new PrismaClient();
+    try {
+      await prisma.user.delete({ where: { email } });
+    } finally {
+      await prisma.$disconnect();
+    }
   });
 
   it('tidak memberi Pelajar permission apa pun pada /auth/me', async () => {

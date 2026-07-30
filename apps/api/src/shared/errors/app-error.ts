@@ -74,6 +74,14 @@ export class AppError extends Error {
     return new AppError('RATE_LIMITED', 429, 'Terlalu banyak percobaan. Coba lagi nanti.');
   }
 
+  static emailAlreadyUsed(): AppError {
+    return new AppError('EMAIL_ALREADY_USED', 409, 'Email sudah digunakan.');
+  }
+
+  static tokenExpired(): AppError {
+    return new AppError('TOKEN_EXPIRED', 422, 'Tautan tidak valid atau sudah kedaluwarsa.');
+  }
+
   static validation(fields: Record<string, string[]>): AppError {
     return new AppError('VALIDATION_ERROR', 422, 'Data yang diberikan tidak valid.', fields);
   }

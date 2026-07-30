@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { serverClient, unwrapList } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
-import { StatusPill } from '../../components/status-pill';
+import { UserManager } from './user-manager';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,35 +75,7 @@ export default async function MasterUsersPage({ searchParams }: Props) {
           <button className="btn" type="submit">Terapkan</button>
         </form>
 
-        <section className="card" style={{ padding: '6px 0' }}>
-          <div className="tableWrap">
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>Pengguna</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Login terakhir</th>
-                  <th>Bergabung</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.items.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <span className="cellTitle">{item.fullName}</span>
-                      <span className="cellSub">{item.email}</span>
-                    </td>
-                    <td>{item.role === 'MASTER' ? 'Master' : 'Pelajar'}</td>
-                    <td><StatusPill status={item.status} /></td>
-                    <td>{formatDate(item.lastLoginAt)}</td>
-                    <td>{formatDate(item.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <UserManager users={list.items} />
 
         {list.meta.totalPages > 1 ? (
           <nav aria-label="Navigasi halaman" className="toolbar" style={{ justifyContent: 'center' }}>
@@ -125,9 +97,4 @@ function href(params: Awaited<Props['searchParams']>, page: number): string {
   if (params.status) query.set('status', params.status);
   query.set('page', String(page));
   return `/master/users?${query.toString()}`;
-}
-
-function formatDate(value: unknown): string {
-  if (!value) return 'Belum pernah';
-  return new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(String(value)));
 }
