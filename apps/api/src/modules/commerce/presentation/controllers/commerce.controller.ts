@@ -40,6 +40,16 @@ import {
   WebhookAcceptedDto,
 } from '../dto/commerce.response';
 
+/**
+ * Validasi khusus notifikasi Midtrans: membuang field di luar DTO alih-alih
+ * menolak permintaannya. Lihat alasannya di `midtransWebhook`.
+ */
+export const MIDTRANS_NOTIFICATION_PIPE = new ValidationPipe({
+  whitelist: true,
+  transform: true,
+  errorHttpStatusCode: 422,
+});
+
 @ApiTags('registration')
 @Controller()
 export class CommerceController {
@@ -83,15 +93,21 @@ export class CommerceController {
   @ApiOperation({ summary: 'Menerima notifikasi transaksi Midtrans yang ditandatangani' })
   @ApiEnvelope(WebhookAcceptedDto)
   @ApiErrors(403, 404, 422)
-  async midtransWebhook(
-    // Midtrans mengirim ~22 field dan menambah field baru tanpa pemberitahuan.
-    // Pipe global memakai `forbidNonWhitelisted`, yang akan menolak seluruh
-    // notifikasi hanya karena ada field tak dikenal — pembayaran lunas tidak
-    // akan pernah terproses. Di sini field asing cukup dibuang oleh
-    // `whitelist`, sehingga service tetap hanya melihat field terdeklarasi.
-    @Body(new ValidationPipe({ whitelist: true, transform: true, errorHttpStatusCode: 422 }))
-    dto: MidtransNotificationDto,
-  ) {
+  // Midtrans mengirim ~22 field dan bisa menambah field baru tanpa
+  // pemberitahuan. Pipe global memakai `forbidNonWhitelisted`, sehingga satu
+  // field tak dikenal saja menolak seluruh notifikasi — pembayaran lunas tidak
+  // pernah terproses dan pelajar tidak mendapat akses.
+  //
+  // Body sengaja diterima mentah: ValidationPipe melewatkan parameter yang
+  // metatype-nya `Object`, jadi pipe global tidak ikut campur. Validasi
+  // dilakukan eksplisit di bawah dengan `whitelist` saja, sehingga field asing
+  // dibuang dan service tetap hanya melihat field terdeklarasi.
+  async midtransWebhook(@Body() rawNotification: Record<string, unknown>) {
+    const dto = (await MIDTRANS_NOTIFICATION_PIPE.transform(rawNotification, {
+      type: 'body',
+      metatype: MidtransNotificationDto,
+    })) as MidtransNotificationDto;
+
     await this.commerce.handleMidtrans(dto);
     return { accepted: true };
   }

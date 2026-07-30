@@ -4,8 +4,24 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { MidtransNotificationDto } from '../dto/commerce.dto';
+import { MIDTRANS_NOTIFICATION_PIPE } from './commerce.controller';
 
-const metadata: ArgumentMetadata = { type: 'body', metatype: MidtransNotificationDto };
+/**
+ * Salinan konfigurasi pipe global di `bootstrap.ts`. Pipe global tetap
+ * dijalankan Nest untuk setiap parameter, termasuk yang punya pipe sendiri,
+ * jadi tes harus melewatinya lebih dulu agar mencerminkan runtime.
+ */
+const globalPipe = new ValidationPipe({
+  whitelist: true,
+  forbidNonWhitelisted: true,
+  transform: true,
+  errorHttpStatusCode: 422,
+});
+
+/** Metatype parameter `@Body() rawNotification: Record<string, unknown>`. */
+const rawBodyMetadata: ArgumentMetadata = { type: 'body', metatype: Object };
+
+const dtoMetadata: ArgumentMetadata = { type: 'body', metatype: MidtransNotificationDto };
 
 /**
  * Payload sebenarnya yang dikirim Midtrans sandbox untuk pembayaran kartu
@@ -37,18 +53,21 @@ const providerNotification = {
   transaction_time: '2026-07-30 17:30:23',
 };
 
+/** Meniru urutan nyata: pipe global lebih dulu, lalu validasi eksplisit. */
+async function runWebhookPipeline(body: Record<string, unknown>) {
+  const afterGlobal = (await globalPipe.transform(body, rawBodyMetadata)) as Record<
+    string,
+    unknown
+  >;
+  return (await MIDTRANS_NOTIFICATION_PIPE.transform(
+    afterGlobal,
+    dtoMetadata,
+  )) as MidtransNotificationDto;
+}
+
 describe('midtrans webhook payload validation', () => {
   it('accepts the full provider payload and strips undeclared fields', async () => {
-    const pipe = new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      errorHttpStatusCode: 422,
-    });
-
-    const result = (await pipe.transform(
-      { ...providerNotification },
-      metadata,
-    )) as MidtransNotificationDto;
+    const result = await runWebhookPipeline({ ...providerNotification });
 
     expect(result.order_id).toBe('REG-test');
     expect(result.transaction_status).toBe('capture');
@@ -59,29 +78,21 @@ describe('midtrans webhook payload validation', () => {
   });
 
   it('still rejects a payload missing a field the signature depends on', async () => {
-    const pipe = new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      errorHttpStatusCode: 422,
-    });
     const { signature_key: _omitted, ...withoutSignature } = providerNotification;
 
-    await expect(pipe.transform(withoutSignature, metadata)).rejects.toThrow();
+    await expect(runWebhookPipeline(withoutSignature)).rejects.toThrow(
+      UnprocessableEntityException,
+    );
   });
 
-  it('documents why the global forbidNonWhitelisted pipe cannot be used here', async () => {
-    // Regresi yang pernah terjadi di produksi: setiap notifikasi pembayaran
-    // lunas ditolak 422 karena membawa field di luar DTO, sehingga akses
-    // pelajar tidak pernah diberikan.
-    const globalPipe = new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      errorHttpStatusCode: 422,
-    });
-
+  it('regression: binding the DTO directly would let the global pipe reject the payload', async () => {
+    // Bug produksi 30 Juli 2026. Memasang pipe di level parameter TIDAK
+    // menggantikan pipe global — Nest menjalankan keduanya, global lebih dulu.
+    // Karena itu body harus diterima sebagai `Object` agar pipe global
+    // melewatinya. Tes ini gagal jika seseorang mengembalikan binding langsung
+    // ke `@Body() dto: MidtransNotificationDto`.
     const rejection = await globalPipe
-      .transform({ ...providerNotification }, metadata)
+      .transform({ ...providerNotification }, dtoMetadata)
       .then(() => null)
       .catch((error: UnprocessableEntityException) => error);
 
