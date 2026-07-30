@@ -6,6 +6,7 @@ import { ArrowLeft } from '../../../components/icons';
 import { ApiError, serverClient, unwrap } from '../../../lib/api';
 import { requirePermission } from '../../../lib/session';
 import { CourseEditor } from './course-editor';
+import { CourseSettings } from './course-settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,10 +14,15 @@ type CourseDetail = Schemas['AdminCourseDetailDto'];
 
 interface Props {
   params: Promise<{ courseId: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }
 
-export default async function MasterCourseEditorPage({ params }: Props) {
+export default async function MasterCourseEditorPage({ params, searchParams }: Props) {
   const { courseId } = await params;
+  const { tab: requestedTab } = await searchParams;
+  const tab = ['overview', 'lessons', 'settings'].includes(requestedTab ?? '')
+    ? requestedTab!
+    : 'overview';
   const user = await requirePermission('courses.manage', `/master/courses/${courseId}`);
   const client = await serverClient();
 
@@ -32,18 +38,69 @@ export default async function MasterCourseEditorPage({ params }: Props) {
 
   return (
     <AppShell user={user}>
-      <main className="wrap wrapNarrow">
+      <main className="masterContent">
         <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
-          <Link href="/master" className="pill">
+          <Link href="/master/courses" className="pill">
             <ArrowLeft size={13} /> Kelola Kursus
           </Link>
-          <Link href={`/master/courses/${courseId}/enrollments`} className="pill">
-            Pelajar terdaftar
-          </Link>
         </div>
+        <div className="courseAdminHead">
+          <div>
+            <h1 className="pageTitle">{course.title}</h1>
+            <p className="pageSub">/{course.slug} · {course.modules.length} bagian</p>
+          </div>
+        </div>
+        <nav className="courseTabs" aria-label="Kelola kursus">
+          <Link href={`/master/courses/${courseId}?tab=overview`} aria-current={tab === 'overview' ? 'page' : undefined}>Overview</Link>
+          <Link href={`/master/courses/${courseId}?tab=lessons`} aria-current={tab === 'lessons' ? 'page' : undefined}>Materi</Link>
+          <Link href={`/master/courses/${courseId}/enrollments`}>Peserta</Link>
+          <Link href={`/master/courses/${courseId}?tab=settings`} aria-current={tab === 'settings' ? 'page' : undefined}>Pengaturan</Link>
+        </nav>
 
-        <CourseEditor course={course} />
+        {tab === 'overview' ? <CourseOverview course={course} /> : null}
+        {tab === 'lessons' ? <CourseEditor course={course} /> : null}
+        {tab === 'settings' ? <CourseSettings course={course} /> : null}
       </main>
     </AppShell>
   );
+}
+
+function CourseOverview({ course }: { course: CourseDetail }) {
+  const lessons = course.modules.reduce((sum, item) => sum + item.lessons.length, 0);
+  const required = course.modules.flatMap((item) => item.lessons).filter((item) => item.isRequired).length;
+  return (
+    <div className="courseOverview">
+      <article className="card courseHeroAdmin">
+        <div className="courseHeroVisual" aria-hidden="true">{course.title.slice(0, 1)}</div>
+        <div className="courseHeroBody">
+          <span className="pill">{course.status === 'PUBLISHED' ? 'Terbit' : course.status === 'DRAFT' ? 'Draf' : 'Arsip'}</span>
+          <h2>{course.title}</h2>
+          <p>{course.shortDescription || 'Tambahkan deskripsi singkat pada tab Pengaturan.'}</p>
+          <div className="courseMetaLine">{course.level} · {course.estimatedMinutes} menit</div>
+        </div>
+        <Link className="btn btnGhost" href={`/master/courses/${course.id}?tab=lessons`}>Edit materi</Link>
+      </article>
+      <section className="metricGrid courseMetricGrid">
+        <Metric label="Bagian" value={course.modules.length} />
+        <Metric label="Materi" value={lessons} />
+        <Metric label="Materi wajib" value={required} />
+        <Metric label="Status" value={course.status === 'PUBLISHED' ? 'Terbit' : course.status === 'DRAFT' ? 'Draf' : 'Arsip'} />
+      </section>
+      <article className="card dashboardPanel">
+        <div className="panelHead"><h2>Struktur kursus</h2></div>
+        {course.modules.map((item, index) => (
+          <div className="overviewModule" key={item.id}>
+            <span>{index + 1}</span>
+            <strong>{item.title}</strong>
+            <small>{item.lessons.length} materi</small>
+          </div>
+        ))}
+        {course.modules.length === 0 ? <p className="empty">Belum ada bagian.</p> : null}
+      </article>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number | string }) {
+  return <article className="card metricCard"><span>{label}</span><strong>{value}</strong></article>;
 }

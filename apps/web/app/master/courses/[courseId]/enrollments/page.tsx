@@ -45,26 +45,38 @@ export default async function CourseEnrollmentsPage({ params }: Props) {
 
   return (
     <AppShell user={user}>
-      <main className="wrap wrapNarrow">
+      <main className="masterContent">
         <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
-          <Link href="/master" className="pill">
+          <Link href="/master/courses" className="pill">
             <ArrowLeft size={13} /> Kelola Kursus
-          </Link>
-          <Link href={`/master/courses/${courseId}`} className="pill">
-            Susun materi
           </Link>
         </div>
 
-        <div className="pageHead">
-          <div className="pageHeadMain">
-            <h1 className="pageTitle">Pelajar terdaftar</h1>
-            <p className="pageSub">
-              {course.title} · {total} pelajar
-            </p>
+        <div className="courseAdminHead">
+          <div>
+            <h1 className="pageTitle">{course.title}</h1>
+            <p className="pageSub">/{course.slug} · {total} peserta</p>
           </div>
         </div>
 
-        <EnrollmentManager courseId={courseId} enrollments={enrollments} />
+        <nav className="courseTabs" aria-label="Kelola kursus">
+          <Link href={`/master/courses/${courseId}?tab=overview`}>Overview</Link>
+          <Link href={`/master/courses/${courseId}?tab=lessons`}>Materi</Link>
+          <Link href={`/master/courses/${courseId}/enrollments`} aria-current="page">
+            Peserta
+          </Link>
+          <Link href={`/master/courses/${courseId}?tab=settings`}>Pengaturan</Link>
+        </nav>
+
+        <section className="courseMembers">
+          <div className="panelHead">
+            <div>
+              <h2>Peserta ({total})</h2>
+              <p className="pageSub">Atur akses dan status peserta kursus ini.</p>
+            </div>
+          </div>
+          <EnrollmentManager courseId={courseId} enrollments={enrollments} />
+        </section>
       </main>
     </AppShell>
   );

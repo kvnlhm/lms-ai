@@ -12,12 +12,61 @@ const LEARNER_NAV = [
 ];
 
 const MASTER_NAV = [
-  { href: '/master', label: 'Kelola', permission: 'courses.manage' },
-  { href: '/master/users', label: 'Pengguna', permission: 'users.read' },
+  { href: '/master', label: 'Dashboard', icon: '◉', permission: 'courses.manage' },
+  { href: '/master/courses', label: 'Kursus', icon: '◇', permission: 'courses.manage' },
+  { href: '/master/users', label: 'Pengguna', icon: '◎', permission: 'users.read' },
 ] as const;
 
 /** Kerangka halaman untuk area yang membutuhkan autentikasi. */
 export function AppShell({ user, children }: { user: CurrentUser; children: ReactNode }) {
+  if (user.role === 'MASTER') {
+    return (
+      <div className="masterShell">
+        <aside className="masterSidebar">
+          <Link href="/master" className="workspaceSwitch" aria-label="Dashboard AIPreneur">
+            <span className="brandMark">AI</span>
+            <span>
+              <strong>AIPreneur</strong>
+              <small>Academy</small>
+            </span>
+          </Link>
+
+          <nav className="sideNav" aria-label="Navigasi Master">
+            <span className="sideLabel">Kelola</span>
+            {MASTER_NAV.filter((item) => can(user, item.permission)).map((item) => (
+              <NavLink key={item.href} href={item.href}>
+                <span className="sideIcon" aria-hidden="true">{item.icon}</span>
+                {item.label}
+              </NavLink>
+            ))}
+            <span className="sideLabel sideLabelSpace">Lihat akademi</span>
+            <Link className="navLink" href="/courses">
+              <span className="sideIcon" aria-hidden="true">↗</span>
+              Katalog Pelajar
+            </Link>
+          </nav>
+
+          <div className="sideProfile">
+            <span className="avatar"><span aria-hidden="true">{initials(user.fullName)}</span></span>
+            <span className="sideProfileText">
+              <strong>{user.fullName}</strong>
+              <small>Master</small>
+            </span>
+            <ThemeToggle />
+            <LogoutButton />
+          </div>
+        </aside>
+        <div className="masterMain">
+          <header className="masterTopbar">
+            <span className="mobileBrand">AIPreneur Academy</span>
+            <span className="masterTopTitle">Workspace Master</span>
+          </header>
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <header className="topbar">

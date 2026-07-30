@@ -13,8 +13,8 @@ export default async function NewCoursePage() {
 
   return (
     <AppShell user={user}>
-      <main className="wrap wrapNarrow">
-        <Link href="/master" className="pill" style={{ marginBottom: 18, display: 'inline-flex' }}>
+      <main className="masterContent masterContentNarrow">
+        <Link href="/master/courses" className="pill" style={{ marginBottom: 18, display: 'inline-flex' }}>
           <ArrowLeft size={13} /> Kelola Kursus
         </Link>
 

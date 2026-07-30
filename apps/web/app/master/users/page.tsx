@@ -39,7 +39,7 @@ export default async function MasterUsersPage({ searchParams }: Props) {
 
   return (
     <AppShell user={user}>
-      <main className="wrap">
+      <main className="masterContent">
         <div className="pageHead">
           <div className="pageHeadMain">
             <h1 className="pageTitle">Pengguna</h1>

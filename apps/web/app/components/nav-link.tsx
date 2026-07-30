@@ -11,7 +11,8 @@ import type { ReactNode } from 'react';
  */
 export function NavLink({ href, children }: { href: string; children: ReactNode }) {
   const pathname = usePathname();
-  const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+  const isActive =
+    href === '/' || href === '/master' ? pathname === href : pathname.startsWith(href);
 
   return (
     <Link href={href} className="navLink" aria-current={isActive ? 'page' : undefined}>
