@@ -415,6 +415,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/course-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar kategori yang dapat dipilih untuk kursus */
+        get: operations["AdminCoursesController_categories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/courses": {
         parameters: {
             query?: never;
@@ -1190,6 +1207,8 @@ export interface components {
             access: components["schemas"]["CourseAccessDto"];
         };
         AdminCategoryDto: {
+            /** Format: uuid */
+            id: string;
             name: string;
             slug: string;
         };
@@ -2761,6 +2780,44 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_categories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminCategoryDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

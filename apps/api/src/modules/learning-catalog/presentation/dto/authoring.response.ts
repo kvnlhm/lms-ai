@@ -6,6 +6,7 @@ const CONTENT_TYPES = ['VIDEO', 'TEXT', 'PDF', 'EXTERNAL_LINK'];
 const COMPLETION_RULES = ['MANUAL', 'OPENED', 'MINIMUM_ACTIVE_SECONDS', 'VIDEO_PERCENTAGE'];
 
 export class AdminCategoryDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() name!: string;
   @ApiProperty() slug!: string;
 }

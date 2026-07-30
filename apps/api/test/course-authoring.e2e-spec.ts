@@ -51,6 +51,21 @@ describe('Penyusunan kursus oleh Master', () => {
     expect(response.body.data.publishedAt).toBeNull();
   });
 
+  it('menyediakan kategori dan dapat memasangnya pada kursus', async () => {
+    const categories = await asMaster('get', '/admin/course-categories').expect(200);
+    expect(categories.body.data.length).toBeGreaterThanOrEqual(5);
+    const categoryId = categories.body.data[0].id as string;
+    const courseId = await createCourse(`uji-kategori-${Date.now()}`);
+
+    await asMaster('patch', `/admin/courses/${courseId}`)
+      .send({ categoryId })
+      .expect(200);
+
+    const detail = await asMaster('get', `/admin/courses/${courseId}`).expect(200);
+    expect(detail.body.data.categoryId).toBe(categoryId);
+    expect(detail.body.data.category.id).toBe(categoryId);
+  });
+
   it('menolak slug yang sudah dipakai', async () => {
     const slug = `uji-duplikat-${Date.now()}`;
     await createCourse(slug);

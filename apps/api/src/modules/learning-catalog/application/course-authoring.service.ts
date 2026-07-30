@@ -120,6 +120,13 @@ export class CourseAuthoringService {
 
   // ── Kursus ──────────────────────────────────────────────────
 
+  async listCategories() {
+    return this.prisma.courseCategory.findMany({
+      select: { id: true, name: true, slug: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   /** Daftar untuk Master; mencakup draf dan arsip, tidak seperti katalog publik. */
   async list(params: { page: number; pageSize: number; status?: PublicationStatus; search?: string }) {
     const where: Prisma.CourseWhereInput = {
@@ -132,7 +139,7 @@ export class CourseAuthoringService {
       this.prisma.course.findMany({
         where,
         include: {
-          category: { select: { name: true, slug: true } },
+          category: { select: { id: true, name: true, slug: true } },
           _count: { select: { modules: true, enrollments: true } },
         },
         orderBy: { updatedAt: 'desc' },
@@ -151,7 +158,9 @@ export class CourseAuthoringService {
         level: course.level,
         status: course.status,
         estimatedMinutes: course.estimatedMinutes,
-        category: course.category ? { name: course.category.name, slug: course.category.slug } : null,
+        category: course.category
+          ? { id: course.category.id, name: course.category.name, slug: course.category.slug }
+          : null,
         moduleCount: course._count.modules,
         enrollmentCount: course._count.enrollments,
         lessonCount: await this.prisma.lesson.count({ where: { module: { courseId: course.id } } }),
@@ -271,7 +280,7 @@ export class CourseAuthoringService {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       include: {
-        category: { select: { name: true, slug: true } },
+        category: { select: { id: true, name: true, slug: true } },
         modules: {
           orderBy: { position: 'asc' },
           include: { lessons: { orderBy: { position: 'asc' } } },
@@ -282,7 +291,9 @@ export class CourseAuthoringService {
 
     return {
       ...toCourse(course),
-      category: course.category ? { name: course.category.name, slug: course.category.slug } : null,
+      category: course.category
+        ? { id: course.category.id, name: course.category.name, slug: course.category.slug }
+        : null,
       modules: course.modules.map((row) => ({
         ...toModule(row),
         lessons: row.lessons.map(toLesson),

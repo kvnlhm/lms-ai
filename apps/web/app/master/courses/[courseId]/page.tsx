@@ -11,6 +11,7 @@ import { CourseSettings } from './course-settings';
 export const dynamic = 'force-dynamic';
 
 type CourseDetail = Schemas['AdminCourseDetailDto'];
+type Category = Schemas['AdminCategoryDto'];
 
 interface Props {
   params: Promise<{ courseId: string }>;
@@ -27,10 +28,14 @@ export default async function MasterCourseEditorPage({ params, searchParams }: P
   const client = await serverClient();
 
   let course: CourseDetail;
+  let categories: Category[];
   try {
-    course = unwrap<CourseDetail>(
-      await client.GET('/api/v1/admin/courses/{courseId}', { params: { path: { courseId } } }),
-    );
+    [course, categories] = await Promise.all([
+      client.GET('/api/v1/admin/courses/{courseId}', { params: { path: { courseId } } })
+        .then((result) => unwrap<CourseDetail>(result)),
+      client.GET('/api/v1/admin/course-categories', {})
+        .then((result) => unwrap<Category[]>(result)),
+    ]);
   } catch (error) {
     if (error instanceof ApiError && error.isNotFound) notFound();
     throw error;
@@ -59,7 +64,7 @@ export default async function MasterCourseEditorPage({ params, searchParams }: P
 
         {tab === 'overview' ? <CourseOverview course={course} /> : null}
         {tab === 'lessons' ? <CourseEditor course={course} /> : null}
-        {tab === 'settings' ? <CourseSettings course={course} /> : null}
+        {tab === 'settings' ? <CourseSettings course={course} categories={categories} /> : null}
       </main>
     </AppShell>
   );

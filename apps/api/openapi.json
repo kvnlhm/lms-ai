@@ -1658,6 +1658,63 @@
         ]
       }
     },
+    "/api/v1/admin/course-categories": {
+      "get": {
+        "operationId": "AdminCoursesController_categories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminCategoryDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Daftar kategori yang dapat dipilih untuk kursus",
+        "tags": [
+          "admin-catalog"
+        ]
+      }
+    },
     "/api/v1/admin/courses": {
       "get": {
         "operationId": "AdminCoursesController_list",
@@ -5322,6 +5379,10 @@
       "AdminCategoryDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
           "name": {
             "type": "string"
           },
@@ -5330,6 +5391,7 @@
           }
         },
         "required": [
+          "id",
           "name",
           "slug"
         ]

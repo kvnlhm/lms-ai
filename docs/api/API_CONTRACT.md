@@ -487,6 +487,16 @@ For Master:
 
 Includes draft, published, and archived.
 
+## GET `/admin/course-categories`
+
+Returns the Master-selectable course categories. Initial production categories:
+
+- AI untuk Pemilik Bisnis
+- AI untuk Marketing
+- Dasar Coding
+- Fundamental dan Penerapan AI
+- Karier dan Kesiapan Kerja AI
+
 ## POST `/admin/courses`
 
 ```json

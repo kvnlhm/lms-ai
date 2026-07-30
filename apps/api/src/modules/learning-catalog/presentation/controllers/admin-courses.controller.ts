@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import {
   ApiEnvelope,
+  ApiEnvelopeArray,
   ApiEnvelopeList,
   ApiErrors,
 } from '../../../../shared/http/api-envelope';
@@ -28,6 +29,7 @@ import {
   AdminCourseDetailDto,
   AdminCourseDto,
   AdminCourseListItemDto,
+  AdminCategoryDto,
   AdminLessonDto,
   AdminModuleDto,
   ReorderResultDto,
@@ -70,6 +72,14 @@ export class AdminCoursesController {
   ) {}
 
   // ── Kursus ──────────────────────────────────────────────────
+
+  @Get('course-categories')
+  @ApiOperation({ summary: 'Daftar kategori yang dapat dipilih untuk kursus' })
+  @ApiEnvelopeArray(AdminCategoryDto)
+  @ApiErrors(401, 403)
+  async categories() {
+    return this.authoring.listCategories();
+  }
 
   @Get('courses')
   @ApiOperation({ summary: 'Daftar kursus termasuk draf dan arsip' })

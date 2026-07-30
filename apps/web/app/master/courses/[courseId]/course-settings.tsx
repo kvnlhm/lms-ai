@@ -13,8 +13,9 @@ import {
 } from '../../../lib/browser-api';
 
 type Course = Schemas['AdminCourseDetailDto'];
+type Category = Schemas['AdminCategoryDto'];
 
-export function CourseSettings({ course }: { course: Course }) {
+export function CourseSettings({ course, categories }: { course: Course; categories: Category[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [thumbnailBusy, setThumbnailBusy] = useState(false);
@@ -123,6 +124,7 @@ export function CourseSettings({ course }: { course: Course }) {
           slug: String(form.get('slug') ?? ''),
           shortDescription: String(form.get('shortDescription') ?? ''),
           description: String(form.get('description') ?? ''),
+          categoryId: String(form.get('categoryId') ?? '') || undefined,
           level: String(form.get('level') ?? 'BEGINNER') as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
           estimatedMinutes: Number(form.get('estimatedMinutes') ?? 0),
         },
@@ -183,9 +185,16 @@ export function CourseSettings({ course }: { course: Course }) {
         <div className="field"><label htmlFor="shortDescription">Deskripsi singkat</label><input id="shortDescription" name="shortDescription" defaultValue={course.shortDescription ?? ''} /></div>
         <div className="field"><label htmlFor="description">Deskripsi lengkap</label><textarea id="description" name="description" defaultValue={course.description ?? ''} /></div>
         <div className="fieldRow">
+          <div className="field">
+            <label htmlFor="categoryId">Kategori</label>
+            <select id="categoryId" name="categoryId" defaultValue={course.categoryId ?? ''} required>
+              <option value="" disabled>Pilih kategori</option>
+              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+            </select>
+          </div>
           <div className="field"><label htmlFor="level">Level</label><select id="level" name="level" defaultValue={course.level}><option value="BEGINNER">Pemula</option><option value="INTERMEDIATE">Menengah</option><option value="ADVANCED">Lanjutan</option></select></div>
-          <div className="field"><label htmlFor="estimatedMinutes">Estimasi menit</label><input id="estimatedMinutes" name="estimatedMinutes" type="number" min={0} defaultValue={course.estimatedMinutes} /></div>
         </div>
+        <div className="field"><label htmlFor="estimatedMinutes">Estimasi menit</label><input id="estimatedMinutes" name="estimatedMinutes" type="number" min={0} defaultValue={course.estimatedMinutes} /></div>
         {message ? <p className="pageSub" role="status">{message}</p> : null}
         <button className="btn" type="submit" disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan perubahan'}</button>
       </form>
