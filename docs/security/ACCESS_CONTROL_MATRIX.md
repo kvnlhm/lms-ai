@@ -37,6 +37,10 @@ Role bukan satu-satunya kontrol. Backend tetap memeriksa resource ownership, enr
 | View notification | Yes | Yes | Own notification |
 | Revoke own session | Yes | Yes | Own session |
 | Revoke other user session | Restricted Master | No | `users.security.manage` |
+| Manage access tiers | Yes | No | `commerce.manage` |
+| View registration payment records | Yes | No | `commerce.manage` |
+| Start public checkout | Public | Public | Active tier, server-side price |
+| Process payment webhook | Provider only | No | Valid signature + provider status verification |
 
 ## Resource Rules
 

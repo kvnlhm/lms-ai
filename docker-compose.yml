@@ -47,6 +47,9 @@ services:
       SESSION_COOKIE_DOMAIN: localhost
       # Hanya untuk local Compose. Production wajib memakai secret acak.
       MFA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      MIDTRANS_ENVIRONMENT: SANDBOX
+      EMAIL_PROVIDER: DISABLED
+      WHATSAPP_PROVIDER: DISABLED
     command: ['pnpm', '--filter', '@lms/api', 'exec', 'prisma', 'migrate', 'deploy']
     depends_on:
       postgres:

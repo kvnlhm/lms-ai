@@ -21,6 +21,7 @@ import { AllExceptionsFilter } from './shared/http/all-exceptions.filter';
 import { RequestContextMiddleware } from './shared/http/request-context.middleware';
 import { ResponseInterceptor } from './shared/http/response.interceptor';
 import { IdempotencyModule } from './shared/idempotency/idempotency.module';
+import { CommerceModule } from './modules/commerce/commerce.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { IdempotencyModule } from './shared/idempotency/idempotency.module';
     LearningDeliveryModule,
     LearningProgressModule,
     VideoModule,
+    CommerceModule,
     HealthModule,
   ],
   providers: [

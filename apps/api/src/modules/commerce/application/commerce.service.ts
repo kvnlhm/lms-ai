@@ -1,0 +1,518 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import {
+  EnrollmentStatus,
+  PaymentOrderStatus,
+  Prisma,
+  PublicationStatus,
+  UserStatus,
+} from '@prisma/client';
+import { createHash, randomUUID } from 'node:crypto';
+import type { AppConfig } from '../../../config/configuration';
+import { OutboxWriter } from '../../../infrastructure/outbox/outbox.writer';
+import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
+import { AppError } from '../../../shared/errors/app-error';
+import { UserCredentialService } from '../../identity/application/user-credential.service';
+import { ActivationNotifierService } from '../infrastructure/activation-notifier.service';
+import { MidtransService, type MidtransStatus } from '../infrastructure/midtrans.service';
+import type {
+  CreateAccessTierDto,
+  CreateCheckoutDto,
+  MidtransNotificationDto,
+  UpdateAccessTierDto,
+} from '../presentation/dto/commerce.dto';
+
+const tierInclude = {
+  courses: {
+    orderBy: { position: 'asc' as const },
+    include: {
+      course: {
+        select: { id: true, slug: true, title: true, thumbnailUrl: true, status: true },
+      },
+    },
+  },
+} satisfies Prisma.AccessTierInclude;
+
+@Injectable()
+export class CommerceService {
+  private readonly config: AppConfig;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly credentials: UserCredentialService,
+    private readonly outbox: OutboxWriter,
+    private readonly midtrans: MidtransService,
+    private readonly notifier: ActivationNotifierService,
+    config: ConfigService<{ app: AppConfig }, true>,
+  ) {
+    this.config = config.get('app', { infer: true });
+  }
+
+  async publicTiers() {
+    const tiers = await this.prisma.accessTier.findMany({
+      where: {
+        isActive: true,
+        courses: { some: { course: { status: PublicationStatus.PUBLISHED } } },
+      },
+      include: tierInclude,
+      orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+    });
+    return tiers.map((tier) => this.mapTier(tier, true));
+  }
+
+  async adminTiers() {
+    const tiers = await this.prisma.accessTier.findMany({
+      include: tierInclude,
+      orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+    });
+    return tiers.map((tier) => this.mapTier(tier, false));
+  }
+
+  async createTier(input: CreateAccessTierDto) {
+    await this.assertCourses(input.courseIds);
+    try {
+      const tier = await this.prisma.accessTier.create({
+        data: {
+          name: input.name.trim(),
+          slug: input.slug,
+          description: input.description?.trim() || null,
+          priceIdr: input.priceIdr,
+          durationMonths: input.durationMonths ?? null,
+          isActive: input.isActive ?? true,
+          position: input.position ?? 0,
+          courses: {
+            create: input.courseIds.map((courseId, position) => ({ courseId, position })),
+          },
+        },
+        include: tierInclude,
+      });
+      return this.mapTier(tier, false);
+    } catch (error) {
+      this.rethrowTierConflict(error);
+    }
+  }
+
+  async updateTier(tierId: string, input: UpdateAccessTierDto) {
+    await this.assertTier(tierId);
+    if (input.courseIds) await this.assertCourses(input.courseIds);
+    try {
+      const tier = await this.prisma.$transaction(async (tx) => {
+        if (input.courseIds) {
+          await tx.accessTierCourse.deleteMany({ where: { tierId } });
+        }
+        return tx.accessTier.update({
+          where: { id: tierId },
+          data: {
+            ...(input.name !== undefined ? { name: input.name.trim() } : {}),
+            ...(input.slug !== undefined ? { slug: input.slug } : {}),
+            ...(input.description !== undefined
+              ? { description: input.description?.trim() || null }
+              : {}),
+            ...(input.priceIdr !== undefined ? { priceIdr: input.priceIdr } : {}),
+            ...(input.durationMonths !== undefined
+              ? { durationMonths: input.durationMonths }
+              : {}),
+            ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+            ...(input.position !== undefined ? { position: input.position } : {}),
+            ...(input.courseIds
+              ? {
+                  courses: {
+                    create: input.courseIds.map((courseId, position) => ({
+                      courseId,
+                      position,
+                    })),
+                  },
+                }
+              : {}),
+          },
+          include: tierInclude,
+        });
+      });
+      return this.mapTier(tier, false);
+    } catch (error) {
+      this.rethrowTierConflict(error);
+    }
+  }
+
+  async createCheckout(input: CreateCheckoutDto) {
+    if (!input.termsAccepted) {
+      throw AppError.validation({ termsAccepted: ['Persetujuan syarat wajib diberikan.'] });
+    }
+    const tier = await this.prisma.accessTier.findFirst({
+      where: { id: input.tierId, isActive: true },
+      include: tierInclude,
+    });
+    if (!tier || tier.courses.length === 0) throw AppError.notFound();
+    const orderCode = `REG-${randomUUID().replaceAll('-', '')}`;
+    const expiresAt = new Date(Date.now() + this.config.commerce.orderTtlMinutes * 60_000);
+    const order = await this.prisma.registrationOrder.create({
+      data: {
+        orderCode,
+        tierId: tier.id,
+        fullName: input.fullName.trim(),
+        email: input.email.trim().toLowerCase(),
+        phone: normalizePhone(input.phone),
+        grossAmount: tier.priceIdr,
+        expiresAt,
+      },
+    });
+    try {
+      const snap = await this.midtrans.createSnap({
+        orderCode,
+        amount: tier.priceIdr,
+        itemName: tier.name,
+        fullName: order.fullName,
+        email: order.email,
+        phone: order.phone,
+      });
+      await this.prisma.registrationOrder.update({
+        where: { id: order.id },
+        data: { snapToken: snap.token, redirectUrl: snap.redirect_url },
+      });
+      return {
+        orderCode,
+        snapToken: snap.token,
+        redirectUrl: snap.redirect_url,
+        ...this.midtrans.clientConfiguration,
+        expiresAt,
+      };
+    } catch (error) {
+      await this.prisma.registrationOrder.update({
+        where: { id: order.id },
+        data: { status: PaymentOrderStatus.FAILED },
+      });
+      throw error;
+    }
+  }
+
+  async orderStatus(orderCode: string) {
+    const order = await this.prisma.registrationOrder.findUnique({
+      where: { orderCode },
+      select: {
+        orderCode: true,
+        status: true,
+        emailDeliveryStatus: true,
+        whatsAppDeliveryStatus: true,
+        accessEndsAt: true,
+      },
+    });
+    if (!order) throw AppError.notFound();
+    return order;
+  }
+
+  async handleMidtrans(notification: MidtransNotificationDto): Promise<void> {
+    if (!this.midtrans.verifySignature(notification)) {
+      throw AppError.permissionDenied();
+    }
+    // Nilai yang diambil langsung dari Midtrans menjadi sumber kanonis,
+    // bukan body webhook yang datang dari jaringan publik.
+    const status = await this.midtrans.getStatus(notification.order_id);
+    const eventKey = createHash('sha256')
+      .update(
+        `${status.order_id}:${status.transaction_id ?? ''}:${status.transaction_status}:${status.fraud_status ?? ''}`,
+      )
+      .digest('hex');
+    const outcome = await this.applyPaymentStatus(status, eventKey);
+    if (outcome?.notify) {
+      await this.deliverActivation(outcome.orderId, outcome.userId);
+      return;
+    }
+    const pendingDelivery = await this.prisma.registrationOrder.findUnique({
+      where: { orderCode: status.order_id },
+      select: {
+        id: true,
+        provisionedUserId: true,
+        status: true,
+        emailDeliveryStatus: true,
+        whatsAppDeliveryStatus: true,
+      },
+    });
+    if (
+      pendingDelivery?.status === PaymentOrderStatus.PAID &&
+      pendingDelivery.provisionedUserId &&
+      (pendingDelivery.emailDeliveryStatus === 'PENDING' ||
+        pendingDelivery.whatsAppDeliveryStatus === 'PENDING')
+    ) {
+      await this.deliverActivation(pendingDelivery.id, pendingDelivery.provisionedUserId);
+    }
+  }
+
+  private async applyPaymentStatus(status: MidtransStatus, eventKey: string) {
+    const order = await this.prisma.registrationOrder.findUnique({
+      where: { orderCode: status.order_id },
+      include: { tier: { include: tierInclude } },
+    });
+    if (!order) throw AppError.notFound();
+    if (!amountMatches(status.gross_amount, order.grossAmount)) {
+      throw AppError.validation({ grossAmount: ['Nominal pembayaran tidak sesuai dengan order.'] });
+    }
+    const nextStatus = mapPaymentStatus(status);
+    const unusablePassword =
+      nextStatus === PaymentOrderStatus.PAID ? await this.credentials.hashUnusablePassword() : null;
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        await tx.paymentWebhookEvent.create({
+          data: {
+            orderId: order.id,
+            providerEventKey: eventKey,
+            payload: status as unknown as Prisma.InputJsonValue,
+          },
+        });
+        if (order.status === PaymentOrderStatus.PAID) {
+          await tx.paymentWebhookEvent.update({
+            where: { providerEventKey: eventKey },
+            data: { processedAt: new Date() },
+          });
+          return null;
+        }
+        if (nextStatus !== PaymentOrderStatus.PAID) {
+          await tx.registrationOrder.update({
+            where: { id: order.id },
+            data: {
+              status: nextStatus,
+              providerTransactionId: status.transaction_id,
+              paymentType: status.payment_type,
+              fraudStatus: status.fraud_status,
+            },
+          });
+          await tx.paymentWebhookEvent.update({
+            where: { providerEventKey: eventKey },
+            data: { processedAt: new Date() },
+          });
+          return null;
+        }
+
+        const now = new Date();
+        const accessEndsAt = order.tier.durationMonths
+          ? addMonths(now, order.tier.durationMonths)
+          : null;
+        let user = await tx.user.findFirst({
+          where: { email: order.email, deletedAt: null },
+          select: { id: true, emailVerifiedAt: true },
+        });
+        if (!user) {
+          const studentRole = await tx.role.findUnique({
+            where: { code: 'STUDENT' },
+            select: { id: true },
+          });
+          if (!studentRole || !unusablePassword) {
+            throw new Error('Role STUDENT belum tersedia.');
+          }
+          user = await tx.user.create({
+            data: {
+              email: order.email,
+              fullName: order.fullName,
+              phone: order.phone,
+              status: UserStatus.ACTIVE,
+              passwordHash: unusablePassword,
+              roles: { create: { roleId: studentRole.id } },
+            },
+            select: { id: true, emailVerifiedAt: true },
+          });
+        }
+
+        for (const tierCourse of order.tier.courses) {
+          const existing = await tx.enrollment.findUnique({
+            where: { userId_courseId: { userId: user.id, courseId: tierCourse.courseId } },
+            select: { id: true, accessEndsAt: true },
+          });
+          const effectiveEnd =
+            existing?.accessEndsAt === null
+              ? null
+              : laterDate(existing?.accessEndsAt, accessEndsAt);
+          const enrollment = existing
+            ? await tx.enrollment.update({
+                where: { id: existing.id },
+                data: {
+                  status: EnrollmentStatus.ACTIVE,
+                  accessStartsAt: now,
+                  accessEndsAt: effectiveEnd,
+                  removedAt: null,
+                },
+              })
+            : await tx.enrollment.create({
+                data: {
+                  userId: user.id,
+                  courseId: tierCourse.courseId,
+                  status: EnrollmentStatus.ACTIVE,
+                  accessStartsAt: now,
+                  accessEndsAt,
+                },
+              });
+          const requiredLessons = await tx.lesson.count({
+            where: {
+              isActive: true,
+              isRequired: true,
+              module: { courseId: tierCourse.courseId, isActive: true },
+            },
+          });
+          await tx.courseProgress.upsert({
+            where: { enrollmentId: enrollment.id },
+            create: { enrollmentId: enrollment.id, requiredLessonsTotal: requiredLessons },
+            update: { requiredLessonsTotal: requiredLessons },
+          });
+        }
+
+        await tx.registrationOrder.update({
+          where: { id: order.id },
+          data: {
+            status: PaymentOrderStatus.PAID,
+            providerTransactionId: status.transaction_id,
+            paymentType: status.payment_type,
+            fraudStatus: status.fraud_status,
+            paidAt: now,
+            accessStartsAt: now,
+            accessEndsAt,
+            provisionedUserId: user.id,
+          },
+        });
+        await tx.paymentWebhookEvent.update({
+          where: { providerEventKey: eventKey },
+          data: { processedAt: now },
+        });
+        await this.outbox.append(tx, {
+          eventType: 'commerce.registration_paid',
+          aggregateType: 'registration_order',
+          aggregateId: order.id,
+          payload: {
+            orderId: order.id,
+            userId: user.id,
+            tierId: order.tierId,
+            courseIds: order.tier.courses.map((course) => course.courseId),
+          },
+        });
+        return { notify: true as const, orderId: order.id, userId: user.id };
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  private async deliverActivation(orderId: string, userId: string): Promise<void> {
+    const order = await this.prisma.registrationOrder.findUnique({
+      where: { id: orderId },
+      include: { tier: { select: { name: true } } },
+    });
+    if (!order) return;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailVerifiedAt: true },
+    });
+    const activationUrl = !user?.emailVerifiedAt
+      ? `${this.config.webUrl}/accept-invitation?token=${encodeURIComponent(
+          (await this.credentials.issueInvitation(userId)).token,
+        )}`
+      : `${this.config.webUrl}/login`;
+    const result = await this.notifier.send({
+      fullName: order.fullName,
+      email: order.email,
+      phone: order.phone,
+      activationUrl,
+      tierName: order.tier.name,
+    });
+    await this.prisma.registrationOrder.update({
+      where: { id: orderId },
+      data: {
+        emailDeliveryStatus: result.email,
+        whatsAppDeliveryStatus: result.whatsApp,
+        deliveryError: result.errors.join(' | ').slice(0, 1_000) || null,
+      },
+    });
+  }
+
+  private async assertTier(tierId: string): Promise<void> {
+    const tier = await this.prisma.accessTier.findUnique({
+      where: { id: tierId },
+      select: { id: true },
+    });
+    if (!tier) throw AppError.notFound();
+  }
+
+  private async assertCourses(courseIds: string[]): Promise<void> {
+    if (courseIds.length === 0) {
+      throw AppError.validation({ courseIds: ['Pilih minimal satu kursus.'] });
+    }
+    const count = await this.prisma.course.count({ where: { id: { in: courseIds } } });
+    if (count !== courseIds.length) {
+      throw AppError.validation({ courseIds: ['Satu atau lebih kursus tidak ditemukan.'] });
+    }
+  }
+
+  private rethrowTierConflict(error: unknown): never {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      throw AppError.validation({ slug: ['Slug atau urutan paket sudah digunakan.'] });
+    }
+    throw error;
+  }
+
+  private mapTier(
+    tier: Prisma.AccessTierGetPayload<{ include: typeof tierInclude }>,
+    publishedOnly: boolean,
+  ) {
+    return {
+      id: tier.id,
+      slug: tier.slug,
+      name: tier.name,
+      description: tier.description,
+      priceIdr: tier.priceIdr,
+      durationMonths: tier.durationMonths,
+      isLifetime: tier.durationMonths === null,
+      isActive: tier.isActive,
+      position: tier.position,
+      courses: tier.courses
+        .filter(
+          ({ course }) => !publishedOnly || course.status === PublicationStatus.PUBLISHED,
+        )
+        .map(({ course }) => ({
+          id: course.id,
+          slug: course.slug,
+          title: course.title,
+          thumbnailUrl: course.thumbnailUrl,
+        })),
+    };
+  }
+}
+
+export function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('0')) return `62${digits.slice(1)}`;
+  return digits;
+}
+
+function addMonths(date: Date, months: number): Date {
+  const result = new Date(date);
+  result.setUTCMonth(result.getUTCMonth() + months);
+  return result;
+}
+
+function laterDate(current: Date | null | undefined, candidate: Date | null): Date | null {
+  if (!candidate) return null;
+  if (!current) return candidate;
+  return current > candidate ? current : candidate;
+}
+
+export function amountMatches(raw: string, expected: number): boolean {
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && Math.abs(parsed - expected) < Number.EPSILON;
+}
+
+export function mapPaymentStatus(status: MidtransStatus): PaymentOrderStatus {
+  if (
+    status.status_code === '200' &&
+    ['settlement', 'capture'].includes(status.transaction_status) &&
+    status.fraud_status !== 'deny' &&
+    status.fraud_status !== 'challenge'
+  ) {
+    return PaymentOrderStatus.PAID;
+  }
+  if (status.transaction_status === 'expire') return PaymentOrderStatus.EXPIRED;
+  if (['cancel', 'deny'].includes(status.transaction_status)) return PaymentOrderStatus.CANCELLED;
+  if (['refund', 'partial_refund'].includes(status.transaction_status)) {
+    return PaymentOrderStatus.REFUNDED;
+  }
+  if (status.transaction_status === 'failure') return PaymentOrderStatus.FAILED;
+  return PaymentOrderStatus.PENDING;
+}

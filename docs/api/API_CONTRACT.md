@@ -1,5 +1,24 @@
 # REST API Contract
 
+## Registration Commerce Extension
+
+Public:
+
+- `GET /api/v1/registration/tiers`
+- `POST /api/v1/registration/checkout`
+- `GET /api/v1/registration/orders/{orderCode}`
+- `POST /api/v1/webhooks/midtrans`
+
+Master (`commerce.manage`):
+
+- `GET /api/v1/admin/access-tiers`
+- `POST /api/v1/admin/access-tiers`
+- `PATCH /api/v1/admin/access-tiers/{tierId}`
+
+Harga dan kursus selalu diambil ulang dari database; client tidak dapat
+menentukan nominal. Webhook wajib lolos signature dan status verification
+provider sebelum provisioning.
+
 ## LMS API v1
 
 | Informasi | Detail |

@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 const permissionCodes = [
   'users.read', 'users.manage', 'users.security.manage', 'courses.manage',
   'enrollments.manage', 'discussions.moderate', 'analytics.read', 'reports.export',
-  'audit.read', 'roles.manage', 'announcements.manage',
+  'audit.read', 'roles.manage', 'announcements.manage', 'commerce.manage',
 ];
 
 async function main(): Promise<void> {

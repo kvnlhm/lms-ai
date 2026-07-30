@@ -1,5 +1,10 @@
 # Product Requirement Document
 
+> Ekstensi yang disetujui Product Owner pada 2026-07-30: pendaftaran publik,
+> pembayaran sekali saat daftar, paket akses berbasis durasi/lifetime, dan
+> pengiriman aktivasi melalui email/WhatsApp. Keputusan teknis dan batas
+> keamanannya dicatat dalam ADR-016.
+
 ## Learning Management System Akademi Online
 
 | Informasi | Detail |
@@ -2119,4 +2124,3 @@ Pengembangan LMS menggunakan satu orchestrator dan beberapa specialist subagent.
 13. Pekerjaan paralel hanya dilakukan apabila tidak menulis file yang sama.
 14. Setiap output agent harus mencantumkan risiko dan unresolved issue.
 15. Scope tambahan harus dikembalikan kepada Product Manager untuk prioritas.
-

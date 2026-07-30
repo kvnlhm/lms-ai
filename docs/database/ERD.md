@@ -1,5 +1,18 @@
 # Entity Relationship Design
 
+## Registration Commerce Extension
+
+- `AccessTier` menyimpan nama, harga Rupiah, durasi bulan (`NULL` = lifetime),
+  status aktif, dan urutan.
+- `AccessTierCourse` menghubungkan paket dengan kursus.
+- `RegistrationOrder` menyimpan snapshot harga dan identitas pembeli, status
+  Midtrans, masa akses hasil pembelian, pengguna yang diprovision, serta status
+  delivery aktivasi.
+- `PaymentWebhookEvent` menyimpan payload provider dan kunci event unik untuk
+  pemrosesan idempoten.
+
+Detail keputusan dan transaction boundary terdapat pada ADR-016.
+
 ## LMS Database Design v1.0
 
 Dokumen ini mendefinisikan data model logical untuk MVP. Implementasi fisik menggunakan PostgreSQL dan Prisma.

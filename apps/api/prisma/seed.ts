@@ -33,6 +33,7 @@ const PERMISSIONS: Array<{ code: string; name: string }> = [
   { code: 'audit.read', name: 'Melihat audit log' },
   { code: 'roles.manage', name: 'Mengelola role dan permission' },
   { code: 'announcements.manage', name: 'Mengelola pengumuman' },
+  { code: 'commerce.manage', name: 'Mengelola paket akses dan pembayaran' },
 ];
 
 type Curriculum = Array<{ title: string; lessons: string[] }>;

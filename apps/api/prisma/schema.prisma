@@ -99,6 +99,26 @@ enum PlaybackStatus {
   REVOKED
 }
 
+enum PaymentOrderStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  MIDTRANS
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  SKIPPED
+  FAILED
+}
+
 // ─────────────────────────────────────────────────────────────
 // Core Identity
 // ─────────────────────────────────────────────────────────────
@@ -129,6 +149,7 @@ model User {
   videoAssets            VideoAsset[]            @relation("VideoAssetCreator")
   playbackSessions       VideoPlaybackSession[]
   notificationPreference NotificationPreference?
+  registrationOrders     RegistrationOrder[]     @relation("ProvisionedRegistrationUser")
 
   @@index([status])
   @@map("users")
@@ -281,10 +302,11 @@ model Course {
   createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  category    CourseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  creator     User?           @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  category    CourseCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  creator     User?              @relation(fields: [createdBy], references: [id], onDelete: SetNull)
   modules     CourseModule[]
   enrollments Enrollment[]
+  accessTiers AccessTierCourse[]
 
   @@index([status, publishedAt])
   @@index([categoryId])
@@ -379,6 +401,91 @@ model Enrollment {
   @@unique([userId, courseId])
   @@index([courseId, status])
   @@map("enrollments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Registration Commerce
+// ─────────────────────────────────────────────────────────────
+
+model AccessTier {
+  id             String   @id @default(uuid()) @db.Uuid
+  slug           String   @unique
+  name           String
+  description    String?
+  priceIdr       Int      @map("price_idr")
+  durationMonths Int?     @map("duration_months")
+  isActive       Boolean  @default(true) @map("is_active")
+  position       Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  courses AccessTierCourse[]
+  orders  RegistrationOrder[]
+
+  @@index([isActive, position])
+  @@map("access_tiers")
+}
+
+model AccessTierCourse {
+  tierId   String @map("tier_id") @db.Uuid
+  courseId String @map("course_id") @db.Uuid
+  position Int    @default(0)
+
+  tier   AccessTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  course Course     @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@id([tierId, courseId])
+  @@unique([tierId, position])
+  @@map("access_tier_courses")
+}
+
+model RegistrationOrder {
+  id                     String             @id @default(uuid()) @db.Uuid
+  orderCode              String             @unique @map("order_code")
+  tierId                 String             @map("tier_id") @db.Uuid
+  fullName               String             @map("full_name")
+  email                  String             @db.Citext
+  phone                  String
+  grossAmount            Int                @map("gross_amount")
+  status                 PaymentOrderStatus @default(PENDING)
+  paymentProvider        PaymentProvider    @default(MIDTRANS) @map("payment_provider")
+  snapToken              String?            @map("snap_token")
+  redirectUrl            String?            @map("redirect_url")
+  providerTransactionId  String?            @map("provider_transaction_id")
+  paymentType            String?            @map("payment_type")
+  fraudStatus            String?            @map("fraud_status")
+  paidAt                 DateTime?          @map("paid_at") @db.Timestamptz(6)
+  accessStartsAt         DateTime?          @map("access_starts_at") @db.Timestamptz(6)
+  accessEndsAt           DateTime?          @map("access_ends_at") @db.Timestamptz(6)
+  provisionedUserId      String?            @map("provisioned_user_id") @db.Uuid
+  emailDeliveryStatus    DeliveryStatus     @default(PENDING) @map("email_delivery_status")
+  whatsAppDeliveryStatus DeliveryStatus     @default(PENDING) @map("whatsapp_delivery_status")
+  deliveryError          String?            @map("delivery_error")
+  expiresAt              DateTime           @map("expires_at") @db.Timestamptz(6)
+  createdAt              DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tier            AccessTier            @relation(fields: [tierId], references: [id], onDelete: Restrict)
+  provisionedUser User?                 @relation("ProvisionedRegistrationUser", fields: [provisionedUserId], references: [id], onDelete: SetNull)
+  webhookEvents   PaymentWebhookEvent[]
+
+  @@index([email, status])
+  @@index([status, createdAt])
+  @@map("registration_orders")
+}
+
+model PaymentWebhookEvent {
+  id               String    @id @default(uuid()) @db.Uuid
+  orderId          String    @map("order_id") @db.Uuid
+  providerEventKey String    @unique @map("provider_event_key")
+  payload          Json
+  receivedAt       DateTime  @default(now()) @map("received_at") @db.Timestamptz(6)
+  processedAt      DateTime? @map("processed_at") @db.Timestamptz(6)
+
+  order RegistrationOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, receivedAt])
+  @@map("payment_webhook_events")
 }
 
 model VideoAsset {

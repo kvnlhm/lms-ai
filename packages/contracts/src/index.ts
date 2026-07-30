@@ -53,6 +53,7 @@ export const PERMISSIONS = {
   AUDIT_READ: 'audit.read',
   ROLES_MANAGE: 'roles.manage',
   ANNOUNCEMENTS_MANAGE: 'announcements.manage',
+  COMMERCE_MANAGE: 'commerce.manage',
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '../lib/session';
 import { ThemeToggle } from '../components/theme-toggle';
 import { LoginForm } from './login-form';
+import Link from 'next/link';
 
 export const metadata: Metadata = { title: 'Masuk · LMS AIPrenuer' };
 export const dynamic = 'force-dynamic';
@@ -38,6 +39,9 @@ export default async function LoginPage({ searchParams }: Props) {
         <p className="authLead">Lanjutkan belajar dari pelajaran terakhir yang kamu buka.</p>
 
         <LoginForm nextPath={nextPath} />
+        <p className="authLead" style={{ marginTop: 18, textAlign: 'center' }}>
+          Belum punya akun? <Link href="/register">Lihat paket pendaftaran</Link>
+        </p>
       </section>
     </main>
   );

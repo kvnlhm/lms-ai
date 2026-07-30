@@ -67,6 +67,28 @@ export interface AppConfig {
     storagePath: string;
     maxUploadBytes: number;
   };
+  commerce: {
+    orderTtlMinutes: number;
+    midtrans: {
+      environment: 'SANDBOX' | 'PRODUCTION';
+      serverKey?: string;
+      clientKey?: string;
+    };
+    email: {
+      provider: 'RESEND' | 'DISABLED';
+      apiKey?: string;
+      fromName: string;
+      fromAddress?: string;
+    };
+    whatsApp: {
+      provider: 'META_CLOUD' | 'DISABLED';
+      graphApiVersion: string;
+      phoneNumberId?: string;
+      accessToken?: string;
+      activationTemplateName: string;
+      templateLanguage: string;
+    };
+  };
 }
 
 export function loadConfig(): AppConfig {
@@ -77,6 +99,18 @@ export function loadConfig(): AppConfig {
   const videoProvider = process.env.VIDEO_PROVIDER ?? 'SELF_HOSTED';
   if (!['SELF_HOSTED', 'BUNNY_STREAM'].includes(videoProvider)) {
     throw new Error('VIDEO_PROVIDER harus SELF_HOSTED atau BUNNY_STREAM.');
+  }
+  const midtransEnvironment = process.env.MIDTRANS_ENVIRONMENT ?? 'SANDBOX';
+  if (!['SANDBOX', 'PRODUCTION'].includes(midtransEnvironment)) {
+    throw new Error('MIDTRANS_ENVIRONMENT harus SANDBOX atau PRODUCTION.');
+  }
+  const emailProvider = process.env.EMAIL_PROVIDER ?? 'DISABLED';
+  if (!['RESEND', 'DISABLED'].includes(emailProvider)) {
+    throw new Error('EMAIL_PROVIDER harus RESEND atau DISABLED.');
+  }
+  const whatsAppProvider = process.env.WHATSAPP_PROVIDER ?? 'DISABLED';
+  if (!['META_CLOUD', 'DISABLED'].includes(whatsAppProvider)) {
+    throw new Error('WHATSAPP_PROVIDER harus META_CLOUD atau DISABLED.');
   }
 
   return {
@@ -120,6 +154,29 @@ export function loadConfig(): AppConfig {
     courseThumbnail: {
       storagePath: process.env.COURSE_THUMBNAIL_STORAGE_PATH ?? '/data/course-thumbnails',
       maxUploadBytes: int('COURSE_THUMBNAIL_MAX_UPLOAD_BYTES', 5_242_880),
+    },
+    commerce: {
+      orderTtlMinutes: int('REGISTRATION_ORDER_TTL_MINUTES', 1_440),
+      midtrans: {
+        environment: midtransEnvironment as 'SANDBOX' | 'PRODUCTION',
+        serverKey: process.env.MIDTRANS_SERVER_KEY || undefined,
+        clientKey: process.env.MIDTRANS_CLIENT_KEY || undefined,
+      },
+      email: {
+        provider: emailProvider as 'RESEND' | 'DISABLED',
+        apiKey: process.env.RESEND_API_KEY || undefined,
+        fromName: process.env.EMAIL_FROM_NAME ?? 'AIPreneur Academy',
+        fromAddress: process.env.EMAIL_FROM_ADDRESS || undefined,
+      },
+      whatsApp: {
+        provider: whatsAppProvider as 'META_CLOUD' | 'DISABLED',
+        graphApiVersion: process.env.WHATSAPP_GRAPH_API_VERSION ?? 'v23.0',
+        phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || undefined,
+        accessToken: process.env.WHATSAPP_ACCESS_TOKEN || undefined,
+        activationTemplateName:
+          process.env.WHATSAPP_ACTIVATION_TEMPLATE_NAME ?? 'academy_account_activation',
+        templateLanguage: process.env.WHATSAPP_TEMPLATE_LANGUAGE ?? 'id',
+      },
     },
   };
 }
