@@ -850,6 +850,23 @@ table.data tbody tr:hover { background: var(--raised); }
 .profileSectionHead h2 { margin: 0; font-size: 18px; }
 .profileSectionHead p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 .profileSessionNotice { margin: 18px 24px 0; }
+.sectionTitleRow { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.sectionTitleRow a { color: var(--accent); font-size: 13px; font-weight: 650; }
+.recentActivity { overflow: hidden; }
+.recentActivity > a { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 18px; border-bottom: 1px solid var(--line-soft); color: inherit; text-decoration: none; }
+.recentActivity > a:last-child { border-bottom: 0; }
+.recentActivity strong, .recentActivity small { display: block; }
+.recentActivity small, .recentActivity time { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.historyPage { max-width: 920px; }
+.historyList { overflow: hidden; }
+.historyItem { display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 16px; padding: 20px; border-bottom: 1px solid var(--line-soft); }
+.historyItem:last-child { border-bottom: 0; }
+.historyDot { width: 10px; height: 10px; border: 2px solid var(--accent); border-radius: 50%; }
+.historyDot.complete { background: var(--accent); }
+.historyItem h2 { margin: 5px 0 3px; font-size: 16px; }
+.historyItem p, .historyItem time { margin: 0; color: var(--muted); font-size: 12px; }
+.historyItem time { display: block; margin-top: 7px; }
+.historyPagination { display: flex; justify-content: center; margin-top: 22px; }
 .preferenceForm { padding: 4px 24px 24px; }
 .preferenceList { display: grid; }
 .preferenceRow { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--line-soft); cursor: pointer; }

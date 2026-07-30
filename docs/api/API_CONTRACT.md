@@ -751,6 +751,31 @@ Response:
 
 Returns the highest-priority active learning item.
 
+```json
+{
+  "data": {
+    "enrollmentId": "uuid",
+    "course": {
+      "id": "uuid",
+      "title": "AI Fundamentals",
+      "shortDescription": "Dasar penerapan AI"
+    },
+    "lesson": {
+      "id": "uuid",
+      "title": "Pengenalan AI",
+      "contentType": "VIDEO",
+      "moduleTitle": "Mulai di sini"
+    },
+    "progressPercent": 25,
+    "lastActivityAt": "2026-07-30T08:00:00.000Z"
+  }
+}
+```
+
+Returns `data: null` when no active enrollment is currently accessible.
+Selection is scoped to the authenticated user, published courses, and valid
+access windows.
+
 ## GET `/me/learning-history`
 
 Cursor pagination:
@@ -763,6 +788,12 @@ from
 to
 eventType
 ```
+
+The MVP endpoint implements `cursor` and `limit`; `limit` defaults to 20 and is
+capped at 50. Each item contains course, module, lesson, activity type,
+timestamp, duration when available, and progress after completion when
+available. Results are always scoped to the authenticated user. The remaining
+filters above are reserved for the reporting iteration.
 
 ---
 

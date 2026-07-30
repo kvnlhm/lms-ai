@@ -48,6 +48,7 @@ describe('Penyelesaian pelajaran', () => {
       data: { status: 'ACTIVE', completedAt: null },
     });
     await h.prisma.outboxMessage.deleteMany({ where: { aggregateId: enrollment.id } });
+    await h.prisma.learningEvent.deleteMany({ where: { userId: session.userId } });
   });
 
   function complete(lessonId: string, idempotencyKey?: string) {
@@ -66,6 +67,91 @@ describe('Penyelesaian pelajaran', () => {
     expect(response.body.data.courseProgress).toBeCloseTo((1 / lessonIds.length) * 100, 1);
     expect(response.body.data.nextLessonId).toBe(lessonIds[1]);
     expect(response.body.data.courseStatus).toBe('ACTIVE');
+
+    const continuation = await request(h.server)
+      .get(`${prefix}/me/continue-learning`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+    expect(continuation.body.data.lesson.id).toBe(lessonIds[1]);
+  });
+
+  it('mengembalikan pelajaran aktif untuk dilanjutkan', async () => {
+    await request(h.server)
+      .post(`${prefix}/learn/lessons/${lessonIds[0]}/open`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .send({})
+      .expect(200);
+
+    const response = await request(h.server)
+      .get(`${prefix}/me/continue-learning`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+
+    expect(response.body.data).toMatchObject({
+      course: { id: courseId },
+      lesson: { id: lessonIds[0] },
+      progressPercent: 0,
+    });
+  });
+
+  it('menampilkan histori milik sendiri dengan cursor dan menyembunyikan milik pengguna lain', async () => {
+    const master = await h.prisma.user.findUniqueOrThrow({
+      where: { email: 'master@akademionline.id' },
+      select: { id: true },
+    });
+    const ownFirst = await h.prisma.learningEvent.create({
+      data: {
+        eventUuid: randomUUID(),
+        eventName: 'learning.lesson_opened',
+        userId: session.userId,
+        courseId,
+        lessonId: lessonIds[0],
+        occurredAt: new Date('2026-07-30T01:00:00Z'),
+      },
+    });
+    const ownSecond = await h.prisma.learningEvent.create({
+      data: {
+        eventUuid: randomUUID(),
+        eventName: 'learning.lesson_completed',
+        userId: session.userId,
+        courseId,
+        lessonId: lessonIds[1],
+        occurredAt: new Date('2026-07-30T02:00:00Z'),
+        durationSeconds: 120,
+        metadata: { courseProgressPercent: 20 },
+      },
+    });
+    await h.prisma.learningEvent.create({
+      data: {
+        eventUuid: randomUUID(),
+        eventName: 'learning.lesson_opened',
+        userId: master.id,
+        courseId,
+        lessonId: lessonIds[2],
+        occurredAt: new Date('2026-07-30T03:00:00Z'),
+      },
+    });
+
+    const firstPage = await request(h.server)
+      .get(`${prefix}/me/learning-history?limit=1`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+    expect(firstPage.body.data.items).toHaveLength(1);
+    expect(firstPage.body.data.items[0]).toMatchObject({
+      id: ownSecond.id.toString(),
+      activityType: 'LESSON_COMPLETED',
+      lessonId: lessonIds[1],
+      progressAfter: 20,
+    });
+    expect(firstPage.body.data.nextCursor).toBe(ownSecond.id.toString());
+
+    const secondPage = await request(h.server)
+      .get(`${prefix}/me/learning-history?limit=1&cursor=${firstPage.body.data.nextCursor}`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+    expect(secondPage.body.data.items[0].id).toBe(ownFirst.id.toString());
+    expect(JSON.stringify(secondPage.body.data)).not.toContain(master.id);
   });
 
   it('menulis event ke outbox dalam transaksi yang sama', async () => {

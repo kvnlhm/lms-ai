@@ -798,6 +798,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/continue-learning": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aktivitas belajar aktif dengan prioritas tertinggi */
+        get: operations["MyLearningController_continueLearning"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/learning-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Histori aktivitas belajar milik pengguna saat ini */
+        get: operations["MyLearningController_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/live": {
         parameters: {
             query?: never;
@@ -1546,6 +1580,48 @@ export interface components {
             /** @description ID sesi belajar di sisi klien */
             sessionId?: string;
             completionEvidence?: components["schemas"]["CompletionEvidenceDto"];
+        };
+        ContinueCourseDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            shortDescription?: string | null;
+        };
+        ContinueLessonDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            contentType: string;
+            moduleTitle: string;
+        };
+        ContinueLearningDto: {
+            /** Format: uuid */
+            enrollmentId: string;
+            course: components["schemas"]["ContinueCourseDto"];
+            lesson?: components["schemas"]["ContinueLessonDto"] | null;
+            progressPercent: number;
+            /** Format: date-time */
+            lastActivityAt?: string | null;
+        };
+        LearningHistoryItemDto: {
+            id: string;
+            /** @enum {string} */
+            activityType: "LESSON_OPENED" | "LESSON_COMPLETED";
+            /** Format: date-time */
+            occurredAt: string;
+            durationSeconds?: number | null;
+            /** Format: uuid */
+            courseId?: string | null;
+            courseTitle: string;
+            /** Format: uuid */
+            lessonId?: string | null;
+            lessonTitle: string;
+            moduleTitle?: string | null;
+            progressAfter?: number | null;
+        };
+        LearningHistoryPageDto: {
+            items: components["schemas"]["LearningHistoryItemDto"][];
+            nextCursor?: string | null;
         };
     };
     responses: never;
@@ -4145,6 +4221,77 @@ export interface operations {
                 };
             };
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    MyLearningController_continueLearning: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ContinueLearningDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    MyLearningController_history: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LearningHistoryPageDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

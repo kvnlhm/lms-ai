@@ -3963,6 +3963,124 @@
         ]
       }
     },
+    "/api/v1/me/continue-learning": {
+      "get": {
+        "operationId": "MyLearningController_continueLearning",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ContinueLearningDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Aktivitas belajar aktif dengan prioritas tertinggi",
+        "tags": [
+          "learning-progress"
+        ]
+      }
+    },
+    "/api/v1/me/learning-history": {
+      "get": {
+        "operationId": "MyLearningController_history",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LearningHistoryPageDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Histori aktivitas belajar milik pengguna saat ini",
+        "tags": [
+          "learning-progress"
+        ]
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "operationId": "HealthController_live",
@@ -6397,6 +6515,155 @@
             "$ref": "#/components/schemas/CompletionEvidenceDto"
           }
         }
+      },
+      "ContinueCourseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "shortDescription": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "ContinueLessonDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "moduleTitle": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "contentType",
+          "moduleTitle"
+        ]
+      },
+      "ContinueLearningDto": {
+        "type": "object",
+        "properties": {
+          "enrollmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "course": {
+            "$ref": "#/components/schemas/ContinueCourseDto"
+          },
+          "lesson": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContinueLessonDto"
+              }
+            ]
+          },
+          "progressPercent": {
+            "type": "number"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "enrollmentId",
+          "course",
+          "progressPercent"
+        ]
+      },
+      "LearningHistoryItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "activityType": {
+            "type": "string",
+            "enum": [
+              "LESSON_OPENED",
+              "LESSON_COMPLETED"
+            ]
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "durationSeconds": {
+            "type": "number",
+            "nullable": true
+          },
+          "courseId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "courseTitle": {
+            "type": "string"
+          },
+          "lessonId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "lessonTitle": {
+            "type": "string"
+          },
+          "moduleTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "progressAfter": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "activityType",
+          "occurredAt",
+          "courseTitle",
+          "lessonTitle"
+        ]
+      },
+      "LearningHistoryPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearningHistoryItemDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "items"
+        ]
       }
     }
   }

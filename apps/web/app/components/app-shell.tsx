@@ -10,6 +10,7 @@ import { ThemeToggle } from './theme-toggle';
 const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
   { href: '/courses', label: 'Kursus' },
+  { href: '/history', label: 'Histori' },
 ];
 
 const MASTER_NAV = [
