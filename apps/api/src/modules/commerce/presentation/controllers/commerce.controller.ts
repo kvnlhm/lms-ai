@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Req,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PERMISSIONS } from '@lms/contracts';
 import type { Request } from 'express';
@@ -72,7 +83,15 @@ export class CommerceController {
   @ApiOperation({ summary: 'Menerima notifikasi transaksi Midtrans yang ditandatangani' })
   @ApiEnvelope(WebhookAcceptedDto)
   @ApiErrors(403, 404, 422)
-  async midtransWebhook(@Body() dto: MidtransNotificationDto) {
+  async midtransWebhook(
+    // Midtrans mengirim ~22 field dan menambah field baru tanpa pemberitahuan.
+    // Pipe global memakai `forbidNonWhitelisted`, yang akan menolak seluruh
+    // notifikasi hanya karena ada field tak dikenal — pembayaran lunas tidak
+    // akan pernah terproses. Di sini field asing cukup dibuang oleh
+    // `whitelist`, sehingga service tetap hanya melihat field terdeklarasi.
+    @Body(new ValidationPipe({ whitelist: true, transform: true, errorHttpStatusCode: 422 }))
+    dto: MidtransNotificationDto,
+  ) {
     await this.commerce.handleMidtrans(dto);
     return { accepted: true };
   }
