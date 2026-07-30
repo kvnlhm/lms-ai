@@ -30,6 +30,15 @@ Data services:
 
 PostgreSQL dan Redis dapat berada pada VPS awal untuk development atau low-risk staging. Production disarankan menggunakan managed service atau instance terisolasi saat budget memungkinkan.
 
+### Akses administratif PostgreSQL
+
+- PostgreSQL hanya dipublikasikan ke loopback VPS pada
+  `127.0.0.1:${POSTGRES_HOST_PORT:-5433}`.
+- Akses GUI seperti TablePlus wajib melewati SSH tunnel.
+- Port PostgreSQL tidak ditambahkan ke firewall Hostinger atau UFW.
+- Gunakan role database terpisah dengan hak minimum untuk pekerjaan CRUD;
+  jangan memakai role aplikasi untuk penggunaan harian.
+
 ---
 
 ## 2. Domain Layout

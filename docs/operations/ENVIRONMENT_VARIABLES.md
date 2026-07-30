@@ -22,7 +22,11 @@ DATABASE_URL
 DATABASE_POOL_MIN
 DATABASE_POOL_MAX
 DATABASE_STATEMENT_TIMEOUT_MS
+POSTGRES_HOST_PORT
 ```
+
+`POSTGRES_HOST_PORT` default ke `5433` dan hanya di-bind ke loopback VPS untuk
+akses administratif melalui SSH tunnel. Jangan bind PostgreSQL ke `0.0.0.0`.
 
 ## Redis
 
