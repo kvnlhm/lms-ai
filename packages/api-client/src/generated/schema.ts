@@ -278,6 +278,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/analytics/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kebiasaan belajar, retensi, partisipasi forum, dan risiko pelajar */
+        get: operations["AdminAnalyticsController_insights"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -1532,6 +1549,72 @@ export interface components {
             summary: components["schemas"]["AnalyticsSummaryDto"];
             courses: components["schemas"]["CourseAnalyticsRankDto"][];
             daily: components["schemas"]["DailyLearningActivityDto"][];
+        };
+        LearningHabitDto: {
+            dailyActiveLearners: number;
+            weeklyActiveLearners: number;
+            monthlyActiveLearners: number;
+            /** @description Rata-rata jumlah hari berbeda seorang pelajar belajar */
+            averageStudyDaysPerLearner: number;
+            /** @description Rata-rata menit belajar pada hari pelajar itu aktif */
+            averageMinutesPerStudyDay: number;
+            /** @description Pelajar yang belajar pada dua hari berbeda atau lebih */
+            returningLearners: number;
+            /** @example Selasa */
+            busiestWeekday?: string | null;
+            /** @description Jam 0-23 waktu server */
+            busiestHour?: number | null;
+        };
+        RetentionDto: {
+            /** @description Persen pelajar pekan lalu yang kembali pekan ini */
+            sevenDay: number;
+            /** @description Persen pelajar 30 hari sebelumnya yang kembali */
+            thirtyDay: number;
+        };
+        ForumContributorDto: {
+            /** Format: uuid */
+            userId: string;
+            fullName: string;
+            topics: number;
+            replies: number;
+        };
+        ForumInsightDto: {
+            /** @description Persen pelajar aktif yang ikut menulis di forum */
+            participationRate: number;
+            contributors: number;
+            activeLearners: number;
+            topics: number;
+            replies: number;
+            topContributors: components["schemas"]["ForumContributorDto"][];
+        };
+        RiskCountsDto: {
+            LOW: number;
+            MEDIUM: number;
+            HIGH: number;
+        };
+        LearnerRiskDto: {
+            /** Format: uuid */
+            userId: string;
+            fullName: string;
+            email: string;
+            /** @enum {string} */
+            level: "LOW" | "MEDIUM" | "HIGH";
+            /** @description Alasan risk level, sesuai PRD 8.6 */
+            reason: string;
+            daysInactive?: number | null;
+            averageProgress: number;
+        };
+        RiskBoardDto: {
+            counts: components["schemas"]["RiskCountsDto"];
+            /** @description Hanya MEDIUM dan HIGH, maksimal 50 */
+            learners: components["schemas"]["LearnerRiskDto"][];
+        };
+        LearnerInsightsDto: {
+            periodDays: number;
+            habit: components["schemas"]["LearningHabitDto"];
+            retention: components["schemas"]["RetentionDto"];
+            forum: components["schemas"]["ForumInsightDto"];
+            risk: components["schemas"]["RiskBoardDto"];
         };
         PaginatedMetaDto: {
             /** Format: uuid */
@@ -2981,6 +3064,54 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["DashboardAnalyticsDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminAnalyticsController_insights: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LearnerInsightsDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
                 };

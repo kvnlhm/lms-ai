@@ -19,6 +19,7 @@ const MASTER_NAV = [
   { href: '/master/users', label: 'Pengguna', icon: Users, permission: 'users.read' },
   { href: '/master/access-tiers', label: 'Paket akses', icon: Courses, permission: 'commerce.manage' },
   { href: '/master/forum', label: 'Forum', icon: Users, permission: 'discussions.moderate' },
+  { href: '/master/insights', label: 'Insight', icon: Dashboard, permission: 'analytics.read' },
 ] as const;
 
 /** Kerangka halaman untuk area yang membutuhkan autentikasi. */

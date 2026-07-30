@@ -1591,3 +1591,81 @@ Mencabut hak berpartisipasi:
 `courseId` kosong berarti seluruh forum. `expiresAt` kosong berarti berlaku
 sampai dikembalikan. Mencabut dua kali pada cakupan yang sama dijawab `422`.
 Pengembalian hak mengisi `revokedAt` dan tidak pernah menghapus barisnya.
+
+---
+
+## 33. Learner Insights API
+
+Mengikuti PRD 8.2 (Insight Aktivitas Belajar) dan 8.6 (Student Risk Indicator).
+
+### GET `/admin/analytics/insights`
+
+Requires `analytics.read`. Query `days` menerima 7–90, default 30.
+
+```json
+{
+  "data": {
+    "periodDays": 30,
+    "habit": {
+      "dailyActiveLearners": 12,
+      "weeklyActiveLearners": 48,
+      "monthlyActiveLearners": 130,
+      "averageStudyDaysPerLearner": 4.2,
+      "averageMinutesPerStudyDay": 27.5,
+      "returningLearners": 61,
+      "busiestWeekday": "Selasa",
+      "busiestHour": 20
+    },
+    "retention": { "sevenDay": 42.9, "thirtyDay": 38.1 },
+    "forum": {
+      "participationRate": 21.4,
+      "contributors": 9,
+      "activeLearners": 42,
+      "topics": 15,
+      "replies": 61,
+      "topContributors": [{ "userId": "uuid", "fullName": "…", "topics": 3, "replies": 12 }]
+    },
+    "risk": {
+      "counts": { "LOW": 96, "MEDIUM": 21, "HIGH": 13 },
+      "learners": [
+        {
+          "userId": "uuid",
+          "fullName": "…",
+          "email": "…",
+          "level": "HIGH",
+          "reason": "Tidak aktif selama 21 hari.",
+          "daysInactive": 21,
+          "averageProgress": 12.5
+        }
+      ]
+    }
+  }
+}
+```
+
+Definisi yang dipakai, agar angkanya tidak ditafsirkan keliru:
+
+- **Aktif** berarti memiliki `learning_events` pada rentang tersebut. Membuka
+  halaman tanpa menyentuh materi tidak dihitung.
+- **`averageStudyDaysPerLearner`** menghitung hari berbeda seorang pelajar
+  belajar, bukan total kunjungan.
+- **`averageMinutesPerStudyDay`** membagi total durasi dengan jumlah pasangan
+  (pelajar, hari aktif) — jadi hari ketika seseorang tidak belajar tidak
+  menurunkan angkanya.
+- **`retention`** adalah *tingkat kembali*: berapa persen pelajar yang aktif
+  pada periode sebelumnya kembali aktif pada periode terakhir. Definisi ini
+  dipilih karena dapat dihitung tanpa tabel kohort terpisah.
+- **`busiestHour`** memakai zona waktu server.
+- **`participationRate`** membandingkan penulis forum dengan pelajar aktif pada
+  periode yang sama, sesuai PRD 8.3.
+- **`risk.learners`** hanya memuat level `MEDIUM` dan `HIGH`, maksimal 50 baris,
+  diurutkan dari yang paling lama tidak aktif. Setiap baris wajib menyertakan
+  `reason` sesuai PRD 8.6 acceptance criteria.
+
+Klasifikasi risiko bersifat rule-based, bukan skoring, sesuai PRD 8.6:
+
+| Level | Kondisi |
+| --- | --- |
+| `HIGH` | Tidak aktif ≥ 14 hari, atau belum pernah mulai padahal terdaftar ≥ 14 hari |
+| `MEDIUM` | Tidak aktif 7–13 hari, atau progres kurang dari separuh rata-rata kohort |
+| `LOW` | Selain itu, termasuk pelajar yang baru terdaftar |

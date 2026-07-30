@@ -947,6 +947,82 @@
         ]
       }
     },
+    "/api/v1/admin/analytics/insights": {
+      "get": {
+        "operationId": "AdminAnalyticsController_insights",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 7,
+              "maximum": 90,
+              "default": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LearnerInsightsDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Kebiasaan belajar, retensi, partisipasi forum, dan risiko pelajar",
+        "tags": [
+          "admin-analytics"
+        ]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "AdminUsersController_list",
@@ -7069,6 +7145,233 @@
           "summary",
           "courses",
           "daily"
+        ]
+      },
+      "LearningHabitDto": {
+        "type": "object",
+        "properties": {
+          "dailyActiveLearners": {
+            "type": "number"
+          },
+          "weeklyActiveLearners": {
+            "type": "number"
+          },
+          "monthlyActiveLearners": {
+            "type": "number"
+          },
+          "averageStudyDaysPerLearner": {
+            "type": "number",
+            "description": "Rata-rata jumlah hari berbeda seorang pelajar belajar"
+          },
+          "averageMinutesPerStudyDay": {
+            "type": "number",
+            "description": "Rata-rata menit belajar pada hari pelajar itu aktif"
+          },
+          "returningLearners": {
+            "type": "number",
+            "description": "Pelajar yang belajar pada dua hari berbeda atau lebih"
+          },
+          "busiestWeekday": {
+            "type": "string",
+            "nullable": true,
+            "example": "Selasa"
+          },
+          "busiestHour": {
+            "type": "number",
+            "nullable": true,
+            "description": "Jam 0-23 waktu server"
+          }
+        },
+        "required": [
+          "dailyActiveLearners",
+          "weeklyActiveLearners",
+          "monthlyActiveLearners",
+          "averageStudyDaysPerLearner",
+          "averageMinutesPerStudyDay",
+          "returningLearners"
+        ]
+      },
+      "RetentionDto": {
+        "type": "object",
+        "properties": {
+          "sevenDay": {
+            "type": "number",
+            "description": "Persen pelajar pekan lalu yang kembali pekan ini"
+          },
+          "thirtyDay": {
+            "type": "number",
+            "description": "Persen pelajar 30 hari sebelumnya yang kembali"
+          }
+        },
+        "required": [
+          "sevenDay",
+          "thirtyDay"
+        ]
+      },
+      "ForumContributorDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "topics": {
+            "type": "number"
+          },
+          "replies": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "userId",
+          "fullName",
+          "topics",
+          "replies"
+        ]
+      },
+      "ForumInsightDto": {
+        "type": "object",
+        "properties": {
+          "participationRate": {
+            "type": "number",
+            "description": "Persen pelajar aktif yang ikut menulis di forum"
+          },
+          "contributors": {
+            "type": "number"
+          },
+          "activeLearners": {
+            "type": "number"
+          },
+          "topics": {
+            "type": "number"
+          },
+          "replies": {
+            "type": "number"
+          },
+          "topContributors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumContributorDto"
+            }
+          }
+        },
+        "required": [
+          "participationRate",
+          "contributors",
+          "activeLearners",
+          "topics",
+          "replies",
+          "topContributors"
+        ]
+      },
+      "RiskCountsDto": {
+        "type": "object",
+        "properties": {
+          "LOW": {
+            "type": "number"
+          },
+          "MEDIUM": {
+            "type": "number"
+          },
+          "HIGH": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "LOW",
+          "MEDIUM",
+          "HIGH"
+        ]
+      },
+      "LearnerRiskDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Alasan risk level, sesuai PRD 8.6"
+          },
+          "daysInactive": {
+            "type": "number",
+            "nullable": true
+          },
+          "averageProgress": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "userId",
+          "fullName",
+          "email",
+          "level",
+          "reason",
+          "averageProgress"
+        ]
+      },
+      "RiskBoardDto": {
+        "type": "object",
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/RiskCountsDto"
+          },
+          "learners": {
+            "description": "Hanya MEDIUM dan HIGH, maksimal 50",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearnerRiskDto"
+            }
+          }
+        },
+        "required": [
+          "counts",
+          "learners"
+        ]
+      },
+      "LearnerInsightsDto": {
+        "type": "object",
+        "properties": {
+          "periodDays": {
+            "type": "number"
+          },
+          "habit": {
+            "$ref": "#/components/schemas/LearningHabitDto"
+          },
+          "retention": {
+            "$ref": "#/components/schemas/RetentionDto"
+          },
+          "forum": {
+            "$ref": "#/components/schemas/ForumInsightDto"
+          },
+          "risk": {
+            "$ref": "#/components/schemas/RiskBoardDto"
+          }
+        },
+        "required": [
+          "periodDays",
+          "habit",
+          "retention",
+          "forum",
+          "risk"
         ]
       },
       "PaginatedMetaDto": {
