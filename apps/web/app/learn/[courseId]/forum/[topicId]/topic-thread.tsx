@@ -1,0 +1,337 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { ApiError, browserClient, ensureSuccess, unwrap } from '../../../../lib/browser-api';
+
+/** Endpoint forum belum punya DTO respons di OpenAPI; bentuknya ditegaskan di sini. */
+interface Author {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+}
+
+interface Reply {
+  id: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  author: Author;
+  _count: { reactions: number };
+}
+
+interface TopicDetail {
+  id: string;
+  title: string;
+  body: string;
+  status: 'OPEN' | 'RESOLVED' | 'LOCKED' | 'HIDDEN';
+  isPinned: boolean;
+  bestReplyId: string | null;
+  createdAt: string;
+  author: Author;
+  replies: Reply[];
+  _count: { reactions: number };
+  canParticipate: boolean;
+  participationBlockedReason: string | null;
+}
+
+const STATUS_LABEL: Record<TopicDetail['status'], string> = {
+  OPEN: 'Terbuka',
+  RESOLVED: 'Terjawab',
+  LOCKED: 'Dikunci',
+  HIDDEN: 'Disembunyikan',
+};
+
+function formatDate(value: string): string {
+  return new Date(value).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+export function TopicThread({
+  topicId,
+  currentUserId,
+}: {
+  topicId: string;
+  currentUserId: string;
+}) {
+  const [topic, setTopic] = useState<TopicDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await browserClient().GET('/api/v1/learn/forum/topics/{topicId}', {
+        params: { path: { topicId } },
+      });
+      setTopic(unwrap(response) as unknown as TopicDetail);
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Diskusi tidak dapat dimuat.');
+    } finally {
+      setLoading(false);
+    }
+  }, [topicId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function run(action: string, task: () => Promise<unknown>, success?: string) {
+    if (busy) return;
+    setBusy(action);
+    setError(null);
+    setNotice(null);
+    try {
+      await task();
+      if (success) setNotice(success);
+      await load();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'Tindakan gagal dijalankan.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (loading) return <p className="stageNote">Memuat diskusi…</p>;
+
+  if (!topic) {
+    return (
+      <div className="notice noticeError" role="alert">
+        {error ?? 'Diskusi tidak ditemukan.'}
+      </div>
+    );
+  }
+
+  const reportContent = (target: { topicId?: string; replyId?: string }) => {
+    const reason = window.prompt('Apa yang perlu Master ketahui tentang konten ini?')?.trim();
+    if (!reason || reason.length < 5) return;
+    return run(
+      'report',
+      () => browserClient().POST('/api/v1/learn/forum/reports', { body: { ...target, reason } }),
+      'Laporan terkirim ke Master.',
+    );
+  };
+
+  return (
+    <section className="stack">
+      {error ? (
+        <div className="notice noticeError" role="alert">
+          {error}
+        </div>
+      ) : null}
+      {notice ? (
+        <div className="notice" role="status">
+          {notice}
+        </div>
+      ) : null}
+
+      <article className="card stack">
+        <div className="rowBetween">
+          <h1 className="pageTitle">{topic.title}</h1>
+          <span className="inlineActions">
+            {topic.isPinned ? <span className="pill pillAccent">Disematkan</span> : null}
+            <span className="pill">{STATUS_LABEL[topic.status]}</span>
+          </span>
+        </div>
+        <small className="muted">
+          {topic.author.fullName} · {formatDate(topic.createdAt)}
+        </small>
+        <p>{topic.body}</p>
+        <div className="inlineActions">
+          <button
+            className="btnTiny"
+            type="button"
+            disabled={busy !== null || !topic.canParticipate}
+            onClick={() =>
+              void run('react-topic', () =>
+                browserClient().POST('/api/v1/learn/forum/topics/{topicId}/reactions', {
+                  params: { path: { topicId } },
+                }),
+              )
+            }
+          >
+            Suka ({topic._count.reactions})
+          </button>
+          <button
+            className="btnGhost btnSmall"
+            type="button"
+            disabled={busy !== null}
+            onClick={() => void reportContent({ topicId })}
+          >
+            Laporkan
+          </button>
+        </div>
+      </article>
+
+      <h2 className="sectionTitle">{topic.replies.length} balasan</h2>
+
+      <ul className="stack">
+        {topic.replies.map((reply) => (
+          <li
+            key={reply.id}
+            className={reply.id === topic.bestReplyId ? 'card cardAccent' : 'card'}
+          >
+            <div className="rowBetween">
+              <small className="muted">
+                {reply.author.fullName} · {formatDate(reply.createdAt)}
+              </small>
+              {reply.id === topic.bestReplyId ? (
+                <span className="pill pillAccent">Jawaban terbaik</span>
+              ) : null}
+            </div>
+
+            {editingId === reply.id ? (
+              <form
+                className="stack"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void run(
+                    `edit-${reply.id}`,
+                    async () => {
+                      await browserClient().PATCH('/api/v1/learn/forum/replies/{replyId}', {
+                        params: { path: { replyId: reply.id } },
+                        body: { body: editDraft.trim() },
+                      });
+                      setEditingId(null);
+                    },
+                    'Balasan diperbarui.',
+                  );
+                }}
+              >
+                <textarea
+                  value={editDraft}
+                  onChange={(event) => setEditDraft(event.currentTarget.value)}
+                  rows={4}
+                  maxLength={5000}
+                  required
+                  disabled={busy !== null}
+                />
+                <span className="inlineActions">
+                  <button className="btnSecondary btnSmall" type="submit" disabled={busy !== null}>
+                    Simpan
+                  </button>
+                  <button
+                    className="btnGhost btnSmall"
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() => setEditingId(null)}
+                  >
+                    Batal
+                  </button>
+                </span>
+              </form>
+            ) : (
+              <p>{reply.body}</p>
+            )}
+
+            <div className="inlineActions">
+              <button
+                className="btnTiny"
+                type="button"
+                disabled={busy !== null || !topic.canParticipate}
+                onClick={() =>
+                  void run(`react-${reply.id}`, () =>
+                    browserClient().POST('/api/v1/learn/forum/replies/{replyId}/reactions', {
+                      params: { path: { replyId: reply.id } },
+                    }),
+                  )
+                }
+              >
+                Suka ({reply._count.reactions})
+              </button>
+              {reply.author.id === currentUserId && editingId !== reply.id ? (
+                <>
+                  <button
+                    className="btnTiny"
+                    type="button"
+                    disabled={busy !== null || !topic.canParticipate}
+                    onClick={() => {
+                      setEditDraft(reply.body);
+                      setEditingId(reply.id);
+                    }}
+                  >
+                    Sunting
+                  </button>
+                  <button
+                    className="btnGhost btnSmall"
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() =>
+                      void run(
+                        `delete-${reply.id}`,
+                        () =>
+                          browserClient()
+                            .DELETE('/api/v1/learn/forum/replies/{replyId}', {
+                              params: { path: { replyId: reply.id } },
+                            })
+                            .then(ensureSuccess),
+                        'Balasan dihapus.',
+                      )
+                    }
+                  >
+                    Hapus
+                  </button>
+                </>
+              ) : null}
+              {reply.author.id !== currentUserId ? (
+                <button
+                  className="btnGhost btnSmall"
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => void reportContent({ replyId: reply.id })}
+                >
+                  Laporkan
+                </button>
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {topic.canParticipate ? (
+        <form
+          className="card stack"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void run(
+              'reply',
+              async () => {
+                await browserClient().POST('/api/v1/learn/forum/topics/{topicId}/replies', {
+                  params: { path: { topicId } },
+                  body: { body: draft.trim() },
+                });
+                setDraft('');
+              },
+              'Balasan terkirim.',
+            );
+          }}
+        >
+          <label className="field">
+            <span>Tulis balasan</span>
+            <textarea
+              value={draft}
+              onChange={(event) => setDraft(event.currentTarget.value)}
+              rows={4}
+              maxLength={5000}
+              required
+              disabled={busy !== null}
+            />
+          </label>
+          <button className="btn btnBlock" type="submit" disabled={busy !== null}>
+            {busy === 'reply' ? 'Mengirim…' : 'Kirim balasan'}
+          </button>
+        </form>
+      ) : (
+        <div className="notice" role="status">
+          {topic.participationBlockedReason
+            ? `Hak berdiskusimu sedang dicabut. Alasan: ${topic.participationBlockedReason}`
+            : 'Diskusi ini dikunci Master, jadi balasan baru tidak diterima.'}
+        </div>
+      )}
+    </section>
+  );
+}

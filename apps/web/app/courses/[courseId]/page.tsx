@@ -61,11 +61,18 @@ export default async function CourseDetailPage({ params }: Props) {
             {course.shortDescription ? <p className="pageSub">{course.shortDescription}</p> : null}
           </div>
 
-          {course.access.enrolled && startTarget ? (
-            <Link className="btn" href={`/learn/${course.id}/${startTarget}`}>
-              {progress && progress.requiredLessonsCompleted > 0 ? 'Lanjutkan' : 'Mulai belajar'}
-              <ArrowRight size={16} />
-            </Link>
+          {course.access.enrolled ? (
+            <span className="inlineActions">
+              <Link className="btnSecondary" href={`/learn/${course.id}/forum`}>
+                Forum diskusi
+              </Link>
+              {startTarget ? (
+                <Link className="btn" href={`/learn/${course.id}/${startTarget}`}>
+                  {progress && progress.requiredLessonsCompleted > 0 ? 'Lanjutkan' : 'Mulai belajar'}
+                  <ArrowRight size={16} />
+                </Link>
+              ) : null}
+            </span>
           ) : null}
         </div>
 
