@@ -136,6 +136,11 @@ export class UserAdminService {
     await this.credentials.resetMfa(userId);
   }
 
+  async issuePasswordReset(userId: string) {
+    await this.assertExists(userId);
+    return this.credentials.issuePasswordReset(userId);
+  }
+
   private async assertExists(userId: string): Promise<void> {
     const user = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },

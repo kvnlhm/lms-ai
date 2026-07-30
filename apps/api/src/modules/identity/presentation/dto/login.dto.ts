@@ -47,3 +47,5 @@ export class AcceptInvitationDto {
   @MaxLength(128)
   passwordConfirmation!: string;
 }
+
+export class ResetPasswordDto extends AcceptInvitationDto {}

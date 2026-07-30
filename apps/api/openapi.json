@@ -33,6 +33,38 @@
         ]
       }
     },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengganti password menggunakan token sekali pakai",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/mfa/setup": {
       "post": {
         "operationId": "AuthController_setupMfa",
@@ -1004,6 +1036,79 @@
           }
         },
         "summary": "Menghapus MFA dan mencabut seluruh session pengguna",
+        "tags": [
+          "admin-users"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{userId}/password-reset-link": {
+      "post": {
+        "operationId": "AdminUsersController_passwordResetLink",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CredentialLinkResponseDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menerbitkan token reset password sekali pakai",
         "tags": [
           "admin-users"
         ]
@@ -3653,6 +3758,27 @@
           "passwordConfirmation"
         ]
       },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12
+          },
+          "passwordConfirmation": {
+            "type": "string",
+            "minLength": 12
+          }
+        },
+        "required": [
+          "token",
+          "password",
+          "passwordConfirmation"
+        ]
+      },
       "MfaCodeDto": {
         "type": "object",
         "properties": {
@@ -4123,6 +4249,23 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "CredentialLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token mentah; hanya dikembalikan sekali."
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "expiresAt"
         ]
       },
       "CourseCategoryDto": {

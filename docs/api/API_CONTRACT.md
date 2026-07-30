@@ -207,6 +207,10 @@ Public and rate limited.
 
 Response must not reveal whether email exists.
 
+Belum diaktifkan pada deployment tanpa provider email. Sampai SMTP tersedia,
+Master dapat menerbitkan tautan sekali pakai melalui endpoint administratif
+di bawah; token tidak pernah ditulis ke log.
+
 ## POST `/auth/reset-password`
 
 ```json
@@ -361,6 +365,12 @@ Includes:
 ## POST `/admin/users/{userId}/reset-mfa`
 
 Master action requiring elevated permission and audit.
+
+## POST `/admin/users/{userId}/password-reset-link`
+
+Requires `users.security.manage`. Mengembalikan `token` dan `expiresAt` satu
+kali untuk disampaikan Master secara manual. Penerbitan dicatat ke audit log
+tanpa nilai token.
 
 ---
 

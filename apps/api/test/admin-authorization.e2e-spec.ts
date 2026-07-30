@@ -18,6 +18,7 @@ const ADMIN_ENDPOINTS: Array<{ method: 'get' | 'post' | 'patch' | 'put' | 'delet
   { method: 'post', path: '/admin/users/00000000-0000-4000-8000-000000000000/suspend' },
   { method: 'post', path: '/admin/users/00000000-0000-4000-8000-000000000000/activate' },
   { method: 'post', path: '/admin/users/00000000-0000-4000-8000-000000000000/reset-mfa' },
+  { method: 'post', path: '/admin/users/00000000-0000-4000-8000-000000000000/password-reset-link' },
   { method: 'get', path: '/admin/courses' },
   { method: 'post', path: '/admin/courses' },
   { method: 'get', path: '/admin/courses/00000000-0000-4000-8000-000000000000' },
@@ -135,6 +136,36 @@ describe('Otorisasi endpoint Master', () => {
       .expect(422);
 
     await login(h.server, email, 'Password#Undangan123');
+
+    const reset = await request(h.server)
+      .post(`${prefix}/admin/users/${created.body.data.id}/password-reset-link`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .expect(200);
+
+    await request(h.server)
+      .post(`${prefix}/auth/reset-password`)
+      .send({
+        token: reset.body.data.token,
+        password: 'Password#Baru456789',
+        passwordConfirmation: 'Password#Baru456789',
+      })
+      .expect(200);
+
+    await request(h.server)
+      .post(`${prefix}/auth/login`)
+      .send({ email, password: 'Password#Undangan123' })
+      .expect(401);
+    await login(h.server, email, 'Password#Baru456789');
+
+    await request(h.server)
+      .post(`${prefix}/auth/reset-password`)
+      .send({
+        token: reset.body.data.token,
+        password: 'Password#Lain456789',
+        passwordConfirmation: 'Password#Lain456789',
+      })
+      .expect(422);
 
     const prisma = new PrismaClient();
     try {

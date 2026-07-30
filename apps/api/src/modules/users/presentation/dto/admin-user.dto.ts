@@ -133,3 +133,11 @@ export class CreateAdminUserResponseDto extends AdminUserMutationResponseDto {
   @ApiProperty({ format: 'date-time' })
   invitationExpiresAt!: Date;
 }
+
+export class CredentialLinkResponseDto {
+  @ApiProperty({ description: 'Token mentah; hanya dikembalikan sekali.' })
+  token!: string;
+
+  @ApiProperty({ format: 'date-time' })
+  expiresAt!: Date;
+}

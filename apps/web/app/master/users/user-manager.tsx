@@ -11,7 +11,8 @@ export function UserManager({ users }: { users: User[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [invitationUrl, setInvitationUrl] = useState<string | null>(null);
+  const [credentialUrl, setCredentialUrl] = useState<string | null>(null);
+  const [credentialLabel, setCredentialLabel] = useState('Tautan');
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,7 +29,8 @@ export function UserManager({ users }: { users: User[] }) {
           },
         }),
       );
-      setInvitationUrl(
+      setCredentialLabel('Tautan undangan');
+      setCredentialUrl(
         `${window.location.origin}/accept-invitation?token=${encodeURIComponent(created.invitationToken)}`,
       );
       event.currentTarget.reset();
@@ -54,6 +56,20 @@ export function UserManager({ users }: { users: User[] }) {
         await browserClient().POST('/api/v1/admin/users/{userId}/activate', {
           params: { path: { userId: user.id } },
         }),
+      );
+    });
+  }
+
+  async function issuePasswordReset(user: User) {
+    await run(`password-${user.id}`, async () => {
+      const result = unwrap(
+        await browserClient().POST('/api/v1/admin/users/{userId}/password-reset-link', {
+          params: { path: { userId: user.id } },
+        }),
+      );
+      setCredentialLabel(`Tautan reset password untuk ${user.fullName}`);
+      setCredentialUrl(
+        `${window.location.origin}/reset-password?token=${encodeURIComponent(result.token)}`,
       );
     });
   }
@@ -100,11 +116,11 @@ export function UserManager({ users }: { users: User[] }) {
           </button>
         </form>
         {error ? <p className="fieldError" role="alert">{error}</p> : null}
-        {invitationUrl ? (
+        {credentialUrl ? (
           <div className="notice" role="status" style={{ marginTop: 14 }}>
-            <strong>Tautan undangan hanya ditampilkan kali ini.</strong>
-            <input value={invitationUrl} readOnly aria-label="Tautan undangan" />
-            <button className="btn btnGhost" type="button" onClick={() => navigator.clipboard.writeText(invitationUrl)}>
+            <strong>{credentialLabel} hanya ditampilkan kali ini.</strong>
+            <input value={credentialUrl} readOnly aria-label={credentialLabel} />
+            <button className="btn btnGhost" type="button" onClick={() => navigator.clipboard.writeText(credentialUrl)}>
               Salin tautan
             </button>
           </div>
@@ -136,15 +152,20 @@ export function UserManager({ users }: { users: User[] }) {
                   <td>{formatDate(item.lastLoginAt)}</td>
                   <td>{formatDate(item.createdAt)}</td>
                   <td>
-                    {item.status === 'SUSPENDED' ? (
-                      <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => activate(item)}>
-                        Aktifkan
+                    <div className="inlineActions">
+                      <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => issuePasswordReset(item)}>
+                        Reset password
                       </button>
-                    ) : (
-                      <button className="btn btnDanger" type="button" disabled={busy !== null} onClick={() => suspend(item)}>
-                        Tangguhkan
-                      </button>
-                    )}
+                      {item.status === 'SUSPENDED' ? (
+                        <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => activate(item)}>
+                          Aktifkan
+                        </button>
+                      ) : (
+                        <button className="btn btnDanger" type="button" disabled={busy !== null} onClick={() => suspend(item)}>
+                          Tangguhkan
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

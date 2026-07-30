@@ -25,6 +25,7 @@ import {
   AdminUserMutationResponseDto,
   CreateAdminUserDto,
   CreateAdminUserResponseDto,
+  CredentialLinkResponseDto,
   ListAdminUsersDto,
   SuspendAdminUserDto,
   UpdateAdminUserDto,
@@ -144,6 +145,24 @@ export class AdminUsersController {
     }
     await this.users.resetMfa(userId);
     await this.log(request, actor, 'user.mfa_reset', userId);
+  }
+
+  @Post(':userId/password-reset-link')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.USERS_SECURITY_MANAGE)
+  @ApiOperation({ summary: 'Menerbitkan token reset password sekali pakai' })
+  @ApiEnvelope(CredentialLinkResponseDto)
+  @ApiErrors(401, 403, 404)
+  async passwordResetLink(
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @CurrentUser() actor: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const token = await this.users.issuePasswordReset(userId);
+    await this.log(request, actor, 'user.password_reset_issued', userId, {
+      expiresAt: token.expiresAt,
+    });
+    return token;
   }
 
   private async log(

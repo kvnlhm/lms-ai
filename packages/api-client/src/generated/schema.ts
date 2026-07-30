@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mengganti password menggunakan token sekali pakai */
+        post: operations["AuthController_resetPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/mfa/setup": {
         parameters: {
             query?: never;
@@ -254,6 +271,23 @@ export interface paths {
         put?: never;
         /** Menghapus MFA dan mencabut seluruh session pengguna */
         post: operations["AdminUsersController_resetMfa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{userId}/password-reset-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Menerbitkan token reset password sekali pakai */
+        post: operations["AdminUsersController_passwordResetLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -750,6 +784,11 @@ export interface components {
             password: string;
             passwordConfirmation: string;
         };
+        ResetPasswordDto: {
+            token: string;
+            password: string;
+            passwordConfirmation: string;
+        };
         MfaCodeDto: {
             /** @example 123456 */
             code: string;
@@ -898,6 +937,12 @@ export interface components {
         };
         SuspendAdminUserDto: {
             reason: string;
+        };
+        CredentialLinkResponseDto: {
+            /** @description Token mentah; hanya dikembalikan sekali. */
+            token: string;
+            /** Format: date-time */
+            expiresAt: string;
         };
         CourseCategoryDto: {
             name: string;
@@ -1418,6 +1463,29 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AcceptInvitationDto"];
+            };
+        };
+        responses: {
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_resetPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordDto"];
             };
         };
         responses: {
@@ -2068,6 +2136,54 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminUsersController_passwordResetLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CredentialLinkResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
