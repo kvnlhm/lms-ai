@@ -6,6 +6,7 @@ import { OutboxModule } from './infrastructure/outbox/outbox.module';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
 import { EnrollmentModule } from './modules/enrollment/enrollment.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { HealthModule } from './modules/health/health.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { PermissionsGuard } from './modules/identity/presentation/guards/permissions.guard';
@@ -34,6 +35,7 @@ import { IdempotencyModule } from './shared/idempotency/idempotency.module';
     IdempotencyModule,
     AuditModule,
     IdentityModule,
+    AnalyticsModule,
     UsersModule,
     LearningCatalogModule,
     EnrollmentModule,

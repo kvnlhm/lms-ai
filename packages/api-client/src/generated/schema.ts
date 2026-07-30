@@ -261,6 +261,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/analytics/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ringkasan aktivitas belajar dan performa kursus untuk Master */
+        get: operations["AdminAnalyticsController_dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users": {
         parameters: {
             query?: never;
@@ -1039,6 +1056,37 @@ export interface components {
             announcementsEnabled: boolean;
             courseUpdatesEnabled: boolean;
             learningRemindersEnabled: boolean;
+        };
+        AnalyticsSummaryDto: {
+            activeLearners: number;
+            lessonOpens: number;
+            lessonCompletions: number;
+            learningMinutes: number;
+        };
+        CourseAnalyticsRankDto: {
+            /** Format: uuid */
+            courseId: string;
+            title: string;
+            thumbnailUrl?: string | null;
+            lessonOpens: number;
+            lessonCompletions: number;
+            activeLearners: number;
+            enrollmentCount: number;
+            averageProgress: number;
+            completionRate: number;
+        };
+        DailyLearningActivityDto: {
+            /** Format: date-time */
+            date: string;
+            lessonOpens: number;
+            lessonCompletions: number;
+            activeLearners: number;
+        };
+        DashboardAnalyticsDto: {
+            periodDays: number;
+            summary: components["schemas"]["AnalyticsSummaryDto"];
+            courses: components["schemas"]["CourseAnalyticsRankDto"][];
+            daily: components["schemas"]["DailyLearningActivityDto"][];
         };
         PaginatedMetaDto: {
             /** Format: uuid */
@@ -2309,6 +2357,54 @@ export interface operations {
                         data: components["schemas"]["NotificationPreferenceDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminAnalyticsController_dashboard: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DashboardAnalyticsDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
             422: {

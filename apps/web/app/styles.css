@@ -789,6 +789,57 @@ table.data tbody tr:hover { background: var(--raised); }
 .actionCard > span:last-child { display: grid; }
 .actionCard strong { font-size: 14px; }
 .actionCard small { color: var(--muted); font-size: 12.5px; margin-top: 5px; }
+.analyticsSection { margin-top: 38px; }
+.analyticsSection .sectionTitleRow { align-items: flex-end; margin-bottom: 18px; }
+.analyticsSection h2 { margin: 5px 0 4px; font-size: 24px; letter-spacing: -.025em; }
+.analyticsPeriod {
+  flex: none; padding: 7px 11px; border: 1px solid var(--line);
+  border-radius: 9px; color: var(--text-2); background: var(--raised); font-size: 12px;
+}
+.analyticsMetricGrid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px; margin-bottom: 18px;
+}
+.analyticsMetric { position: relative; min-height: 128px; padding: 19px; display: grid; align-content: start; gap: 7px; overflow: hidden; }
+.analyticsMetric::after {
+  content: ''; position: absolute; width: 82px; height: 82px; right: -32px; bottom: -38px;
+  border-radius: 50%; background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.analyticsMetric > span, .analyticsMetric > small { color: var(--muted); font-size: 12px; }
+.analyticsMetric > strong { font-size: 25px; line-height: 1.15; letter-spacing: -.035em; }
+.analyticsGrid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(310px, .75fr); gap: 18px; align-items: start; }
+.analyticsPanel { padding: 22px; min-width: 0; }
+.analyticsPanel .panelHead { align-items: center; margin-bottom: 12px; }
+.analyticsPanel h3 { margin: 0 0 4px; font-size: 17px; }
+.analyticsRankList { display: grid; margin-top: 8px; }
+.analyticsRankRow {
+  display: grid; grid-template-columns: 26px 52px minmax(0, 1fr); align-items: center; gap: 12px;
+  padding: 14px 4px; border-top: 1px solid var(--line-soft);
+}
+.analyticsRankRow:hover { background: var(--raised); }
+.rankNumber { color: var(--muted); font-size: 12px; font-weight: 700; text-align: center; }
+.analyticsRankMain { display: grid; gap: 8px; min-width: 0; }
+.analyticsRankTitle { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.analyticsRankTitle strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.analyticsRankTitle small { flex: none; color: var(--text-2); font-size: 11px; }
+.analyticsBar, .dailyTrack {
+  display: block; height: 6px; overflow: hidden; border-radius: var(--r-pill); background: var(--raised-2);
+}
+.analyticsBar > span, .dailyTrack > span {
+  display: block; height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), #60a5fa);
+}
+.analyticsRankStats { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--muted); }
+.analyticsRankStats small { font-size: 11px; }
+.dailyChart { display: grid; gap: 14px; padding-top: 8px; }
+.dailyRow { display: grid; grid-template-columns: 54px minmax(0, 1fr) 32px; align-items: center; gap: 10px; }
+.dailyRow time { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.dailyRow strong { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.dailyLegend { padding-top: 5px; color: var(--muted); font-size: 11px; }
+.legendDot { width: 7px; height: 7px; display: inline-block; margin-right: 5px; border-radius: 50%; background: var(--accent); }
+.analyticsEmpty { padding: 34px 18px; text-align: center; border-top: 1px solid var(--line-soft); }
+.analyticsEmpty strong { font-size: 14px; }
+.analyticsEmpty p { margin: 6px auto 0; max-width: 360px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .courseAdminHead { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; }
 .courseTabs {
   display: flex; gap: 4px; overflow-x: auto;
@@ -1040,6 +1091,8 @@ table.data tbody tr:hover { background: var(--raised); }
   .sideProfile { flex-wrap: wrap; justify-content: center; }
   .metricGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .masterGrid { grid-template-columns: 1fr; }
+  .analyticsMetricGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analyticsGrid { grid-template-columns: 1fr; }
   .userFilterBar { grid-template-columns: minmax(220px, 1fr) 150px 160px; }
   .userFilterBar .btn { min-height: 40px; }
 }
@@ -1059,6 +1112,11 @@ table.data tbody tr:hover { background: var(--raised); }
   .mobileBrand { display: inline; font-weight: 600; color: var(--text); }
   .masterContent { width: min(100% - 28px, 1380px); padding-top: 24px; padding-bottom: 96px; }
   .metricGrid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .analyticsMetricGrid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .analyticsMetric { min-height: 114px; padding: 15px; }
+  .analyticsMetric > strong { font-size: 21px; }
+  .analyticsRankRow { grid-template-columns: 22px 44px minmax(0, 1fr); gap: 9px; }
+  .analyticsRankStats small:nth-child(2) { display: none; }
   .metricCard { padding: 15px; }
   .metricCard > strong { font-size: 24px; }
   .courseHeroAdmin { align-items: stretch; flex-direction: column; }

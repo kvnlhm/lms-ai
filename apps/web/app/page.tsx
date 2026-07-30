@@ -122,25 +122,25 @@ function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
           <span className="coverText">{course.title}</span>
         )}
       </span>
-      <span className="courseBody">
+      <div className="courseBody">
         <span className="courseName">{course.title}</span>
         <span className="eyebrow" style={{ marginTop: 4 }}>
           {course.category ?? 'Tanpa kategori'}
         </span>
         {course.shortDescription ? <span className="courseDesc">{course.shortDescription}</span> : null}
-        <span className="courseFoot">
-          <span className="courseProgressLabel">
+        <div className="courseFoot">
+          <div className="courseProgressLabel">
             <span>Progres belajar</span><strong>{progress.percent}%</strong>
-          </span>
-          <span className="progress" role="img" aria-label={`Progres ${progress.percent} persen`}>
+          </div>
+          <div className="progress" role="img" aria-label={`Progres ${progress.percent} persen`}>
             <span style={{ width: `${progress.percent}%` }} />
-          </span>
-          <span className="courseStats">
+          </div>
+          <div className="courseStats">
             <span>{progress.requiredLessonsCompleted} dari {progress.requiredLessonsTotal} materi wajib</span>
             <span>{enrollment.status === 'COMPLETED' ? 'Selesai' : 'Sedang berjalan'}</span>
-          </span>
-        </span>
-      </span>
+          </div>
+        </div>
+      </div>
     </Link>
   );
 }

@@ -1007,6 +1007,23 @@ Requires resource authorization.
 
 Requires `analytics.read`.
 
+## GET `/admin/analytics/dashboard`
+
+Query:
+
+```text
+days=7..90
+```
+
+Returns traceable metrics from server-produced `learning_events` and progress data:
+
+- Unique active learners.
+- Lesson opens and completions.
+- Recorded active learning minutes.
+- Course ranking by learning activity.
+- Enrollment count, average progress, and completion rate per course.
+- Daily activity series.
+
 ## GET `/admin/dashboard/overview`
 
 Query:

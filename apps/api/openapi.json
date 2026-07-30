@@ -871,6 +871,82 @@
         ]
       }
     },
+    "/api/v1/admin/analytics/dashboard": {
+      "get": {
+        "operationId": "AdminAnalyticsController_dashboard",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 7,
+              "maximum": 90,
+              "default": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DashboardAnalyticsDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Ringkasan aktivitas belajar dan performa kursus untuk Master",
+        "tags": [
+          "admin-analytics"
+        ]
+      }
+    },
     "/api/v1/admin/users": {
       "get": {
         "operationId": "AdminUsersController_list",
@@ -4813,6 +4889,126 @@
           "announcementsEnabled",
           "courseUpdatesEnabled",
           "learningRemindersEnabled"
+        ]
+      },
+      "AnalyticsSummaryDto": {
+        "type": "object",
+        "properties": {
+          "activeLearners": {
+            "type": "number"
+          },
+          "lessonOpens": {
+            "type": "number"
+          },
+          "lessonCompletions": {
+            "type": "number"
+          },
+          "learningMinutes": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "activeLearners",
+          "lessonOpens",
+          "lessonCompletions",
+          "learningMinutes"
+        ]
+      },
+      "CourseAnalyticsRankDto": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "lessonOpens": {
+            "type": "number"
+          },
+          "lessonCompletions": {
+            "type": "number"
+          },
+          "activeLearners": {
+            "type": "number"
+          },
+          "enrollmentCount": {
+            "type": "number"
+          },
+          "averageProgress": {
+            "type": "number"
+          },
+          "completionRate": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "courseId",
+          "title",
+          "lessonOpens",
+          "lessonCompletions",
+          "activeLearners",
+          "enrollmentCount",
+          "averageProgress",
+          "completionRate"
+        ]
+      },
+      "DailyLearningActivityDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lessonOpens": {
+            "type": "number"
+          },
+          "lessonCompletions": {
+            "type": "number"
+          },
+          "activeLearners": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "date",
+          "lessonOpens",
+          "lessonCompletions",
+          "activeLearners"
+        ]
+      },
+      "DashboardAnalyticsDto": {
+        "type": "object",
+        "properties": {
+          "periodDays": {
+            "type": "number"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AnalyticsSummaryDto"
+          },
+          "courses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseAnalyticsRankDto"
+            }
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DailyLearningActivityDto"
+            }
+          }
+        },
+        "required": [
+          "periodDays",
+          "summary",
+          "courses",
+          "daily"
         ]
       },
       "PaginatedMetaDto": {

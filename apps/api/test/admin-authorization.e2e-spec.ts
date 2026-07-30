@@ -20,6 +20,7 @@ const ADMIN_ENDPOINTS: Array<{ method: 'get' | 'post' | 'patch' | 'put' | 'delet
   { method: 'post', path: '/admin/users/00000000-0000-4000-8000-000000000000/reset-mfa' },
   { method: 'post', path: '/admin/users/00000000-0000-4000-8000-000000000000/password-reset-link' },
   { method: 'get', path: '/admin/courses' },
+  { method: 'get', path: '/admin/analytics/dashboard' },
   { method: 'post', path: '/admin/courses' },
   { method: 'get', path: '/admin/courses/00000000-0000-4000-8000-000000000000' },
   { method: 'patch', path: '/admin/courses/00000000-0000-4000-8000-000000000000' },
@@ -97,6 +98,28 @@ describe('Otorisasi endpoint Master', () => {
       ]),
     );
     expect(JSON.stringify(response.body)).not.toContain('passwordHash');
+  });
+
+  it('memberi Master analytics agregat tanpa data pribadi Pelajar', async () => {
+    const response = await request(h.server)
+      .get(`${prefix}/admin/analytics/dashboard?days=30`)
+      .set('Cookie', master.cookie)
+      .expect(200);
+
+    expect(response.body.data).toEqual(
+      expect.objectContaining({
+        periodDays: 30,
+        summary: expect.objectContaining({
+          activeLearners: expect.any(Number),
+          lessonOpens: expect.any(Number),
+          lessonCompletions: expect.any(Number),
+          learningMinutes: expect.any(Number),
+        }),
+        courses: expect.any(Array),
+        daily: expect.any(Array),
+      }),
+    );
+    expect(JSON.stringify(response.body)).not.toContain(STUDENT.email);
   });
 
   it('membuat Pelajar lewat undangan sekali pakai dan dapat menetapkan password', async () => {
@@ -184,14 +207,14 @@ describe('Otorisasi endpoint Master', () => {
     expect(response.body.data.permissions).toEqual([]);
   });
 
-  it('memberi Master permission courses.manage dan enrollments.manage', async () => {
+  it('memberi Master permission courses.manage, enrollments.manage, dan analytics.read', async () => {
     const response = await request(h.server)
       .get(`${prefix}/auth/me`)
       .set('Cookie', master.cookie)
       .expect(200);
 
     expect(response.body.data.permissions).toEqual(
-      expect.arrayContaining(['courses.manage', 'enrollments.manage']),
+      expect.arrayContaining(['courses.manage', 'enrollments.manage', 'analytics.read']),
     );
   });
 
