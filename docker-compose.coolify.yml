@@ -63,6 +63,8 @@ services:
       VIDEO_PLAYBACK_TTL_SECONDS: ${VIDEO_PLAYBACK_TTL_SECONDS:-300}
       AVATAR_STORAGE_PATH: /data/avatars
       AVATAR_MAX_UPLOAD_BYTES: ${AVATAR_MAX_UPLOAD_BYTES:-5242880}
+      COURSE_THUMBNAIL_STORAGE_PATH: /data/course-thumbnails
+      COURSE_THUMBNAIL_MAX_UPLOAD_BYTES: ${COURSE_THUMBNAIL_MAX_UPLOAD_BYTES:-5242880}
     command: ['pnpm', '--filter', '@lms/api', 'exec', 'prisma', 'migrate', 'deploy']
     depends_on:
       postgres:
@@ -78,6 +80,7 @@ services:
     volumes:
       - video-data:/data/videos
       - avatar-data:/data/avatars
+      - course-thumbnail-data:/data/course-thumbnails
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -161,3 +164,4 @@ volumes:
   redis-data:
   video-data:
   avatar-data:
+  course-thumbnail-data:

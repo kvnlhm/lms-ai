@@ -7,6 +7,7 @@ import {
   type LessonVideoCleanupPort,
 } from './lesson-video-cleanup.port';
 import { checkPublishable } from './publication-rules';
+import { CourseThumbnailService } from './course-thumbnail.service';
 
 export interface CreateCourseInput {
   title: string;
@@ -49,6 +50,7 @@ export interface LessonInput {
  */
 function toCourse(row: {
   id: string; slug: string; title: string;
+  thumbnailUrl: string | null;
   shortDescription: string | null; description: string | null;
   level: string; status: string; estimatedMinutes: number;
   categoryId: string | null; publishedAt: Date | null; archivedAt: Date | null; updatedAt: Date;
@@ -57,6 +59,7 @@ function toCourse(row: {
     id: row.id,
     slug: row.slug,
     title: row.title,
+    thumbnailUrl: row.thumbnailUrl,
     shortDescription: row.shortDescription,
     description: row.description,
     level: row.level,
@@ -112,6 +115,7 @@ export class CourseAuthoringService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(LESSON_VIDEO_CLEANUP) private readonly videos: LessonVideoCleanupPort,
+    private readonly thumbnails: CourseThumbnailService,
   ) {}
 
   // ── Kursus ──────────────────────────────────────────────────
@@ -142,6 +146,7 @@ export class CourseAuthoringService {
         id: course.id,
         slug: course.slug,
         title: course.title,
+        thumbnailUrl: course.thumbnailUrl,
         shortDescription: course.shortDescription,
         level: course.level,
         status: course.status,
@@ -255,7 +260,11 @@ export class CourseAuthoringService {
       select: { id: true },
     });
     await this.videos.removeForLessons(lessons.map(({ id }) => id));
-    await this.prisma.course.delete({ where: { id: courseId } });
+    const deleted = await this.prisma.course.delete({
+      where: { id: courseId },
+      select: { thumbnailUrl: true },
+    });
+    await this.thumbnails.removeByUrl(deleted.thumbnailUrl).catch(() => undefined);
   }
 
   async detail(courseId: string) {

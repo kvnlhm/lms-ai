@@ -14,6 +14,7 @@ export class AdminCourseListItemDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() slug!: string;
   @ApiProperty() title!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) thumbnailUrl!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) shortDescription!: string | null;
   @ApiProperty({ enum: LEVELS }) level!: string;
   @ApiProperty({ enum: STATUSES }) status!: string;
@@ -33,6 +34,7 @@ export class AdminCourseDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() slug!: string;
   @ApiProperty() title!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) thumbnailUrl!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) shortDescription!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) description!: string | null;
   @ApiProperty({ enum: LEVELS }) level!: string;
@@ -85,4 +87,8 @@ export class AdminCourseDetailDto extends AdminCourseDto {
 
 export class ReorderResultDto {
   @ApiProperty({ example: 3 }) reordered!: number;
+}
+
+export class CourseThumbnailResponseDto {
+  @ApiProperty() thumbnailUrl!: string;
 }

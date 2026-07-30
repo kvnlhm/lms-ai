@@ -79,8 +79,12 @@ function CourseCard({ course }: { course: CourseItem }) {
 
   return (
     <Link href={`/courses/${course.id}`} className="card courseCard">
-      <span className="cover">
-        <span className="coverText">{course.title}</span>
+      <span className={`cover${course.thumbnailUrl ? ' hasImage' : ''}`}>
+        {course.thumbnailUrl ? (
+          <img src={course.thumbnailUrl} alt="" />
+        ) : (
+          <span className="coverText">{course.title}</span>
+        )}
       </span>
       <span className="courseBody">
         <span className="courseName">{course.title}</span>

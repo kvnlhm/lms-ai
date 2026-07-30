@@ -100,6 +100,16 @@ AVATAR_MAX_UPLOAD_BYTES
 Default produksi menyimpan avatar pada volume persisten terpisah di
 `/data/avatars` dengan batas 5 MiB.
 
+## Course Thumbnail
+
+```text
+COURSE_THUMBNAIL_STORAGE_PATH
+COURSE_THUMBNAIL_MAX_UPLOAD_BYTES
+```
+
+Default produksi menyimpan thumbnail kursus pada volume persisten terpisah di
+`/data/course-thumbnails` dengan batas 5 MiB.
+
 ## Queue
 
 ```text

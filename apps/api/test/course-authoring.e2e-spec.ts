@@ -70,6 +70,47 @@ describe('Penyusunan kursus oleh Master', () => {
     expect(response.body.error.code).toBe('VALIDATION_ERROR');
   });
 
+  it('mengunggah, mengganti, menyajikan, dan menghapus thumbnail kursus', async () => {
+    const courseId = await createCourse(`uji-thumbnail-${Date.now()}`);
+    const png = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.from('course-thumbnail-test'),
+    ]);
+
+    const uploaded = await asMaster('put', `/admin/courses/${courseId}/thumbnail`)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(200);
+
+    expect(uploaded.body.data.thumbnailUrl).toMatch(
+      /^\/api\/v1\/courses\/thumbnails\/.+\.png$/,
+    );
+    const thumbnailPath = uploaded.body.data.thumbnailUrl as string;
+    const image = await request(h.server).get(thumbnailPath).expect(200);
+    expect(image.headers['content-type']).toMatch(/^image\/png/);
+    expect(image.body).toEqual(png);
+
+    const detail = await asMaster('get', `/admin/courses/${courseId}`).expect(200);
+    expect(detail.body.data.thumbnailUrl).toBe(thumbnailPath);
+
+    await asMaster('put', `/admin/courses/${courseId}/thumbnail`)
+      .set('Content-Type', 'image/png')
+      .send(Buffer.from('bukan-png'))
+      .expect(422);
+
+    const student = await login(h.server, STUDENT.email, STUDENT.password);
+    await request(h.server)
+      .put(`${prefix}/admin/courses/${courseId}/thumbnail`)
+      .set('Cookie', student.cookie)
+      .set('X-CSRF-Token', student.csrfToken)
+      .set('Content-Type', 'image/png')
+      .send(png)
+      .expect(403);
+
+    await asMaster('delete', `/admin/courses/${courseId}/thumbnail`).expect(204);
+    await request(h.server).get(thumbnailPath).expect(404);
+  });
+
   it('menolak penerbitan kursus kosong dan menyebut seluruh alasannya', async () => {
     const courseId = await createCourse(`uji-kosong-${Date.now()}`);
 

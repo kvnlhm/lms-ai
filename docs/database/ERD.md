@@ -151,7 +151,6 @@ erDiagram
     LESSONS ||--o{ LESSON_PREREQUISITES : requires
     LESSONS ||--o{ LESSON_PREREQUISITES : prerequisite
     USERS ||--o{ COURSES : creates
-    MEDIA_ASSETS ||--o{ COURSES : thumbnail
     MEDIA_ASSETS ||--o{ LESSONS : material
 
     LEARNING_PATHS {
@@ -185,9 +184,9 @@ erDiagram
         uuid id PK
         uuid category_id FK
         uuid created_by FK
-        uuid thumbnail_asset_id FK
         varchar slug UK
         varchar title
+        text thumbnail_url
         text short_description
         text description
         varchar level

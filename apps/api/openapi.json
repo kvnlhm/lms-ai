@@ -1456,6 +1456,37 @@
         ]
       }
     },
+    "/api/v1/courses/thumbnails/{filename}": {
+      "get": {
+        "operationId": "CoursesController_thumbnail",
+        "parameters": [
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menyajikan thumbnail kursus berdasarkan nama file acak",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
     "/api/v1/courses": {
       "get": {
         "operationId": "CoursesController_list",
@@ -2028,6 +2059,164 @@
           }
         },
         "summary": "Menghapus kursus yang belum pernah memiliki enrollment",
+        "tags": [
+          "admin-catalog"
+        ]
+      }
+    },
+    "/api/v1/admin/courses/{courseId}/thumbnail": {
+      "put": {
+        "operationId": "AdminCoursesController_uploadThumbnail",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CourseThumbnailResponseDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengunggah atau mengganti thumbnail kursus",
+        "tags": [
+          "admin-catalog"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminCoursesController_removeThumbnail",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Thumbnail kursus dihapus."
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus thumbnail kursus",
         "tags": [
           "admin-catalog"
         ]
@@ -4896,6 +5085,10 @@
           "title": {
             "type": "string"
           },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "shortDescription": {
             "type": "string",
             "nullable": true
@@ -4955,6 +5148,10 @@
           },
           "title": {
             "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
           },
           "position": {
             "type": "number"
@@ -5150,6 +5347,10 @@
           "title": {
             "type": "string"
           },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "shortDescription": {
             "type": "string",
             "nullable": true
@@ -5343,6 +5544,10 @@
           "title": {
             "type": "string"
           },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "shortDescription": {
             "type": "string",
             "nullable": true
@@ -5427,6 +5632,10 @@
           },
           "title": {
             "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true
           },
           "shortDescription": {
             "type": "string",
@@ -5557,6 +5766,17 @@
             "type": "number"
           }
         }
+      },
+      "CourseThumbnailResponseDto": {
+        "type": "object",
+        "properties": {
+          "thumbnailUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "thumbnailUrl"
+        ]
       },
       "AdminModuleDto": {
         "type": "object",

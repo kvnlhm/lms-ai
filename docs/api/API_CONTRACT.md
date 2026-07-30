@@ -504,6 +504,24 @@ Includes draft, published, and archived.
 
 ## PATCH `/admin/courses/{courseId}`
 
+## PUT `/admin/courses/{courseId}/thumbnail`
+
+- Permission: `courses.manage`.
+- Raw body dengan Content-Type `image/jpeg`, `image/png`, atau `image/webp`.
+- Batas default 5 MiB dan signature file diverifikasi server.
+- Mengganti thumbnail lama secara atomik dan mengembalikan `thumbnailUrl`.
+
+## DELETE `/admin/courses/{courseId}/thumbnail`
+
+- Permission: `courses.manage`.
+- Menghapus referensi database dan file persisten thumbnail aktif.
+
+## GET `/courses/thumbnails/{filename}`
+
+- Public untuk kebutuhan katalog.
+- Hanya menerima nama acak yang dibuat server.
+- Respons memakai immutable cache karena setiap penggantian menghasilkan URL baru.
+
 ## POST `/admin/courses/{courseId}/publish`
 
 Rules:

@@ -12,7 +12,13 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { ApiNoContentResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiNoContentResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   ApiEnvelope,
   ApiEnvelopeList,
@@ -25,6 +31,7 @@ import {
   AdminLessonDto,
   AdminModuleDto,
   ReorderResultDto,
+  CourseThumbnailResponseDto,
 } from '../dto/authoring.response';
 import { PERMISSIONS } from '@lms/contracts';
 import type { Request } from 'express';
@@ -33,6 +40,7 @@ import { Paginated } from '../../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../../identity/presentation/decorators';
 import { CourseAuthoringService } from '../../application/course-authoring.service';
+import { CourseThumbnailService } from '../../application/course-thumbnail.service';
 import {
   CreateCourseDto,
   CreateLessonDto,
@@ -57,6 +65,7 @@ import {
 export class AdminCoursesController {
   constructor(
     private readonly authoring: CourseAuthoringService,
+    private readonly thumbnails: CourseThumbnailService,
     private readonly audit: AuditService,
   ) {}
 
@@ -110,6 +119,43 @@ export class AdminCoursesController {
     const course = await this.authoring.update(courseId, dto);
     await this.record(request, user, 'course.updated', 'course', courseId, undefined, { ...dto });
     return course;
+  }
+
+  @Put('courses/:courseId/thumbnail')
+  @HttpCode(200)
+  @ApiConsumes('image/jpeg', 'image/png', 'image/webp')
+  @ApiBody({ schema: { type: 'string', format: 'binary' } })
+  @ApiOperation({ summary: 'Mengunggah atau mengganti thumbnail kursus' })
+  @ApiEnvelope(CourseThumbnailResponseDto)
+  @ApiErrors(401, 403, 404, 422)
+  async uploadThumbnail(
+    @Param('courseId', new ParseUUIDPipe()) courseId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const rawLength = request.header('content-length');
+    const result = await this.thumbnails.upload(
+      courseId,
+      request,
+      request.header('content-type'),
+      rawLength ? Number.parseInt(rawLength, 10) : undefined,
+    );
+    await this.record(request, user, 'course.thumbnail_updated', 'course', courseId);
+    return result;
+  }
+
+  @Delete('courses/:courseId/thumbnail')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Menghapus thumbnail kursus' })
+  @ApiNoContentResponse({ description: 'Thumbnail kursus dihapus.' })
+  @ApiErrors(401, 403, 404)
+  async removeThumbnail(
+    @Param('courseId', new ParseUUIDPipe()) courseId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    await this.thumbnails.remove(courseId);
+    await this.record(request, user, 'course.thumbnail_removed', 'course', courseId);
   }
 
   @Post('courses/:courseId/publish')

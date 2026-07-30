@@ -100,8 +100,8 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
                     <tr key={course.id}>
                       <td>
                         <span className="courseTableTitle">
-                          <span className="courseThumb" aria-hidden="true">
-                            {course.title.slice(0, 1)}
+                          <span className={`courseThumb${course.thumbnailUrl ? ' hasImage' : ''}`} aria-hidden="true">
+                            {course.thumbnailUrl ? <img src={course.thumbnailUrl} alt="" /> : course.title.slice(0, 1)}
                           </span>
                           <span>
                             <span className="cellTitle">{course.title}</span>

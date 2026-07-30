@@ -63,6 +63,10 @@ export interface AppConfig {
     storagePath: string;
     maxUploadBytes: number;
   };
+  courseThumbnail: {
+    storagePath: string;
+    maxUploadBytes: number;
+  };
 }
 
 export function loadConfig(): AppConfig {
@@ -112,6 +116,10 @@ export function loadConfig(): AppConfig {
     avatar: {
       storagePath: process.env.AVATAR_STORAGE_PATH ?? '/data/avatars',
       maxUploadBytes: int('AVATAR_MAX_UPLOAD_BYTES', 5_242_880),
+    },
+    courseThumbnail: {
+      storagePath: process.env.COURSE_THUMBNAIL_STORAGE_PATH ?? '/data/course-thumbnails',
+      maxUploadBytes: int('COURSE_THUMBNAIL_MAX_UPLOAD_BYTES', 5_242_880),
     },
   };
 }

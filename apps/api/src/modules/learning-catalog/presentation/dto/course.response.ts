@@ -18,6 +18,7 @@ export class CourseListItemDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() slug!: string;
   @ApiProperty() title!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) thumbnailUrl!: string | null;
   @ApiPropertyOptional({ type: String, nullable: true }) shortDescription!: string | null;
   @ApiProperty({ enum: LEVELS }) level!: string;
   @ApiProperty() estimatedMinutes!: number;
@@ -36,6 +37,7 @@ export class CourseListItemDto {
 export class CourseSyllabusLessonDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() title!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) thumbnailUrl!: string | null;
   @ApiProperty() position!: number;
   @ApiProperty() estimatedMinutes!: number;
   @ApiProperty({ enum: CONTENT_TYPES }) contentType!: string;

@@ -71,7 +71,9 @@ function CourseOverview({ course }: { course: CourseDetail }) {
   return (
     <div className="courseOverview">
       <article className="card courseHeroAdmin">
-        <div className="courseHeroVisual" aria-hidden="true">{course.title.slice(0, 1)}</div>
+        <div className={`courseHeroVisual${course.thumbnailUrl ? ' hasImage' : ''}`} aria-hidden="true">
+          {course.thumbnailUrl ? <img src={course.thumbnailUrl} alt="" /> : course.title.slice(0, 1)}
+        </div>
         <div className="courseHeroBody">
           <span className="pill">{course.status === 'PUBLISHED' ? 'Terbit' : course.status === 'DRAFT' ? 'Draf' : 'Arsip'}</span>
           <h2>{course.title}</h2>

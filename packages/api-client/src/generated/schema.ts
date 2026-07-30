@@ -364,6 +364,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/courses/thumbnails/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Menyajikan thumbnail kursus berdasarkan nama file acak */
+        get: operations["CoursesController_thumbnail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/courses": {
         parameters: {
             query?: never;
@@ -433,6 +450,24 @@ export interface paths {
         head?: never;
         /** Memperbarui metadata kursus */
         patch: operations["AdminCoursesController_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/courses/{courseId}/thumbnail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mengunggah atau mengganti thumbnail kursus */
+        put: operations["AdminCoursesController_uploadThumbnail"];
+        post?: never;
+        /** Menghapus thumbnail kursus */
+        delete: operations["AdminCoursesController_removeThumbnail"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/courses/{courseId}/publish": {
@@ -1096,6 +1131,7 @@ export interface components {
             id: string;
             slug: string;
             title: string;
+            thumbnailUrl?: string | null;
             shortDescription?: string | null;
             /** @enum {string} */
             level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
@@ -1111,6 +1147,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             title: string;
+            thumbnailUrl?: string | null;
             position: number;
             estimatedMinutes: number;
             /** @enum {string} */
@@ -1161,6 +1198,7 @@ export interface components {
             id: string;
             slug: string;
             title: string;
+            thumbnailUrl?: string | null;
             shortDescription?: string | null;
             /** @enum {string} */
             level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
@@ -1212,6 +1250,7 @@ export interface components {
             id: string;
             slug: string;
             title: string;
+            thumbnailUrl?: string | null;
             shortDescription?: string | null;
             description?: string | null;
             /** @enum {string} */
@@ -1235,6 +1274,7 @@ export interface components {
             id: string;
             slug: string;
             title: string;
+            thumbnailUrl?: string | null;
             shortDescription?: string | null;
             description?: string | null;
             /** @enum {string} */
@@ -1274,6 +1314,9 @@ export interface components {
             /** @enum {string} */
             level?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
             estimatedMinutes?: number;
+        };
+        CourseThumbnailResponseDto: {
+            thumbnailUrl: string;
         };
         AdminModuleDto: {
             /** Format: uuid */
@@ -2620,6 +2663,27 @@ export interface operations {
             };
         };
     };
+    CoursesController_thumbnail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     CoursesController_list: {
         parameters: {
             query?: {
@@ -2956,6 +3020,112 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_uploadThumbnail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+                "image/png": string;
+                "image/webp": string;
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CourseThumbnailResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_removeThumbnail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                courseId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thumbnail kursus dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

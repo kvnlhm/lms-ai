@@ -270,6 +270,7 @@ model Course {
   createdBy        String?           @map("created_by") @db.Uuid
   slug             String            @unique
   title            String
+  thumbnailUrl     String?           @map("thumbnail_url")
   shortDescription String?           @map("short_description")
   description      String?
   level            CourseLevel       @default(BEGINNER)
