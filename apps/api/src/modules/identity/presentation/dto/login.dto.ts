@@ -50,6 +50,13 @@ export class AcceptInvitationDto {
 
 export class ResetPasswordDto extends AcceptInvitationDto {}
 
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'pelajar@akademionline.id' })
+  @IsEmail({}, { message: 'email harus berupa alamat email yang valid' })
+  @MaxLength(255)
+  email!: string;
+}
+
 export class UpdateCurrentUserDto {
   @ApiPropertyOptional({ minLength: 2, maxLength: 120 })
   @IsOptional()

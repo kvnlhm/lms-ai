@@ -21,6 +21,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { VideoModule } from './modules/video/video.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuditModule } from './shared/audit/audit.module';
+import { EmailModule } from './shared/email/email.module';
 import { AllExceptionsFilter } from './shared/http/all-exceptions.filter';
 import { RequestContextMiddleware } from './shared/http/request-context.middleware';
 import { ResponseInterceptor } from './shared/http/response.interceptor';
@@ -39,6 +40,7 @@ import { CommerceModule } from './modules/commerce/commerce.module';
     OutboxModule,
     IdempotencyModule,
     AuditModule,
+    EmailModule,
     IdentityModule,
     AnalyticsModule,
     UsersModule,

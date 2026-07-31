@@ -2,12 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { DeliveryStatus } from '@prisma/client';
 import type { AppConfig } from '../../../config/configuration';
+import { activationEmail } from '../../../shared/email/email-templates';
+import { EmailService } from '../../../shared/email/email.service';
 
 @Injectable()
 export class ActivationNotifierService {
   private readonly config: AppConfig;
 
-  constructor(config: ConfigService<{ app: AppConfig }, true>) {
+  constructor(
+    config: ConfigService<{ app: AppConfig }, true>,
+    private readonly email: EmailService,
+  ) {
     this.config = config.get('app', { infer: true });
   }
 
@@ -43,29 +48,14 @@ export class ActivationNotifierService {
     activationUrl: string;
     tierName: string;
   }): Promise<DeliveryStatus> {
-    const config = this.config.commerce.email;
-    if (config.provider === 'DISABLED') return 'SKIPPED';
-    if (!config.apiKey || !config.fromAddress) throw new Error('Konfigurasi Resend belum lengkap.');
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: `${config.fromName} <${config.fromAddress}>`,
-        to: [input.email],
-        subject: 'Aktifkan akun AIPreneur Academy',
-        html: [
-          `<p>Halo ${escapeHtml(input.fullName)},</p>`,
-          `<p>Pembayaran paket <strong>${escapeHtml(input.tierName)}</strong> berhasil.</p>`,
-          `<p><a href="${escapeHtml(input.activationUrl)}">Aktifkan akun dan buat password</a></p>`,
-          '<p>Tautan ini bersifat pribadi dan memiliki masa berlaku.</p>',
-        ].join(''),
+    return this.email.send(
+      activationEmail({
+        to: input.email,
+        fullName: input.fullName,
+        tierName: input.tierName,
+        activationUrl: input.activationUrl,
       }),
-    });
-    if (!response.ok) throw new Error(`Resend menolak permintaan (${response.status}).`);
-    return 'SENT';
+    );
   }
 
   private async sendWhatsApp(input: {
@@ -106,12 +96,3 @@ export class ActivationNotifierService {
     return 'SENT';
   }
 }
-
-function escapeHtml(value: string): string {
-  return value.replace(
-    /[&<>"']/g,
-    (character) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character]!,
-  );
-}
-

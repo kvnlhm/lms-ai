@@ -12,6 +12,7 @@ import {
   LogoutAllResponseDto,
   PasswordChangedResponseDto,
   AvatarUploadResponseDto,
+  ForgotPasswordResponseDto,
 } from '../dto/auth.response';
 import { ConfigService } from '@nestjs/config';
 import type { CookieOptions, Request, Response } from 'express';
@@ -29,6 +30,7 @@ import { AllowPendingMfa, CurrentSession, CurrentUser, Public } from '../decorat
 import {
   AcceptInvitationDto,
   ChangePasswordDto,
+  ForgotPasswordDto,
   LoginDto,
   MfaCodeDto,
   ResetPasswordDto,
@@ -62,6 +64,17 @@ export class AuthController {
     this.assertPasswordConfirmation(dto.password, dto.passwordConfirmation);
     await this.credentials.acceptInvitation(dto.token, dto.password);
     return { accepted: true };
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Meminta tautan pemulihan password dikirim ke email' })
+  @ApiEnvelope(ForgotPasswordResponseDto, 'Selalu sama, terlepas dari terdaftar atau tidak.')
+  @ApiErrors(422, 429)
+  async forgotPassword(@Body() dto: ForgotPasswordDto, @Req() request: Request) {
+    await this.auth.requestPasswordReset({ email: dto.email, ipAddress: clientIp(request) });
+    return { requested: true };
   }
 
   @Public()

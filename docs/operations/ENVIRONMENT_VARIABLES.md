@@ -150,6 +150,19 @@ SENTRY_DSN
 METRICS_ENABLED
 ```
 
+## Email
+
+Dipakai lintas modul, bukan hanya pendaftaran: aktivasi akun dan pemulihan
+password sama-sama melewatinya (ADR-022). `EMAIL_PROVIDER=DISABLED` membuat
+pengiriman menjadi `SKIPPED` tanpa menjatuhkan alur mana pun.
+
+```text
+EMAIL_PROVIDER=DISABLED
+RESEND_API_KEY
+EMAIL_FROM_NAME=AIPreneur Academy
+EMAIL_FROM_ADDRESS
+```
+
 ## Registration Commerce
 
 ```text
@@ -157,11 +170,6 @@ REGISTRATION_ORDER_TTL_MINUTES=1440
 MIDTRANS_ENVIRONMENT=SANDBOX
 MIDTRANS_SERVER_KEY
 MIDTRANS_CLIENT_KEY
-
-EMAIL_PROVIDER=DISABLED
-RESEND_API_KEY
-EMAIL_FROM_NAME=AIPreneur Academy
-EMAIL_FROM_ADDRESS
 
 WHATSAPP_PROVIDER=DISABLED
 WHATSAPP_GRAPH_API_VERSION=v23.0

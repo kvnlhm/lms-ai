@@ -226,9 +226,30 @@ Public and rate limited.
 
 Response must not reveal whether email exists.
 
-Belum diaktifkan pada deployment tanpa provider email. Sampai SMTP tersedia,
-Master dapat menerbitkan tautan sekali pakai melalui endpoint administratif
-di bawah; token tidak pernah ditulis ke log.
+```json
+{
+  "data": { "requested": true }
+}
+```
+
+Balasan di atas berlaku untuk alamat terdaftar maupun tidak. Yang membedakan
+hanya `422` untuk alamat yang bukan email dan `429` saat pembatas laju kena.
+
+Pembatasnya dua lapis dalam satu jendela `AUTH_RATE_LIMIT_WINDOW_SECONDS`:
+per alamat sebesar `AUTH_RATE_LIMIT_MAX`, dan per IP tiga kali lipatnya.
+Lapis alamat mencegah satu kotak masuk dibanjiri walau penyerang berganti IP;
+lapis IP mencegah satu sumber memindai banyak alamat.
+
+Pengiriman email tidak ditunggu sebelum membalas. Lama panggilan ke provider
+berbeda jelas dari cabang "akun tidak ada", dan selisih waktu itu sendiri
+sudah cukup untuk menebak alamat mana yang terdaftar.
+
+Hanya akun berstatus `ACTIVE` yang menerima tautan. Akun `SUSPENDED` dan
+`INACTIVE` tidak, tanpa perbedaan apa pun pada balasan.
+
+Endpoint administratif `POST /admin/users/{userId}/password-reset-link` tetap
+ada dan tidak berubah: Master masih dapat menerbitkan tautan secara manual
+untuk kasus dukungan, dan endpoint itu tidak mengirim email.
 
 ## POST `/auth/reset-password`
 

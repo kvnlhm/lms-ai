@@ -1,12 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { PermissionCode, RoleCode } from '@lms/contracts';
-import { UserStatus } from '@prisma/client';
+import { CredentialTokenPurpose, UserStatus } from '@prisma/client';
 import type { AppConfig } from '../../../config/configuration';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
+import { AuditService } from '../../../shared/audit/audit.service';
+import { passwordResetEmail } from '../../../shared/email/email-templates';
+import { EmailService } from '../../../shared/email/email.service';
 import { AppError } from '../../../shared/errors/app-error';
 import type { AuthenticatedUser } from '../domain/session';
+import { CredentialTokenService } from './credential-token.service';
 import { LoginRateLimiter } from './login-rate-limiter';
+import { PasswordResetRateLimiter } from './password-reset-rate-limiter';
 import { PasswordService } from './password.service';
 import { SessionService } from './session.service';
 import { MfaService } from './mfa.service';
@@ -44,9 +49,57 @@ export class AuthService {
     private readonly sessions: SessionService,
     private readonly rateLimiter: LoginRateLimiter,
     private readonly mfa: MfaService,
+    private readonly resetRateLimiter: PasswordResetRateLimiter,
+    private readonly tokens: CredentialTokenService,
+    private readonly email: EmailService,
+    private readonly audit: AuditService,
     config: ConfigService<{ app: AppConfig }, true>,
   ) {
     this.app = config.get('app', { infer: true });
+  }
+
+  /**
+   * Memulai pemulihan password atas permintaan pemilik akun.
+   *
+   * Pemanggilnya tidak pernah tahu apakah alamatnya terdaftar: seluruh cabang
+   * di bawah berakhir tanpa nilai kembalian, dan controller selalu membalas
+   * badan yang sama. Tanpa itu endpoint ini menjadi alat pemeriksa
+   * keanggotaan — cukup coba satu alamat untuk tahu apakah orangnya murid di
+   * sini.
+   */
+  async requestPasswordReset(command: { email: string; ipAddress: string }): Promise<void> {
+    const email = command.email.trim().toLowerCase();
+    await this.resetRateLimiter.consume(command.ipAddress, email);
+
+    const user = await this.prisma.user.findFirst({
+      where: { email, deletedAt: null, status: UserStatus.ACTIVE },
+      select: { id: true, fullName: true, email: true },
+    });
+    if (!user) return;
+
+    const issued = await this.tokens.issue(user.id, CredentialTokenPurpose.PASSWORD_RESET);
+    const resetUrl = `${this.app.webUrl}/reset-password?token=${encodeURIComponent(issued.token)}`;
+
+    // Pengiriman sengaja tidak ditunggu. Panggilan ke provider memakan waktu
+    // yang jelas berbeda dari cabang "akun tidak ada" di atas, dan selisih
+    // waktu itu saja sudah cukup untuk menebak alamat mana yang terdaftar.
+    this.email.sendInBackground(
+      passwordResetEmail({
+        to: user.email,
+        fullName: user.fullName,
+        resetUrl,
+        expiresInMinutes: this.app.auth.passwordResetTtlMinutes,
+      }),
+      `pemulihan password untuk pengguna ${user.id}`,
+    );
+
+    await this.audit.record({
+      actorUserId: user.id,
+      action: 'user.password_reset_requested',
+      targetType: 'user',
+      targetId: user.id,
+      ipAddress: command.ipAddress,
+    });
   }
 
   async login(command: LoginCommand): Promise<LoginResult> {

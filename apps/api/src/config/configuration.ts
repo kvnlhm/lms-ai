@@ -69,18 +69,22 @@ export interface AppConfig {
     storagePath: string;
     maxUploadBytes: number;
   };
+  /**
+   * Bukan lagi bagian commerce: aktivasi akun dan pemulihan password sama-sama
+   * memakainya, sehingga identity tidak perlu bergantung pada modul commerce.
+   */
+  email: {
+    provider: 'RESEND' | 'DISABLED';
+    apiKey?: string;
+    fromName: string;
+    fromAddress?: string;
+  };
   commerce: {
     orderTtlMinutes: number;
     midtrans: {
       environment: 'SANDBOX' | 'PRODUCTION';
       serverKey?: string;
       clientKey?: string;
-    };
-    email: {
-      provider: 'RESEND' | 'DISABLED';
-      apiKey?: string;
-      fromName: string;
-      fromAddress?: string;
     };
     whatsApp: {
       provider: 'META_CLOUD' | 'DISABLED';
@@ -158,18 +162,18 @@ export function loadConfig(): AppConfig {
       storagePath: process.env.COURSE_THUMBNAIL_STORAGE_PATH ?? '/data/course-thumbnails',
       maxUploadBytes: int('COURSE_THUMBNAIL_MAX_UPLOAD_BYTES', 5_242_880),
     },
+    email: {
+      provider: emailProvider as 'RESEND' | 'DISABLED',
+      apiKey: process.env.RESEND_API_KEY || undefined,
+      fromName: process.env.EMAIL_FROM_NAME ?? 'AIPreneur Academy',
+      fromAddress: process.env.EMAIL_FROM_ADDRESS || undefined,
+    },
     commerce: {
       orderTtlMinutes: int('REGISTRATION_ORDER_TTL_MINUTES', 1_440),
       midtrans: {
         environment: midtransEnvironment as 'SANDBOX' | 'PRODUCTION',
         serverKey: process.env.MIDTRANS_SERVER_KEY || undefined,
         clientKey: process.env.MIDTRANS_CLIENT_KEY || undefined,
-      },
-      email: {
-        provider: emailProvider as 'RESEND' | 'DISABLED',
-        apiKey: process.env.RESEND_API_KEY || undefined,
-        fromName: process.env.EMAIL_FROM_NAME ?? 'AIPreneur Academy',
-        fromAddress: process.env.EMAIL_FROM_ADDRESS || undefined,
       },
       whatsApp: {
         provider: whatsAppProvider as 'META_CLOUD' | 'DISABLED',

@@ -41,3 +41,4 @@
 | ADR-019 | Accepted | Sesi langsung dengan tautan manual |
 | ADR-020 | Accepted | Configurable Master MFA |
 | ADR-021 | Accepted | Read-only Student impersonation |
+| ADR-022 | Accepted | Pemulihan password mandiri lewat email |

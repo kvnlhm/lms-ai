@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './application/auth.service';
 import { LoginRateLimiter } from './application/login-rate-limiter';
+import { PasswordResetRateLimiter } from './application/password-reset-rate-limiter';
 import { PasswordService } from './application/password.service';
 import { SessionService } from './application/session.service';
 import { AuthController } from './presentation/controllers/auth.controller';
@@ -17,6 +18,7 @@ import { ProfilePreferencesController } from './presentation/controllers/profile
     PasswordService,
     SessionService,
     LoginRateLimiter,
+    PasswordResetRateLimiter,
     MfaService,
     CredentialTokenService,
     UserCredentialService,

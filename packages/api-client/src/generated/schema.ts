@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Meminta tautan pemulihan password dikirim ke email */
+        post: operations["AuthController_forgotPassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/reset-password": {
         parameters: {
             query?: never;
@@ -1696,6 +1713,18 @@ export interface components {
             password: string;
             passwordConfirmation: string;
         };
+        ResponseMetaDto: {
+            /** Format: uuid */
+            requestId: string;
+        };
+        ForgotPasswordResponseDto: {
+            /** @example true */
+            requested: boolean;
+        };
+        ForgotPasswordDto: {
+            /** @example pelajar@akademionline.id */
+            email: string;
+        };
         ResetPasswordDto: {
             token: string;
             password: string;
@@ -1704,10 +1733,6 @@ export interface components {
         MfaCodeDto: {
             /** @example 123456 */
             code: string;
-        };
-        ResponseMetaDto: {
-            /** Format: uuid */
-            requestId: string;
         };
         LoginUserDto: {
             /** Format: uuid */
@@ -2811,6 +2836,49 @@ export interface operations {
         };
         responses: {
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_forgotPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordDto"];
+            };
+        };
+        responses: {
+            /** @description Selalu sama, terlepas dari terdaftar atau tidak. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForgotPasswordResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

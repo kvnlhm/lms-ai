@@ -11,8 +11,9 @@
 | CSRF | Wajib untuk mutation berbasis cookie | API test |
 | MFA | Wajib untuk Master secara default; pengecualian deployment harus dicatat melalui ADR-020 | E2E test dan configuration review |
 | Login rate limit | Per IP dan account key | Abuse test |
+| Password reset rate limit | Per alamat dan per IP; setiap permintaan dihitung, bukan hanya yang gagal | `forgot-password.e2e-spec.ts` |
 | Password reset | Single-use, hashed, expiring | Integration test |
-| Enumeration protection | Forgot-password response seragam | Security test |
+| Enumeration protection | Forgot-password membalas seragam, dan pengiriman email tidak ditunggu agar waktu balasan tidak membocorkan | `forgot-password.e2e-spec.ts` |
 | Session revoke | Current dan all devices | API test |
 
 ## 2. Authorization

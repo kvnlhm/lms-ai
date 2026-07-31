@@ -46,6 +46,14 @@ export class AvatarUploadResponseDto {
   @ApiProperty() avatarUrl!: string;
 }
 
+/**
+ * Sengaja tidak membawa informasi apa pun tentang akunnya. Nilainya selalu
+ * `true`, baik alamatnya terdaftar maupun tidak.
+ */
+export class ForgotPasswordResponseDto {
+  @ApiProperty({ example: true }) requested!: boolean;
+}
+
 export class DeviceSessionDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiPropertyOptional({ type: String, nullable: true }) deviceName!: string | null;
