@@ -35,17 +35,26 @@ export class SessionGuard implements CanActivate {
       context.getClass(),
     ]);
 
+    // Endpoint publik tidak boleh berubah menjadi endpoint terautentikasi hanya
+    // karena browser kebetulan mengirim cookie lama. Selain membuat katalog dan
+    // registrasi gagal bagi pengguna dengan session pending MFA, perilaku lama
+    // juga memblokir webhook provider karena request tanpa session diproses
+    // berbeda dari request yang membawa cookie invalid/pending.
+    //
+    // Authorization, CSRF, dan pemasangan request.session hanya berlaku untuk
+    // endpoint protected. Endpoint publik tetap wajib menerapkan kontrolnya
+    // sendiri (misalnya rate limit checkout dan verifikasi signature webhook).
+    if (isPublic) return true;
+
     const request = context.switchToHttp().getRequest<Request>();
     const sessionId = request.cookies?.[this.app.session.cookieName] as string | undefined;
 
     if (!sessionId) {
-      if (isPublic) return true;
       throw AppError.authenticationRequired();
     }
 
     const session = await this.sessions.touch(sessionId);
     if (!session) {
-      if (isPublic) return true;
       throw AppError.authenticationRequired();
     }
 
