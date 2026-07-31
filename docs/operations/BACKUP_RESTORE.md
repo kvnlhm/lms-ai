@@ -75,7 +75,92 @@ Retention final disesuaikan compliance dan biaya.
 
 ---
 
+## 4a. Implementasi Saat Ini
+
+`scripts/backup.sh` mengambil satu checkpoint mandiri dan memangkas yang
+kedaluwarsa. Pada VPS produksi skrip ini dipasang sebagai
+`/usr/local/bin/lms-backup` (symlink ke checkout repo, supaya repo tetap
+menjadi satu-satunya sumber kebenaran) dan dijalankan crontab root:
+
+```cron
+LMS_APP_UUID=<uuid resource Coolify>
+30 18 * * * /usr/local/bin/lms-backup >> /var/backups/lms-ai/cron.log 2>&1
+```
+
+`LMS_APP_UUID` wajib diisi. Skrip memakainya untuk menemukan container
+PostgreSQL, yang namanya berganti setiap deploy, dan berhenti dengan pesan
+jelas bila nilainya kosong atau cocok ke lebih dari satu container. Nilainya
+hanya ada pada crontab server, tidak di repository.
+
+18:30 UTC setara 01:30 WIB. Hasilnya ada di `/var/backups/lms-ai/` dengan
+tiga keranjang — `daily/`, `weekly/`, `monthly/` — sesuai retention baseline
+§3. Weekly dan monthly berupa hardlink, jadi retensi panjang tidak memakan
+ruang tambahan. Ukuran satu checkpoint saat ini 4,4 MB.
+
+Isi tiap berkas `lms-<stempel>.tar`:
+
+| Berkas | Isi |
+|---|---|
+| `database.dump` | `pg_dump --format=custom --no-owner` |
+| `globals.sql` | definisi role, tanpa kata sandi |
+| `video-data.tar.gz` | volume video self-hosted |
+| `avatar-data.tar.gz` | volume foto profil |
+| `course-thumbnail-data.tar.gz` | volume thumbnail kursus |
+| `MANIFEST.txt` | versi migrasi terakhir dan jumlah baris tabel inti |
+| `SHA256SUMS` | checksum seluruh berkas di atas |
+
+Kata sandi role sengaja tidak disimpan. Saat restore, kata sandi diambil dari
+environment variable Coolify (`POSTGRES_PASSWORD`), sehingga arsip yang bocor
+tidak sekaligus membocorkan kredensial database.
+
+### Yang belum terpenuhi
+
+Dua hal pada §1 dan §4 belum tercapai dan masih menunggu keputusan tujuan
+penyimpanan:
+
+- **Offsite.** Seluruh salinan masih berada pada disk VPS yang sama dengan
+  produksi — belum memenuhi syarat "failure domain berbeda". Kehilangan disk
+  saat ini tetap berarti kehilangan backup.
+- **Encryption at rest.** Arsip hanya dilindungi permission `0600`.
+
+Keduanya sebaiknya diselesaikan bersamaan: enkripsi baru benar-benar berguna
+ketika arsipnya meninggalkan server.
+
+RPO nyata saat ini 24 jam, bukan 15 menit seperti target §1, karena belum ada
+PITR/WAL archiving.
+
+---
+
 ## 5. Restore Procedure
+
+### Prosedur singkat dari satu checkpoint
+
+Sudah dijalankan dan terbukti pada 31 Juli 2026 memakai checkpoint
+`20260731T105134Z`, direstore ke container PostgreSQL 16 terpisah:
+
+```bash
+tar xf /var/backups/lms-ai/daily/lms-<stempel>.tar -C /tmp/pulih
+cd /tmp/pulih && sha256sum -c SHA256SUMS       # arsip utuh
+
+# Role lebih dulu; tanpa ini setiap GRANT gugur.
+psql -U postgres -f globals.sql
+createdb -U postgres lms
+pg_restore -U postgres -d lms --no-owner database.dump
+
+# Volume dipulihkan bersama database agar object_key tetap menunjuk file nyata.
+tar xzf video-data.tar.gz -C /data/videos
+tar xzf avatar-data.tar.gz -C /data/avatars
+tar xzf course-thumbnail-data.tar.gz -C /data/course-thumbnails
+```
+
+Verifikasi: bandingkan jumlah baris terhadap `MANIFEST.txt`, pastikan
+`_prisma_migrations` menunjuk migrasi yang sama, lalu cocokkan `object_key`
+pada `video_assets` dengan daftar berkas di arsip volume.
+
+Melewatkan `globals.sql` bukan galat yang mencolok — restore tetap terlihat
+berhasil, tetapi setiap GRANT dibuang diam-diam.
+
+### Prosedur lengkap untuk incident
 
 1. Deklarasikan incident dan freeze perubahan.
 2. Tentukan recovery point.
