@@ -8207,6 +8207,10 @@
           "fullName": {
             "type": "string"
           },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
           "topics": {
             "type": "number"
           },

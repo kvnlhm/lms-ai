@@ -160,7 +160,11 @@ export default async function InsightsPage({
                     {index + 1}
                   </span>
                   <span className="insightRankAvatar" aria-hidden="true">
-                    {initials(contributor.fullName)}
+                    {contributor.avatarUrl ? (
+                      <img src={contributor.avatarUrl} alt="" />
+                    ) : (
+                      initials(contributor.fullName)
+                    )}
                   </span>
                   <div className="insightRankIdentity">
                     <strong>{contributor.fullName}</strong>

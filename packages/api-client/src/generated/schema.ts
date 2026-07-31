@@ -1817,6 +1817,7 @@ export interface components {
             /** Format: uuid */
             userId: string;
             fullName: string;
+            avatarUrl?: string | null;
             topics: number;
             replies: number;
         };

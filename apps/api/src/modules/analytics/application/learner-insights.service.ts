@@ -44,6 +44,7 @@ interface ForumRow {
 interface ContributorRow {
   user_id: string;
   full_name: string;
+  avatar_url: string | null;
   topics: bigint;
   replies: bigint;
 }
@@ -162,6 +163,7 @@ export class LearnerInsightsService {
         topContributors: contributors.map((row) => ({
           userId: row.user_id,
           fullName: row.full_name,
+          avatarUrl: row.avatar_url,
           topics: Number(row.topics),
           replies: Number(row.replies),
         })),
@@ -281,9 +283,14 @@ export class LearnerInsightsService {
         FROM "forum_replies" WHERE "created_at" >= ${since} AND "deleted_at" IS NULL
         GROUP BY 1
       )
-      SELECT t.user_id, u."full_name", SUM(t.topics)::bigint AS topics, SUM(t.replies)::bigint AS replies
+      SELECT
+        t.user_id,
+        u."full_name",
+        u."avatar_url",
+        SUM(t.topics)::bigint AS topics,
+        SUM(t.replies)::bigint AS replies
       FROM tallies t JOIN "users" u ON u."id" = t.user_id
-      GROUP BY t.user_id, u."full_name"
+      GROUP BY t.user_id, u."full_name", u."avatar_url"
       ORDER BY (SUM(t.topics) + SUM(t.replies)) DESC
       LIMIT 10
     `);

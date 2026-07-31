@@ -15,7 +15,7 @@ interface ModerationTopic {
   replyCount: number;
   lastActivityAt: string;
   moderationReason: string | null;
-  author: { id: string; fullName: string; email: string };
+  author: { id: string; fullName: string; email: string; avatarUrl: string | null };
   course: { id: string; title: string };
   _count: { reports: number };
 }
@@ -50,6 +50,16 @@ const STATUS_LABEL: Record<ModerationTopic['status'], string> = {
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 }
 
 export function ForumModeration() {
@@ -141,8 +151,8 @@ export function ForumModeration() {
   };
 
   return (
-    <section className="stack">
-      <nav className="tabRow" aria-label="Bagian moderasi forum">
+    <section className="stack masterForum">
+      <nav className="tabRow masterForumTabs" aria-label="Bagian moderasi forum">
         {(
           [
             ['topics', `Diskusi (${topics.length})`],
@@ -178,18 +188,26 @@ export function ForumModeration() {
         topics.length === 0 ? (
           <p className="stageNote">Belum ada diskusi.</p>
         ) : (
-          <ul className="stack">
+          <ul className="stack masterForumList">
             {topics.map((topic) => (
-              <li key={topic.id} className="card">
-                <div className="rowBetween">
-                  <div>
-                    <strong>{topic.title}</strong>
-                    <small className="muted">
-                      {topic.course.title} · {topic.author.fullName} · {topic.replyCount} balasan ·{' '}
-                      {formatDate(topic.lastActivityAt)}
-                    </small>
+              <li key={topic.id} className="card masterForumCard">
+                <div className="masterForumCardHead">
+                  <div className="masterForumIdentity">
+                    <span className="masterForumAvatar" aria-hidden="true">
+                      {topic.author.avatarUrl ? (
+                        <img src={topic.author.avatarUrl} alt="" />
+                      ) : (
+                        initials(topic.author.fullName)
+                      )}
+                    </span>
+                    <div>
+                      <strong>{topic.title}</strong>
+                      <small>
+                        {topic.author.fullName} · {formatDate(topic.lastActivityAt)}
+                      </small>
+                    </div>
                   </div>
-                  <span className="inlineActions">
+                  <span className="inlineActions masterForumBadges">
                     {topic.isPinned ? <span className="pill pillAccent">Disematkan</span> : null}
                     {topic._count.reports > 0 ? (
                       <span className="pill pillAccent">{topic._count.reports} laporan</span>
@@ -197,10 +215,18 @@ export function ForumModeration() {
                     <span className="pill">{STATUS_LABEL[topic.status]}</span>
                   </span>
                 </div>
+                <div className="masterForumMeta">
+                  <span>{topic.course.title}</span>
+                  <span>{topic.replyCount} balasan</span>
+                  <span>{topic._count.reports} laporan</span>
+                </div>
                 {topic.moderationReason ? (
-                  <small className="muted">Alasan moderasi: {topic.moderationReason}</small>
+                  <div className="masterForumReason">
+                    <strong>Alasan moderasi</strong>
+                    <span>{topic.moderationReason}</span>
+                  </div>
                 ) : null}
-                <div className="inlineActions">
+                <div className="inlineActions masterForumActions">
                   {topic.status !== 'HIDDEN' ? (
                     <button
                       className="btnTiny"

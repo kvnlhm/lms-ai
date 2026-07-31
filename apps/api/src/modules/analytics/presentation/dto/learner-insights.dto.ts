@@ -26,6 +26,7 @@ export class RetentionDto {
 export class ForumContributorDto {
   @ApiProperty({ format: 'uuid' }) userId!: string;
   @ApiProperty() fullName!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) avatarUrl!: string | null;
   @ApiProperty() topics!: number;
   @ApiProperty() replies!: number;
 }
