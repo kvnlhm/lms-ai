@@ -6,10 +6,16 @@ import { firstLessonOf, login, prefix, startHarness, type Harness } from './supp
 const MASTER = { email: 'master@akademionline.id', password: 'Master#Lokal12345' };
 const STUDENT = { email: 'pelajar@akademionline.id', password: 'Pelajar#Lokal12345' };
 
+// Aplikasi memakai default `/data/videos`, sedangkan tes ini memeriksa
+// `/tmp/lms-test-videos`. Tanpa menyetelnya di sini, keduanya hanya sepakat
+// bila runner kebetulan mengekspor VIDEO_STORAGE_PATH — ketergantungan
+// tersembunyi yang membuat tes gagal di lingkungan bersih.
+process.env.VIDEO_STORAGE_PATH ??= '/tmp/lms-test-videos';
+const storage = process.env.VIDEO_STORAGE_PATH;
+
 describe('Video self-hosted', () => {
   let h: Harness;
   const videoAssetIds: string[] = [];
-  const storage = process.env.VIDEO_STORAGE_PATH ?? '/tmp/lms-test-videos';
 
   beforeAll(async () => {
     h = await startHarness();

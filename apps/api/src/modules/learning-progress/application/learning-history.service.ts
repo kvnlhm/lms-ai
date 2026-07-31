@@ -40,7 +40,13 @@ export class LearningHistoryService {
         courseProgress: { include: { lastLesson: { include: { module: true } } } },
         lessonProgress: { select: { lessonId: true, status: true } },
       },
-      orderBy: [{ courseProgress: { lastActivityAt: 'desc' } }, { enrolledAt: 'desc' }],
+      // `nulls: 'last'` wajib: pada PostgreSQL, ORDER BY ... DESC menaruh NULL
+      // paling depan, sehingga kursus yang belum pernah dibuka akan
+      // mengalahkan kursus yang sedang aktif dipelajari.
+      orderBy: [
+        { courseProgress: { lastActivityAt: { sort: 'desc', nulls: 'last' } } },
+        { enrolledAt: 'desc' },
+      ],
     });
 
     const enrollment = enrollments[0];
