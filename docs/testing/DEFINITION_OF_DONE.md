@@ -72,3 +72,19 @@ Sebuah task atau feature dianggap selesai hanya jika seluruh item relevan terpen
 - Changelog diperbarui.
 - API contract dan OpenAPI sinkron.
 - Implementation report mencantumkan files, tests, risks, dan unresolved issues.
+
+---
+
+## Frontend: Kelas CSS
+
+`pnpm --filter @lms/web lint` menjalankan `scripts/check-css-classes.mjs`, yang
+memastikan setiap kelas literal pada `className` benar-benar didefinisikan di
+`app/styles.css`.
+
+Ini menutup satu kelas cacat yang lolos dari typecheck, lint, maupun build:
+kelas yang tidak pernah ditulis. `.authPage` pernah begitu, dan akibatnya
+halaman penerimaan undangan serta pengaturan ulang password — tepat tempat
+pelajar berbayar membuat password pertamanya — tampil tanpa gaya sama sekali.
+
+Yang tidak diperiksa: `className` dengan nilai hasil perhitungan, dan apakah
+gayanya benar-benar terlihat baik. Keduanya masih menuntut membuka halamannya.
