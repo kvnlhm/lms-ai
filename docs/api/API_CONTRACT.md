@@ -1904,3 +1904,69 @@ melengkapi trigger "Pengumuman baru" pada PRD 7.14.
 langsung tampil saat diterbitkan. Untuk yang dijadwalkan ke masa depan,
 pemberitahuannya menunggu pekerjaan terjadwal yang belum ada — lebih baik
 tidak mengirim daripada memberi tahu tentang sesuatu yang belum dapat dibuka.
+
+---
+
+## 37. Error Monitoring API
+
+Memenuhi PRD 12.7. Perilaku dan alasan desainnya ada di
+`docs/operations/INCIDENT_RESPONSE.md` §0a.
+
+### Endpoint Master
+
+Seluruhnya memerlukan permission `audit.read`.
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/admin/errors` | Daftar galat, terbaru lebih dulu |
+| GET | `/admin/errors/summary` | Jumlah terbuka, selesai, dan terlihat 24 jam terakhir |
+| POST | `/admin/errors/{errorId}/resolve` | Menandai sudah ditangani |
+| POST | `/admin/errors/{errorId}/reopen` | Membuka kembali |
+
+Query pada `/admin/errors`: `status` (`OPEN`, `RESOLVED`), `source` (`API`,
+`WEB`, `WORKER`), `page`, `pageSize`.
+
+```json
+{
+  "id": "42",
+  "fingerprint": "a1b2c3…",
+  "source": "API",
+  "status": "OPEN",
+  "type": "TypeError",
+  "message": "Tidak dapat membaca properti id",
+  "stack": "TypeError: …",
+  "context": { "method": "GET", "path": "/users/:id", "statusCode": 500 },
+  "occurrences": 128,
+  "firstSeenAt": "2026-07-31T09:00:00Z",
+  "lastSeenAt": "2026-07-31T14:22:00Z",
+  "resolvedAt": null
+}
+```
+
+`id` adalah string, bukan angka: kuncinya `BIGSERIAL` dan JSON tidak mengenal
+`BigInt`. `errorId` yang bukan angka dijawab `404`, bukan `422` — dari sisi
+pemanggil keduanya sama-sama berarti tidak ada.
+
+`resolve` bukan janji bahwa galatnya tidak akan kembali. Bila fingerprint yang
+sama muncul lagi, statusnya otomatis kembali `OPEN`.
+
+### POST `/telemetry/client-errors`
+
+Publik, tanpa sesi dan tanpa CSRF. Galat pada halaman login dan pendaftaran
+justru yang paling perlu diketahui, dan di sana belum ada sesi.
+
+```json
+{
+  "type": "TypeError",
+  "message": "x.map bukan fungsi",
+  "stack": "TypeError: …",
+  "path": "/courses"
+}
+```
+
+Balasan `202` tanpa badan. `source` selalu `WEB` dan ditentukan server — bukan
+oleh pelapor. Batas panjang: `type` 200, `message` 500, `stack` 4000, `path`
+300; melebihi itu dijawab `422`. Field di luar daftar juga `422`.
+
+Batas laju per IP diatur `CLIENT_ERROR_MAX_PER_HOUR` (default 30); melebihi itu
+dijawab `429`.

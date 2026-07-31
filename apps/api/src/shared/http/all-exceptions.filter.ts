@@ -9,6 +9,7 @@ import {
 import type { ErrorCode } from '@lms/contracts';
 import type { Request, Response } from 'express';
 import { AppError } from '../errors/app-error';
+import { ErrorMonitorService } from '../observability/error-monitor.service';
 
 interface NormalisedError {
   status: number;
@@ -28,6 +29,8 @@ interface NormalisedError {
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
+  constructor(private readonly monitor: ErrorMonitorService) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest<Request>();
@@ -41,6 +44,25 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `${request.method} ${request.originalUrl} gagal (requestId=${requestId})`,
         exception instanceof Error ? exception.stack : String(exception),
       );
+      // Hanya 5xx yang dicatat. 4xx adalah permintaan yang memang ditolak —
+      // memasukkannya akan menenggelamkan kegagalan nyata di antara ribuan
+      // percobaan login yang salah password.
+      this.monitor.capture({
+        source: 'API',
+        type: exception instanceof Error ? exception.constructor.name : 'UnknownError',
+        message: exception instanceof Error ? exception.message : String(exception),
+        stack: exception instanceof Error ? exception.stack : undefined,
+        // Path pola, bukan URL asli: `/users/:id` menjaga galat yang sama tetap
+        // satu kelompok, dan mencegah ID pengguna masuk ke fingerprint.
+        route: `${request.method} ${routePattern(request)}`,
+        context: {
+          method: request.method,
+          path: routePattern(request),
+          statusCode: normalised.status,
+          requestId,
+          userId: request.session?.id,
+        },
+      });
     } else {
       this.logger.warn(
         `${request.method} ${request.originalUrl} → ${normalised.status} ${normalised.code} (requestId=${requestId})`,
@@ -91,6 +113,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message: 'Terjadi kesalahan pada server.',
     };
   }
+}
+
+/**
+ * Bentuk rute tanpa nilai yang berubah-ubah.
+ *
+ * Express menyediakan pola rute untuk permintaan yang berhasil dicocokkan;
+ * untuk sisanya URL dinormalkan sendiri, karena tanpa itu setiap ID pengguna
+ * menghasilkan kelompok galat baru dan ID-nya ikut tersimpan.
+ */
+function routePattern(request: Request): string {
+  const matched = (request.route as { path?: string } | undefined)?.path;
+  if (matched) return matched;
+
+  return (request.originalUrl.split('?')[0] ?? '')
+    .replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id')
+    .replace(/\/\d+/g, '/:n');
 }
 
 function statusToCode(status: number): ErrorCode {

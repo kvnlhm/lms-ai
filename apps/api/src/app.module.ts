@@ -20,8 +20,10 @@ import { AnnouncementModule } from './modules/announcement/announcement.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { VideoModule } from './modules/video/video.module';
 import { UsersModule } from './modules/users/users.module';
+import { ObservabilityApiModule } from './modules/observability/observability-api.module';
 import { AuditModule } from './shared/audit/audit.module';
 import { EmailModule } from './shared/email/email.module';
+import { ObservabilityModule } from './shared/observability/observability.module';
 import { AllExceptionsFilter } from './shared/http/all-exceptions.filter';
 import { RequestContextMiddleware } from './shared/http/request-context.middleware';
 import { ResponseInterceptor } from './shared/http/response.interceptor';
@@ -41,6 +43,7 @@ import { CommerceModule } from './modules/commerce/commerce.module';
     IdempotencyModule,
     AuditModule,
     EmailModule,
+    ObservabilityModule,
     IdentityModule,
     AnalyticsModule,
     UsersModule,
@@ -54,6 +57,7 @@ import { CommerceModule } from './modules/commerce/commerce.module';
     AnnouncementModule,
     LiveSessionModule,
     CommerceModule,
+    ObservabilityApiModule,
     HealthModule,
   ],
   providers: [

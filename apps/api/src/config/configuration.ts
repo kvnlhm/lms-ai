@@ -79,6 +79,15 @@ export interface AppConfig {
     fromName: string;
     fromAddress?: string;
   };
+  /** Pemantauan galat runtime, PRD 12.7. */
+  observability: {
+    /** Penerima peringatan galat; kosong berarti hanya dicatat, tanpa surat. */
+    alertTo?: string;
+    /** Batas surat per jam, agar satu insiden tidak membanjiri kotak masuk. */
+    alertMaxPerHour: number;
+    /** Batas laporan galat browser per IP per jam. */
+    clientReportMaxPerHour: number;
+  };
   commerce: {
     orderTtlMinutes: number;
     midtrans: {
@@ -167,6 +176,11 @@ export function loadConfig(): AppConfig {
       apiKey: process.env.RESEND_API_KEY || undefined,
       fromName: process.env.EMAIL_FROM_NAME ?? 'AIPreneur Academy',
       fromAddress: process.env.EMAIL_FROM_ADDRESS || undefined,
+    },
+    observability: {
+      alertTo: process.env.ERROR_ALERT_TO || undefined,
+      alertMaxPerHour: int('ERROR_ALERT_MAX_PER_HOUR', 10),
+      clientReportMaxPerHour: int('CLIENT_ERROR_MAX_PER_HOUR', 30),
     },
     commerce: {
       orderTtlMinutes: int('REGISTRATION_ORDER_TTL_MINUTES', 1_440),

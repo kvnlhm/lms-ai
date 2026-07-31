@@ -57,6 +57,18 @@
 - Lifecycle deletion.
 - Quarantine sampai status `AVAILABLE`.
 
+## 4a. Error Reporting
+
+| Control | Requirement | Verification |
+|---|---|---|
+| Endpoint laporan browser | Publik tanpa sesi, karena galat halaman login perlu terlihat | `error-monitoring.e2e-spec.ts` |
+| Batas laju laporan | Per IP per jam, agar tabel galat tidak dapat digelembungkan | `error-monitoring.e2e-spec.ts` |
+| Batas payload | `type`, `message`, `stack`, `path` dibatasi; field lain ditolak | `error-monitoring.e2e-spec.ts` |
+| Sumber tidak dipercaya | `source` dan waktu ditentukan server, bukan pelapor | `error-monitoring.e2e-spec.ts` |
+| Akses pembacaan | `audit.read`; pelajar ditolak `403` | `error-monitoring.e2e-spec.ts` |
+| PII pada galat | `context` hanya pengenal teknis, tanpa email, nama, atau payload | Review kode |
+| Anggaran peringatan | Batas surat per jam agar insiden besar tidak membanjiri kotak masuk | `error-monitor.service.spec.ts` |
+
 ## 5. API Security
 
 - HTTPS only.
@@ -131,6 +143,7 @@
 - Patch schedule.
 - Centralised logging.
 - Alert untuk auth anomaly dan backup failure.
+- Galat runtime tercatat dan diberitahukan; lihat `INCIDENT_RESPONSE.md` §0a.
 
 ## 11. Secure Development Gate
 

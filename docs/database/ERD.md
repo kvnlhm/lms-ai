@@ -820,3 +820,37 @@ Constraints:
 - Playback token dan permanent URL tidak pernah disimpan.
 - Provider secrets dan permanent playback URL tidak disimpan di database.
 - `object_key` hanya diisi untuk provider self-hosted dan bukan public URL.
+
+---
+
+## 13. Error Events
+
+Memenuhi PRD 12.7. Satu baris mewakili satu jenis galat, bukan satu kejadian:
+`fingerprint` unik menjaga galat berulang tetap satu baris dengan `occurrences`
+yang bertambah. Tanpa itu, satu bug pada endpoint ramai akan menulis ribuan
+baris per menit — justru saat sistem sedang bermasalah.
+
+```text
+ERROR_EVENTS
+- id
+- fingerprint
+- source
+- status
+- type
+- message
+- stack
+- context
+- occurrences
+- first_seen_at
+- last_seen_at
+- resolved_at
+- resolved_by
+- alerted_at
+```
+
+`context` tidak boleh memuat email, nama, atau isi payload pengguna; galat
+bukan tempat penyimpanan PII baru. Yang disimpan hanya pengenal teknis:
+metode, rute berpola, status HTTP, request ID, user ID, nama antrean.
+
+`resolved_by` memakai `ON DELETE SET NULL`, bukan `CASCADE`: menghapus akun
+Master tidak boleh ikut menghapus riwayat galat yang kebetulan ditutup olehnya.

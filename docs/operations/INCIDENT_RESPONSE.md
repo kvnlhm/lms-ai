@@ -9,17 +9,52 @@ Peringatan otomatis dikirim lewat Resend ke alamat operator, dari
 |---|---|
 | Coolify | Deployment gagal, container berubah status, server tidak terjangkau, penggunaan disk, backup dan scheduled task gagal, docker cleanup gagal |
 | `scripts/backup.sh` | Checkpoint backup gagal diambil |
+| Pemantauan galat | Galat runtime baru pada API, browser, dan worker — lihat §0a |
 
 Keberhasilan sengaja tidak dilaporkan, kecuali beberapa saklar Coolify yang
 memang dimatikan secara default.
 
-Dua hal yang belum terpantau dan masih menunggu pengerjaan:
+Satu hal yang masih belum terpantau:
 
-- **Galat aplikasi.** Tidak ada pelaporan galat runtime API maupun web; galat
-  hanya terlihat bila log dibaca manual.
 - **Cron yang tidak pernah menyala.** Bila daemon cron mati, skrip backup tidak
   berjalan dan tidak ada yang mengirim peringatan. Sebagian tertutup oleh
   pemantauan server tidak terjangkau milik Coolify.
+
+## 0a. Pemantauan Galat Aplikasi
+
+Memenuhi PRD 12.7. Galat runtime tersimpan di tabel `error_events` dan dapat
+dibuka Master pada `/master/errors`; permission `audit.read`.
+
+| Sumber | Ditangkap di | Yang masuk |
+|---|---|---|
+| `API` | `AllExceptionsFilter` | Hanya respons 5xx |
+| `WEB` | `global-error.tsx` dan `instrumentation.ts` | Galat render browser dan galat Server Component |
+| `WORKER` | Event `failed` pada BullMQ | Job yang gagal setelah percobaan terakhir |
+
+4xx sengaja tidak dicatat. Permintaan yang ditolak adalah sistem yang bekerja
+sebagaimana mestinya; memasukkannya akan menenggelamkan kegagalan nyata di
+antara ribuan percobaan login yang salah password.
+
+**Pengelompokan.** Satu baris mewakili satu jenis galat, bukan satu kejadian.
+Fingerprint dihitung dari sumber, kelas exception, pesan yang sudah dinormalkan
+(UUID, angka, dan nilai dalam kutip diganti penanda), bingkai tumpukan pertama
+milik kode sendiri, dan rute. Tanpa normalisasi, satu bug menghasilkan satu
+baris — dan satu surat — per pengguna yang terkena.
+
+**Kapan surat dikirim.** Hanya saat sebuah galat pertama kali muncul, atau
+muncul lagi setelah ditandai selesai. Kejadian kedua dan seterusnya menambah
+`occurrences` tanpa memberi tahu siapa pun. Ada pula anggaran
+`ERROR_ALERT_MAX_PER_HOUR` (default 10) karena satu insiden dapat memunculkan
+puluhan galat berbeda sekaligus.
+
+**Menutup galat** bukan janji bahwa ia tidak akan kembali: bila fingerprint yang
+sama muncul lagi, statusnya otomatis kembali `OPEN` dan satu surat dikirim.
+
+**Batas yang perlu diketahui.** Endpoint `POST /telemetry/client-errors`
+bersifat publik — galat pada halaman login dan pendaftaran justru yang paling
+perlu diketahui, dan di sana belum ada sesi. Pagarnya berupa batas per IP
+(`CLIENT_ERROR_MAX_PER_HOUR`, default 30), payload yang dibatasi ketat, serta
+`source` dan waktu yang ditentukan server, bukan pelapor.
 
 Catatan operasional: pengaturan notifikasi Coolify dibaca oleh proses antrean
 yang berumur panjang. Setelah mengubahnya di luar UI, jalankan

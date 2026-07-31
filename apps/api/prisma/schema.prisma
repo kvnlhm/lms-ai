@@ -162,6 +162,7 @@ model User {
   announcements          Announcement[]          @relation("AnnouncementCreator")
   announcementTargets    AnnouncementTarget[]    @relation("AnnouncementTargetUser")
   announcementReads      AnnouncementRead[]      @relation("AnnouncementReader")
+  resolvedErrors         ErrorEvent[]            @relation("ErrorEventResolver")
 
   @@index([status])
   @@map("users")
@@ -314,11 +315,11 @@ model Course {
   createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  category    CourseCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  creator     User?              @relation(fields: [createdBy], references: [id], onDelete: SetNull)
-  modules     CourseModule[]
-  enrollments Enrollment[]
-  accessTiers AccessTierCourse[]
+  category      CourseCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  creator       User?              @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  modules       CourseModule[]
+  enrollments   Enrollment[]
+  accessTiers   AccessTierCourse[]
   forumTopics   ForumTopic[]
   forumBans     ForumBan[]
   liveSessions  LiveSession[]
@@ -910,8 +911,8 @@ model Announcement {
   createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  course    Course?               @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  creator   User                  @relation("AnnouncementCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  course    Course?              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  creator   User                 @relation("AnnouncementCreator", fields: [createdBy], references: [id], onDelete: Restrict)
   targets   AnnouncementTarget[]
   readState AnnouncementRead[]
 
@@ -943,4 +944,51 @@ model AnnouncementRead {
 
   @@id([announcementId, userId])
   @@map("announcement_reads")
+}
+
+// ── Pemantauan galat (PRD 12.7) ────────────────────────────────
+
+enum ErrorSource {
+  API
+  WEB
+  WORKER
+}
+
+enum ErrorStatus {
+  OPEN
+  RESOLVED
+}
+
+/// Satu baris per jenis galat, bukan per kejadian.
+///
+/// Galat yang sama pada satu endpoint bisa terjadi ribuan kali dalam semenit;
+/// menyimpannya satu per satu membuat tabel ini menjadi beban tersendiri saat
+/// sistem sedang bermasalah — persis saat ia paling dibutuhkan. Pengelompokan
+/// memakai `fingerprint` sehingga jumlahnya bertambah, bukan barisnya.
+model ErrorEvent {
+  id          BigInt      @id @default(autoincrement())
+  fingerprint String      @unique
+  source      ErrorSource
+  status      ErrorStatus @default(OPEN)
+  /// Nama kelas exception, atau `Error` bila tidak diketahui.
+  type        String
+  message     String
+  /// Jejak tumpukan kejadian terakhir, dipangkas.
+  stack       String?
+  /// Konteks kejadian terakhir: method, path, statusCode, requestId, userId.
+  /// Sengaja tanpa email atau nama agar galat tidak menjadi sumber PII baru.
+  context     Json?
+  occurrences Int         @default(1)
+  firstSeenAt DateTime    @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt  DateTime    @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  resolvedAt  DateTime?   @map("resolved_at") @db.Timestamptz(6)
+  resolvedBy  String?     @map("resolved_by") @db.Uuid
+  /// Peringatan terakhir; menahan surat susulan untuk galat yang itu-itu juga.
+  alertedAt   DateTime?   @map("alerted_at") @db.Timestamptz(6)
+
+  resolver User? @relation("ErrorEventResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
+
+  @@index([status, lastSeenAt])
+  @@index([source, lastSeenAt])
+  @@map("error_events")
 }

@@ -3,6 +3,7 @@ import { Worker, type Job } from 'bullmq';
 import type IORedis from 'ioredis';
 import { loadWorkerConfig, type WorkerConfig } from './config';
 import { REDIS_CONNECTION } from './infrastructure/redis.provider';
+import { WorkerErrorMonitor } from './observability/error-monitor';
 import { AnalyticsProcessor } from './processors/analytics.processor';
 import type { EventJob } from './processors/event-job';
 import { NotificationsProcessor } from './processors/notifications.processor';
@@ -24,6 +25,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
     @Inject(REDIS_CONNECTION) private readonly connection: IORedis,
     private readonly analytics: AnalyticsProcessor,
     private readonly notifications: NotificationsProcessor,
+    private readonly monitor: WorkerErrorMonitor,
   ) {}
 
   onModuleInit(): void {
@@ -57,6 +59,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
       this.logger.error(
         `Job ${job?.name ?? 'unknown'} (${job?.id ?? 'tanpa-id'}) di ${queue} gagal: ${error.message}`,
       );
+      this.monitor.capture({ queue, jobName: job?.name, error });
     });
 
     this.workers.push(worker);

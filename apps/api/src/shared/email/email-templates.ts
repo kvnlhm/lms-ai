@@ -23,6 +23,41 @@ export function activationEmail(input: {
   };
 }
 
+/**
+ * Peringatan galat baru untuk operator.
+ *
+ * Isinya sengaja memuat pesan dan jejak tumpukan apa adanya: penerimanya adalah
+ * operator, dan surat yang hanya berbunyi "ada galat" memaksa orang membuka
+ * dashboard untuk tahu apakah perlu bangun tengah malam atau tidak.
+ */
+export function errorAlertEmail(input: {
+  to: string;
+  appName: string;
+  source: string;
+  type: string;
+  message: string;
+  route?: string;
+  stack?: string;
+  isRegression: boolean;
+  dashboardUrl: string;
+}): OutgoingEmail {
+  const headline = input.isRegression ? 'Galat yang sudah ditutup muncul lagi' : 'Galat baru';
+  return {
+    to: input.to,
+    subject: `[${input.appName}] ${headline}: ${input.type}`,
+    html: layout([
+      `<p><strong>${escapeHtml(headline)}</strong> pada ${escapeHtml(input.source)}.</p>`,
+      `<p><strong>${escapeHtml(input.type)}</strong>: ${escapeHtml(input.message)}</p>`,
+      input.route ? `<p>Rute: <code>${escapeHtml(input.route)}</code></p>` : '',
+      input.stack
+        ? `<pre style="background:#f4f4f5;padding:12px;overflow-x:auto">${escapeHtml(input.stack)}</pre>`
+        : '',
+      `<p><a href="${escapeHtml(input.dashboardUrl)}">Buka daftar galat</a></p>`,
+      '<p>Kejadian berikutnya untuk galat yang sama tidak dikirim lagi, agar satu masalah tidak membanjiri kotak masuk.</p>',
+    ]),
+  };
+}
+
 export function passwordResetEmail(input: {
   to: string;
   fullName: string;

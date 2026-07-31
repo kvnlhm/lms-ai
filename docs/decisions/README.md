@@ -42,3 +42,4 @@
 | ADR-020 | Accepted | Configurable Master MFA |
 | ADR-021 | Accepted | Read-only Student impersonation |
 | ADR-022 | Accepted | Pemulihan password mandiri lewat email |
+| ADR-023 | Accepted | Pemantauan galat dibangun sendiri |

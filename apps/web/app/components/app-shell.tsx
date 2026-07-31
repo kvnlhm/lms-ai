@@ -35,6 +35,7 @@ const MASTER_NAV = [
     icon: Dashboard,
     permission: 'announcements.manage',
   },
+  { href: '/master/errors', label: 'Galat', icon: Dashboard, permission: 'audit.read' },
 ] as const;
 
 /** Kerangka halaman untuk area yang membutuhkan autentikasi. */

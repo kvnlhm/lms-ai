@@ -142,13 +142,34 @@ AI_REQUEST_TIMEOUT_MS
 
 ## Observability
 
+Pemantauan galat runtime (PRD 12.7). Galat disimpan di `error_events` dan dibaca
+Master pada `/master/errors`; rinciannya di
+`docs/operations/INCIDENT_RESPONSE.md` §0a.
+
 ```text
-OTEL_SERVICE_NAME
-OTEL_EXPORTER_OTLP_ENDPOINT
-OTEL_EXPORTER_OTLP_HEADERS
-SENTRY_DSN
-METRICS_ENABLED
+ERROR_ALERT_TO
+ERROR_ALERT_MAX_PER_HOUR=10
+CLIENT_ERROR_MAX_PER_HOUR=30
 ```
+
+`ERROR_ALERT_TO` kosong berarti galat tetap dicatat tetapi tidak ada surat yang
+dikirim. Pengirimannya memakai konfigurasi Email di bawah, jadi
+`EMAIL_PROVIDER=DISABLED` juga mematikan peringatan ini.
+
+`ERROR_ALERT_MAX_PER_HOUR` membatasi jumlah surat per jam. Satu insiden dapat
+memunculkan puluhan galat berbeda sekaligus; tanpa batas ini kotak masuk
+penerimanya penuh dan justru berhenti dibaca.
+
+`CLIENT_ERROR_MAX_PER_HOUR` membatasi laporan galat browser per IP. Endpointnya
+publik karena galat pada halaman login dan pendaftaran terjadi sebelum ada sesi.
+
+Worker membaca `ERROR_ALERT_TO`, `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, dan
+`EMAIL_FROM_NAME` langsung dari environment — ia tidak memakai modul email milik
+API. Bila salah satunya kosong, kegagalan job tetap tercatat tanpa surat.
+
+Belum terpasang, disebut di sini agar tidak dikira sudah ada: `OTEL_SERVICE_NAME`,
+`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`, `SENTRY_DSN`,
+`METRICS_ENABLED`.
 
 ## Email
 
