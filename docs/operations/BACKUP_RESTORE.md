@@ -92,6 +92,36 @@ PostgreSQL, yang namanya berganti setiap deploy, dan berhenti dengan pesan
 jelas bila nilainya kosong atau cocok ke lebih dari satu container. Nilainya
 hanya ada pada crontab server, tidak di repository.
 
+### Peringatan kegagalan
+
+`LMS_ALERT_TO` menentukan penerima. Kegagalan mengirim satu email lewat Resend;
+keberhasilan sengaja tidak mengirim apa pun, karena surat rutin yang selalu
+datang justru melatih orang mengabaikannya.
+
+Kunci Resend dibaca langsung dari environment container API yang sedang
+berjalan, jadi tidak ada salinan rahasia tambahan di crontab atau berkas lain,
+dan rotasi kunci otomatis terikut.
+
+Jalurnya dapat diuji kapan saja tanpa merusak backup lebih dulu:
+
+```bash
+LMS_APP_UUID=<uuid> LMS_ALERT_TO=<email> /usr/local/bin/lms-backup --test-alert
+```
+
+Satu kegagalan menghasilkan tepat satu surat. Penjaganya berupa berkas
+penanda, bukan variabel, karena `die` kerap dipanggil dari dalam command
+substitution yang berjalan di subshell — variabel apa pun yang diset di sana
+lenyap, lalu trap `ERR` di shell induk ikut menyala dan mengirim surat kedua
+untuk kegagalan yang sama.
+
+### Yang tidak tercakup peringatan ini
+
+Bila cron sendiri tidak pernah menyala — daemonnya mati, atau servernya mati —
+skripnya tidak berjalan sama sekali sehingga tidak ada yang mengirim
+peringatan. Lubang itu ditutup dari sisi lain: Coolify memantau server tidak
+terjangkau dan penggunaan disk, dan mengirimnya lewat Resend ke alamat yang
+sama.
+
 18:30 UTC setara 01:30 WIB. Hasilnya ada di `/var/backups/lms-ai/` dengan
 tiga keranjang — `daily/`, `weekly/`, `monthly/` — sesuai retention baseline
 §3. Weekly dan monthly berupa hardlink, jadi retensi panjang tidak memakan

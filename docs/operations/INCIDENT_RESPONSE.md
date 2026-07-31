@@ -1,5 +1,33 @@
 # Incident Response Plan
 
+## 0. Bagaimana Insiden Diketahui
+
+Peringatan otomatis dikirim lewat Resend ke alamat operator, dari
+`alerts@send.aipreneur.co.id`.
+
+| Sumber | Yang dilaporkan |
+|---|---|
+| Coolify | Deployment gagal, container berubah status, server tidak terjangkau, penggunaan disk, backup dan scheduled task gagal, docker cleanup gagal |
+| `scripts/backup.sh` | Checkpoint backup gagal diambil |
+
+Keberhasilan sengaja tidak dilaporkan, kecuali beberapa saklar Coolify yang
+memang dimatikan secara default.
+
+Dua hal yang belum terpantau dan masih menunggu pengerjaan:
+
+- **Galat aplikasi.** Tidak ada pelaporan galat runtime API maupun web; galat
+  hanya terlihat bila log dibaca manual.
+- **Cron yang tidak pernah menyala.** Bila daemon cron mati, skrip backup tidak
+  berjalan dan tidak ada yang mengirim peringatan. Sebagian tertutup oleh
+  pemantauan server tidak terjangkau milik Coolify.
+
+Catatan operasional: pengaturan notifikasi Coolify dibaca oleh proses antrean
+yang berumur panjang. Setelah mengubahnya di luar UI, jalankan
+`docker exec coolify php artisan horizon:terminate` agar worker memuat ulang;
+tanpa itu pengiriman tetap memakai pengaturan lama dan gagal diam-diam.
+
+---
+
 ## 1. Severity
 
 | Severity | Contoh | Response |
