@@ -196,9 +196,10 @@ export class AnnouncementService {
    * Menerbitkan pengumuman dan memberi tahu penerimanya.
    *
    * Notifikasi hanya dikirim bila pengumumannya benar-benar sudah tampil.
-   * Untuk yang dijadwalkan ke masa depan, pemberitahuannya menunggu pekerjaan
-   * terjadwal yang belum ada — dicatat sebagai keterbatasan, bukan diam-diam
-   * dikirim lebih awal.
+   * Yang dijadwalkan ke masa depan diberitahukan oleh `AnnouncementScheduler`
+   * saat waktunya tiba, bukan dikirim lebih awal — memberi tahu tentang
+   * sesuatu yang belum dapat dibuka hanya membuat pelajar menemukan halaman
+   * kosong.
    */
   async publish(id: string) {
     const announcement = await this.prisma.announcement.findUnique({
@@ -212,21 +213,42 @@ export class AnnouncementService {
 
     const now = new Date();
     const publishedAt = announcement.publishedAt ?? now;
+    const immediate = publishedAt <= now;
+
     const updated = await this.prisma.announcement.update({
       where: { id },
-      data: { status: AnnouncementStatus.PUBLISHED, publishedAt },
+      data: {
+        status: AnnouncementStatus.PUBLISHED,
+        publishedAt,
+        // Ditandai di sini supaya penjadwal tidak mengirim ulang notifikasi
+        // yang sudah dikirim pada langkah ini.
+        ...(immediate ? { notifiedAt: now } : {}),
+      },
       select: { id: true, title: true, status: true, publishedAt: true },
     });
 
-    if (publishedAt <= now) {
-      await this.notifications.notify(await this.recipientsOf(announcement), {
-        type: 'ANNOUNCEMENT_PUBLISHED',
-        title: 'Pengumuman baru',
-        body: announcement.title,
-        linkUrl: '/announcements',
-      });
-    }
+    if (immediate) await this.notifyRecipients(announcement);
     return updated;
+  }
+
+  /**
+   * Mengirim notifikasi "Pengumuman baru" kepada penerimanya.
+   *
+   * Dipakai bersama oleh penerbitan langsung dan penjadwal, sehingga aturan
+   * siapa yang menerima hanya ada di satu tempat.
+   */
+  async notifyRecipients(announcement: {
+    id: string;
+    title: string;
+    audience: AnnouncementAudience;
+    courseId: string | null;
+  }): Promise<void> {
+    await this.notifications.notify(await this.recipientsOf(announcement), {
+      type: 'ANNOUNCEMENT_PUBLISHED',
+      title: 'Pengumuman baru',
+      body: announcement.title,
+      linkUrl: '/announcements',
+    });
   }
 
   async archive(id: string) {

@@ -79,6 +79,16 @@ export interface AppConfig {
     fromName: string;
     fromAddress?: string;
   };
+  announcement: {
+    /**
+     * Pekerjaan latar yang memberitahukan pengumuman terjadwal.
+     *
+     * Dapat dimatikan agar test dapat memanggil satu siklus secara manual;
+     * poller latar akan berlomba dengan test dan membuat hasilnya tidak pasti.
+     */
+    schedulerEnabled: boolean;
+    schedulerIntervalSeconds: number;
+  };
   /** Pemantauan galat runtime, PRD 12.7. */
   observability: {
     /** Penerima peringatan galat; kosong berarti hanya dicatat, tanpa surat. */
@@ -176,6 +186,10 @@ export function loadConfig(): AppConfig {
       apiKey: process.env.RESEND_API_KEY || undefined,
       fromName: process.env.EMAIL_FROM_NAME ?? 'AIPreneur Academy',
       fromAddress: process.env.EMAIL_FROM_ADDRESS || undefined,
+    },
+    announcement: {
+      schedulerEnabled: bool('ANNOUNCEMENT_SCHEDULER_ENABLED', true),
+      schedulerIntervalSeconds: int('ANNOUNCEMENT_SCHEDULER_INTERVAL_SECONDS', 60),
     },
     observability: {
       alertTo: process.env.ERROR_ALERT_TO || undefined,

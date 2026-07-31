@@ -823,6 +823,19 @@ Constraints:
 
 ---
 
+## 12a. Announcement Scheduling
+
+`announcements.published_at` merangkap sebagai jadwal: nilai di masa depan
+membuat pengumuman berstatus `PUBLISHED` belum tampil sampai waktunya.
+
+`announcements.notified_at` menandai bahwa penerimanya sudah diberi tahu.
+Tanpa kolom ini, penjadwal akan mengirim notifikasi yang sama pada setiap
+siklus. Migrasi yang menambahkannya mengisi kolom ini untuk seluruh pengumuman
+yang sudah tampil — tanpa backfill itu, siklus pertama akan menyiarkan ulang
+seluruh riwayat pengumuman sekaligus.
+
+---
+
 ## 13. Error Events
 
 Memenuhi PRD 12.7. Satu baris mewakili satu jenis galat, bukan satu kejadian:

@@ -23,6 +23,10 @@ export interface Harness {
  * ingin diuji di sini, jadi dependensi tidak digantikan test double.
  */
 export async function startHarness(): Promise<Harness> {
+  // Poller latar akan berlomba dengan test dan membuat hasilnya tidak pasti.
+  // Test yang memang menguji penjadwal memanggil satu siklusnya secara manual.
+  process.env.ANNOUNCEMENT_SCHEDULER_ENABLED ??= 'false';
+
   const app = await createApp();
   await app.init();
 

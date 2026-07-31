@@ -140,6 +140,21 @@ AI_MAX_COST_PER_JOB
 AI_REQUEST_TIMEOUT_MS
 ```
 
+## Announcement
+
+Penjadwal yang memberitahukan pengumuman terjadwal saat waktunya tiba (PRD
+7.13). Berupa poller di dalam proses API, bukan pekerjaan worker terpisah.
+
+```text
+ANNOUNCEMENT_SCHEDULER_ENABLED=true
+ANNOUNCEMENT_SCHEDULER_INTERVAL_SECONDS=60
+```
+
+Jeda ini menentukan seberapa terlambat sebuah notifikasi terjadwal boleh
+dikirim. Mematikannya membuat pengumuman terjadwal tetap tampil saat waktunya,
+tetapi tanpa notifikasi. Test end-to-end mematikannya dan memanggil satu siklus
+secara manual, karena poller latar akan berlomba dengan test.
+
 ## Observability
 
 Pemantauan galat runtime (PRD 12.7). Galat disimpan di `error_events` dan dibaca

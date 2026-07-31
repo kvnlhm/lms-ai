@@ -907,6 +907,12 @@ model Announcement {
   courseId    String?              @map("course_id") @db.Uuid
   publishedAt DateTime?            @map("published_at") @db.Timestamptz(6)
   endsAt      DateTime?            @map("ends_at") @db.Timestamptz(6)
+  /// Penanda bahwa penerimanya sudah diberi tahu.
+  ///
+  /// Diperlukan karena pengumuman terjadwal diberitahukan oleh pekerjaan latar,
+  /// bukan oleh tindakan menerbitkan. Tanpa penanda ini, setiap siklus akan
+  /// mengirim notifikasi yang sama berulang kali.
+  notifiedAt  DateTime?            @map("notified_at") @db.Timestamptz(6)
   createdBy   String               @map("created_by") @db.Uuid
   createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -917,6 +923,7 @@ model Announcement {
   readState AnnouncementRead[]
 
   @@index([status, publishedAt, endsAt])
+  @@index([status, notifiedAt, publishedAt])
   @@map("announcements")
 }
 

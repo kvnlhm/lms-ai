@@ -1895,15 +1895,37 @@ Seluruhnya memerlukan permission `announcements.manage`.
 `DRAFT`; penerbitan adalah langkah terpisah agar tulisan setengah jadi tidak
 pernah sampai ke pelajar.
 
+### Penjadwalan
+
+`publishedAt` merangkap sebagai jadwal. Menerbitkan pengumuman dengan
+`publishedAt` di masa depan membuat statusnya `PUBLISHED`, tetapi ia belum
+lolos saringan kelayakan sehingga belum tampil bagi Pelajar sampai waktunya
+tiba. Ini memenuhi acceptance criteria "Master dapat menjadwalkan pengumuman"
+pada PRD 7.13.
+
+Menerbitkan tetap tindakan sadar seorang Master. `DRAFT` dengan `publishedAt`
+yang sudah lewat tidak terbit dengan sendirinya — tulisan setengah jadi tidak
+boleh tersiar karena tanggalnya kebetulan terlampaui.
+
 ### Notifikasi
 
 Menerbitkan mengirim notifikasi `ANNOUNCEMENT_PUBLISHED` kepada penerimanya,
 melengkapi trigger "Pengumuman baru" pada PRD 7.14.
 
-**Keterbatasan yang disengaja:** notifikasi hanya dikirim bila pengumumannya
-langsung tampil saat diterbitkan. Untuk yang dijadwalkan ke masa depan,
-pemberitahuannya menunggu pekerjaan terjadwal yang belum ada — lebih baik
-tidak mengirim daripada memberi tahu tentang sesuatu yang belum dapat dibuka.
+Untuk pengumuman terjadwal, notifikasinya dikirim oleh `AnnouncementScheduler`
+saat jadwalnya tiba, bukan saat diterbitkan — memberi tahu tentang sesuatu yang
+belum dapat dibuka hanya mengarahkan pelajar ke halaman kosong. Penjadwalnya
+berupa poller di dalam API dengan jeda `ANNOUNCEMENT_SCHEDULER_INTERVAL_SECONDS`,
+jadi pemberitahuan dapat terlambat sebesar satu jeda itu.
+
+Kolom `notified_at` menjaga agar notifikasi tidak terkirim dua kali. Pengumuman
+diklaim lebih dulu baru diberitahukan; bila pengirimannya gagal setelah klaim,
+isinya tetap tampil di halaman dan yang hilang hanya dorongannya. Urutan ini
+kebalikan dari relay outbox, dan disengaja: pengiriman ganda di sini berarti
+ratusan pelajar menerima notifikasi yang sama dua kali.
+
+Pengumuman yang `endsAt`-nya sudah lewat sebelum sempat diberitahukan
+dilewati.
 
 ---
 
