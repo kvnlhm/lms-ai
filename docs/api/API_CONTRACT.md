@@ -2091,3 +2091,22 @@ menyalin data pribadi seluruh pelajar.
 `at-risk-users` memakai `classifyRisk` yang sama persis dengan dashboard
 insight, termasuk pembulatannya, sehingga ekspor dan dashboard tidak pernah
 menyebut orang yang berbeda sebagai berisiko.
+
+---
+
+## 40. Skema Respons Forum
+
+Ke-24 handler forum kini mendeklarasikan skema responsnya di OpenAPI. Sebelumnya
+tidak satu pun punya, sehingga dokumen hanya menyebut "200 OK" tanpa isi dan
+client hasil generate mengembalikan `unknown`.
+
+Akibatnya sisi web mendeklarasikan bentuknya sendiri lalu melakukan cast buta.
+Deklarasi itu sempat mengklaim `author.email` dan `reporter.email`, padahal
+server hanya mengirim `{ id, fullName, avatarUrl }` sesuai PRD butir 1146 —
+klaim yang tidak pernah diperiksa siapa pun karena cast-nya mematikan
+pemeriksaan tipe. Halaman moderasi tidak pernah menampilkannya, jadi tidak ada
+yang terlihat rusak; yang rusak adalah jaminannya.
+
+Kolom penulis yang boleh dilihat pelajar lain tetap terbatas pada id, nama, dan
+foto. DTO membuat batas itu terlihat pada kontrak, bukan hanya tersimpan di
+dalam satu konstanta service.

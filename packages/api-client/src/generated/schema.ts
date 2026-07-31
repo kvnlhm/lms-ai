@@ -2729,6 +2729,43 @@ export interface components {
             items: components["schemas"]["LearningHistoryItemDto"][];
             nextCursor?: string | null;
         };
+        ForumAuthorDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            avatarUrl?: string | null;
+        };
+        ForumReactionCountDto: {
+            reactions: number;
+        };
+        ForumTopicListItemDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** @enum {string} */
+            status: "OPEN" | "RESOLVED" | "LOCKED" | "HIDDEN";
+            isPinned: boolean;
+            replyCount: number;
+            /** Format: date-time */
+            lastActivityAt: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            lessonId?: string | null;
+            /** Format: uuid */
+            moduleId?: string | null;
+            author: components["schemas"]["ForumAuthorDto"];
+            _count: components["schemas"]["ForumReactionCountDto"];
+        };
+        ForumTopicCreatedDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** @enum {string} */
+            status: "OPEN" | "RESOLVED" | "LOCKED" | "HIDDEN";
+            /** Format: date-time */
+            createdAt: string;
+        };
         CreateTopicDto: {
             /** Format: uuid */
             moduleId?: string;
@@ -2737,12 +2774,86 @@ export interface components {
             title: string;
             body: string;
         };
+        ForumReplyDto: {
+            /** Format: uuid */
+            id: string;
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            author: components["schemas"]["ForumAuthorDto"];
+            _count: components["schemas"]["ForumReactionCountDto"];
+        };
+        ForumTopicDetailDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            courseId: string;
+            /** Format: uuid */
+            moduleId?: string | null;
+            /** Format: uuid */
+            lessonId?: string | null;
+            title: string;
+            body: string;
+            /** @enum {string} */
+            status: "OPEN" | "RESOLVED" | "LOCKED" | "HIDDEN";
+            isPinned: boolean;
+            /** Format: uuid */
+            bestReplyId?: string | null;
+            replyCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            author: components["schemas"]["ForumAuthorDto"];
+            _count: components["schemas"]["ForumReactionCountDto"];
+            replies: components["schemas"]["ForumReplyDto"][];
+            /** @description Salah bila diskusi terkunci atau hak berpartisipasi sedang dicabut */
+            canParticipate: boolean;
+            participationBlockedReason?: string | null;
+        };
+        ForumTopicUpdatedDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            body: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
         UpdateTopicDto: {
             title?: string;
             body?: string;
         };
+        ForumReplyCreatedDto: {
+            /** Format: uuid */
+            id: string;
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         ReplyBodyDto: {
             body: string;
+        };
+        ForumReplyUpdatedDto: {
+            /** Format: uuid */
+            id: string;
+            body: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ForumReactionResultDto: {
+            /** @description Keadaan setelah tombol ditekan */
+            reacted: boolean;
+            total: number;
+        };
+        ForumReportCreatedDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "PENDING" | "ACTIONED" | "DISMISSED";
+            /** Format: date-time */
+            createdAt: string;
         };
         ReportContentDto: {
             /** Format: uuid */
@@ -2751,25 +2862,135 @@ export interface components {
             replyId?: string;
             reason: string;
         };
+        ForumCourseRefDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+        };
+        ForumReportCountDto: {
+            reports: number;
+        };
+        ModerationTopicListItemDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** @enum {string} */
+            status: "OPEN" | "RESOLVED" | "LOCKED" | "HIDDEN";
+            isPinned: boolean;
+            replyCount: number;
+            /** Format: date-time */
+            lastActivityAt: string;
+            /** Format: date-time */
+            createdAt: string;
+            moderationReason?: string | null;
+            author: components["schemas"]["ForumAuthorDto"];
+            course: components["schemas"]["ForumCourseRefDto"];
+            _count: components["schemas"]["ForumReportCountDto"];
+        };
+        TopicStatusChangedDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "OPEN" | "RESOLVED" | "LOCKED" | "HIDDEN";
+            moderationReason?: string | null;
+            /** Format: date-time */
+            moderatedAt?: string | null;
+        };
         SetTopicStatusDto: {
             /** @enum {string} */
             status: "OPEN" | "RESOLVED" | "LOCKED" | "HIDDEN";
             reason?: string;
         };
+        TopicPinnedDto: {
+            /** Format: uuid */
+            id: string;
+            isPinned: boolean;
+        };
         SetPinnedDto: {
             isPinned: boolean;
+        };
+        TopicBestReplyDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            bestReplyId?: string | null;
+            /** @enum {string} */
+            status: "OPEN" | "RESOLVED" | "LOCKED" | "HIDDEN";
         };
         SetBestReplyDto: {
             /** Format: uuid */
             replyId?: string | null;
         };
+        ReplyHiddenDto: {
+            /** Format: uuid */
+            id: string;
+            isHidden: boolean;
+            moderationReason?: string | null;
+        };
         SetReplyHiddenDto: {
             isHidden: boolean;
             reason?: string;
         };
+        ForumTopicRefDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** @enum {string} */
+            status?: "OPEN" | "RESOLVED" | "LOCKED" | "HIDDEN";
+        };
+        ReportedReplyDto: {
+            /** Format: uuid */
+            id: string;
+            body: string;
+            isHidden: boolean;
+            topic: components["schemas"]["ForumTopicRefDto"];
+        };
+        ForumReportListItemDto: {
+            /** Format: uuid */
+            id: string;
+            reason: string;
+            /** @enum {string} */
+            status: "PENDING" | "ACTIONED" | "DISMISSED";
+            /** Format: date-time */
+            createdAt: string;
+            reporter: components["schemas"]["ForumAuthorDto"];
+            topic?: components["schemas"]["ForumTopicRefDto"] | null;
+            reply?: components["schemas"]["ReportedReplyDto"] | null;
+        };
+        ForumReportResolvedDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "PENDING" | "ACTIONED" | "DISMISSED";
+            /** Format: date-time */
+            reviewedAt?: string | null;
+        };
         ResolveReportDto: {
             /** @enum {string} */
             status: "ACTIONED" | "DISMISSED";
+        };
+        ForumBanDto: {
+            /** Format: uuid */
+            id: string;
+            reason: string;
+            /** Format: date-time */
+            expiresAt?: string | null;
+            /** Format: date-time */
+            revokedAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            user: components["schemas"]["ForumAuthorDto"];
+            issuer: components["schemas"]["ForumAuthorDto"];
+            course?: components["schemas"]["ForumCourseRefDto"] | null;
+        };
+        ForumBanCreatedDto: {
+            /** Format: uuid */
+            id: string;
+            reason: string;
+            /** Format: date-time */
+            expiresAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
         };
         CreateBanDto: {
             /** Format: uuid */
@@ -2782,6 +3003,12 @@ export interface components {
             reason: string;
             /** @description Kosongkan untuk berlaku sampai dicabut */
             expiresAt?: string;
+        };
+        ForumBanRevokedDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            revokedAt?: string | null;
         };
         NotificationDto: {
             /** Format: uuid */
@@ -6199,6 +6426,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumTopicListItemDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6240,6 +6478,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumTopicCreatedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6285,6 +6534,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumTopicDetailDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6371,6 +6631,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumTopicUpdatedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6428,6 +6699,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumReplyCreatedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6530,6 +6812,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumReplyUpdatedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6583,6 +6876,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumReactionResultDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6620,6 +6924,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumReactionResultDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6659,6 +6974,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumReportCreatedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6708,6 +7034,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModerationTopicListItemDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6741,6 +7078,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["TopicStatusChangedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6790,6 +7138,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["TopicPinnedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6839,6 +7198,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["TopicBestReplyDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6888,6 +7258,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumReplyCreatedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6937,6 +7318,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReplyHiddenDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -7058,6 +7450,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumReportListItemDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -7091,6 +7494,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumReportResolvedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -7136,6 +7550,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumBanDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -7167,6 +7592,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumBanCreatedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -7212,6 +7648,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ForumBanRevokedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;

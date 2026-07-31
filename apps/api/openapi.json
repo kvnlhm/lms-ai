@@ -4820,6 +4820,31 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ForumTopicListItemDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -4879,6 +4904,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumTopicCreatedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -4940,6 +4987,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumTopicDetailDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -4999,6 +5068,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumTopicUpdatedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5139,6 +5230,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumReplyCreatedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5220,6 +5333,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumReplyUpdatedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5350,6 +5485,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumReactionResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5401,6 +5558,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumReactionResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5453,6 +5632,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumReportCreatedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5555,6 +5756,31 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ModerationTopicListItemDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5606,6 +5832,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TopicStatusChangedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5677,6 +5925,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TopicPinnedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5748,6 +6018,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TopicBestReplyDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5819,6 +6111,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumReplyCreatedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -5890,6 +6204,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReplyHiddenDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -6076,6 +6412,31 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ForumReportListItemDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -6127,6 +6488,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumReportResolvedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -6189,6 +6572,31 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ForumBanDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -6229,6 +6637,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumBanCreatedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -6290,6 +6720,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ForumBanRevokedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -11463,6 +11915,130 @@
           "items"
         ]
       },
+      "ForumAuthorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "fullName"
+        ]
+      },
+      "ForumReactionCountDto": {
+        "type": "object",
+        "properties": {
+          "reactions": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "reactions"
+        ]
+      },
+      "ForumTopicListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "LOCKED",
+              "HIDDEN"
+            ]
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "replyCount": {
+            "type": "number"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lessonId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "moduleId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "author": {
+            "$ref": "#/components/schemas/ForumAuthorDto"
+          },
+          "_count": {
+            "$ref": "#/components/schemas/ForumReactionCountDto"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "isPinned",
+          "replyCount",
+          "lastActivityAt",
+          "createdAt",
+          "author",
+          "_count"
+        ]
+      },
+      "ForumTopicCreatedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "LOCKED",
+              "HIDDEN"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "createdAt"
+        ]
+      },
       "CreateTopicDto": {
         "type": "object",
         "properties": {
@@ -11486,6 +12062,157 @@
           "body"
         ]
       },
+      "ForumReplyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/ForumAuthorDto"
+          },
+          "_count": {
+            "$ref": "#/components/schemas/ForumReactionCountDto"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "createdAt",
+          "updatedAt",
+          "author",
+          "_count"
+        ]
+      },
+      "ForumTopicDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "courseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "moduleId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "lessonId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "LOCKED",
+              "HIDDEN"
+            ]
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "bestReplyId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "replyCount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/ForumAuthorDto"
+          },
+          "_count": {
+            "$ref": "#/components/schemas/ForumReactionCountDto"
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForumReplyDto"
+            }
+          },
+          "canParticipate": {
+            "type": "boolean",
+            "description": "Salah bila diskusi terkunci atau hak berpartisipasi sedang dicabut"
+          },
+          "participationBlockedReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "courseId",
+          "title",
+          "body",
+          "status",
+          "isPinned",
+          "replyCount",
+          "createdAt",
+          "updatedAt",
+          "author",
+          "_count",
+          "replies",
+          "canParticipate"
+        ]
+      },
+      "ForumTopicUpdatedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "updatedAt"
+        ]
+      },
       "UpdateTopicDto": {
         "type": "object",
         "properties": {
@@ -11497,6 +12224,27 @@
           }
         }
       },
+      "ForumReplyCreatedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "createdAt"
+        ]
+      },
       "ReplyBodyDto": {
         "type": "object",
         "properties": {
@@ -11506,6 +12254,69 @@
         },
         "required": [
           "body"
+        ]
+      },
+      "ForumReplyUpdatedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "updatedAt"
+        ]
+      },
+      "ForumReactionResultDto": {
+        "type": "object",
+        "properties": {
+          "reacted": {
+            "type": "boolean",
+            "description": "Keadaan setelah tombol ditekan"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "reacted",
+          "total"
+        ]
+      },
+      "ForumReportCreatedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIONED",
+              "DISMISSED"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt"
         ]
       },
       "ReportContentDto": {
@@ -11525,6 +12336,124 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "ForumCourseRefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "ForumReportCountDto": {
+        "type": "object",
+        "properties": {
+          "reports": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "reports"
+        ]
+      },
+      "ModerationTopicListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "LOCKED",
+              "HIDDEN"
+            ]
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "replyCount": {
+            "type": "number"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "moderationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "author": {
+            "$ref": "#/components/schemas/ForumAuthorDto"
+          },
+          "course": {
+            "$ref": "#/components/schemas/ForumCourseRefDto"
+          },
+          "_count": {
+            "$ref": "#/components/schemas/ForumReportCountDto"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "isPinned",
+          "replyCount",
+          "lastActivityAt",
+          "createdAt",
+          "author",
+          "course",
+          "_count"
+        ]
+      },
+      "TopicStatusChangedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "LOCKED",
+              "HIDDEN"
+            ]
+          },
+          "moderationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "moderatedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status"
         ]
       },
       "SetTopicStatusDto": {
@@ -11547,6 +12476,22 @@
           "status"
         ]
       },
+      "TopicPinnedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "isPinned": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "isPinned"
+        ]
+      },
       "SetPinnedDto": {
         "type": "object",
         "properties": {
@@ -11558,6 +12503,33 @@
           "isPinned"
         ]
       },
+      "TopicBestReplyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bestReplyId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "LOCKED",
+              "HIDDEN"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
       "SetBestReplyDto": {
         "type": "object",
         "properties": {
@@ -11567,6 +12539,26 @@
             "nullable": true
           }
         }
+      },
+      "ReplyHiddenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "isHidden": {
+            "type": "boolean"
+          },
+          "moderationReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "isHidden"
+        ]
       },
       "SetReplyHiddenDto": {
         "type": "object",
@@ -11582,6 +12574,131 @@
           "isHidden"
         ]
       },
+      "ForumTopicRefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "LOCKED",
+              "HIDDEN"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "ReportedReplyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "isHidden": {
+            "type": "boolean"
+          },
+          "topic": {
+            "$ref": "#/components/schemas/ForumTopicRefDto"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "isHidden",
+          "topic"
+        ]
+      },
+      "ForumReportListItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIONED",
+              "DISMISSED"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reporter": {
+            "$ref": "#/components/schemas/ForumAuthorDto"
+          },
+          "topic": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ForumTopicRefDto"
+              }
+            ]
+          },
+          "reply": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportedReplyDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "status",
+          "createdAt",
+          "reporter"
+        ]
+      },
+      "ForumReportResolvedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIONED",
+              "DISMISSED"
+            ]
+          },
+          "reviewedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
       "ResolveReportDto": {
         "type": "object",
         "properties": {
@@ -11595,6 +12712,79 @@
         },
         "required": [
           "status"
+        ]
+      },
+      "ForumBanDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "revokedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/ForumAuthorDto"
+          },
+          "issuer": {
+            "$ref": "#/components/schemas/ForumAuthorDto"
+          },
+          "course": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ForumCourseRefDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "createdAt",
+          "user",
+          "issuer"
+        ]
+      },
+      "ForumBanCreatedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "reason",
+          "createdAt"
         ]
       },
       "CreateBanDto": {
@@ -11620,6 +12810,23 @@
         "required": [
           "userId",
           "reason"
+        ]
+      },
+      "ForumBanRevokedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revokedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id"
         ]
       },
       "NotificationDto": {

@@ -1,45 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import type { Schemas } from '@lms/api-client';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 
 /**
- * Endpoint forum belum mendeklarasikan DTO respons di OpenAPI, sehingga
- * bentuknya ditegaskan di sini — pola yang sama dipakai playback session.
+ * Bentuknya datang dari OpenAPI.
+ *
+ * Deklarasi sebelumnya mengklaim `author.email` dan `reporter.email`, padahal
+ * `authorSelect` di server hanya mengirim id, nama, dan foto. Cast buta membuat
+ * TypeScript menerima klaim itu tanpa pernah memeriksanya.
  */
-interface ModerationTopic {
-  id: string;
-  title: string;
-  status: 'OPEN' | 'RESOLVED' | 'LOCKED' | 'HIDDEN';
-  isPinned: boolean;
-  replyCount: number;
-  lastActivityAt: string;
-  moderationReason: string | null;
-  author: { id: string; fullName: string; email: string; avatarUrl: string | null };
-  course: { id: string; title: string };
-  _count: { reports: number };
-}
-
-interface Report {
-  id: string;
-  reason: string;
-  status: 'PENDING' | 'ACTIONED' | 'DISMISSED';
-  createdAt: string;
-  reporter: { id: string; fullName: string; email: string };
-  topic: { id: string; title: string; status: string } | null;
-  reply: { id: string; body: string; isHidden: boolean; topic: { title: string } } | null;
-}
-
-interface Ban {
-  id: string;
-  reason: string;
-  expiresAt: string | null;
-  revokedAt: string | null;
-  createdAt: string;
-  user: { id: string; fullName: string; email: string };
-  issuer: { fullName: string };
-  course: { id: string; title: string } | null;
-}
+type ModerationTopic = Schemas['ModerationTopicListItemDto'];
+type Report = Schemas['ForumReportListItemDto'];
+type Ban = Schemas['ForumBanDto'];
 
 const STATUS_LABEL: Record<ModerationTopic['status'], string> = {
   OPEN: 'Terbuka',
@@ -84,9 +58,9 @@ export function ForumModeration() {
         }),
         client.GET('/api/v1/admin/forum/bans', { params: { query: { activeOnly: true } } }),
       ]);
-      setTopics(unwrap(topicsResponse) as unknown as ModerationTopic[]);
-      setReports(unwrap(reportsResponse) as unknown as Report[]);
-      setBans(unwrap(bansResponse) as unknown as Ban[]);
+      setTopics(unwrap(topicsResponse) as ModerationTopic[]);
+      setReports(unwrap(reportsResponse) as Report[]);
+      setBans(unwrap(bansResponse) as Ban[]);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Data forum gagal dimuat.');
     } finally {

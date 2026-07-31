@@ -11,7 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiErrors } from '../../../shared/http/api-envelope';
+import { ApiEnvelope, ApiEnvelopeList, ApiErrors } from '../../../shared/http/api-envelope';
 import { Paginated } from '../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser } from '../../identity/presentation/decorators';
@@ -23,6 +23,16 @@ import {
   ReportContentDto,
   UpdateTopicDto,
 } from './forum.dto';
+import {
+  ForumReactionResultDto,
+  ForumReplyCreatedDto,
+  ForumReplyUpdatedDto,
+  ForumReportCreatedDto,
+  ForumTopicCreatedDto,
+  ForumTopicDetailDto,
+  ForumTopicListItemDto,
+  ForumTopicUpdatedDto,
+} from './forum-response.dto';
 
 @ApiTags('forum')
 @Controller()
@@ -31,6 +41,7 @@ export class ForumController {
 
   @Get('learn/courses/:courseId/forum/topics')
   @ApiOperation({ summary: 'Daftar topik diskusi pada kursus yang diikuti' })
+  @ApiEnvelopeList(ForumTopicListItemDto)
   @ApiErrors(401, 403, 404)
   async listTopics(
     @Param('courseId', new ParseUUIDPipe()) courseId: string,
@@ -53,6 +64,7 @@ export class ForumController {
   @Post('learn/courses/:courseId/forum/topics')
   @HttpCode(201)
   @ApiOperation({ summary: 'Membuat topik diskusi baru' })
+  @ApiEnvelope(ForumTopicCreatedDto)
   @ApiErrors(401, 403, 404, 422)
   createTopic(
     @Param('courseId', new ParseUUIDPipe()) courseId: string,
@@ -64,6 +76,7 @@ export class ForumController {
 
   @Get('learn/forum/topics/:topicId')
   @ApiOperation({ summary: 'Detail topik beserta balasannya' })
+  @ApiEnvelope(ForumTopicDetailDto)
   @ApiErrors(401, 403, 404)
   topicDetail(
     @Param('topicId', new ParseUUIDPipe()) topicId: string,
@@ -74,6 +87,7 @@ export class ForumController {
 
   @Patch('learn/forum/topics/:topicId')
   @ApiOperation({ summary: 'Mengubah topik milik sendiri' })
+  @ApiEnvelope(ForumTopicUpdatedDto)
   @ApiErrors(401, 403, 404, 409, 422)
   updateTopic(
     @Param('topicId', new ParseUUIDPipe()) topicId: string,
@@ -97,6 +111,7 @@ export class ForumController {
   @Post('learn/forum/topics/:topicId/replies')
   @HttpCode(201)
   @ApiOperation({ summary: 'Membalas diskusi' })
+  @ApiEnvelope(ForumReplyCreatedDto)
   @ApiErrors(401, 403, 404, 409, 422)
   createReply(
     @Param('topicId', new ParseUUIDPipe()) topicId: string,
@@ -108,6 +123,7 @@ export class ForumController {
 
   @Patch('learn/forum/replies/:replyId')
   @ApiOperation({ summary: 'Mengubah balasan milik sendiri' })
+  @ApiEnvelope(ForumReplyUpdatedDto)
   @ApiErrors(401, 403, 404, 409, 422)
   updateReply(
     @Param('replyId', new ParseUUIDPipe()) replyId: string,
@@ -131,6 +147,7 @@ export class ForumController {
   @Post('learn/forum/topics/:topicId/reactions')
   @HttpCode(200)
   @ApiOperation({ summary: 'Menyalakan atau mematikan reaksi pada topik' })
+  @ApiEnvelope(ForumReactionResultDto)
   @ApiErrors(401, 403, 404)
   reactTopic(
     @Param('topicId', new ParseUUIDPipe()) topicId: string,
@@ -142,6 +159,7 @@ export class ForumController {
   @Post('learn/forum/replies/:replyId/reactions')
   @HttpCode(200)
   @ApiOperation({ summary: 'Menyalakan atau mematikan reaksi pada balasan' })
+  @ApiEnvelope(ForumReactionResultDto)
   @ApiErrors(401, 403, 404)
   reactReply(
     @Param('replyId', new ParseUUIDPipe()) replyId: string,
@@ -153,6 +171,7 @@ export class ForumController {
   @Post('learn/forum/reports')
   @HttpCode(201)
   @ApiOperation({ summary: 'Melaporkan topik atau balasan kepada Master' })
+  @ApiEnvelope(ForumReportCreatedDto)
   @ApiErrors(401, 403, 404, 422)
   report(@Body() dto: ReportContentDto, @CurrentUser() user: AuthenticatedUser) {
     return this.forum.report(user.id, { topicId: dto.topicId, replyId: dto.replyId }, dto.reason);

@@ -2,19 +2,11 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import type { Schemas } from '@lms/api-client';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 
-/** Endpoint forum belum punya DTO respons di OpenAPI; bentuknya ditegaskan di sini. */
-interface TopicSummary {
-  id: string;
-  title: string;
-  status: 'OPEN' | 'RESOLVED' | 'LOCKED' | 'HIDDEN';
-  isPinned: boolean;
-  replyCount: number;
-  lastActivityAt: string;
-  author: { id: string; fullName: string; avatarUrl: string | null };
-  _count: { reactions: number };
-}
+/** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
+type TopicSummary = Schemas['ForumTopicListItemDto'];
 
 const STATUS_LABEL: Record<TopicSummary['status'], string> = {
   OPEN: 'Terbuka',
@@ -52,7 +44,7 @@ export function CourseForum({ courseId }: { courseId: string }) {
             },
           },
         );
-        setTopics(unwrap(response) as unknown as TopicSummary[]);
+        setTopics(unwrap(response) as TopicSummary[]);
       } catch (caught) {
         setError(caught instanceof ApiError ? caught.message : 'Diskusi gagal dimuat.');
       } finally {

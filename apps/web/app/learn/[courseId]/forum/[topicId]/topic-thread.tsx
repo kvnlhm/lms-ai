@@ -1,38 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import type { Schemas } from '@lms/api-client';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../../../lib/browser-api';
 
-/** Endpoint forum belum punya DTO respons di OpenAPI; bentuknya ditegaskan di sini. */
-interface Author {
-  id: string;
-  fullName: string;
-  avatarUrl: string | null;
-}
-
-interface Reply {
-  id: string;
-  body: string;
-  createdAt: string;
-  updatedAt: string;
-  author: Author;
-  _count: { reactions: number };
-}
-
-interface TopicDetail {
-  id: string;
-  title: string;
-  body: string;
-  status: 'OPEN' | 'RESOLVED' | 'LOCKED' | 'HIDDEN';
-  isPinned: boolean;
-  bestReplyId: string | null;
-  createdAt: string;
-  author: Author;
-  replies: Reply[];
-  _count: { reactions: number };
-  canParticipate: boolean;
-  participationBlockedReason: string | null;
-}
+/** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
+type TopicDetail = Schemas['ForumTopicDetailDto'];
 
 const STATUS_LABEL: Record<TopicDetail['status'], string> = {
   OPEN: 'Terbuka',
@@ -68,7 +41,7 @@ export function TopicThread({
       const response = await browserClient().GET('/api/v1/learn/forum/topics/{topicId}', {
         params: { path: { topicId } },
       });
-      setTopic(unwrap(response) as unknown as TopicDetail);
+      setTopic(unwrap(response) as TopicDetail);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Diskusi tidak dapat dimuat.');
     } finally {
