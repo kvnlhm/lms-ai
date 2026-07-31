@@ -106,7 +106,15 @@ export class MidtransService {
     if (!response.ok) {
       throw AppError.validation({ payment: ['Status pembayaran tidak dapat diverifikasi.'] });
     }
-    return (await response.json()) as MidtransStatus;
+    const payload = (await response.json()) as Partial<MidtransStatus>;
+    // Midtrans tetap membalas HTTP 200 walau transaksinya tidak ada; kegagalan
+    // hanya terlihat pada `status_code` di dalam body, dan `order_id` tidak
+    // ikut dikirim. Tanpa penjagaan ini `order_id` yang `undefined` diteruskan
+    // ke query Prisma, webhook membalas 500, dan Midtrans mengulang kirim
+    // berkali-kali. Kasus nyatanya: notifikasi uji dari dashboard Midtrans dan
+    // order milik environment lain setelah sandbox dipindah ke production.
+    if (!payload.order_id) throw AppError.notFound();
+    return payload as MidtransStatus;
   }
 
   private assertConfigured(): void {
