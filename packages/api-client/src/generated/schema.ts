@@ -1657,6 +1657,40 @@ export interface paths {
         patch: operations["CommerceController_updateTier"];
         trace?: never;
     };
+    "/api/v1/admin/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Riwayat tindakan administratif, terbaru lebih dulu */
+        get: operations["AuditLogController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit-logs/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Jenis tindakan yang pernah tercatat, untuk mengisi penyaring */
+        get: operations["AuditLogController_actions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/errors": {
         parameters: {
             query?: never;
@@ -2897,6 +2931,29 @@ export interface components {
             /** @default 0 */
             position?: number;
             courseIds?: string[];
+        };
+        AuditLogActorDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            email: string;
+        };
+        AuditLogEntryDto: {
+            id: string;
+            action: string;
+            targetType: string;
+            targetId?: string | null;
+            actor?: components["schemas"]["AuditLogActorDto"] | null;
+            beforeData?: Record<string, never> | null;
+            afterData?: Record<string, never> | null;
+            requestId?: string | null;
+            ipAddress?: string | null;
+            userAgent?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AuditLogActionsDto: {
+            actions: string[];
         };
         ErrorEventDto: {
             id: string;
@@ -8068,6 +8125,100 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuditLogController_list: {
+        parameters: {
+            query?: {
+                actorUserId?: string;
+                /** @description Cocok berdasarkan awalan, mis. `user.` */
+                action?: string;
+                targetType?: string;
+                targetId?: string;
+                from?: string;
+                to?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AuditLogEntryDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuditLogController_actions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AuditLogActionsDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

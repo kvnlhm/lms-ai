@@ -1992,3 +1992,49 @@ oleh pelapor. Batas panjang: `type` 200, `message` 500, `stack` 4000, `path`
 
 Batas laju per IP diatur `CLIENT_ERROR_MAX_PER_HOUR` (default 30); melebihi itu
 dijawab `429`.
+
+---
+
+## 38. Audit Log API
+
+Sisi baca untuk PRD 13. Penulisannya sudah ada sejak awal; sebelumnya tidak ada
+cara membacanya selain query SQL langsung ke produksi.
+
+Seluruh endpoint memerlukan permission `audit.read`.
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/admin/audit-logs` | Riwayat tindakan, terbaru lebih dulu |
+| GET | `/admin/audit-logs/actions` | Jenis tindakan yang pernah tercatat |
+
+Query: `actorUserId`, `action`, `targetType`, `targetId`, `from`, `to`, `page`,
+`pageSize`.
+
+`action` dicocokkan berdasarkan **awalan**, bukan kecocokan penuh: `user.`
+menyaring seluruh tindakan atas pengguna tanpa perlu menyebutnya satu per satu.
+
+```json
+{
+  "id": "1284",
+  "action": "user.deleted",
+  "targetType": "User",
+  "targetId": "uuid",
+  "actor": { "id": "uuid", "fullName": "Nama Master", "email": "master@…" },
+  "beforeData": { "status": "ACTIVE" },
+  "afterData": { "status": "SUSPENDED" },
+  "requestId": "uuid",
+  "ipAddress": "203.0.113.9",
+  "userAgent": "Mozilla/5.0 …",
+  "createdAt": "2026-07-31T14:22:00Z"
+}
+```
+
+`id` adalah string karena kuncinya `BIGSERIAL`.
+
+`actor` bernilai `null` bila akun pelakunya sudah dihapus. Relasinya memakai
+`ON DELETE SET NULL`, jadi menghapus akun tidak menghapus jejak apa yang pernah
+dilakukannya.
+
+`/actions` mengembalikan daftar yang dihitung dari data, bukan daftar tetap
+yang ditulis tangan — daftar tangan akan basi begitu ada tindakan baru yang
+dicatat.

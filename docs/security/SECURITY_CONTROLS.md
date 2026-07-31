@@ -25,6 +25,9 @@
 - Scoped query untuk list.
 - Bulk operation memvalidasi seluruh target.
 - Sensitive action membutuhkan recent authentication.
+- Audit log hanya dapat dibaca pemegang `audit.read`; isinya memuat cuplikan
+  data sebelum/sesudah dan alamat IP, sehingga bukan konsumsi umum.
+- Audit log tidak memiliki endpoint ubah maupun hapus.
 - Permission tidak pernah berasal dari client payload.
 - Master role tidak otomatis berarti seluruh permission apabila permission model dikembangkan lebih granular.
 
