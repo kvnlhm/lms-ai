@@ -67,8 +67,8 @@ export function NotificationInbox() {
   const unread = items.filter((item) => item.readAt === null).length;
 
   return (
-    <section className="stack">
-      <div className="rowBetween">
+    <section className="stack notificationWorkspace">
+      <div className="notificationToolbar">
         <nav className="tabRow" aria-label="Saringan notifikasi">
           <button
             type="button"
@@ -113,9 +113,17 @@ export function NotificationInbox() {
       ) : null}
 
       {!loading && items.length > 0 ? (
-        <ul className="stack">
+        <ul className="stack notificationList">
           {items.map((item) => (
-            <li key={item.id} className={item.readAt === null ? 'card cardAccent' : 'card'}>
+            <li
+              key={item.id}
+              className={
+                item.readAt === null
+                  ? 'card cardAccent notificationCard notificationUnread'
+                  : 'card notificationCard'
+              }
+            >
+              <span className="notificationDot" aria-hidden="true" />
               <div className="rowBetween">
                 <div>
                   <strong>{item.title}</strong>

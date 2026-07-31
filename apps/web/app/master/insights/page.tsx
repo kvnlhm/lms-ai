@@ -26,6 +26,16 @@ function Metric({ label, value, hint }: { label: string; value: string; hint?: s
   );
 }
 
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+}
+
 export default async function InsightsPage({
   searchParams,
 }: {
@@ -135,20 +145,36 @@ export default async function InsightsPage({
         </section>
 
         {forum.topContributors.length > 0 ? (
-          <section>
-            <h2 className="sectionTitle">Paling aktif berdiskusi</h2>
-            <ol className="stack">
+          <section className="insightSection">
+            <div className="insightSectionHead">
+              <div>
+                <span className="eyebrow">Kontributor forum</span>
+                <h2 className="sectionTitle">Paling aktif berdiskusi</h2>
+              </div>
+              <small>Diurutkan berdasarkan aktivitas dalam {days} hari terakhir</small>
+            </div>
+            <ol className="insightRanking">
               {forum.topContributors.map((contributor, index) => (
-                <li key={contributor.userId} className="card">
-                  <div className="rowBetween">
+                <li key={contributor.userId} className="card insightRankCard">
+                  <span className="insightRankNumber" aria-label={`Peringkat ${index + 1}`}>
+                    {index + 1}
+                  </span>
+                  <span className="insightRankAvatar" aria-hidden="true">
+                    {initials(contributor.fullName)}
+                  </span>
+                  <div className="insightRankIdentity">
+                    <strong>{contributor.fullName}</strong>
+                    <small>Aktif berkontribusi di forum akademi</small>
+                  </div>
+                  <div className="insightRankStats">
                     <span>
-                      <strong>
-                        {index + 1}. {contributor.fullName}
-                      </strong>
+                      <strong>{contributor.topics}</strong>
+                      <small>Topik</small>
                     </span>
-                    <small className="muted">
-                      {contributor.topics} topik · {contributor.replies} balasan
-                    </small>
+                    <span>
+                      <strong>{contributor.replies}</strong>
+                      <small>Balasan</small>
+                    </span>
                   </div>
                 </li>
               ))}

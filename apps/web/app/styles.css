@@ -833,6 +833,27 @@ table.data tbody tr:hover { background: var(--raised); }
 .masterContent .btnGhost { background: var(--surface); color: var(--text); }
 .masterContent .pill { border-radius: 9px; padding: 7px 14px; background: transparent; }
 .masterContent .pillAccent { background: var(--raised); border-color: var(--line); color: var(--text); }
+.masterWorkspace { gap: 24px; }
+.masterFormPanel { padding: 28px; gap: 0; }
+.masterPanelHead {
+  margin: -2px 0 24px; padding-bottom: 20px; border-bottom: 1px solid var(--line-soft);
+}
+.masterPanelHead .sectionTitle { margin: 6px 0 7px; }
+.masterPanelHead p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.masterFormPanel .field > span { font-size: 13px; font-weight: 600; color: var(--text-2); }
+.masterFormPanel .field input,
+.masterFormPanel .field select,
+.masterFormPanel .field textarea { width: 100%; }
+.masterFormPanel > .btnBlock { margin-top: 2px; min-height: 42px; }
+.masterListHead {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+  margin-top: 10px;
+}
+.masterListHead .sectionTitle { margin: 6px 0 0; }
+.masterRecordList { gap: 10px; }
+.masterRecordCard { padding: 20px; gap: 12px !important; }
+.masterRecordCard > p { margin: 2px 0; color: var(--text-2); line-height: 1.6; }
+.masterRecordCard .inlineActions { padding-top: 10px; border-top: 1px solid var(--line-soft); }
 .metricGrid {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px; margin: 28px 0;
@@ -841,6 +862,60 @@ table.data tbody tr:hover { background: var(--raised); }
 .metricCard > span { color: var(--text-2); font-size: 13px; }
 .metricCard > strong { font-size: 30px; line-height: 1.1; letter-spacing: -.04em; }
 .metricCard > small { color: var(--muted); font-size: 12px; }
+.insightSection { margin-top: 34px; }
+.insightSectionHead {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 20px;
+  margin-bottom: 14px;
+}
+.insightSectionHead .sectionTitle { margin: 6px 0 0; }
+.insightSectionHead > small { color: var(--muted); font-size: 12px; }
+.insightRanking { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.insightRankCard {
+  display: grid; grid-template-columns: 34px 42px minmax(0, 1fr) auto;
+  align-items: center; gap: 14px; padding: 15px 18px;
+}
+.insightRankNumber {
+  width: 30px; height: 30px; display: grid; place-items: center;
+  border-radius: 9px; background: var(--raised); color: var(--text-2);
+  font-size: 13px; font-weight: 700;
+}
+.insightRankAvatar {
+  width: 42px; height: 42px; display: grid; place-items: center;
+  border-radius: 50%; background: var(--accent-soft); color: var(--accent-text);
+  font-size: 12px; font-weight: 700;
+}
+.insightRankIdentity { display: grid; gap: 3px; }
+.insightRankIdentity > strong { font-size: 14px; }
+.insightRankIdentity > small { color: var(--muted); font-size: 12px; }
+.insightRankStats { display: flex; align-items: center; gap: 8px; }
+.insightRankStats > span {
+  min-width: 82px; display: grid; gap: 2px; padding: 8px 12px;
+  border-radius: 10px; background: var(--raised); text-align: center;
+}
+.insightRankStats strong { font-size: 15px; }
+.insightRankStats small {
+  color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+}
+.notificationWorkspace { gap: 12px; }
+.notificationToolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--surface);
+}
+.notificationList { gap: 10px; }
+.notificationCard {
+  position: relative; grid-template-columns: 1fr; gap: 12px !important;
+  padding: 20px 22px 20px 28px;
+}
+.notificationCard > p { margin: 0; color: var(--text-2); line-height: 1.6; }
+.notificationDot {
+  position: absolute; left: 12px; top: 24px; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--line);
+}
+.notificationUnread .notificationDot {
+  background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.notificationCard .inlineActions { padding-top: 4px; }
 .masterGrid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(260px, .7fr); gap: 18px; }
 .dashboardPanel { padding: 22px; }
 .dashboardPanel .panelHead { align-items: center; }
@@ -1389,4 +1464,18 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .forumTopicLink strong { white-space: normal; }
   .forumTopicCard .inlineActions { width: 100%; padding-left: 55px; }
   .forumTopicStats { padding-left: 55px; }
+}
+
+@media (max-width: 680px) {
+  .masterFormPanel { padding: 20px; }
+  .masterListHead,
+  .insightSectionHead,
+  .notificationToolbar { align-items: flex-start; flex-direction: column; }
+  .insightRankCard {
+    grid-template-columns: 30px 38px minmax(0, 1fr);
+    padding: 14px; gap: 10px;
+  }
+  .insightRankAvatar { width: 38px; height: 38px; }
+  .insightRankStats { grid-column: 2 / -1; width: 100%; }
+  .insightRankStats > span { flex: 1; }
 }

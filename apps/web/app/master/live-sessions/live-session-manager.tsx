@@ -124,7 +124,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
   }
 
   return (
-    <section className="stack">
+    <section className="stack masterWorkspace">
       {error ? (
         <div className="notice noticeError" role="alert">
           <p>{error}</p>
@@ -143,8 +143,14 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
         </div>
       ) : null}
 
-      <form className="card stack" onSubmit={create}>
-        <h2 className="sectionTitle">Jadwalkan sesi baru</h2>
+      <form className="card stack masterFormPanel" onSubmit={create}>
+        <div className="masterPanelHead">
+          <div>
+            <span className="eyebrow">Buat jadwal</span>
+            <h2 className="sectionTitle">Jadwalkan sesi baru</h2>
+            <p>Pilih kursus, tentukan waktu, lalu masukkan tautan ruang pertemuan.</p>
+          </div>
+        </div>
         <label className="field">
           <span>Kursus</span>
           <select
@@ -164,6 +170,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
           <span>Judul sesi</span>
           <input
             value={title}
+            placeholder="Contoh: Bedah strategi konten bersama mentor"
             onChange={(event) => setTitle(event.currentTarget.value)}
             minLength={3}
             maxLength={200}
@@ -175,6 +182,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
           <span>Keterangan (opsional)</span>
           <textarea
             value={description}
+            placeholder="Berikan gambaran singkat tentang sesi ini."
             onChange={(event) => setDescription(event.currentTarget.value)}
             rows={2}
             maxLength={1000}
@@ -226,17 +234,23 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
         </button>
       </form>
 
-      <h2 className="sectionTitle">Jadwal tersimpan</h2>
+      <div className="masterListHead">
+        <div>
+          <span className="eyebrow">Agenda kelas</span>
+          <h2 className="sectionTitle">Jadwal tersimpan</h2>
+        </div>
+        <span className="pill">{sessions.length} sesi</span>
+      </div>
       {loading ? <p className="stageNote">Memuat jadwal…</p> : null}
       {!loading && sessions.length === 0 ? (
         <p className="stageNote">Belum ada sesi terjadwal.</p>
       ) : null}
       {!loading && sessions.length > 0 ? (
-        <ul className="stack">
+        <ul className="stack masterRecordList">
           {sessions.map((session) => {
             const cancelled = session.cancelledAt !== null;
             return (
-              <li key={session.id} className="card">
+              <li key={session.id} className="card masterRecordCard">
                 <div className="rowBetween">
                   <div>
                     <strong>{session.title}</strong>

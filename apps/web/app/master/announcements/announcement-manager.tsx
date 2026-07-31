@@ -121,7 +121,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
   }
 
   return (
-    <section className="stack">
+    <section className="stack masterWorkspace">
       {error ? (
         <div className="notice noticeError" role="alert">
           <p>{error}</p>
@@ -140,12 +140,19 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
         </div>
       ) : null}
 
-      <form className="card stack" onSubmit={submit}>
-        <h2 className="sectionTitle">Tulis pengumuman</h2>
+      <form className="card stack masterFormPanel" onSubmit={submit}>
+        <div className="masterPanelHead">
+          <div>
+            <span className="eyebrow">Pesan baru</span>
+            <h2 className="sectionTitle">Tulis pengumuman</h2>
+            <p>Sampaikan informasi penting kepada seluruh pengguna atau peserta kursus tertentu.</p>
+          </div>
+        </div>
         <label className="field">
           <span>Judul</span>
           <input
             value={title}
+            placeholder="Judul pengumuman"
             onChange={(event) => setTitle(event.currentTarget.value)}
             minLength={3}
             maxLength={200}
@@ -157,6 +164,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
           <span>Isi</span>
           <textarea
             value={body}
+            placeholder="Tulis isi pengumuman dengan jelas dan ringkas."
             onChange={(event) => setBody(event.currentTarget.value)}
             rows={4}
             maxLength={5000}
@@ -233,17 +241,23 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
         </button>
       </form>
 
-      <h2 className="sectionTitle">Daftar pengumuman</h2>
+      <div className="masterListHead">
+        <div>
+          <span className="eyebrow">Riwayat konten</span>
+          <h2 className="sectionTitle">Daftar pengumuman</h2>
+        </div>
+        <span className="pill">{items.length} pengumuman</span>
+      </div>
       {loading ? <p className="stageNote">Memuat…</p> : null}
       {!loading && items.length === 0 ? (
         <p className="stageNote">Belum ada pengumuman.</p>
       ) : null}
       {!loading && items.length > 0 ? (
-        <ul className="stack">
+        <ul className="stack masterRecordList">
           {items.map((item) => {
             const pill = STATUS_PILL[item.status];
             return (
-              <li key={item.id} className="card">
+              <li key={item.id} className="card masterRecordCard">
                 <div className="rowBetween">
                   <div>
                     <strong>{item.title}</strong>
