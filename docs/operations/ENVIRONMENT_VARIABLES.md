@@ -140,6 +140,25 @@ AI_MAX_COST_PER_JOB
 AI_REQUEST_TIMEOUT_MS
 ```
 
+## Rate Limiting
+
+Pembatas laju yang berlaku untuk seluruh API (SECURITY_CONTROLS §5a).
+
+```text
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_MAX=240
+RATE_LIMIT_WINDOW_SECONDS=60
+MAX_REQUEST_BODY_BYTES=262144
+```
+
+Dihitung per alamat, bukan per pengguna: guard-nya berjalan sebelum sesi
+diperiksa, supaya jalur login ikut terlindungi. Endpoint mahal punya anggaran
+sendiri lewat dekorator `@RateLimit`, jadi pencarian tidak menghabiskan jatah
+menjelajah biasa.
+
+`RATE_LIMIT_ENABLED=false` hanya untuk test; 235 permintaan dari satu alamat
+akan menabrak batasnya.
+
 ## Announcement
 
 Penjadwal yang memberitahukan pengumuman terjadwal saat waktunya tiba (PRD

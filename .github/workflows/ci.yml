@@ -55,6 +55,27 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @lms/api exec prisma migrate deploy
+
+      # Migrasi dan schema.prisma harus sepakat. Drift di sini tidak membuat
+      # satu test pun merah — ia muncul belakangan sebagai perubahan siluman
+      # yang menumpang pada migrasi fitur berikutnya, atau sebagai indeks yang
+      # ada di schema tapi tidak pernah dibuat di database produksi.
+      - name: Ensure migrations match the schema
+        env:
+          PGPASSWORD: lms_ci_password
+        run: |
+          createdb -h localhost -U lms lms_shadow
+          diff=$(pnpm --filter @lms/api exec prisma migrate diff \
+            --from-migrations apps/api/prisma/migrations \
+            --to-schema-datamodel apps/api/prisma/schema.prisma \
+            --shadow-database-url "postgresql://lms:lms_ci_password@localhost:5432/lms_shadow?schema=public" \
+            --script)
+          echo "$diff"
+          if ! echo "$diff" | grep -q "This is an empty migration"; then
+            echo "::error::schema.prisma dan migrasi tidak sepakat. Jalankan prisma migrate diff dan tambahkan migrasinya."
+            exit 1
+          fi
+
       - run: pnpm openapi:generate
       - name: Ensure generated contract is current
         run: git diff --exit-code -- apps/api/openapi.json packages/api-client/src/generated
@@ -67,6 +88,48 @@ jobs:
       - run: pnpm --filter @lms/api run test:e2e
       - run: pnpm --filter @lms/worker run test:e2e
       - run: pnpm build
+
+  # SECURITY_CONTROLS.md §11 mewajibkan dependency scan dan secret scan pada
+  # setiap PR kritis. Keduanya belum pernah benar-benar berjalan.
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Pemindai rahasia perlu riwayat untuk membandingkan antar-commit;
+          # tanpa ini ia hanya melihat satu snapshot dan melewatkan rahasia
+          # yang ditambahkan lalu dihapus pada commit berikutnya.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Hanya dependency yang benar-benar sampai ke produksi yang memblokir.
+      #
+      # Saat gerbang ini dipasang, ada 15 advisory high di seluruh pohon
+      # dependensi — 9 di antaranya menyentuh produksi. Sembilan itu diperbaiki
+      # lewat `pnpm.overrides` di package.json root. Sisanya ada di rantai
+      # perkakas build (eslint, jest); DoS pada linter tidak mengancam akademi
+      # yang sedang berjalan, dan menggagalkan rilis karenanya hanya akan
+      # membuat gerbang ini dimatikan dalam sebulan.
+      - name: Dependency scan (produksi — memblokir)
+        run: pnpm audit --prod --audit-level high
+
+      # Tetap dilaporkan supaya tidak menghilang dari pandangan.
+      - name: Dependency scan (termasuk perkakas — hanya laporan)
+        continue-on-error: true
+        run: pnpm audit --audit-level high
+
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   ai:
     runs-on: ubuntu-latest

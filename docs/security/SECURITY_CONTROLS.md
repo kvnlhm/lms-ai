@@ -99,6 +99,42 @@
 - OpenAPI contract test.
 - No secret in response.
 
+## 5a. Rate Limiting dan Batas Permintaan
+
+| Control | Requirement | Verification |
+|---|---|---|
+| Pembatas laju global | Berlaku untuk seluruh endpoint, per alamat, default 240/menit | `rate-limit.e2e-spec.ts` |
+| Urutan guard | Pembatas berjalan **sebelum** pemeriksaan sesi | `rate-limit.e2e-spec.ts` |
+| Anggaran endpoint mahal | Pencarian 60/menit, unduhan laporan 20/menit, terpisah dari anggaran umum | `rate-limit.e2e-spec.ts` |
+| Pembebasan | Hanya health check, yang dipolling mesin | `rate-limit.e2e-spec.ts` |
+| Alamat pada Redis | Di-hash sebelum menjadi key | Review kode |
+| Batas ukuran body | `MAX_REQUEST_BODY_BYTES`, default 256 KiB | Review kode |
+
+Pembatas per-alur yang sudah ada — login, pemulihan password, checkout, laporan
+galat browser — tetap dipertahankan. Yang global adalah pagar kasar terhadap
+banjir; yang per-alur jauh lebih ketat dan punya makna sendiri.
+
+**Perilaku saat Redis mati:** pembatas dilewati, permintaan tetap dilayani, dan
+kegagalannya dicatat. Ini pilihan sadar — kehilangan pembatas laju sesaat lebih
+ringan daripada seluruh akademi berhenti melayani karena satu dependensi.
+
+## 5b. Gerbang CI
+
+`SECURITY_CONTROLS.md` §11 sudah lama mewajibkan dependency scan dan secret
+scan; keduanya baru benar-benar berjalan sejak 31 Juli 2026.
+
+| Gerbang | Perilaku |
+|---|---|
+| Dependency scan produksi | **Memblokir** pada high/critical |
+| Dependency scan penuh | Hanya laporan; temuan pada perkakas build tidak menghentikan rilis |
+| Secret scan | Memblokir; memakai riwayat penuh agar rahasia yang sempat ditambahkan lalu dihapus tetap terlihat |
+| Drift migrasi | Memblokir bila `schema.prisma` dan migrasi tidak sepakat |
+
+Saat gerbang ini dipasang ada 15 advisory high, 9 di antaranya menyentuh
+produksi (`js-yaml`, `lodash`, `multer` ×4, `postcss` ×2, `sharp`). Seluruhnya
+transitif dan diperbaiki lewat `pnpm.overrides`. Sisanya ada pada rantai
+perkakas build.
+
 ## 6. Database Security
 
 - PostgreSQL private network.

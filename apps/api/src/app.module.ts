@@ -28,6 +28,7 @@ import { AuditModule } from './shared/audit/audit.module';
 import { EmailModule } from './shared/email/email.module';
 import { ObservabilityModule } from './shared/observability/observability.module';
 import { AllExceptionsFilter } from './shared/http/all-exceptions.filter';
+import { RateLimitGuard } from './shared/http/rate-limit.guard';
 import { RequestContextMiddleware } from './shared/http/request-context.middleware';
 import { ResponseInterceptor } from './shared/http/response.interceptor';
 import { IdempotencyModule } from './shared/idempotency/idempotency.module';
@@ -67,6 +68,9 @@ import { CommerceModule } from './modules/commerce/commerce.module';
     HealthModule,
   ],
   providers: [
+    // Paling depan supaya banjir permintaan ditolak sebelum menyentuh
+    // pemeriksaan sesi — termasuk ketika yang dibanjiri adalah halaman login.
+    { provide: APP_GUARD, useClass: RateLimitGuard },
     // Autentikasi berlaku secara default; endpoint publik harus memakai @Public().
     { provide: APP_GUARD, useClass: SessionGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },

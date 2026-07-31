@@ -79,6 +79,15 @@ export interface AppConfig {
     fromName: string;
     fromAddress?: string;
   };
+  /** Pembatas laju yang berlaku untuk seluruh API (SECURITY_CONTROLS §5). */
+  rateLimit: {
+    /** Dimatikan pada test; 230 e2e dari satu alamat akan menabrak batasnya. */
+    enabled: boolean;
+    max: number;
+    windowSeconds: number;
+  };
+  /** Batas ukuran body JSON (SECURITY_CONTROLS §3). */
+  maxRequestBodyBytes: number;
   announcement: {
     /**
      * Pekerjaan latar yang memberitahukan pengumuman terjadwal.
@@ -187,6 +196,12 @@ export function loadConfig(): AppConfig {
       fromName: process.env.EMAIL_FROM_NAME ?? 'AIPreneur Academy',
       fromAddress: process.env.EMAIL_FROM_ADDRESS || undefined,
     },
+    rateLimit: {
+      enabled: bool('RATE_LIMIT_ENABLED', true),
+      max: int('RATE_LIMIT_MAX', 240),
+      windowSeconds: int('RATE_LIMIT_WINDOW_SECONDS', 60),
+    },
+    maxRequestBodyBytes: int('MAX_REQUEST_BODY_BYTES', 262_144),
     announcement: {
       schedulerEnabled: bool('ANNOUNCEMENT_SCHEDULER_ENABLED', true),
       schedulerIntervalSeconds: int('ANNOUNCEMENT_SCHEDULER_INTERVAL_SECONDS', 60),

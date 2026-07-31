@@ -4,6 +4,7 @@ import { PERMISSIONS } from '@lms/contracts';
 import type { Request, Response } from 'express';
 import { AuditService } from '../../../shared/audit/audit.service';
 import { ApiEnvelope, ApiErrors } from '../../../shared/http/api-envelope';
+import { RateLimit } from '../../../shared/http/rate-limit.decorator';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { csvFilename, toCsv } from '../application/csv';
@@ -35,6 +36,8 @@ export class ReportsController {
   }
 
   @Get('admin/reports/:reportKey.csv')
+  // Satu unduhan dapat memindai puluhan ribu baris.
+  @RateLimit(20, 60)
   @RequirePermissions(PERMISSIONS.REPORTS_EXPORT)
   @ApiProduces('text/csv')
   @ApiOperation({ summary: 'Mengunduh satu laporan sebagai CSV' })

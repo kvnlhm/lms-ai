@@ -26,6 +26,9 @@ export async function startHarness(): Promise<Harness> {
   // Poller latar akan berlomba dengan test dan membuat hasilnya tidak pasti.
   // Test yang memang menguji penjadwal memanggil satu siklusnya secara manual.
   process.env.ANNOUNCEMENT_SCHEDULER_ENABLED ??= 'false';
+  // 230 test dari satu alamat akan menabrak pembatas laju global. Spec yang
+  // memang menguji pembatasnya menyalakannya sendiri.
+  process.env.RATE_LIMIT_ENABLED ??= 'false';
 
   const app = await createApp();
   await app.init();

@@ -3,9 +3,11 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { RedisService } from '../../infrastructure/redis/redis.service';
 import { Public } from '../identity/presentation/decorators';
+import { SkipRateLimit } from '../../shared/http/rate-limit.decorator';
 
 @ApiTags('health')
 @Controller('health')
+@SkipRateLimit()
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,

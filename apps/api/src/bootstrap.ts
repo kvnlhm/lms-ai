@@ -2,6 +2,7 @@ import { type INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { loadConfig } from './config/configuration';
@@ -19,6 +20,16 @@ export async function createApp(): Promise<INestApplication> {
   app.setGlobalPrefix(API_PREFIX);
   app.use(helmet());
   app.use(cookieParser());
+
+  // Batas ukuran body, diwajibkan SECURITY_CONTROLS §3. Sebelumnya hanya
+  // mengandalkan bawaan Express yang tidak pernah dinyatakan di mana pun,
+  // sehingga tidak ada yang tahu berapa nilainya tanpa membaca dependensi.
+  //
+  // Unggahan video dan foto profil tidak terpengaruh: keduanya membaca body
+  // sebagai stream dengan content-type non-JSON, jadi parser ini melewatinya
+  // dan batas ukurannya diurus masing-masing modul.
+  app.use(json({ limit: config.maxRequestBodyBytes }));
+  app.use(urlencoded({ extended: false, limit: config.maxRequestBodyBytes }));
 
   // Cookie session hanya berguna bila browser mengirimnya; origin web
   // ditetapkan eksplisit karena credentials tidak boleh dipakai dengan '*'.
