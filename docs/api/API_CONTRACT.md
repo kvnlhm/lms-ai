@@ -1803,3 +1803,67 @@ diperbarui, ditambahkan ke kursus, kursus selesai, pelajar masuk kategori
 high risk, kursus dengan drop-off tinggi, dan pertanyaan belum dijawab.
 Nilai enum `ENROLLED_IN_COURSE` dan `COURSE_COMPLETED` sudah disediakan agar
 pemasangannya nanti tidak memerlukan migrasi.
+
+---
+
+## 36. Announcement API
+
+Mengikuti PRD 7.13.
+
+### Endpoint Pelajar
+
+| Metode | Path | Keterangan |
+| --- | --- | --- |
+| GET | `/me/announcements` | Pengumuman aktif yang relevan untukku |
+| GET | `/me/announcements/unread-count` | Jumlah yang belum dibaca |
+| POST | `/me/announcements/{announcementId}/read` | Menandai sudah dibaca |
+
+Sebuah pengumuman baru terlihat pelajar bila **seluruh** syarat terpenuhi:
+
+- `status` bernilai `PUBLISHED` — draft tidak pernah terlihat.
+- `publishedAt` sudah lewat — penjadwalan dihormati, bukan sekadar disimpan.
+- `endsAt` kosong atau belum lewat — yang berakhir berhenti tampil.
+- Audiensnya cocok: `ALL_USERS`, atau `COURSE_LEARNERS` dengan enrollment aktif
+  pada kursus itu, atau `SPECIFIC_USERS` yang menyertakan dirinya.
+
+Menandai baca memeriksa ulang kelayakan yang sama, sehingga pengumuman yang
+bukan untuknya dijawab `404` dan keberadaannya tidak dapat disimpulkan.
+
+### Endpoint Master
+
+Seluruhnya memerlukan permission `announcements.manage`.
+
+| Metode | Path | Keterangan |
+| --- | --- | --- |
+| GET | `/admin/announcements` | Semua, termasuk draft dan arsip; filter `status` |
+| POST | `/admin/announcements` | Membuat sebagai `DRAFT` |
+| PATCH | `/admin/announcements/{id}` | Mengubah isi, audiens, atau jadwal |
+| POST | `/admin/announcements/{id}/publish` | Menerbitkan dan memberi tahu penerima |
+| POST | `/admin/announcements/{id}/archive` | Menghentikan tampil tanpa menghapus |
+| DELETE | `/admin/announcements/{id}` | Menghapus permanen |
+
+```json
+{
+  "title": "Libur akhir pekan",
+  "body": "Kelas langsung ditiadakan Sabtu ini.",
+  "audience": "COURSE_LEARNERS",
+  "courseId": "uuid",
+  "publishedAt": "2026-08-01T00:00:00Z",
+  "endsAt": "2026-08-08T00:00:00Z"
+}
+```
+
+`courseId` wajib untuk `COURSE_LEARNERS`; `userIds` wajib untuk
+`SPECIFIC_USERS`. Selain itu dijawab `422`. Membuat selalu menghasilkan
+`DRAFT`; penerbitan adalah langkah terpisah agar tulisan setengah jadi tidak
+pernah sampai ke pelajar.
+
+### Notifikasi
+
+Menerbitkan mengirim notifikasi `ANNOUNCEMENT_PUBLISHED` kepada penerimanya,
+melengkapi trigger "Pengumuman baru" pada PRD 7.14.
+
+**Keterbatasan yang disengaja:** notifikasi hanya dikirim bila pengumumannya
+langsung tampil saat diterbitkan. Untuk yang dijadwalkan ke masa depan,
+pemberitahuannya menunggu pekerjaan terjadwal yang belum ada — lebih baik
+tidak mengirim daripada memberi tahu tentang sesuatu yang belum dapat dibuka.

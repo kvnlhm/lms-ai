@@ -1331,6 +1331,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pengumuman yang relevan dan sedang aktif untukku */
+        get: operations["AnnouncementController_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/announcements/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Jumlah pengumuman aktif yang belum dibaca */
+        get: operations["AnnouncementController_unreadCount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/announcements/{announcementId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Menandai pengumuman sudah dibaca */
+        post: operations["AnnouncementController_markRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Seluruh pengumuman termasuk draft dan yang diarsipkan */
+        get: operations["AnnouncementController_list"];
+        put?: never;
+        /** Membuat pengumuman sebagai draft */
+        post: operations["AnnouncementController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{announcementId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Menghapus pengumuman */
+        delete: operations["AnnouncementController_remove"];
+        options?: never;
+        head?: never;
+        /** Mengubah isi, audiens, atau jadwal pengumuman */
+        patch: operations["AnnouncementController_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{announcementId}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Menerbitkan pengumuman dan memberi tahu penerimanya */
+        post: operations["AnnouncementController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{announcementId}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mengarsipkan pengumuman agar berhenti tampil */
+        post: operations["AnnouncementController_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/learn/courses/{courseId}/live-sessions": {
         parameters: {
             query?: never;
@@ -2450,7 +2571,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "ENROLLED_IN_COURSE" | "FORUM_REPLY" | "FORUM_BEST_ANSWER" | "FORUM_PARTICIPATION_REVOKED" | "FORUM_PARTICIPATION_RESTORED" | "COURSE_COMPLETED" | "LIVE_SESSION_SCHEDULED" | "FORUM_NEW_TOPIC" | "FORUM_CONTENT_REPORTED";
+            type: "ENROLLED_IN_COURSE" | "FORUM_REPLY" | "FORUM_BEST_ANSWER" | "FORUM_PARTICIPATION_REVOKED" | "FORUM_PARTICIPATION_RESTORED" | "COURSE_COMPLETED" | "LIVE_SESSION_SCHEDULED" | "FORUM_NEW_TOPIC" | "FORUM_CONTENT_REPORTED" | "ANNOUNCEMENT_PUBLISHED";
             title: string;
             body: string;
             linkUrl?: string | null;
@@ -2464,6 +2585,48 @@ export interface components {
         };
         MarkAllReadDto: {
             updated: number;
+        };
+        LearnerAnnouncementDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            body: string;
+            /** Format: date-time */
+            publishedAt?: string | null;
+            /** Format: date-time */
+            endsAt?: string | null;
+            /** Format: date-time */
+            readAt?: string | null;
+        };
+        AnnouncementUnreadCountDto: {
+            unread: number;
+        };
+        CreateAnnouncementDto: {
+            title: string;
+            body: string;
+            /** @enum {string} */
+            audience: "ALL_USERS" | "COURSE_LEARNERS" | "SPECIFIC_USERS";
+            /**
+             * Format: uuid
+             * @description Wajib untuk COURSE_LEARNERS
+             */
+            courseId?: string;
+            /** @description Wajib untuk SPECIFIC_USERS */
+            userIds?: string[];
+            /** @description Kosongkan untuk tampil segera saat diterbitkan */
+            publishedAt?: string;
+            endsAt?: string;
+        };
+        UpdateAnnouncementDto: {
+            title?: string;
+            body?: string;
+            /** @enum {string} */
+            audience?: "ALL_USERS" | "COURSE_LEARNERS" | "SPECIFIC_USERS";
+            /** Format: uuid */
+            courseId?: string;
+            userIds?: string[];
+            publishedAt?: string;
+            endsAt?: string;
         };
         LearnerLiveSessionDto: {
             /** Format: uuid */
@@ -6751,6 +6914,336 @@ export interface operations {
                 };
             };
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AnnouncementController_mine: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LearnerAnnouncementDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AnnouncementController_unreadCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnnouncementUnreadCountDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AnnouncementController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AnnouncementController_list: {
+        parameters: {
+            query?: {
+                status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AnnouncementController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAnnouncementDto"];
+            };
+        };
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AnnouncementController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AnnouncementController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAnnouncementDto"];
+            };
+        };
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AnnouncementController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AnnouncementController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcementId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

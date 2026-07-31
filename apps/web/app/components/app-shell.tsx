@@ -11,6 +11,7 @@ const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
   { href: '/courses', label: 'Kursus' },
   { href: '/history', label: 'Histori' },
+  { href: '/announcements', label: 'Pengumuman' },
   { href: '/notifications', label: 'Notifikasi' },
 ];
 
@@ -26,6 +27,12 @@ const MASTER_NAV = [
     label: 'Sesi langsung',
     icon: Courses,
     permission: 'courses.manage',
+  },
+  {
+    href: '/master/announcements',
+    label: 'Pengumuman',
+    icon: Dashboard,
+    permission: 'announcements.manage',
   },
 ] as const;
 

@@ -29,6 +29,7 @@ const PREFERENCE_OF: Record<
   FORUM_BEST_ANSWER: 'announcementsEnabled',
   FORUM_NEW_TOPIC: 'announcementsEnabled',
   FORUM_CONTENT_REPORTED: 'announcementsEnabled',
+  ANNOUNCEMENT_PUBLISHED: 'announcementsEnabled',
   // Pencabutan hak selalu dikirim: pelajar harus tahu mengapa ia ditolak
   // saat menulis, dan mematikannya akan membuat sistem terasa rusak.
   FORUM_PARTICIPATION_REVOKED: 'announcementsEnabled',
