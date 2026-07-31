@@ -7,6 +7,7 @@ import { LogoutButton } from './logout-button';
 import { NavLink } from './nav-link';
 import { ThemeToggle } from './theme-toggle';
 import { ImpersonationBanner } from './impersonation-banner';
+import { GlobalSearch } from './global-search';
 
 const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
@@ -95,6 +96,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           <header className="masterTopbar">
             <span className="mobileBrand">AIPreneur Academy</span>
             <span className="masterTopTitle">Workspace Master</span>
+            <GlobalSearch />
           </header>
           {children}
         </div>
@@ -125,6 +127,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
         </nav>
 
         <div className="topbarRight">
+          <GlobalSearch />
           <ThemeToggle />
           <LogoutButton />
           <Link href="/profile" className="avatar" title={`Profil ${user.fullName}`}>

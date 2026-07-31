@@ -22,6 +22,7 @@ import { VideoModule } from './modules/video/video.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuditReadModule } from './modules/audit/audit-read.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { SearchModule } from './modules/search/search.module';
 import { ObservabilityApiModule } from './modules/observability/observability-api.module';
 import { AuditModule } from './shared/audit/audit.module';
 import { EmailModule } from './shared/email/email.module';
@@ -61,6 +62,7 @@ import { CommerceModule } from './modules/commerce/commerce.module';
     CommerceModule,
     AuditReadModule,
     ReportsModule,
+    SearchModule,
     ObservabilityApiModule,
     HealthModule,
   ],

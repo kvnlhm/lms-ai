@@ -6,6 +6,6 @@ import { AnnouncementController } from './presentation/announcement.controller';
 @Module({
   controllers: [AnnouncementController],
   providers: [AnnouncementService, AnnouncementScheduler],
-  exports: [AnnouncementScheduler],
+  exports: [AnnouncementScheduler, AnnouncementService],
 })
 export class AnnouncementModule {}

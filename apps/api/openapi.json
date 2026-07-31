@@ -8732,6 +8732,102 @@
         ]
       }
     },
+    "/api/v1/search": {
+      "get": {
+        "operationId": "SearchController_run",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Kata kunci; tidak case-sensitive",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "types",
+            "required": false,
+            "in": "query",
+            "description": "Batasi ke jenis tertentu; kosong berarti semua",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "users",
+                  "courses",
+                  "lessons",
+                  "forum",
+                  "announcements"
+                ]
+              }
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Hasil maksimum per jenis",
+            "schema": {
+              "default": 5,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SearchGroupDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mencari lintas pengguna, kursus, materi, forum, dan pengumuman",
+        "tags": [
+          "search"
+        ]
+      }
+    },
     "/api/v1/admin/errors": {
       "get": {
         "operationId": "ErrorLogController_list",
@@ -13766,6 +13862,71 @@
         },
         "required": [
           "reports"
+        ]
+      },
+      "SearchHitDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "users",
+              "courses",
+              "lessons",
+              "forum",
+              "announcements"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "description": "Tautan relatif ke objeknya"
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "title",
+          "url"
+        ]
+      },
+      "SearchGroupDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "users",
+              "courses",
+              "lessons",
+              "forum",
+              "announcements"
+            ]
+          },
+          "total": {
+            "type": "number",
+            "description": "Jumlah seluruh kecocokan, bukan hanya yang dikirim"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchHitDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "total",
+          "items"
         ]
       },
       "ErrorEventDto": {

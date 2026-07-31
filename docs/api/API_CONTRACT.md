@@ -2142,3 +2142,59 @@ hanya akan berujung 404.
 Bookmark bukan progres. Menandai maupun melepas tanda tidak mengubah apa pun
 tentang penyelesaian materi. `LearnLessonResponseDto` kini memuat `bookmarked`
 supaya tombolnya tidak sempat tampil dalam keadaan salah lalu berkedip.
+
+---
+
+## 42. Search API
+
+Memenuhi PRD 10. Satu endpoint untuk seluruh area pencarian.
+
+### GET `/search`
+
+Query: `q` (2–100 karakter), `types` (dipisah koma), `limit` (1–25, default 5).
+
+Jenis yang dikenal: `users`, `courses`, `lessons`, `forum`, `announcements`.
+Nilai di luar daftar itu dijawab `422`.
+
+```json
+[
+  {
+    "type": "courses",
+    "total": 12,
+    "items": [
+      {
+        "type": "courses",
+        "id": "uuid",
+        "title": "Video Editing Mastery",
+        "subtitle": "Konten Kreatif",
+        "url": "/courses/uuid"
+      }
+    ]
+  }
+]
+```
+
+`total` adalah jumlah seluruh kecocokan, bukan hanya yang dikirim — antarmuka
+dapat menyebut "12 kecocokan" walau hanya lima yang ditampilkan.
+
+### Cakupan
+
+Ini bagian yang menentukan benar-tidaknya endpoint ini. Pencarian adalah jalan
+pintas ke data; kalau cakupannya lalai, ia menjadi jalan pintas melewati
+otorisasi. Cakupan ditentukan dari permission pada session, tidak pernah dari
+parameter.
+
+| Jenis | Master | Pelajar |
+|---|---|---|
+| `users` | Perlu `users.read` | **Kelompoknya tidak dikirim sama sekali** |
+| `courses` | Termasuk draft dan arsip | Hanya `PUBLISHED` |
+| `lessons` | Seluruh kursus | Hanya kursus dengan enrollment aktif |
+| `forum` | Termasuk yang disembunyikan | Bukan `HIDDEN`, dan hanya kursus yang diikuti |
+| `announcements` | Termasuk draft | Aturan kelayakan `AnnouncementService.visibleTo` |
+
+Untuk pelajar, kelompok `users` tidak dikirim — bukan dikirim kosong. Kelompok
+kosong akan tetap dapat dipakai memastikan apakah sebuah alamat terdaftar.
+
+Aturan kelayakan pengumuman datang dari `AnnouncementService`, bukan disalin ke
+modul pencarian: dua definisi "boleh dilihat" akan membuat yang satu tertinggal
+saat yang lain berubah.

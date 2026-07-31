@@ -1760,6 +1760,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mencari lintas pengguna, kursus, materi, forum, dan pengumuman */
+        get: operations["SearchController_run"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/errors": {
         parameters: {
             query?: never;
@@ -3278,6 +3295,22 @@ export interface components {
         };
         ReportCatalogDto: {
             reports: components["schemas"]["ReportCatalogItemDto"][];
+        };
+        SearchHitDto: {
+            /** @enum {string} */
+            type: "users" | "courses" | "lessons" | "forum" | "announcements";
+            id: string;
+            title: string;
+            subtitle?: string | null;
+            /** @description Tautan relatif ke objeknya */
+            url: string;
+        };
+        SearchGroupDto: {
+            /** @enum {string} */
+            type: "users" | "courses" | "lessons" | "forum" | "announcements";
+            /** @description Jumlah seluruh kecocokan, bukan hanya yang dikirim */
+            total: number;
+            items: components["schemas"]["SearchHitDto"][];
         };
         ErrorEventDto: {
             id: string;
@@ -8971,6 +9004,51 @@ export interface operations {
                 };
                 content: {
                     "text/csv": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    SearchController_run: {
+        parameters: {
+            query: {
+                /** @description Kata kunci; tidak case-sensitive */
+                q: string;
+                /** @description Batasi ke jenis tertentu; kosong berarti semua */
+                types?: ("users" | "courses" | "lessons" | "forum" | "announcements")[];
+                /** @description Hasil maksimum per jenis */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SearchGroupDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
         };

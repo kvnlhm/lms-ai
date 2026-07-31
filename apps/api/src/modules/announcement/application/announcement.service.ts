@@ -27,8 +27,12 @@ export class AnnouncementService {
    * Tiga acceptance criteria PRD 7.13 bertemu di sini: draft tidak terlihat,
    * yang berakhir tidak tampil aktif, dan penjadwalan dihormati karena
    * `publishedAt` boleh berada di masa depan.
+   *
+   * Publik agar pencarian global memakai aturan yang sama persis. Menyalinnya
+   * ke modul pencarian akan membuat dua definisi "boleh dilihat", dan yang satu
+   * pasti tertinggal saat yang lain berubah.
    */
-  private visibleTo(userId: string, now: Date): Prisma.AnnouncementWhereInput {
+  visibleTo(userId: string, now: Date): Prisma.AnnouncementWhereInput {
     return {
       status: AnnouncementStatus.PUBLISHED,
       publishedAt: { not: null, lte: now },

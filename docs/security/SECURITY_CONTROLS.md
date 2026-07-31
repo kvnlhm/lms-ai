@@ -25,6 +25,8 @@
 - Scoped query untuk list.
 - Bulk operation memvalidasi seluruh target.
 - Sensitive action membutuhkan recent authentication.
+- Pencarian global menyempitkan setiap kueri menurut permission pemanggil; lihat
+  `API_CONTRACT.md` §42.
 - Audit log hanya dapat dibaca pemegang `audit.read`; isinya memuat cuplikan
   data sebelum/sesudah dan alamat IP, sehingga bukan konsumsi umum.
 - Audit log tidak memiliki endpoint ubah maupun hapus.
