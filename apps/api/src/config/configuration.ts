@@ -49,6 +49,8 @@ export interface AppConfig {
     rateLimitWindowSeconds: number;
     rateLimitMax: number;
     passwordResetTtlMinutes: number;
+    /** Dapat dimatikan sebagai accepted deployment risk; default tetap aman. */
+    requireMasterMfa: boolean;
     mfaIssuer: string;
     /** Kunci AES-256 dalam base64 untuk rahasia TOTP. */
     mfaEncryptionKey: string;
@@ -138,6 +140,7 @@ export function loadConfig(): AppConfig {
       rateLimitWindowSeconds: int('AUTH_RATE_LIMIT_WINDOW_SECONDS', 300),
       rateLimitMax: int('AUTH_RATE_LIMIT_MAX', 10),
       passwordResetTtlMinutes: int('PASSWORD_RESET_TTL_MINUTES', 30),
+      requireMasterMfa: bool('REQUIRE_MASTER_MFA', true),
       mfaIssuer: process.env.MFA_ISSUER ?? 'LMS Akademi Online',
       mfaEncryptionKey: required('MFA_ENCRYPTION_KEY'),
     },

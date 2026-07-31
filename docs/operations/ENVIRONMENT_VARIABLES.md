@@ -48,10 +48,16 @@ SESSION_COOKIE_SECURE
 SESSION_COOKIE_SAME_SITE
 CSRF_COOKIE_NAME
 PASSWORD_RESET_TTL_MINUTES
+REQUIRE_MASTER_MFA
 MFA_ISSUER
 AUTH_RATE_LIMIT_WINDOW_SECONDS
 AUTH_RATE_LIMIT_MAX
 ```
+
+`REQUIRE_MASTER_MFA` default `true`. Nilai `false` melewati setup dan
+verifikasi TOTP untuk role Master. Gunakan hanya sebagai accepted deployment
+risk, batasi akses administratif, dan pertahankan rate limit serta kata sandi
+unik yang kuat.
 
 ## Object Storage
 

@@ -9,7 +9,7 @@
 | Session storage | Redis server-side | Integration test |
 | Session rotation | Login, MFA, privilege change | Security test |
 | CSRF | Wajib untuk mutation berbasis cookie | API test |
-| MFA | Wajib untuk Master | E2E test |
+| MFA | Wajib untuk Master secara default; pengecualian deployment harus dicatat melalui ADR-020 | E2E test dan configuration review |
 | Login rate limit | Per IP dan account key | Abuse test |
 | Password reset | Single-use, hashed, expiring | Integration test |
 | Enumeration protection | Forgot-password response seragam | Security test |

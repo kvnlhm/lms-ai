@@ -86,7 +86,8 @@ export class AuthService {
     const roleCode = assignment.role.code as RoleCode;
     const permissions = assignment.role.permissions.map((rp) => rp.permission.code as PermissionCode);
     const isMaster = roleCode === 'MASTER';
-    const mfaEnabled = isMaster ? await this.mfa.isEnabled(user.id) : false;
+    const requiresMasterMfa = isMaster && this.app.auth.requireMasterMfa;
+    const mfaEnabled = requiresMasterMfa ? await this.mfa.isEnabled(user.id) : false;
 
     const expiresAt = new Date(Date.now() + this.app.session.absoluteTtlSeconds * 1000);
     const deviceRecord = await this.prisma.authSession.create({
@@ -104,8 +105,8 @@ export class AuthService {
       roleCode,
       permissions,
       deviceRecordId: deviceRecord.id,
-      pendingMfa: isMaster && mfaEnabled,
-      mfaSetupRequired: isMaster && !mfaEnabled,
+      pendingMfa: requiresMasterMfa && mfaEnabled,
+      mfaSetupRequired: requiresMasterMfa && !mfaEnabled,
     });
 
     await this.prisma.user.update({
@@ -123,8 +124,8 @@ export class AuthService {
         email: user.email,
         role: roleCode,
         status: user.status,
-        requiresMfa: isMaster,
-        mfaSetupRequired: isMaster && !mfaEnabled,
+        requiresMfa: requiresMasterMfa,
+        mfaSetupRequired: requiresMasterMfa && !mfaEnabled,
       },
     };
   }
