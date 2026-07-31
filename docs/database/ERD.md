@@ -867,3 +867,32 @@ metode, rute berpola, status HTTP, request ID, user ID, nama antrean.
 
 `resolved_by` memakai `ON DELETE SET NULL`, bukan `CASCADE`: menghapus akun
 Master tidak boleh ikut menghapus riwayat galat yang kebetulan ditutup olehnya.
+
+---
+
+## 14. Menjaga Migrasi Bebas Drift
+
+Periksa dengan:
+
+```bash
+pnpm --filter @lms/api exec prisma migrate diff \
+  --from-migrations prisma/migrations \
+  --to-schema-datamodel prisma/schema.prisma \
+  --shadow-database-url "<url database bayangan>" --script
+```
+
+Hasil yang benar adalah `-- This is an empty migration.` Apa pun selain itu
+berarti database dan `schema.prisma` sudah berbeda.
+
+Dua jenis drift pernah ditemukan di sini, dan keduanya layak diwaspadai:
+
+- **Default yang ditulis tangan.** Tiga tabel commerce dan
+  `notification_preferences` dibuat dengan default tingkat database yang tidak
+  dinyatakan schema. Diselaraskan oleh migrasi `align_column_defaults`, mengikuti
+  arah schema karena schema adalah sumber kebenaran (AGENTS.md §3).
+- **Indeks yang dinyatakan di schema tetapi migrasinya terlewat.** Ini yang
+  paling berbahaya: seluruh test lulus, aplikasi berjalan, dan perbedaannya baru
+  terasa sebagai kueri lambat di produksi.
+
+Perubahan siluman ikut terbawa: `migrate diff` berikutnya akan menyisipkan
+pembetulan drift lama ke dalam migrasi fitur yang tidak ada hubungannya.
