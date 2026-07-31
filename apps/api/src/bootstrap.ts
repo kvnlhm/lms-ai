@@ -2,8 +2,8 @@ import { type INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import { json, urlencoded } from 'express';
 import helmet from 'helmet';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { loadConfig } from './config/configuration';
 
@@ -15,7 +15,7 @@ export const API_PREFIX = 'api/v1';
  */
 export async function createApp(): Promise<INestApplication> {
   const config = loadConfig();
-  const app = await NestFactory.create(AppModule, { bufferLogs: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: false });
 
   app.setGlobalPrefix(API_PREFIX);
   app.use(helmet());
@@ -25,11 +25,17 @@ export async function createApp(): Promise<INestApplication> {
   // mengandalkan bawaan Express yang tidak pernah dinyatakan di mana pun,
   // sehingga tidak ada yang tahu berapa nilainya tanpa membaca dependensi.
   //
+  // Lewat adapter Nest, bukan `import { json } from 'express'`: express hanya
+  // dependency transitif lewat @nestjs/platform-express, dan pada image
+  // produksi dengan layout pnpm ketat modulnya tidak terjangkau dari paket ini.
+  // Impor langsung lolos typecheck di mesin pengembangan — tempat node_modules
+  // ter-hoist — lalu gagal saat runtime di produksi.
+  //
   // Unggahan video dan foto profil tidak terpengaruh: keduanya membaca body
   // sebagai stream dengan content-type non-JSON, jadi parser ini melewatinya
   // dan batas ukurannya diurus masing-masing modul.
-  app.use(json({ limit: config.maxRequestBodyBytes }));
-  app.use(urlencoded({ extended: false, limit: config.maxRequestBodyBytes }));
+  app.useBodyParser('json', { limit: config.maxRequestBodyBytes });
+  app.useBodyParser('urlencoded', { extended: false, limit: config.maxRequestBodyBytes });
 
   // Cookie session hanya berguna bila browser mengirimnya; origin web
   // ditetapkan eksplisit karena credentials tidak boleh dipakai dengan '*'.
