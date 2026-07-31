@@ -78,7 +78,9 @@ describe('midtrans webhook payload validation', () => {
   });
 
   it('still rejects a payload missing a field the signature depends on', async () => {
-    const { signature_key: _omitted, ...withoutSignature } = providerNotification;
+    const withoutSignature = Object.fromEntries(
+      Object.entries(providerNotification).filter(([key]) => key !== 'signature_key'),
+    );
 
     await expect(runWebhookPipeline(withoutSignature)).rejects.toThrow(
       UnprocessableEntityException,

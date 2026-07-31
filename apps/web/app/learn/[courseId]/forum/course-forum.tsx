@@ -91,10 +91,10 @@ export function CourseForum({ courseId }: { courseId: string }) {
   }
 
   return (
-    <section className="stack">
-      <div className="rowBetween">
+    <section className="stack forumPanel">
+      <div className="forumToolbar">
         <form
-          className="inlineActions"
+          className="forumSearch"
           onSubmit={(event) => {
             event.preventDefault();
             void load(search.trim());
@@ -138,7 +138,7 @@ export function CourseForum({ courseId }: { courseId: string }) {
 
       {composing ? (
         <form
-          className="card stack"
+          className="card stack forumComposer"
           onSubmit={(event) => {
             event.preventDefault();
             void submit();
@@ -175,32 +175,58 @@ export function CourseForum({ courseId }: { courseId: string }) {
       {loading ? <p className="stageNote">Memuat diskusi…</p> : null}
 
       {!loading && topics.length === 0 ? (
-        <p className="stageNote">
-          Belum ada diskusi di kursus ini. Jadilah yang pertama bertanya.
-        </p>
+        <div className="card forumEmpty">
+          <strong>Belum ada diskusi</strong>
+          <p>Jadilah peserta pertama yang membuka percakapan di kursus ini.</p>
+          <button className="btn" type="button" onClick={() => setComposing(true)}>
+            Mulai diskusi
+          </button>
+        </div>
       ) : null}
 
       {!loading && topics.length > 0 ? (
-        <ul className="stack">
+        <ul className="stack forumTopicList">
           {topics.map((topic) => (
-            <li key={topic.id} className="card">
+            <li key={topic.id} className="card forumTopicCard">
               <div className="rowBetween">
-                <Link href={`/learn/${courseId}/forum/${topic.id}`}>
-                  <strong>{topic.title}</strong>
+                <Link className="forumTopicLink" href={`/learn/${courseId}/forum/${topic.id}`}>
+                  <span className="forumAvatar" aria-hidden="true">
+                    {topic.author.avatarUrl ? (
+                      <img src={topic.author.avatarUrl} alt="" />
+                    ) : (
+                      initials(topic.author.fullName)
+                    )}
+                  </span>
+                  <span>
+                    <strong>{topic.title}</strong>
+                    <small>
+                      Dibuat oleh {topic.author.fullName} · {formatDate(topic.lastActivityAt)}
+                    </small>
+                  </span>
                 </Link>
                 <span className="inlineActions">
                   {topic.isPinned ? <span className="pill pillAccent">Disematkan</span> : null}
                   <span className="pill">{STATUS_LABEL[topic.status]}</span>
                 </span>
               </div>
-              <small className="muted">
-                {topic.author.fullName} · {topic.replyCount} balasan · {topic._count.reactions}{' '}
-                reaksi · {formatDate(topic.lastActivityAt)}
-              </small>
+              <div className="forumTopicStats" aria-label="Aktivitas diskusi">
+                <span><strong>{topic.replyCount}</strong> balasan</span>
+                <span><strong>{topic._count.reactions}</strong> suka</span>
+              </div>
             </li>
           ))}
         </ul>
       ) : null}
     </section>
   );
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 }

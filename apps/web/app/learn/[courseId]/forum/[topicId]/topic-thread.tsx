@@ -117,7 +117,7 @@ export function TopicThread({
   };
 
   return (
-    <section className="stack">
+    <section className="stack forumThread">
       {error ? (
         <div className="notice noticeError" role="alert">
           {error}
@@ -129,7 +129,7 @@ export function TopicThread({
         </div>
       ) : null}
 
-      <article className="card stack">
+      <article className="card stack forumTopicHero">
         <div className="rowBetween">
           <h1 className="pageTitle">{topic.title}</h1>
           <span className="inlineActions">
@@ -137,11 +137,21 @@ export function TopicThread({
             <span className="pill">{STATUS_LABEL[topic.status]}</span>
           </span>
         </div>
-        <small className="muted">
-          {topic.author.fullName} · {formatDate(topic.createdAt)}
-        </small>
-        <p>{topic.body}</p>
-        <div className="inlineActions">
+        <div className="forumAuthor">
+          <span className="forumAvatar" aria-hidden="true">
+            {topic.author.avatarUrl ? (
+              <img src={topic.author.avatarUrl} alt="" />
+            ) : (
+              initials(topic.author.fullName)
+            )}
+          </span>
+          <span>
+            <strong>{topic.author.fullName}</strong>
+            <small>{formatDate(topic.createdAt)}</small>
+          </span>
+        </div>
+        <p className="forumBody">{topic.body}</p>
+        <div className="inlineActions forumActions">
           <button
             className="btnTiny"
             type="button"
@@ -167,18 +177,37 @@ export function TopicThread({
         </div>
       </article>
 
-      <h2 className="sectionTitle">{topic.replies.length} balasan</h2>
+      <div className="forumSectionHead">
+        <div>
+          <span className="eyebrow">Percakapan</span>
+          <h2 className="sectionTitle">{topic.replies.length} balasan</h2>
+        </div>
+      </div>
 
-      <ul className="stack">
+      <ul className="stack forumReplyList">
         {topic.replies.map((reply) => (
           <li
             key={reply.id}
-            className={reply.id === topic.bestReplyId ? 'card cardAccent' : 'card'}
+            className={
+              reply.id === topic.bestReplyId
+                ? 'card cardAccent forumReplyCard'
+                : 'card forumReplyCard'
+            }
           >
             <div className="rowBetween">
-              <small className="muted">
-                {reply.author.fullName} · {formatDate(reply.createdAt)}
-              </small>
+              <div className="forumAuthor">
+                <span className="forumAvatar forumAvatarSmall" aria-hidden="true">
+                  {reply.author.avatarUrl ? (
+                    <img src={reply.author.avatarUrl} alt="" />
+                  ) : (
+                    initials(reply.author.fullName)
+                  )}
+                </span>
+                <span>
+                  <strong>{reply.author.fullName}</strong>
+                  <small>{formatDate(reply.createdAt)}</small>
+                </span>
+              </div>
               {reply.id === topic.bestReplyId ? (
                 <span className="pill pillAccent">Jawaban terbaik</span>
               ) : null}
@@ -225,10 +254,10 @@ export function TopicThread({
                 </span>
               </form>
             ) : (
-              <p>{reply.body}</p>
+              <p className="forumBody">{reply.body}</p>
             )}
 
-            <div className="inlineActions">
+            <div className="inlineActions forumActions">
               <button
                 className="btnTiny"
                 type="button"
@@ -294,7 +323,7 @@ export function TopicThread({
 
       {topic.canParticipate ? (
         <form
-          className="card stack"
+          className="card stack forumReplyComposer"
           onSubmit={(event) => {
             event.preventDefault();
             void run(
@@ -310,8 +339,12 @@ export function TopicThread({
             );
           }}
         >
-          <label className="field">
-            <span>Tulis balasan</span>
+          <div>
+            <span className="eyebrow">Ikut berdiskusi</span>
+            <h2 className="forumComposerTitle">Tulis balasan</h2>
+          </div>
+          <label className="field forumReplyField">
+            <span className="srOnly">Isi balasan</span>
             <textarea
               value={draft}
               onChange={(event) => setDraft(event.currentTarget.value)}
@@ -319,6 +352,7 @@ export function TopicThread({
               maxLength={5000}
               required
               disabled={busy !== null}
+              placeholder="Tulis pendapat, pertanyaan, atau jawabanmu…"
             />
           </label>
           <button className="btn btnBlock" type="submit" disabled={busy !== null}>
@@ -334,4 +368,14 @@ export function TopicThread({
       )}
     </section>
   );
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 }
