@@ -69,28 +69,42 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
   return (
     <form className="registrationFlow" onSubmit={submit}>
       <section>
-        <h2>1. Pilih paket akses</h2>
+        <h2 className="registrationSectionTitle">Pilih paket yang paling sesuai untukmu</h2>
         <div className="tierGrid">
-          {tiers.map((tier) => (
-            <label className={`tierCard${tier.id === tierId ? ' selected' : ''}`} key={tier.id}>
-              <input
-                type="radio"
-                name="tier"
-                value={tier.id}
-                checked={tier.id === tierId}
-                onChange={() => setTierId(tier.id)}
-              />
-              <span className="tierDuration">
-                {tier.isLifetime ? 'Lifetime' : `${tier.durationMonths} bulan`}
-              </span>
-              <strong>{tier.name}</strong>
-              <span className="tierPrice">{formatRupiah(tier.priceIdr)}</span>
-              <p>{tier.description ?? 'Akses materi belajar dalam paket ini.'}</p>
-              <ul>
-                {tier.courses.map((course) => <li key={course.id}>{course.title}</li>)}
-              </ul>
-            </label>
-          ))}
+          {tiers.map((tier) => {
+            const benefits = tierBenefits(tier);
+            const selected = tier.id === tierId;
+
+            return (
+              <label className={`tierCard${selected ? ' selected' : ''}`} key={tier.id}>
+                <input
+                  type="radio"
+                  name="tier"
+                  value={tier.id}
+                  checked={selected}
+                  onChange={() => setTierId(tier.id)}
+                />
+                <span className="tierSelection" aria-hidden="true">{selected ? '✓' : ''}</span>
+                <span className="tierDuration">
+                  {tier.isLifetime ? 'Akses Lifetime' : `Akses ${tier.durationMonths} Bulan`}
+                </span>
+                <strong className="tierName">{tier.name}</strong>
+                <ul className="tierBenefits">
+                  {benefits.map((benefit) => (
+                    <li key={benefit}>
+                      <span className="tierCheck" aria-hidden="true">✓</span>
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+                <span className="tierPriceLabel">Investasi belajar</span>
+                <span className="tierPrice">{formatRupiah(tier.priceIdr)}</span>
+                <span className="tierChoose" aria-hidden="true">
+                  {selected ? 'Paket dipilih' : 'Pilih paket'}
+                </span>
+              </label>
+            );
+          })}
         </div>
       </section>
 
@@ -143,6 +157,19 @@ function formatRupiah(value: number): string {
     currency: 'IDR',
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function tierBenefits(tier: Tier): string[] {
+  const descriptionItems = (tier.description ?? '')
+    .split(/\r?\n/)
+    .map((item) => item.replace(/^[-*•✓]\s*/, '').trim())
+    .filter(Boolean);
+  const courseItems = tier.courses.map((course) => `Akses kursus ${course.title}`);
+  const items = [...descriptionItems, ...courseItems];
+
+  return items.length > 0
+    ? Array.from(new Set(items))
+    : ['Akses materi belajar dalam paket ini'];
 }
 
 async function loadSnap(clientKey: string, isProduction: boolean): Promise<void> {

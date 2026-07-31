@@ -25,15 +25,14 @@ export default async function RegisterPage() {
         <Link className="btn btnGhost" href="/login">Sudah punya akun? Masuk</Link>
       </header>
       <section className="registrationHero">
-        <span className="eyebrow">Satu pembayaran, akses sesuai pilihanmu</span>
-        <h1>Pilih masa belajar yang paling cocok.</h1>
+        <span className="eyebrow">Mulai perjalanan belajarmu</span>
+        <h1>Pilih Paket Belajarmu</h1>
         <p>
-          Setelah pembayaran terverifikasi, akses kursus dan tautan aktivasi akun
-          dikirim otomatis ke email dan WhatsApp.
+          Satu kali pembayaran untuk akses akademi sesuai durasi pilihanmu.
+          Setelah pembayaran terverifikasi, tautan aktivasi akun dikirim ke email.
         </p>
       </section>
       <RegistrationForm tiers={tiers} />
     </main>
   );
 }
-
