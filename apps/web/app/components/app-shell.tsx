@@ -11,6 +11,7 @@ const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
   { href: '/courses', label: 'Kursus' },
   { href: '/history', label: 'Histori' },
+  { href: '/notifications', label: 'Notifikasi' },
 ];
 
 const MASTER_NAV = [
@@ -53,6 +54,12 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
                 </NavLink>
               );
             })}
+            {/* Tanpa permission: Master juga menerima notifikasi diskusi baru
+                dan konten yang dilaporkan. */}
+            <NavLink href="/notifications">
+              <span className="sideIcon"><Dashboard size={18} /></span>
+              Notifikasi
+            </NavLink>
             <span className="sideLabel sideLabelSpace">Lihat akademi</span>
             <Link className="navLink" href="/courses">
               <span className="sideIcon"><ExternalLink size={18} /></span>

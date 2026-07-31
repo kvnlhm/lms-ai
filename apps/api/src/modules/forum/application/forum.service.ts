@@ -3,6 +3,7 @@ import { ForumTopicStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
+import { NotificationService } from '../../notification/application/notification.service';
 
 /** Kolom penulis yang boleh dilihat pelajar lain (PRD butir 1146). */
 const authorSelect = { id: true, fullName: true, avatarUrl: true } as const;
@@ -37,6 +38,7 @@ export class ForumService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: EnrollmentAccessService,
+    private readonly notifications: NotificationService,
   ) {}
 
   /**
@@ -190,6 +192,13 @@ export class ForumService {
       },
       select: { id: true, title: true, status: true, createdAt: true },
     });
+
+    await this.notifications.notify(await this.moderatorIds(), {
+      type: 'FORUM_NEW_TOPIC',
+      title: 'Diskusi baru menunggu',
+      body: `${input.title}`,
+      linkUrl: '/master/forum',
+    });
     return topic;
   }
 
@@ -241,7 +250,39 @@ export class ForumService {
         data: { replyCount: { increment: 1 }, lastActivityAt: new Date() },
       }),
     ]);
+
+    await this.notifyTopicAuthor(topicId, userId);
     return reply;
+  }
+
+  /** Memberi tahu penulis topik bahwa diskusinya dibalas orang lain. */
+  private async notifyTopicAuthor(topicId: string, replierId: string): Promise<void> {
+    const topic = await this.prisma.forumTopic.findUnique({
+      where: { id: topicId },
+      select: { id: true, title: true, authorId: true, courseId: true },
+    });
+    // Membalas diskusi sendiri tidak perlu diberitahukan.
+    if (!topic || topic.authorId === replierId) return;
+
+    await this.notifications.notify([topic.authorId], {
+      type: 'FORUM_REPLY',
+      title: 'Diskusimu mendapat balasan',
+      body: topic.title,
+      linkUrl: `/learn/${topic.courseId}/forum/${topic.id}`,
+    });
+  }
+
+  /** Pemegang izin moderasi, yaitu penerima notifikasi Master. */
+  private async moderatorIds(): Promise<string[]> {
+    const moderators = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        status: 'ACTIVE',
+        roles: { some: { role: { permissions: { some: { permission: { code: 'discussions.moderate' } } } } } },
+      },
+      select: { id: true },
+    });
+    return moderators.map(({ id }) => id);
   }
 
   async updateReply(userId: string, replyId: string, body: string) {
@@ -310,10 +351,18 @@ export class ForumService {
     // bermasalah pun harus bisa melaporkan penyalahgunaan terhadap dirinya.
     await this.access.assertActiveAccess(userId, courseId);
 
-    return this.prisma.forumReport.create({
+    const report = await this.prisma.forumReport.create({
       data: { reporterId: userId, topicId: topicId ?? null, replyId: replyId ?? null, reason },
       select: { id: true, status: true, createdAt: true },
     });
+
+    await this.notifications.notify(await this.moderatorIds(), {
+      type: 'FORUM_CONTENT_REPORTED',
+      title: 'Konten forum dilaporkan',
+      body: reason.slice(0, 200),
+      linkUrl: '/master/forum',
+    });
+    return report;
   }
 
   // ─────────────────────────────────────────────

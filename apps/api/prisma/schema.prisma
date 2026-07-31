@@ -158,6 +158,7 @@ model User {
   forumBans              ForumBan[]              @relation("ForumBanUser")
   forumBansIssued        ForumBan[]              @relation("ForumBanIssuer")
   liveSessions           LiveSession[]           @relation("LiveSessionCreator")
+  notifications          Notification[]          @relation("NotificationRecipient")
 
   @@index([status])
   @@map("users")
@@ -838,4 +839,37 @@ model LiveSession {
 
   @@index([courseId, startsAt])
   @@map("live_sessions")
+}
+
+/// Jenis notifikasi mengikuti daftar trigger PRD 7.14, ditambah dua kejadian
+/// forum yang dicatat sebagai kekurangan pada ADR-018.
+enum NotificationType {
+  ENROLLED_IN_COURSE
+  FORUM_REPLY
+  FORUM_BEST_ANSWER
+  FORUM_PARTICIPATION_REVOKED
+  FORUM_PARTICIPATION_RESTORED
+  COURSE_COMPLETED
+  LIVE_SESSION_SCHEDULED
+  FORUM_NEW_TOPIC
+  FORUM_CONTENT_REPORTED
+}
+
+/// Notifikasi dalam aplikasi. Channel MVP hanya in-app (PRD 7.14); pengiriman
+/// email menyusul lewat modul communication tanpa mengubah tabel ini.
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String
+  body      String
+  /// Tautan relatif ke objek terkait, wajib menurut acceptance criteria PRD.
+  linkUrl   String?          @map("link_url")
+  readAt    DateTime?        @map("read_at") @db.Timestamptz(6)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
 }

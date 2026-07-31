@@ -1737,3 +1737,69 @@ pun dengan kredibilitas akademi. Pencocokan dilakukan persis atau lewat akhiran
 
 `durationMinutes` menerima 5 sampai 600. Pembatalan mengisi `cancelledAt` dan
 tidak menghapus barisnya.
+
+---
+
+## 35. Notification API
+
+Mengikuti PRD 7.14. Channel MVP hanya in-app; pengiriman email menyusul lewat
+modul communication tanpa mengubah bentuk endpoint ini.
+
+| Metode | Path | Keterangan |
+| --- | --- | --- |
+| GET | `/me/notifications` | Milik sendiri, terbaru dulu; filter `unreadOnly`, `page`, `pageSize` |
+| GET | `/me/notifications/unread-count` | Jumlah yang belum dibaca |
+| PATCH | `/me/notifications/{notificationId}/read` | Menandai satu sudah dibaca |
+| POST | `/me/notifications/read-all` | Menandai seluruhnya sudah dibaca |
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "type": "FORUM_REPLY",
+      "title": "Diskusimu mendapat balasan",
+      "body": "Bagaimana memulai proyek pertama?",
+      "linkUrl": "/learn/uuid/forum/uuid",
+      "readAt": null,
+      "createdAt": "2026-07-31T02:00:00Z"
+    }
+  ]
+}
+```
+
+Kepemilikan ditegakkan lewat klausa `where`, bukan diperiksa setelah baris
+terbaca, sehingga notifikasi milik pengguna lain dijawab `404` dan
+keberadaannya tidak dapat disimpulkan.
+
+### Pemicu yang sudah aktif
+
+| `type` | Penerima | Kejadian |
+| --- | --- | --- |
+| `FORUM_REPLY` | Penulis topik | Diskusinya dibalas orang lain |
+| `FORUM_BEST_ANSWER` | Penulis balasan | Balasannya ditandai jawaban terbaik |
+| `FORUM_PARTICIPATION_REVOKED` | Pelajar | Hak berdiskusinya dicabut |
+| `FORUM_PARTICIPATION_RESTORED` | Pelajar | Hak berdiskusinya dipulihkan |
+| `LIVE_SESSION_SCHEDULED` | Peserta kursus | Sesi langsung dijadwalkan |
+| `FORUM_NEW_TOPIC` | Pemegang `discussions.moderate` | Ada diskusi baru |
+| `FORUM_CONTENT_REPORTED` | Pemegang `discussions.moderate` | Konten dilaporkan |
+
+Membalas diskusi sendiri tidak menghasilkan notifikasi.
+
+### Preferensi
+
+Jenis notifikasi dipetakan ke tiga saklar pada `notification_preferences`.
+Pengguna tanpa baris preferensi memakai default aktif.
+
+`FORUM_PARTICIPATION_REVOKED` dan `FORUM_PARTICIPATION_RESTORED` **selalu
+dikirim** dan tidak dapat dibungkam. Tanpa keduanya, pelajar ditolak saat
+menulis tanpa pernah tahu sebabnya, dan sistem akan terasa rusak.
+
+### Belum aktif
+
+Trigger PRD berikut belum dipasang karena bergantung pada modul yang belum
+ada atau pekerjaan terjadwal: pengumuman baru, materi baru tersedia, kursus
+diperbarui, ditambahkan ke kursus, kursus selesai, pelajar masuk kategori
+high risk, kursus dengan drop-off tinggi, dan pertanyaan belum dijawab.
+Nilai enum `ENROLLED_IN_COURSE` dan `COURSE_COMPLETED` sudah disediakan agar
+pemasangannya nanti tidak memerlukan migrasi.

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
+import { NotificationService } from '../../notification/application/notification.service';
 
 /**
  * Penyedia rapat daring yang tautannya diterima. Daftar tertutup ini menutup
@@ -46,6 +47,7 @@ export class LiveSessionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: EnrollmentAccessService,
+    private readonly notifications: NotificationService,
   ) {}
 
   /**
@@ -109,7 +111,7 @@ export class LiveSessionService {
     const course = await this.prisma.course.count({ where: { id: input.courseId } });
     if (!course) throw AppError.validation({ courseId: ['Kursus tidak ditemukan.'] });
 
-    return this.prisma.liveSession.create({
+    const session = await this.prisma.liveSession.create({
       data: {
         courseId: input.courseId,
         title: input.title,
@@ -121,6 +123,23 @@ export class LiveSessionService {
       },
       select: { id: true, title: true, startsAt: true, durationMinutes: true },
     });
+
+    // Peserta kursus perlu tahu jadwalnya lebih awal; tanpa ini mereka baru
+    // menemukannya secara kebetulan saat membuka halaman kursus.
+    const learners = await this.prisma.enrollment.findMany({
+      where: { courseId: input.courseId, status: 'ACTIVE' },
+      select: { userId: true },
+    });
+    await this.notifications.notify(
+      learners.map(({ userId }) => userId),
+      {
+        type: 'LIVE_SESSION_SCHEDULED',
+        title: 'Sesi langsung dijadwalkan',
+        body: `${input.title} — ${input.startsAt.toISOString()}`,
+        linkUrl: `/courses/${input.courseId}`,
+      },
+    );
+    return session;
   }
 
   async update(id: string, input: Partial<UpsertInput>) {

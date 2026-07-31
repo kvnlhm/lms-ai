@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ForumReportStatus, ForumTopicStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
+import { NotificationService } from '../../notification/application/notification.service';
 
 const authorSelect = { id: true, fullName: true, email: true } as const;
 
@@ -21,7 +22,10 @@ interface BanInput {
  */
 @Injectable()
 export class ForumModerationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationService,
+  ) {}
 
   async listTopics(input: {
     courseId?: string;
@@ -108,15 +112,31 @@ export class ForumModerationService {
         throw AppError.validation({ replyId: ['Balasan bukan bagian dari topik ini.'] });
       }
     }
-    return this.prisma.forumTopic.update({
+    const updated = await this.prisma.forumTopic.update({
       where: { id: topicId },
       data: {
         bestReplyId: replyId,
         // Menandai jawaban terbaik berarti pertanyaannya sudah terjawab.
         status: replyId ? ForumTopicStatus.RESOLVED : undefined,
       },
-      select: { id: true, bestReplyId: true, status: true },
+      select: { id: true, bestReplyId: true, status: true, courseId: true, title: true },
     });
+
+    if (replyId) {
+      const reply = await this.prisma.forumReply.findUnique({
+        where: { id: replyId },
+        select: { authorId: true },
+      });
+      if (reply) {
+        await this.notifications.notify([reply.authorId], {
+          type: 'FORUM_BEST_ANSWER',
+          title: 'Jawabanmu ditandai sebagai jawaban terbaik',
+          body: updated.title,
+          linkUrl: `/learn/${updated.courseId}/forum/${updated.id}`,
+        });
+      }
+    }
+    return { id: updated.id, bestReplyId: updated.bestReplyId, status: updated.status };
   }
 
   async setReplyHidden(replyId: string, isHidden: boolean, moderatorId: string, reason?: string) {
@@ -288,7 +308,7 @@ export class ForumModerationService {
       throw AppError.validation({ userId: ['Pelajar ini sudah dicabut haknya pada cakupan itu.'] });
     }
 
-    return this.prisma.forumBan.create({
+    const ban = await this.prisma.forumBan.create({
       data: {
         userId: input.userId,
         courseId: input.courseId ?? null,
@@ -298,20 +318,40 @@ export class ForumModerationService {
       },
       select: { id: true, reason: true, expiresAt: true, createdAt: true },
     });
+
+    // ADR-018 mencatat ketiadaan pemberitahuan ini sebagai kekurangan:
+    // sebelumnya pelajar baru tahu ketika mencoba menulis dan ditolak.
+    await this.notifications.notify([input.userId], {
+      type: 'FORUM_PARTICIPATION_REVOKED',
+      title: 'Hak berdiskusimu dicabut sementara',
+      body: input.expiresAt
+        ? `${input.reason} Berlaku sampai ${input.expiresAt.toISOString()}.`
+        : `${input.reason} Berlaku sampai dipulihkan Master.`,
+      linkUrl: input.courseId ? `/learn/${input.courseId}/forum` : undefined,
+    });
+    return ban;
   }
 
   /** Mengembalikan hak berdiskusi. Barisnya ditandai, bukan dihapus. */
   async revokeBan(banId: string, revokedBy: string) {
     const ban = await this.prisma.forumBan.findFirst({
       where: { id: banId, revokedAt: null },
-      select: { id: true },
+      select: { id: true, userId: true, courseId: true },
     });
     if (!ban) throw AppError.notFound();
-    return this.prisma.forumBan.update({
+    const revoked = await this.prisma.forumBan.update({
       where: { id: banId },
       data: { revokedAt: new Date(), revokedBy },
       select: { id: true, revokedAt: true },
     });
+
+    await this.notifications.notify([ban.userId], {
+      type: 'FORUM_PARTICIPATION_RESTORED',
+      title: 'Hak berdiskusimu dipulihkan',
+      body: 'Kamu dapat kembali menulis di forum.',
+      linkUrl: ban.courseId ? `/learn/${ban.courseId}/forum` : undefined,
+    });
+    return revoked;
   }
 
   private async assertTopicExists(topicId: string): Promise<void> {
