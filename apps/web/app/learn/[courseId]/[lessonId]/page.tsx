@@ -5,6 +5,7 @@ import { AppShell } from '../../../components/app-shell';
 import { ArrowLeft, ArrowRight } from '../../../components/icons';
 import { ApiError, serverClient, unwrap } from '../../../lib/api';
 import { requireUser } from '../../../lib/session';
+import { BookmarkButton } from './bookmark-button';
 import { CompleteButton } from './complete-button';
 import { VideoPlayer } from './video-player';
 
@@ -91,6 +92,7 @@ export default async function LessonPage({ params }: Props) {
           </div>
 
           <div className="playerFoot">
+            <BookmarkButton lessonId={lessonId} initiallyBookmarked={lesson.bookmarked} />
             <CompleteButton
               courseId={courseId}
               lessonId={lessonId}

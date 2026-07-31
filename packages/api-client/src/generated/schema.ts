@@ -919,6 +919,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/bookmarks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Materi yang kutandai untuk dibuka kembali */
+        get: operations["BookmarkController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/learn/lessons/{lessonId}/bookmark": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Menandai materi ini */
+        put: operations["BookmarkController_add"];
+        post?: never;
+        /** Melepas tanda dari materi ini */
+        delete: operations["BookmarkController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/learn/lessons/{lessonId}/open": {
         parameters: {
             query?: never;
@@ -2653,6 +2688,27 @@ export interface components {
             /** Format: uuid */
             nextLessonId?: string | null;
             courseProgress: number;
+            /** @description Benar bila materi ini sudah ditandai pengguna */
+            bookmarked: boolean;
+        };
+        BookmarkDto: {
+            /** Format: uuid */
+            lessonId: string;
+            lessonTitle: string;
+            moduleTitle: string;
+            /** Format: uuid */
+            courseId: string;
+            courseTitle: string;
+            note?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        BookmarkStateDto: {
+            bookmarked: boolean;
+        };
+        SaveBookmarkDto: {
+            /** @description Catatan pribadi; tidak pernah terlihat pengguna lain */
+            note?: string;
         };
         OpenLessonResponseDto: {
             /** @enum {string} */
@@ -6206,6 +6262,128 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    BookmarkController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BookmarkDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    BookmarkController_add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveBookmarkDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BookmarkStateDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    BookmarkController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BookmarkStateDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

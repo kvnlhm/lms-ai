@@ -2110,3 +2110,35 @@ yang terlihat rusak; yang rusak adalah jaminannya.
 Kolom penulis yang boleh dilihat pelajar lain tetap terbatas pada id, nama, dan
 foto. DTO membuat batas itu terlihat pada kontrak, bukan hanya tersimpan di
 dalam satu konstanta service.
+
+---
+
+## 41. Bookmark API
+
+Backlog P1 "Bookmark materi", entitas `UserBookmark` pada PRD 14.
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/me/bookmarks` | Materi yang ditandai, terbaru lebih dulu |
+| PUT | `/learn/lessons/{lessonId}/bookmark` | Menandai materi |
+| DELETE | `/learn/lessons/{lessonId}/bookmark` | Melepas tanda |
+
+`PUT`, bukan `POST`: menandai materi yang sama dua kali menghasilkan keadaan
+yang sama, bukan galat duplikat. Badan permintaan menerima `note` opsional
+(maksimum 500 karakter) — catatan pribadi yang tidak pernah terlihat pengguna
+lain.
+
+Menandai memerlukan akses aktif ke kursus materinya. Tanpa pemeriksaan itu,
+daftar bookmark menjadi cara memanen judul materi dari kursus yang tidak
+dibayar.
+
+`DELETE` tidak membedakan "tidak ada" dari "berhasil dihapus": hasil akhirnya
+sama, dan membedakannya hanya membuat tombol di antarmuka gagal karena hal yang
+tidak perlu dipedulikan siapa pun.
+
+Bookmark ke materi yang sudah dinonaktifkan tidak ikut ditampilkan; tautannya
+hanya akan berujung 404.
+
+Bookmark bukan progres. Menandai maupun melepas tanda tidak mengubah apa pun
+tentang penyelesaian materi. `LearnLessonResponseDto` kini memuat `bookmarked`
+supaya tombolnya tidak sempat tampil dalam keadaan salah lalu berkedip.

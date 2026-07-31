@@ -163,6 +163,7 @@ model User {
   announcementTargets    AnnouncementTarget[]    @relation("AnnouncementTargetUser")
   announcementReads      AnnouncementRead[]      @relation("AnnouncementReader")
   resolvedErrors         ErrorEvent[]            @relation("ErrorEventResolver")
+  bookmarks              UserBookmark[]          @relation("UserBookmarkOwner")
 
   @@index([status])
   @@map("users")
@@ -375,6 +376,7 @@ model Lesson {
   requiredBy    LessonPrerequisite[] @relation("PrerequisiteSide")
   videoAssets   VideoAsset[]
   forumTopics   ForumTopic[]
+  bookmarks     UserBookmark[]
 
   @@unique([moduleId, position])
   @@index([moduleId, isActive])
@@ -998,4 +1000,23 @@ model ErrorEvent {
   @@index([status, lastSeenAt])
   @@index([source, lastSeenAt])
   @@map("error_events")
+}
+
+/// Materi yang ditandai pelajar untuk dibuka kembali (PRD 14, backlog P1).
+///
+/// Bookmark bukan progres: menghapusnya tidak mengubah apa pun tentang
+/// penyelesaian materi, dan kehilangannya tidak merusak riwayat belajar.
+model UserBookmark {
+  userId    String   @map("user_id") @db.Uuid
+  lessonId  String   @map("lesson_id") @db.Uuid
+  /// Catatan pribadi pelajar; tidak pernah terlihat pengguna lain.
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user   User   @relation("UserBookmarkOwner", fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([userId, lessonId])
+  @@index([userId, createdAt])
+  @@map("user_bookmarks")
 }

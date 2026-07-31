@@ -78,4 +78,6 @@ export class LearnLessonResponseDto {
   @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true }) previousLessonId!: string | null;
   @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true }) nextLessonId!: string | null;
   @ApiProperty() courseProgress!: number;
+  @ApiProperty({ description: 'Benar bila materi ini sudah ditandai pengguna' })
+  bookmarked!: boolean;
 }

@@ -117,10 +117,13 @@ export class LearningDeliveryService {
     const ordered = flattenLessons(modules);
     const { previousLessonId, nextLessonId } = neighbours(ordered, lessonId);
 
-    const courseProgress = await this.prisma.courseProgress.findUnique({
-      where: { enrollmentId: access.enrollmentId },
-      select: { progressPercent: true },
-    });
+    const [courseProgress, bookmarked] = await Promise.all([
+      this.prisma.courseProgress.findUnique({
+        where: { enrollmentId: access.enrollmentId },
+        select: { progressPercent: true },
+      }),
+      this.prisma.userBookmark.count({ where: { userId, lessonId } }),
+    ]);
 
     return {
       id: lesson.id,
@@ -143,6 +146,9 @@ export class LearningDeliveryService {
       previousLessonId,
       nextLessonId,
       courseProgress: Number(courseProgress?.progressPercent ?? 0),
+      // Ikut di sini, bukan lewat permintaan terpisah, supaya tombolnya tidak
+      // sempat tampil dalam keadaan salah lalu berkedip saat datanya tiba.
+      bookmarked: bookmarked > 0,
     };
   }
 }
