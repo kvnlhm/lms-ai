@@ -10,6 +10,7 @@
 | Session rotation | Login, MFA, privilege change | Security test |
 | CSRF | Wajib untuk mutation berbasis cookie | API test |
 | MFA | Wajib untuk Master secara default; pengecualian deployment harus dicatat melalui ADR-020 | E2E test dan configuration review |
+| Client IP resolution | `trust proxy = 2`, sesuai rantai Traefik lalu gateway nginx; Traefik menimpa `X-Forwarded-For` klien sehingga hop tidak dapat digeser | Manual: header palsu tetap tercatat sebagai alamat asli |
 | Login rate limit | Per IP dan account key | Abuse test |
 | Password reset rate limit | Per alamat dan per IP; setiap permintaan dihitung, bukan hanya yang gagal | `forgot-password.e2e-spec.ts` |
 | Password reset | Single-use, hashed, expiring | Integration test |

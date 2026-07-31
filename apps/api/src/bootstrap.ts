@@ -39,9 +39,16 @@ export async function createApp(): Promise<INestApplication> {
     }),
   );
 
-  // Express mempercayai satu proxy di depan (nginx) agar request.ip benar
-  // untuk rate limiting dan audit log.
-  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  // Ada dua proxy di depan API, bukan satu: Traefik lalu gateway nginx.
+  // Dengan nilai 1, `request.ip` berhenti pada alamat Traefik, sehingga setiap
+  // audit log mencatat IP proxy yang sama dan pembatas laju per-IP kehilangan
+  // daya bedanya — semua pengunjung masuk ke ember yang sama.
+  //
+  // Menaikkannya ke 2 aman karena Traefik menimpa X-Forwarded-For milik
+  // klien, bukan menambahkannya: permintaan dengan header palsu terbukti
+  // tetap tercatat sebagai alamat aslinya, sehingga tidak ada entri tambahan
+  // yang bisa disisipkan untuk menggeser hitungan hop ini.
+  app.getHttpAdapter().getInstance().set('trust proxy', 2);
 
   return app;
 }
