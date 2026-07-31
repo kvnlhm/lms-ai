@@ -157,6 +157,7 @@ export class AuthService {
     role: RoleCode;
     status: UserStatus;
     permissions: PermissionCode[];
+    isImpersonating: boolean;
   }> {
     const record = await this.prisma.user.findFirst({
       where: { id: user.id, deletedAt: null },
@@ -176,6 +177,7 @@ export class AuthService {
       ...record,
       role: user.roleCode,
       permissions: user.permissions,
+      isImpersonating: Boolean(user.impersonatedByUserId),
     };
   }
 
@@ -192,6 +194,7 @@ export class AuthService {
     role: RoleCode;
     status: UserStatus;
     permissions: PermissionCode[];
+    isImpersonating: boolean;
   }> {
     await this.prisma.user.update({
       where: { id: user.id },

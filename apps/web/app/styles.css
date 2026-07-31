@@ -767,6 +767,33 @@ table.data tbody tr:hover { background: var(--raised); }
   gap: 10px;
   margin-top: 24px;
 }
+
+.userDeleteConfirm { background: #dc2626; border-color: #dc2626; }
+.impersonationBanner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 44px;
+  padding: 8px 20px;
+  color: #fef3c7;
+  background: #78350f;
+  border-bottom: 1px solid #b45309;
+}
+.impersonationBanner button {
+  padding: 7px 12px;
+  color: #451a03;
+  font-weight: 700;
+  background: #fef3c7;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.impersonationBanner button:disabled { cursor: wait; opacity: .7; }
+.impersonationError { color: #fecaca; }
 .btnDangerSolid {
   min-height: 38px;
   padding: 0 16px;

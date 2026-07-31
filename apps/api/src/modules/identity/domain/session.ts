@@ -20,6 +20,10 @@ export interface SessionData {
   pendingMfa?: boolean;
   /** Master yang belum menyiapkan MFA; hanya boleh mengakses endpoint setup. */
   mfaSetupRequired?: boolean;
+  /** Master yang memulai sesi lihat-sebagai. Tidak memberi permission Master. */
+  impersonatedByUserId?: string;
+  /** Session Master yang dipulihkan ketika sesi lihat-sebagai diakhiri. */
+  originalSessionId?: string;
 }
 
 /** Bentuk pengguna yang dilihat guard dan controller. */
@@ -27,6 +31,7 @@ export interface AuthenticatedUser {
   id: string;
   roleCode: RoleCode;
   permissions: PermissionCode[];
+  impersonatedByUserId?: string;
 }
 
 export interface ActiveSession extends AuthenticatedUser {
@@ -35,4 +40,6 @@ export interface ActiveSession extends AuthenticatedUser {
   deviceRecordId: string;
   pendingMfa?: boolean;
   mfaSetupRequired?: boolean;
+  impersonatedByUserId?: string;
+  originalSessionId?: string;
 }

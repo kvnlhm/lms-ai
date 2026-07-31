@@ -43,11 +43,13 @@ export class SessionService {
 
   async create(
     data: Omit<SessionData, 'csrfToken' | 'absoluteExpiresAt' | 'createdAt'>,
+    ttlSeconds = this.app.session.absoluteTtlSeconds,
   ): Promise<{ sessionId: string; csrfToken: string; absoluteExpiresAt: Date }> {
     const sessionId = SessionService.generateId();
     const csrfToken = SessionService.generateCsrfToken();
     const now = Date.now();
-    const absoluteExpiresAt = now + this.app.session.absoluteTtlSeconds * 1000;
+    const effectiveTtl = Math.min(ttlSeconds, this.app.session.absoluteTtlSeconds);
+    const absoluteExpiresAt = now + effectiveTtl * 1000;
 
     const session: SessionData = {
       ...data,
@@ -57,8 +59,16 @@ export class SessionService {
     };
 
     const pipeline = this.redis.client.multi();
-    pipeline.set(this.key(sessionId), JSON.stringify(session), 'EX', this.app.session.idleTtlSeconds);
+    pipeline.set(
+      this.key(sessionId),
+      JSON.stringify(session),
+      'EX',
+      Math.min(this.app.session.idleTtlSeconds, effectiveTtl),
+    );
     pipeline.sadd(this.userIndexKey(data.userId), sessionId);
+    // Index boleh hidup selama TTL sesi normal; jangan memendekkannya ketika
+    // menambahkan sesi pratinjau 30 menit karena pengguna mungkin punya sesi
+    // reguler yang masih aktif.
     pipeline.expire(this.userIndexKey(data.userId), this.app.session.absoluteTtlSeconds);
     await pipeline.exec();
 

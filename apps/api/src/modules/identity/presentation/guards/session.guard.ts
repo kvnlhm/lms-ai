@@ -5,7 +5,11 @@ import type { Request } from 'express';
 import type { AppConfig } from '../../../../config/configuration';
 import { AppError } from '../../../../shared/errors/app-error';
 import { SessionService } from '../../application/session.service';
-import { ALLOW_PENDING_MFA_KEY, IS_PUBLIC_KEY } from '../decorators';
+import {
+  ALLOW_IMPERSONATION_MUTATION_KEY,
+  ALLOW_PENDING_MFA_KEY,
+  IS_PUBLIC_KEY,
+} from '../decorators';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -74,6 +78,13 @@ export class SessionGuard implements CanActivate {
     }
 
     if (MUTATING_METHODS.has(request.method)) {
+      if (session.impersonatedByUserId) {
+        const allowed = this.reflector.getAllAndOverride<boolean>(
+          ALLOW_IMPERSONATION_MUTATION_KEY,
+          [context.getHandler(), context.getClass()],
+        );
+        if (!allowed) throw AppError.permissionDenied();
+      }
       const header = request.header('x-csrf-token');
       if (!SessionService.csrfMatches(session.csrfToken, header)) {
         throw AppError.csrfInvalid();
@@ -89,6 +100,8 @@ export class SessionGuard implements CanActivate {
       deviceRecordId: session.deviceRecordId,
       pendingMfa: session.pendingMfa === true,
       mfaSetupRequired: session.mfaSetupRequired === true,
+      impersonatedByUserId: session.impersonatedByUserId,
+      originalSessionId: session.originalSessionId,
     };
 
     return true;

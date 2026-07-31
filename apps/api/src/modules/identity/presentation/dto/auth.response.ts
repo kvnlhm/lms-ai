@@ -30,6 +30,8 @@ export class CurrentUserResponseDto {
   @ApiProperty({ enum: ROLE_CODES }) role!: string;
   @ApiProperty({ enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED'] }) status!: string;
   @ApiProperty({ enum: PERMISSION_CODES, isArray: true }) permissions!: string[];
+  @ApiProperty({ description: 'Benar saat Master sedang melihat aplikasi sebagai Pelajar.' })
+  isImpersonating!: boolean;
 }
 
 export class LogoutAllResponseDto {

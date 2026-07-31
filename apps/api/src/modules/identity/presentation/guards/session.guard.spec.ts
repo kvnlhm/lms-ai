@@ -53,4 +53,43 @@ describe('SessionGuard', () => {
       status: 401,
     });
   });
+
+  it('blocks mutations while impersonating a student', async () => {
+    const touch = jest.fn().mockResolvedValue({
+      userId: 'student-id',
+      roleCode: 'STUDENT',
+      permissions: [],
+      csrfToken: 'csrf',
+      absoluteExpiresAt: Date.now() + 60_000,
+      createdAt: Date.now(),
+      deviceRecordId: 'device-id',
+      impersonatedByUserId: 'master-id',
+      originalSessionId: 'master-session',
+    });
+    const reflector = {
+      getAllAndOverride: jest
+        .fn()
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(false),
+    } as unknown as Reflector;
+    const config = { get: jest.fn().mockReturnValue(app) } as unknown as ConfigService<
+      { app: AppConfig },
+      true
+    >;
+    const guard = new SessionGuard(
+      reflector,
+      { touch } as unknown as SessionService,
+      config,
+    );
+
+    await expect(
+      guard.canActivate(
+        contextFor({
+          method: 'POST',
+          cookies: { lms_session: 'preview-session' },
+          header: jest.fn().mockReturnValue('csrf'),
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'PERMISSION_DENIED', status: 403 });
+  });
 });

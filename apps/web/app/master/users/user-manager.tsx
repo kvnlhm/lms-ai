@@ -16,6 +16,7 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
   const [credentialUrl, setCredentialUrl] = useState<string | null>(null);
   const [credentialLabel, setCredentialLabel] = useState('Tautan');
   const [showCreate, setShowCreate] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,6 +84,28 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
       setCredentialUrl(
         `${window.location.origin}/reset-password?token=${encodeURIComponent(result.token)}`,
       );
+    });
+  }
+
+  async function impersonate(user: User) {
+    await run(`impersonate-${user.id}`, async () => {
+      unwrap(
+        await browserClient().POST('/api/v1/admin/users/{userId}/impersonate', {
+          params: { path: { userId: user.id } },
+        }),
+      );
+      window.location.assign('/');
+    });
+  }
+
+  async function removeUser(user: User) {
+    await run(`delete-${user.id}`, async () => {
+      unwrap(
+        await browserClient().DELETE('/api/v1/admin/users/{userId}', {
+          params: { path: { userId: user.id } },
+        }),
+      );
+      setDeleteTarget(null);
     });
   }
 
@@ -244,6 +267,11 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                       <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => issuePasswordReset(item)}>
                         Reset password
                       </button>
+                      {item.role === 'STUDENT' && item.status === 'ACTIVE' ? (
+                        <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => impersonate(item)}>
+                          Lihat sebagai
+                        </button>
+                      ) : null}
                       {item.status === 'SUSPENDED' ? (
                         <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => activate(item)}>
                           Aktifkan
@@ -253,6 +281,11 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                           Tangguhkan
                         </button>
                       )}
+                      {item.role === 'STUDENT' ? (
+                        <button className="btnTiny userDangerAction" type="button" disabled={busy !== null} onClick={() => setDeleteTarget(item)}>
+                          Hapus
+                        </button>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -266,6 +299,35 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
           ) : null}
         </div>
       </section>
+
+      {deleteTarget ? (
+        <div className="confirmOverlay" role="presentation" onMouseDown={() => setDeleteTarget(null)}>
+          <div
+            className="confirmDialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-user-title"
+            aria-describedby="delete-user-description"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <span className="confirmDangerIcon" aria-hidden="true">!</span>
+            <h2 id="delete-user-title">Hapus pengguna?</h2>
+            <p id="delete-user-description">
+              Akun <strong>{deleteTarget.fullName}</strong> akan dinonaktifkan, seluruh sesi
+              dicabut, dan data pribadinya dihapus. Histori belajar anonim tetap dipertahankan
+              untuk integritas laporan.
+            </p>
+            <div className="confirmActions">
+              <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => setDeleteTarget(null)}>
+                Batal
+              </button>
+              <button className="btn userDeleteConfirm" type="button" disabled={busy !== null} onClick={() => void removeUser(deleteTarget)}>
+                {busy === `delete-${deleteTarget.id}` ? 'Menghapus…' : 'Ya, hapus pengguna'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

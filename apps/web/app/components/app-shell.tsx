@@ -6,6 +6,7 @@ import { Courses, Dashboard, ExternalLink, Users } from './icons';
 import { LogoutButton } from './logout-button';
 import { NavLink } from './nav-link';
 import { ThemeToggle } from './theme-toggle';
+import { ImpersonationBanner } from './impersonation-banner';
 
 const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
@@ -99,6 +100,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
 
   return (
     <>
+      {user.isImpersonating ? <ImpersonationBanner /> : null}
       <header className="topbar">
         <Link href="/" className="brand" aria-label="LMS AIPrenuer, ke beranda">
           <span className="brandMark" aria-hidden="true">

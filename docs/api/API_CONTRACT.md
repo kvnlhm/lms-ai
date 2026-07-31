@@ -429,6 +429,22 @@ Requires `users.security.manage`. Mengembalikan `token` dan `expiresAt` satu
 kali untuk disampaikan Master secara manual. Penerbitan dicatat ke audit log
 tanpa nilai token.
 
+## DELETE `/admin/users/{userId}`
+
+Requires `users.manage`. Hanya akun Pelajar. Seluruh sesi dicabut, data pribadi
+diredaksi, dan relasi histori belajar tetap dipertahankan. Aksi diaudit.
+
+## POST `/admin/users/{userId}/impersonate`
+
+Requires `users.security.manage`. Membuat sesi pratinjau hanya-baca maksimal 30
+menit untuk akun Pelajar aktif. Sesi memakai permission Pelajar; password dan
+session target tidak pernah diberikan kepada Master. Aksi diaudit.
+
+## POST `/admin/users/impersonation/end`
+
+Hanya dapat dipanggil dari sesi pratinjau. Mencabut sesi pratinjau dan
+memulihkan opaque session Master semula bila masih valid.
+
 ---
 
 ## 8. Learning Paths

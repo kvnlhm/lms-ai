@@ -3,6 +3,8 @@ import { Prisma, UserStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { UserCredentialService } from '../../identity/application/user-credential.service';
 import { AppError } from '../../../shared/errors/app-error';
+import { SessionService } from '../../identity/application/session.service';
+import type { ActiveSession } from '../../identity/domain/session';
 
 export interface ListUsersInput {
   page: number;
@@ -17,6 +19,7 @@ export class UserAdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly credentials: UserCredentialService,
+    private readonly sessions: SessionService,
   ) {}
 
   async list(input: ListUsersInput) {
@@ -139,6 +142,102 @@ export class UserAdminService {
   async issuePasswordReset(userId: string) {
     await this.assertExists(userId);
     return this.credentials.issuePasswordReset(userId);
+  }
+
+  async deleteStudent(userId: string): Promise<void> {
+    const target = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true, roles: { select: { role: { select: { code: true } } } } },
+    });
+    if (!target) throw AppError.notFound();
+    if (target.roles.some(({ role }) => role.code !== 'STUDENT')) {
+      throw AppError.validation({ userId: ['Hanya akun Pelajar yang dapat dihapus dari halaman ini.'] });
+    }
+
+    await this.credentials.revokeSessions(userId);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        fullName: 'Pengguna dihapus',
+        email: `deleted-${userId}@invalid.local`,
+        phone: null,
+        bio: null,
+        avatarUrl: null,
+        status: UserStatus.INACTIVE,
+        deletedAt: new Date(),
+      },
+    });
+  }
+
+  async startImpersonation(
+    actor: ActiveSession,
+    targetUserId: string,
+    metadata: { ipAddress?: string; userAgent?: string },
+  ) {
+    const target = await this.prisma.user.findFirst({
+      where: { id: targetUserId, deletedAt: null, status: UserStatus.ACTIVE },
+      select: {
+        id: true,
+        roles: {
+          take: 1,
+          select: {
+            role: {
+              select: {
+                code: true,
+                permissions: { select: { permission: { select: { code: true } } } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!target) throw AppError.notFound();
+    const assignment = target.roles[0];
+    if (!assignment || assignment.role.code !== 'STUDENT') {
+      throw AppError.validation({ userId: ['Sesi lihat-sebagai hanya tersedia untuk Pelajar aktif.'] });
+    }
+
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+    const device = await this.prisma.authSession.create({
+      data: {
+        userId: target.id,
+        deviceName: 'Pratinjau oleh Master',
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent?.slice(0, 400),
+        expiresAt,
+      },
+    });
+    return this.sessions.create(
+      {
+        userId: target.id,
+        roleCode: 'STUDENT',
+        permissions: assignment.role.permissions.map(({ permission }) => permission.code) as ActiveSession['permissions'],
+        deviceRecordId: device.id,
+        impersonatedByUserId: actor.id,
+        originalSessionId: actor.sessionId,
+      },
+      30 * 60,
+    );
+  }
+
+  async endImpersonation(session: ActiveSession) {
+    if (!session.impersonatedByUserId || !session.originalSessionId) {
+      throw AppError.permissionDenied();
+    }
+    const original = await this.sessions.touch(session.originalSessionId);
+    if (
+      !original ||
+      original.userId !== session.impersonatedByUserId ||
+      original.roleCode !== 'MASTER'
+    ) {
+      throw AppError.authenticationRequired();
+    }
+    await this.sessions.destroy(session.sessionId);
+    await this.prisma.authSession.updateMany({
+      where: { id: session.deviceRecordId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    return { sessionId: session.originalSessionId, csrfToken: original.csrfToken };
   }
 
   private async assertExists(userId: string): Promise<void> {

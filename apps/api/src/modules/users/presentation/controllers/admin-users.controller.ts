@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -9,16 +10,24 @@ import {
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PERMISSIONS } from '@lms/contracts';
 import { ApiEnvelope, ApiEnvelopeList, ApiErrors } from '../../../../shared/http/api-envelope';
 import { Paginated } from '../../../../shared/http/response.interceptor';
-import type { Request } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
+import type { AppConfig } from '../../../../config/configuration';
 import { AuditService } from '../../../../shared/audit/audit.service';
 import { AppError } from '../../../../shared/errors/app-error';
-import type { AuthenticatedUser } from '../../../identity/domain/session';
-import { CurrentUser, RequirePermissions } from '../../../identity/presentation/decorators';
+import type { ActiveSession, AuthenticatedUser } from '../../../identity/domain/session';
+import {
+  AllowImpersonationMutation,
+  CurrentSession,
+  CurrentUser,
+  RequirePermissions,
+} from '../../../identity/presentation/decorators';
 import { UserAdminService } from '../../application/user-admin.service';
 import {
   AdminUserListItemDto,
@@ -34,10 +43,15 @@ import {
 @ApiTags('admin-users')
 @Controller('admin/users')
 export class AdminUsersController {
+  private readonly app: AppConfig;
+
   constructor(
     private readonly users: UserAdminService,
     private readonly audit: AuditService,
-  ) {}
+    config: ConfigService<{ app: AppConfig }, true>,
+  ) {
+    this.app = config.get('app', { infer: true });
+  }
 
   @Get()
   @RequirePermissions(PERMISSIONS.USERS_READ)
@@ -163,6 +177,79 @@ export class AdminUsersController {
       expiresAt: token.expiresAt,
     });
     return token;
+  }
+
+  @Delete(':userId')
+  @HttpCode(204)
+  @RequirePermissions(PERMISSIONS.USERS_MANAGE)
+  @ApiOperation({ summary: 'Menghapus dan meredaksi akun Pelajar' })
+  @ApiErrors(401, 403, 404, 422)
+  async remove(
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @CurrentUser() actor: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    if (userId === actor.id) {
+      throw AppError.validation({ userId: ['Master tidak dapat menghapus akunnya sendiri.'] });
+    }
+    await this.users.deleteStudent(userId);
+    await this.log(request, actor, 'user.deleted', userId, { personalDataRedacted: true });
+  }
+
+  @Post(':userId/impersonate')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.USERS_SECURITY_MANAGE)
+  @ApiOperation({ summary: 'Memulai pratinjau hanya-baca sebagai Pelajar' })
+  @ApiErrors(401, 403, 404, 422)
+  async impersonate(
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+    @CurrentSession() actor: ActiveSession,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const preview = await this.users.startImpersonation(actor, userId, {
+      ipAddress: request.ip,
+      userAgent: request.header('user-agent') ?? undefined,
+    });
+    await this.log(request, actor, 'user.impersonation_started', userId, { readOnly: true });
+    this.setSessionCookies(response, preview.sessionId, preview.csrfToken);
+    return { started: true };
+  }
+
+  @Post('impersonation/end')
+  @HttpCode(200)
+  @AllowImpersonationMutation()
+  @ApiOperation({ summary: 'Mengakhiri pratinjau dan memulihkan sesi Master' })
+  @ApiErrors(401, 403)
+  async endImpersonation(
+    @CurrentSession() session: ActiveSession,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const restored = await this.users.endImpersonation(session);
+    await this.audit.record({
+      actorUserId: session.impersonatedByUserId!,
+      action: 'user.impersonation_ended',
+      targetType: 'user',
+      targetId: session.id,
+      requestId: request.requestId,
+      ipAddress: request.ip,
+      userAgent: request.header('user-agent') ?? undefined,
+    });
+    this.setSessionCookies(response, restored.sessionId, restored.csrfToken);
+    return { ended: true };
+  }
+
+  private setSessionCookies(response: Response, sessionId: string, csrfToken: string): void {
+    const options: CookieOptions = {
+      domain: this.app.session.cookieDomain,
+      path: '/',
+      secure: this.app.session.cookieSecure,
+      sameSite: this.app.session.cookieSameSite,
+      maxAge: this.app.session.absoluteTtlSeconds * 1000,
+    };
+    response.cookie(this.app.session.cookieName, sessionId, { ...options, httpOnly: true });
+    response.cookie(this.app.session.csrfCookieName, csrfToken, { ...options, httpOnly: false });
   }
 
   private async log(

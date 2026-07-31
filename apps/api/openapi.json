@@ -1316,6 +1316,65 @@
         "tags": [
           "admin-users"
         ]
+      },
+      "delete": {
+        "operationId": "AdminUsersController_remove",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus dan meredaksi akun Pelajar",
+        "tags": [
+          "admin-users"
+        ]
       }
     },
     "/api/v1/admin/users/{userId}/suspend": {
@@ -1603,6 +1662,99 @@
           }
         },
         "summary": "Menerbitkan token reset password sekali pakai",
+        "tags": [
+          "admin-users"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{userId}/impersonate": {
+      "post": {
+        "operationId": "AdminUsersController_impersonate",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Memulai pratinjau hanya-baca sebagai Pelajar",
+        "tags": [
+          "admin-users"
+        ]
+      }
+    },
+    "/api/v1/admin/users/impersonation/end": {
+      "post": {
+        "operationId": "AdminUsersController_endImpersonation",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengakhiri pratinjau dan memulihkan sesi Master",
         "tags": [
           "admin-users"
         ]
@@ -7864,6 +8016,10 @@
                 "commerce.manage"
               ]
             }
+          },
+          "isImpersonating": {
+            "type": "boolean",
+            "description": "Benar saat Master sedang melihat aplikasi sebagai Pelajar."
           }
         },
         "required": [
@@ -7872,7 +8028,8 @@
           "email",
           "role",
           "status",
-          "permissions"
+          "permissions",
+          "isImpersonating"
         ]
       },
       "UpdateCurrentUserDto": {

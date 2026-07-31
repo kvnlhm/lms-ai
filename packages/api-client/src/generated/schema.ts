@@ -323,7 +323,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Menghapus dan meredaksi akun Pelajar */
+        delete: operations["AdminUsersController_remove"];
         options?: never;
         head?: never;
         /** Mengubah profil administratif pengguna */
@@ -392,6 +393,40 @@ export interface paths {
         put?: never;
         /** Menerbitkan token reset password sekali pakai */
         post: operations["AdminUsersController_passwordResetLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{userId}/impersonate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Memulai pratinjau hanya-baca sebagai Pelajar */
+        post: operations["AdminUsersController_impersonate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/impersonation/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mengakhiri pratinjau dan memulihkan sesi Master */
+        post: operations["AdminUsersController_endImpersonation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1718,6 +1753,8 @@ export interface components {
             /** @enum {string} */
             status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
             permissions: ("users.read" | "users.manage" | "users.security.manage" | "courses.manage" | "enrollments.manage" | "discussions.moderate" | "analytics.read" | "reports.export" | "audit.read" | "roles.manage" | "announcements.manage" | "commerce.manage")[];
+            /** @description Benar saat Master sedang melihat aplikasi sebagai Pelajar. */
+            isImpersonating: boolean;
         };
         UpdateCurrentUserDto: {
             fullName?: string;
@@ -3591,6 +3628,51 @@ export interface operations {
             };
         };
     };
+    AdminUsersController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     AdminUsersController_update: {
         parameters: {
             query?: never;
@@ -3835,6 +3917,78 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminUsersController_impersonate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminUsersController_endImpersonation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

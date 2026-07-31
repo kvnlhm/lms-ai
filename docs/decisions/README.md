@@ -39,3 +39,5 @@
 | ADR-017 | Accepted | YouTube sebagai sumber video opsional |
 | ADR-018 | Accepted | Pencabutan hak berpartisipasi di forum |
 | ADR-019 | Accepted | Sesi langsung dengan tautan manual |
+| ADR-020 | Accepted | Configurable Master MFA |
+| ADR-021 | Accepted | Read-only Student impersonation |
