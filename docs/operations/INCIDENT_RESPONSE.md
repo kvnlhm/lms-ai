@@ -7,12 +7,37 @@ Peringatan otomatis dikirim lewat Resend ke alamat operator, dari
 
 | Sumber | Yang dilaporkan |
 |---|---|
-| Coolify | Deployment gagal, container berubah status, server tidak terjangkau, penggunaan disk, backup dan scheduled task gagal, docker cleanup gagal |
+| Coolify | Deployment gagal, server tidak terjangkau, penggunaan disk, backup dan scheduled task gagal, docker cleanup gagal |
+| `scripts/health-watch.sh` | Container aplikasi mati atau unhealthy, dan situs tidak membalas 200 |
 | `scripts/backup.sh` | Checkpoint backup gagal diambil |
 | Pemantauan galat | Galat runtime baru pada API, browser, dan worker — lihat §0a |
 
 Keberhasilan sengaja tidak dilaporkan, kecuali beberapa saklar Coolify yang
 memang dimatikan secara default.
+
+**Saklar "container status change" milik Coolify tidak berfungsi.** Saklarnya
+ada di antarmuka dan dapat dinyalakan, tetapi pada Coolify 4.1.2 pemanggilan
+notifikasinya dikomentari di dalam source:
+`app/Actions/Docker/GetContainersStatus.php` baris 362 dan 450 berisi
+`// $this->server->team?->notify(new ContainerStopped(...));`. Tidak ada satu
+pun pemanggilan aktif untuk container aplikasi.
+
+Ini ketahuan pada 31 Juli 2026 ketika produksi mati sembilan menit — API
+crash-loop, container web dan gateway hilang — dan tidak satu pun surat
+container terkirim. Yang datang hanya "Deployment failed", karena kebetulan
+kematiannya terjadi di tengah deploy. Kegagalan di luar deploy tidak akan
+menghasilkan apa pun.
+
+`scripts/health-watch.sh` menutup lubang itu: berjalan tiap lima menit lewat
+cron, memeriksa keenam layanan wajib beserta status `unhealthy`-nya, lalu
+memanggil `/health/ready` dari luar karena seluruh container dapat terlihat
+sehat sementara gateway salah merutekan. Surat hanya dikirim pada perpindahan
+keadaan — sekali saat rusak, sekali saat pulih — supaya satu insiden tidak
+menghasilkan puluhan surat.
+
+Kunci Resend disalin ke `/var/lib/lms-health-watch/resend.key` setiap siklus
+sehat. Tanpa itu, pengawas menjadi bisu tepat ketika seluruh container API mati
+— kegagalan terparah yang justru paling perlu dilaporkan.
 
 Satu hal yang masih belum terpantau:
 
