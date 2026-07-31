@@ -1691,6 +1691,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar laporan yang tersedia untuk diekspor */
+        get: operations["ReportsController_catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/reports/{reportKey}.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mengunduh satu laporan sebagai CSV */
+        get: operations["ReportsController_download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/errors": {
         parameters: {
             query?: never;
@@ -2954,6 +2988,13 @@ export interface components {
         };
         AuditLogActionsDto: {
             actions: string[];
+        };
+        ReportCatalogItemDto: {
+            key: string;
+            label: string;
+        };
+        ReportCatalogDto: {
+            reports: components["schemas"]["ReportCatalogItemDto"][];
         };
         ErrorEventDto: {
             id: string;
@@ -8224,6 +8265,87 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    ReportsController_catalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReportCatalogDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    ReportsController_download: {
+        parameters: {
+            query?: {
+                courseId?: string;
+                from?: string;
+                to?: string;
+                /** @description Ambang hari tanpa aktivitas; hanya untuk laporan pengguna tidak aktif */
+                inactiveDays?: number;
+            };
+            header?: never;
+            path: {
+                reportKey: "users" | "enrollments" | "progress" | "course-completions" | "learning-activity" | "inactive-users" | "at-risk-users" | "forum" | "course-performance";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": components["schemas"]["ApiErrorDto"];
                 };
             };
         };

@@ -35,6 +35,7 @@ const MASTER_NAV = [
     icon: Dashboard,
     permission: 'announcements.manage',
   },
+  { href: '/master/reports', label: 'Laporan', icon: Dashboard, permission: 'reports.export' },
   { href: '/master/errors', label: 'Galat', icon: Dashboard, permission: 'audit.read' },
   { href: '/master/audit', label: 'Audit log', icon: Users, permission: 'audit.read' },
 ] as const;

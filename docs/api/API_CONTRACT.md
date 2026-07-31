@@ -2038,3 +2038,56 @@ dilakukannya.
 `/actions` mengembalikan daftar yang dihitung dari data, bukan daftar tetap
 yang ditulis tangan — daftar tangan akan basi begitu ada tindakan baru yang
 dicatat.
+
+---
+
+## 39. Reports API
+
+Memenuhi PRD 9. Seluruh endpoint memerlukan permission `reports.export`.
+
+| Method | Path | Keterangan |
+|---|---|---|
+| GET | `/admin/reports` | Daftar laporan yang tersedia |
+| GET | `/admin/reports/{reportKey}.csv` | Mengunduh satu laporan |
+
+Sembilan `reportKey`: `users`, `enrollments`, `progress`, `course-completions`,
+`learning-activity`, `inactive-users`, `at-risk-users`, `forum`,
+`course-performance`. Kunci di luar daftar itu dijawab `422`.
+
+Query: `courseId`, `from`, `to`, `inactiveDays`. Tiap laporan hanya memakai
+penyaring yang relevan baginya; yang tidak relevan diabaikan, bukan ditolak.
+
+Balasannya `text/csv`, **bukan** amplop `{ data, meta }` — berkas unduhan tidak
+dibungkus. Header: `Content-Disposition: attachment`, dan `Cache-Control:
+no-store` karena isinya data pribadi yang tidak boleh mengendap di cache
+perantara.
+
+Berkas selalu memuat baris header walau datanya kosong. Berkas benar-benar
+kosong tidak dapat dibedakan dari ekspor yang gagal.
+
+### Yang dijaga di dalam berkas
+
+Sel yang diawali `=`, `+`, `-`, `@`, atau tab diawali kutip satu sebelum
+ditulis. Nama, judul, dan isi forum ditulis pengguna; tanpa penetralan itu,
+`=HYPERLINK(...)` pada nama seseorang akan dijalankan Excel begitu Master
+membuka berkasnya. Penjagaan ini hanya berlaku untuk teks — angka dibiarkan
+tetap angka agar kolomnya dapat dijumlahkan.
+
+Berkas diawali BOM UTF-8 agar Excel membaca huruf non-ASCII dengan benar, dan
+memakai CRLF sesuai RFC 4180.
+
+`laporan pengguna` tidak pernah mengambil kolom password, rahasia MFA, maupun
+token — yang tidak diambil tidak dapat bocor.
+
+### Batas dan audit
+
+Ekspor yang melampaui 50.000 baris ditolak `422` dengan pesan yang menyebut
+jumlah barisnya, bukan dipotong diam-diam.
+
+Setiap unduhan tercatat sebagai `report.exported` pada audit log berisi nama
+laporan, penyaring, dan jumlah baris — bukan isinya. Audit log bukan tempat
+menyalin data pribadi seluruh pelajar.
+
+`at-risk-users` memakai `classifyRisk` yang sama persis dengan dashboard
+insight, termasuk pembulatannya, sehingga ekspor dan dashboard tidak pernah
+menyebut orang yang berbeda sebagai berisiko.

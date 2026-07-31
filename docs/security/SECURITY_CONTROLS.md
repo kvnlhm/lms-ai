@@ -72,6 +72,18 @@
 | PII pada galat | `context` hanya pengenal teknis, tanpa email, nama, atau payload | Review kode |
 | Anggaran peringatan | Batas surat per jam agar insiden besar tidak membanjiri kotak masuk | `error-monitor.service.spec.ts` |
 
+## 4b. Report Export
+
+| Control | Requirement | Verification |
+|---|---|---|
+| Akses ekspor | `reports.export`; pelajar ditolak `403` | `reports.e2e-spec.ts` |
+| Injeksi rumus CSV | Sel teks berawalan `=`, `+`, `-`, `@`, tab dinetralkan | `csv.spec.ts`, `reports.e2e-spec.ts` |
+| Kredensial pada ekspor | Password hash, rahasia MFA, dan token tidak pernah diambil | `reports.e2e-spec.ts` |
+| Caching | `Cache-Control: no-store` pada seluruh berkas laporan | `reports.e2e-spec.ts` |
+| Batas ukuran | Lebih dari 50.000 baris ditolak, bukan dipotong diam-diam | Review kode |
+| Jejak ekspor | Tercatat sebagai `report.exported`, tanpa menyalin isi laporan | `reports.e2e-spec.ts` |
+| Nama berkas | Kunci laporan dibersihkan sebelum masuk `Content-Disposition` | `csv.spec.ts` |
+
 ## 5. API Security
 
 - HTTPS only.

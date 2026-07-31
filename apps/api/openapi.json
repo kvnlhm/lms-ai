@@ -7936,6 +7936,159 @@
         ]
       }
     },
+    "/api/v1/admin/reports": {
+      "get": {
+        "operationId": "ReportsController_catalog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReportCatalogDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Daftar laporan yang tersedia untuk diekspor",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/admin/reports/{reportKey}.csv": {
+      "get": {
+        "operationId": "ReportsController_download",
+        "parameters": [
+          {
+            "name": "reportKey",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "users",
+                "enrollments",
+                "progress",
+                "course-completions",
+                "learning-activity",
+                "inactive-users",
+                "at-risk-users",
+                "forum",
+                "course-performance"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "inactiveDays",
+            "required": false,
+            "in": "query",
+            "description": "Ambang hari tanpa aktivitas; hanya untuk laporan pengguna tidak aktif",
+            "schema": {
+              "default": 30,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengunduh satu laporan sebagai CSV",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
     "/api/v1/admin/errors": {
       "get": {
         "operationId": "ErrorLogController_list",
@@ -12123,6 +12276,35 @@
         },
         "required": [
           "actions"
+        ]
+      },
+      "ReportCatalogItemDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label"
+        ]
+      },
+      "ReportCatalogDto": {
+        "type": "object",
+        "properties": {
+          "reports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportCatalogItemDto"
+            }
+          }
+        },
+        "required": [
+          "reports"
         ]
       },
       "ErrorEventDto": {
