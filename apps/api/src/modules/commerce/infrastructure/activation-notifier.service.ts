@@ -92,7 +92,38 @@ export class ActivationNotifierService {
         }),
       },
     );
-    if (!response.ok) throw new Error(`WhatsApp menolak permintaan (${response.status}).`);
+    if (!response.ok) {
+      // Alasan dari Meta ikut dibawa. Sebelumnya hanya kode status yang
+      // dilaporkan, sehingga "WhatsApp menolak permintaan (404)" bisa berarti
+      // nomor salah, token tidak berizin, atau nama template tidak ada —
+      // dan membedakannya menuntut memanggil ulang Graph API secara manual.
+      // Badan galat Meta tidak memuat token maupun data pribadi penerima.
+      throw new Error(
+        `WhatsApp menolak permintaan (${response.status}): ${await metaErrorMessage(response)}`,
+      );
+    }
     return 'SENT';
+  }
+}
+
+/**
+ * Mengambil kalimat galat dari balasan Graph API.
+ *
+ * Meta menaruh keterangan paling berguna pada `error.error_data.details` —
+ * misalnya "template name (x) does not exist in id" — sedangkan `error.message`
+ * hanya memuat kode dan judul umum. Keduanya digabung bila ada.
+ */
+async function metaErrorMessage(response: Response): Promise<string> {
+  try {
+    const payload = (await response.json()) as {
+      error?: { message?: string; error_data?: { details?: string } };
+    };
+    const pesan = payload.error?.message;
+    const rinci = payload.error?.error_data?.details;
+    if (pesan && rinci) return `${pesan} — ${rinci}`;
+    return rinci ?? pesan ?? 'tanpa keterangan';
+  } catch {
+    // Balasan non-JSON, misalnya halaman galat dari proxy di depan Graph API.
+    return 'balasan tidak dapat dibaca';
   }
 }
