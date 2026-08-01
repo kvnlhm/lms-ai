@@ -630,6 +630,19 @@ table.data tbody tr:hover { background: var(--raised); }
   border-radius: 10px;
   background: color-mix(in srgb, var(--raised) 58%, var(--surface));
 }
+.addLessonForm {
+  margin-top: 14px;
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--line));
+}
+.lessonCreateNotice {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--text-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
 .lessonEditHead { margin-bottom: 18px; }
 .lessonEditHead strong { font-size: 15px; }
 .lessonEditHead p { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
