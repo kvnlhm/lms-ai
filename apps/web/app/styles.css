@@ -667,6 +667,32 @@ table.data tbody tr:hover { background: var(--raised); }
   flex-wrap: wrap;
   padding: 4px 0 18px;
 }
+.lessonQuickOptions {
+  display: flex;
+  padding: 5px 0 14px;
+}
+.lessonAdvanced {
+  margin-bottom: 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+}
+.lessonAdvanced summary {
+  padding: 11px 13px;
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.lessonAdvanced[open] summary { border-bottom: 1px solid var(--line-soft); }
+.lessonAdvancedHint {
+  margin: 13px 13px 4px;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.lessonAdvanced .lessonEditGrid { padding: 0 13px; }
+.lessonAdvanced .lessonOptions { padding: 2px 13px 14px; }
 .lessonEditActions { display: flex; justify-content: flex-end; gap: 8px; }
 .videoUploadProgress {
   margin: 0 14px 14px 54px;
@@ -1448,6 +1474,7 @@ table.data tbody tr:hover { background: var(--raised); }
   .lessonEditForm { margin-left: 10px; margin-right: 10px; padding: 16px; }
   .lessonEditGrid { grid-template-columns: 1fr; }
   .lessonEditFull { grid-column: auto; }
+  .lessonAdvanced .lessonOptions { align-items: flex-start; flex-direction: column; gap: 10px; }
   .moduleTitleForm { grid-template-columns: auto minmax(0, 1fr); width: 100%; min-width: 0; }
   .moduleTitleForm .btnTiny { grid-row: 2; }
   .moduleTitleForm .btnTiny:first-of-type { grid-column: 2; justify-self: end; margin-right: 58px; }
