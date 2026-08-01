@@ -89,6 +89,108 @@ jobs:
       - run: pnpm --filter @lms/worker run test:e2e
       - run: pnpm build
 
+  # Membangun image produksi lalu benar-benar menyalakannya.
+  #
+  # Ada satu kelas kegagalan yang lolos dari typecheck, lint, seluruh test, dan
+  # `nest build`, lalu baru muncul ketika container produksi menyala: mengimpor
+  # dependency transitif. Di runner CI dan mesin pengembangan `node_modules`
+  # ter-hoist sehingga impornya terselesaikan; pada image produksi yang dipasang
+  # dengan `pnpm install --filter @lms/api...`, sebuah paket hanya dapat
+  # mengimpor apa yang tercantum di `dependencies` miliknya sendiri.
+  #
+  # Pada 31 Juli 2026 hal ini menjatuhkan produksi selama sembilan menit.
+  # Gerbang ini menangkap seluruh kegagalan "berhasil dibangun, gagal menyala",
+  # bukan hanya impor transitif.
+  boot:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lms
+          POSTGRES_PASSWORD: lms_ci_password
+          POSTGRES_DB: lms
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lms -d lms"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      BOOT_ENV: >-
+        -e DATABASE_URL=postgresql://lms:lms_ci_password@localhost:5432/lms?schema=public
+        -e REDIS_URL=redis://localhost:6379
+        -e MFA_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        -e APP_ENV=ci
+        -e SESSION_COOKIE_SECURE=false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -f apps/api/Dockerfile -t lms-api:ci .
+
+      - name: Build worker image
+        run: docker build -f apps/worker/Dockerfile -t lms-worker:ci .
+
+      # `--network host` supaya container menjangkau service postgres dan redis
+      # yang dipetakan ke localhost runner.
+      - name: API harus benar-benar mendengarkan
+        run: |
+          docker run -d --name api-boot --network host $BOOT_ENV lms-api:ci
+
+          # /health/live sengaja dipilih: ia tidak menyentuh dependency, jadi
+          # yang diuji murni "prosesnya menyala dan menerima koneksi".
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3001/api/v1/health/live >/dev/null 2>&1; then
+              echo "API menyala setelah ${i} detik."
+              exit 0
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' api-boot)" != "true" ]; then
+              echo "::error::Container API berhenti sebelum sempat mendengarkan."
+              docker logs api-boot
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::error::API tidak pernah menjawab health check dalam 30 detik."
+          docker logs api-boot
+          exit 1
+
+      - name: Worker harus menyala tanpa keluar
+        run: |
+          docker run -d --name worker-boot --network host $BOOT_ENV lms-worker:ci
+
+          # Worker tidak punya HTTP server, jadi buktinya: masih berjalan dan
+          # sudah mencetak penanda siap.
+          sleep 15
+          if [ "$(docker inspect -f '{{.State.Running}}' worker-boot)" != "true" ]; then
+            echo "::error::Container worker berhenti."
+            docker logs worker-boot
+            exit 1
+          fi
+          if ! docker logs worker-boot 2>&1 | grep -q "worker berjalan"; then
+            echo "::error::Worker berjalan tetapi tidak pernah melaporkan siap."
+            docker logs worker-boot
+            exit 1
+          fi
+          echo "Worker menyala."
+
+      - name: Log container
+        if: always()
+        run: |
+          docker logs api-boot 2>&1 | tail -30 || true
+          docker logs worker-boot 2>&1 | tail -20 || true
+
   # SECURITY_CONTROLS.md §11 mewajibkan dependency scan dan secret scan pada
   # setiap PR kritis. Keduanya belum pernah benar-benar berjalan.
   security:
