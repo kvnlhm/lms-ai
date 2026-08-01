@@ -34,7 +34,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
     );
 
     this.start('notifications', this.config.concurrency.notifications, (job) =>
-      Promise.resolve(this.notifications.handle(job.data as EventJob)),
+      this.notifications.handle(job.data as EventJob),
     );
 
     this.logger.log('Worker analytics dan notifications siap.');
