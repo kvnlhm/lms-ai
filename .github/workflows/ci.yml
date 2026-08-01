@@ -56,6 +56,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @lms/api exec prisma migrate deploy
 
+      # Seluruh e2e memakai katalog, role, dan akun dari seed — `login()` pada
+      # harness bahkan menuntut 200. Tanpa langkah ini 230 dari 235 test gagal,
+      # dan gejalanya menyesatkan: login yang gagal berulang kali menabrak
+      # pembatas laju jalur auth, sehingga yang terlihat 429, bukan "data tidak
+      # ada". Ini tidak pernah ketahuan karena CI-nya sendiri belum pernah
+      # berjalan.
+      - run: pnpm --filter @lms/api run db:seed
+
       # Migrasi dan schema.prisma harus sepakat. Drift di sini tidak membuat
       # satu test pun merah — ia muncul belakangan sebagai perubahan siluman
       # yang menumpang pada migrasi fitur berikutnya, atau sebagai indeks yang
