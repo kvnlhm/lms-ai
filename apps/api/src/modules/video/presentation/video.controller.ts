@@ -120,6 +120,8 @@ export class VideoController {
 
   @Get('playback-sessions/:playbackSessionId/content')
   @Header('Cache-Control', 'private, no-store')
+  @Header('Content-Disposition', 'inline')
+  @Header('X-Content-Type-Options', 'nosniff')
   @ApiOperation({ summary: 'Mengotorisasi internal media delivery oleh reverse proxy' })
   @ApiErrors(401, 403, 404)
   async content(

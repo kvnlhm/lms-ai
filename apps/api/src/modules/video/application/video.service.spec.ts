@@ -1,4 +1,4 @@
-import { parseYoutubeVideoId } from './video.service';
+import { parseYoutubeVideoId, playbackWatermarkText } from './video.service';
 
 describe('parseYoutubeVideoId', () => {
   it('accepts the link shapes people actually paste', () => {
@@ -39,5 +39,24 @@ describe('parseYoutubeVideoId', () => {
     expect(parseYoutubeVideoId('data:text/html,<script>alert(1)</script>')).toBeNull();
     // Host yang sekadar mengandung "youtube.com" bukan milik YouTube.
     expect(parseYoutubeVideoId('https://youtube.com.evil.test/watch?v=dQw4w9WgXcQ')).toBeNull();
+  });
+});
+
+describe('playbackWatermarkText', () => {
+  it('identifies the viewer and session without exposing the complete email local-part', () => {
+    expect(
+      playbackWatermarkText(
+        'Pelajar Testing',
+        'pelajar.testing@example.com',
+        '91ba1234-1111-2222-3333-444444444444',
+      ),
+    ).toBe('Pelajar Testing · pe****@example.com · 91BA1234');
+  });
+
+  it('handles short and malformed email values without throwing', () => {
+    expect(playbackWatermarkText('Akun', 'a@example.com', 'abcd1234')).toBe(
+      'Akun · a*@example.com · ABCD1234',
+    );
+    expect(playbackWatermarkText('Akun', 'lokal', 'abcd1234')).toBe('Akun · lo*** · ABCD1234');
   });
 });
