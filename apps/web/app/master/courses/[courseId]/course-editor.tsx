@@ -3,15 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { ApiError, browserClient, ensureSuccess, unwrap } from '../../../lib/browser-api';
 import {
-  ApiError,
-  browserApiUrl,
-  browserClient,
-  ensureSuccess,
-  readCsrfToken,
-  unwrap,
-} from '../../../lib/browser-api';
+  attachToLesson,
+  uploadErrorMessage,
+  uploadToLibrary,
+} from '../../../lib/video-upload';
 import { ChevronDown, ChevronUp, Edit, Trash } from '../../../components/icons';
+import { VideoLibraryPicker } from '../../../components/video-library-picker';
 import { StatusPill } from '../../../components/status-pill';
 
 type CourseDetail = Schemas['AdminCourseDetailDto'];
@@ -68,6 +67,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation | null>(null);
   const [youtubeLessonId, setYoutubeLessonId] = useState<string | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [pickerLesson, setPickerLesson] = useState<{ id: string; title: string } | null>(null);
 
   /**
    * Menjalankan satu mutation.
@@ -253,28 +253,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
     });
 
     try {
-      if (!file.name.toLowerCase().endsWith('.mp4')) {
-        throw new ApiError('VALIDATION_ERROR', 422, 'Pilih file dengan ekstensi .mp4.');
-      }
-      if (file.size < 1) {
-        throw new ApiError('VALIDATION_ERROR', 422, 'File video kosong.');
-      }
-
-      // Sebagian browser/OS memberi `file.type` kosong atau `application/octet-stream`
-      // untuk MP4. Ekstensi dinormalisasi di sini; server tetap memeriksa signature
-      // ISO-BMFF `ftyp` sebelum menandai video tersedia.
-      const intent = unwrap(
-        await client().POST('/api/v1/admin/videos/upload-intents', {
-          body: {
-            title,
-            fileName: file.name,
-            mimeType: 'video/mp4',
-            sizeBytes: file.size,
-          },
-        }),
-      ) as unknown as { uploadUrl: string; method: string; videoAssetId: string };
-
-      await uploadFile(intent.uploadUrl, intent.method, file, (percent) => {
+      const videoAssetId = await uploadToLibrary(file, title, (percent) => {
         setUpload({
           lessonId,
           fileName: file.name,
@@ -286,12 +265,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
 
       // Berkasnya kini ada di perpustakaan; pemasangan ke pelajaran adalah
       // langkah tersendiri, dan itulah yang membuatnya bisa dipakai ulang.
-      unwrap(
-        await client().PUT('/api/v1/admin/lessons/{lessonId}/video', {
-          params: { path: { lessonId } },
-          body: { videoAssetId: intent.videoAssetId },
-        }),
-      );
+      await attachToLesson(lessonId, videoAssetId);
 
       setUpload({
         lessonId,
@@ -526,6 +500,16 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             className="btnTiny"
                             type="button"
                             disabled={busy !== null}
+                            onClick={() => setPickerLesson({ id: lesson.id, title: lesson.title })}
+                          >
+                            Pilih dari perpustakaan
+                          </button>
+                        ) : null}
+                        {lesson.contentType === 'VIDEO' ? (
+                          <button
+                            className="btnTiny"
+                            type="button"
+                            disabled={busy !== null}
                             onClick={() => {
                               setYoutubeUrl('');
                               setYoutubeLessonId((current) =>
@@ -751,6 +735,28 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
           </section>
         </div>
       ) : null}
+
+      {pickerLesson ? (
+        <VideoLibraryPicker
+          lessonTitle={pickerLesson.title}
+          busy={busy !== null}
+          onClose={() => setPickerLesson(null)}
+          onSelect={(videoAssetId) => {
+            const target = pickerLesson;
+            setPickerLesson(null);
+            void run(`pilih-video-${target.id}`, async () => {
+              await attachToLesson(target.id, videoAssetId);
+              setUpload({
+                lessonId: target.id,
+                fileName: target.title,
+                percent: 100,
+                status: 'SUCCESS',
+                message: 'Video dari perpustakaan dipasang dan siap diputar.',
+              });
+            });
+          }}
+        />
+      ) : null}
     </>
   );
 }
@@ -809,77 +815,6 @@ function ModuleTitleForm({
       </button>
     </form>
   );
-}
-
-function uploadFile(
-  uploadUrl: string,
-  method: string,
-  file: File,
-  onProgress: (percent: number) => void,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = new XMLHttpRequest();
-    const absoluteUrl = new URL(uploadUrl, `${browserApiUrl().replace(/\/$/, '')}/`).toString();
-    request.open(method, absoluteUrl);
-    request.withCredentials = true;
-    request.setRequestHeader('Content-Type', 'video/mp4');
-    const csrf = readCsrfToken();
-    if (csrf) request.setRequestHeader('X-CSRF-Token', csrf);
-
-    request.upload.addEventListener('progress', (event) => {
-      if (!event.lengthComputable || event.total < 1) return;
-      onProgress(Math.min(100, Math.round((event.loaded / event.total) * 100)));
-    });
-    request.addEventListener('load', () => {
-      if (request.status >= 200 && request.status < 300) {
-        onProgress(100);
-        resolve();
-        return;
-      }
-      reject(xhrApiError(request));
-    });
-    request.addEventListener('error', () => {
-      reject(new ApiError('NETWORK_ERROR', 0, 'Koneksi terputus saat mengunggah video.'));
-    });
-    request.addEventListener('abort', () => {
-      reject(new ApiError('NETWORK_ERROR', 0, 'Upload video dibatalkan.'));
-    });
-    request.send(file);
-  });
-}
-
-function xhrApiError(request: XMLHttpRequest): ApiError {
-  try {
-    const payload = JSON.parse(request.responseText) as {
-      error?: {
-        code?: string;
-        message?: string;
-        fields?: Record<string, string[]>;
-        requestId?: string;
-      };
-    };
-    const body = payload.error;
-    if (body) {
-      return new ApiError(
-        (body.code ?? 'INTERNAL_ERROR') as ConstructorParameters<typeof ApiError>[0],
-        request.status,
-        body.message ?? 'Upload video gagal.',
-        body.fields,
-        body.requestId,
-      );
-    }
-  } catch {
-    // Respons non-JSON ditangani dengan pesan generik di bawah.
-  }
-  return new ApiError('INTERNAL_ERROR', request.status, 'Server menolak upload video.');
-}
-
-function uploadErrorMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) {
-    return 'Upload gagal. Periksa koneksi dan coba lagi.';
-  }
-  const details = error.fields ? Object.values(error.fields).flat().filter(Boolean) : [];
-  return details.length > 0 ? details.join(' ') : error.message;
 }
 
 function LessonEditForm({
