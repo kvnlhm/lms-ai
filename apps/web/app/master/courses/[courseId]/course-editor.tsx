@@ -150,7 +150,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
 
   const addLesson = (
     moduleId: string,
-    body: { title: string; contentType: (typeof CONTENT_TYPES)[number]['value']; isRequired: boolean },
+    body: LessonUpdateInput,
   ) =>
     run(`add-lesson-${moduleId}`, async () =>
       unwrap(
@@ -652,6 +652,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                 )}
 
                 <AddLessonForm
+                  moduleId={courseModule.id}
                   disabled={busy !== null}
                   onAdd={(body) => addLesson(courseModule.id, body)}
                 />
@@ -1015,62 +1016,171 @@ function AddModuleForm({
 }
 
 function AddLessonForm({
+  moduleId,
   disabled,
   onAdd,
 }: {
+  moduleId: string;
   disabled: boolean;
-  onAdd: (body: {
-    title: string;
-    contentType: (typeof CONTENT_TYPES)[number]['value'];
-    isRequired: boolean;
-  }) => Promise<boolean>;
+  onAdd: (body: LessonUpdateInput) => Promise<boolean>;
 }) {
-  const [title, setTitle] = useState('');
   const [contentType, setContentType] = useState<(typeof CONTENT_TYPES)[number]['value']>('TEXT');
-  const [isRequired, setIsRequired] = useState(true);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (title.trim().length < 3) return;
-    const ok = await onAdd({ title: title.trim(), contentType, isRequired });
-    if (ok) setTitle('');
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const title = String(form.get('title') ?? '').trim();
+    if (title.length < 3) return;
+
+    const ok = await onAdd({
+      title,
+      description: String(form.get('description') ?? '').trim(),
+      contentType,
+      textContent: contentType === 'TEXT' ? String(form.get('textContent') ?? '').trim() : '',
+      externalUrl:
+        contentType === 'EXTERNAL_LINK' || contentType === 'PDF'
+          ? String(form.get('externalUrl') ?? '').trim()
+          : '',
+      estimatedMinutes: Number(form.get('estimatedMinutes') ?? 0),
+      isRequired: form.get('isRequired') === 'on',
+      isPreview: form.get('isPreview') === 'on',
+      isActive: form.get('isActive') === 'on',
+      completionRule: String(
+        form.get('completionRule') ?? 'MANUAL',
+      ) as (typeof COMPLETION_RULES)[number]['value'],
+    });
+    if (ok) {
+      formElement.reset();
+      setContentType('TEXT');
+    }
   }
 
   return (
-    <form className="addForm" onSubmit={submit}>
-      <label className="srOnly" htmlFor={`lesson-${contentType}`}>
-        Judul pelajaran baru
-      </label>
-      <input
-        placeholder="Judul pelajaran baru"
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        disabled={disabled}
-      />
-      <select
-        value={contentType}
-        onChange={(event) => setContentType(event.target.value as typeof contentType)}
-        disabled={disabled}
-        aria-label="Jenis materi"
-      >
-        {CONTENT_TYPES.map((type) => (
-          <option key={type.value} value={type.value}>
-            {type.label}
-          </option>
-        ))}
-      </select>
-      <label className="checkRow">
-        <input
-          type="checkbox"
-          checked={isRequired}
-          onChange={(event) => setIsRequired(event.target.checked)}
-          disabled={disabled}
-        />
-        Wajib
-      </label>
-      <button className="btnTiny" type="submit" disabled={disabled || title.trim().length < 3}>
-        Tambah
-      </button>
+    <form className="lessonEditForm addLessonForm" onSubmit={submit}>
+      <div className="lessonEditHead">
+        <div>
+          <strong>Tambah materi</strong>
+          <p>Lengkapi judul dan isi materi sekaligus. Kamu masih bisa mengubahnya setelah disimpan.</p>
+        </div>
+      </div>
+      <div className="lessonEditGrid">
+        <div className="field">
+          <label htmlFor={`new-lesson-title-${moduleId}`}>Judul</label>
+          <input
+            id={`new-lesson-title-${moduleId}`}
+            name="title"
+            placeholder="Contoh: Apa itu AI?"
+            minLength={3}
+            maxLength={200}
+            required
+            disabled={disabled}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor={`new-lesson-type-${moduleId}`}>Jenis materi</label>
+          <select
+            id={`new-lesson-type-${moduleId}`}
+            value={contentType}
+            onChange={(event) => setContentType(event.target.value as typeof contentType)}
+            disabled={disabled}
+          >
+            {CONTENT_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>{type.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="field lessonEditFull">
+          <label htmlFor={`new-lesson-description-${moduleId}`}>Deskripsi singkat</label>
+          <textarea
+            id={`new-lesson-description-${moduleId}`}
+            name="description"
+            maxLength={2000}
+            placeholder="Ringkasan singkat yang tampil pada daftar pelajaran."
+            disabled={disabled}
+          />
+        </div>
+        {contentType === 'TEXT' ? (
+          <div className="field lessonEditFull">
+            <label htmlFor={`new-lesson-content-${moduleId}`}>Isi artikel atau materi teks</label>
+            <textarea
+              className="lessonContentInput"
+              id={`new-lesson-content-${moduleId}`}
+              name="textContent"
+              maxLength={50000}
+              placeholder="Tulis materi pembelajaran di sini…"
+              required
+              disabled={disabled}
+            />
+            <span className="fieldHint">Maksimal 50.000 karakter.</span>
+          </div>
+        ) : null}
+        {contentType === 'EXTERNAL_LINK' || contentType === 'PDF' ? (
+          <div className="field lessonEditFull">
+            <label htmlFor={`new-lesson-url-${moduleId}`}>
+              {contentType === 'PDF' ? 'URL dokumen PDF' : 'URL tujuan'}
+            </label>
+            <input
+              id={`new-lesson-url-${moduleId}`}
+              name="externalUrl"
+              type="url"
+              placeholder="https://"
+              required
+              disabled={disabled}
+            />
+          </div>
+        ) : null}
+        {contentType === 'VIDEO' ? (
+          <div className="lessonCreateNotice lessonEditFull">
+            Setelah materi disimpan, unggah MP4, pilih video dari perpustakaan, atau tautkan YouTube
+            melalui tombol yang muncul pada materi tersebut.
+          </div>
+        ) : null}
+        <div className="field">
+          <label htmlFor={`new-lesson-duration-${moduleId}`}>Estimasi durasi (menit)</label>
+          <input
+            id={`new-lesson-duration-${moduleId}`}
+            name="estimatedMinutes"
+            type="number"
+            min={0}
+            max={10000}
+            defaultValue={0}
+            disabled={disabled}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor={`new-lesson-completion-${moduleId}`}>Aturan selesai</label>
+          <select
+            id={`new-lesson-completion-${moduleId}`}
+            name="completionRule"
+            defaultValue="MANUAL"
+            disabled={disabled}
+          >
+            {COMPLETION_RULES.map((rule) => (
+              <option key={rule.value} value={rule.value}>{rule.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="lessonOptions">
+        <label className="checkRow">
+          <input name="isRequired" type="checkbox" defaultChecked disabled={disabled} />
+          Wajib
+        </label>
+        <label className="checkRow">
+          <input name="isPreview" type="checkbox" disabled={disabled} />
+          Bisa dipreview
+        </label>
+        <label className="checkRow">
+          <input name="isActive" type="checkbox" defaultChecked disabled={disabled} />
+          Aktif
+        </label>
+      </div>
+      <div className="lessonEditActions">
+        <button className="btn" type="submit" disabled={disabled}>
+          {disabled ? 'Menyimpan…' : 'Tambah materi'}
+        </button>
+      </div>
     </form>
   );
 }
