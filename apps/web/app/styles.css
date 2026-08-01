@@ -889,6 +889,7 @@ table.data tbody tr:hover { background: var(--raised); }
 .sideProfileText strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .sideProfileText small { margin-top: 3px; color: #777d87; font-size: 11px; }
 .sideProfile .iconBtn { width: 30px; height: 30px; }
+.mobileMasterMenu { display: none; }
 .masterMain { min-width: 0; background: var(--surface); }
 .masterTopbar {
   height: 52px; position: sticky; top: 0; z-index: 15;
@@ -1378,17 +1379,42 @@ table.data tbody tr:hover { background: var(--raised); }
   }
   .workspaceSwitch, .sideLabel, .sideProfile { display: none; }
   .sideNav {
-    display: flex; width: 100%; min-width: 0; justify-content: flex-start; gap: 4px; margin: 0;
-    overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: x proximity;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    display: grid; flex: 1; min-width: 0; width: auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; margin: 0;
+    overflow: visible;
   }
-  .sideNav::-webkit-scrollbar { display: none; }
+  .sideNav > .navLink:nth-of-type(n + 4) { display: none; }
   .sideNav .navLink {
-    display: grid; flex: 0 0 74px; gap: 1px; justify-items: center;
-    scroll-snap-align: start; font-size: 10px; line-height: 1.2; padding: 5px 7px;
-    white-space: nowrap;
+    display: grid; min-width: 0; gap: 1px; justify-items: center;
+    font-size: 10px; line-height: 1.2; padding: 5px 4px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .sideIcon { font-size: 18px; }
+  .mobileMasterMenu {
+    position: relative; display: block; flex: 0 0 min(74px, 24vw); min-width: 0;
+  }
+  .mobileMasterMenu > summary {
+    min-height: 48px; display: grid; place-content: center; justify-items: center; gap: 1px;
+    padding: 5px 4px; border-radius: 8px; color: var(--text-2);
+    font-size: 10px; line-height: 1.2; list-style: none; cursor: pointer;
+  }
+  .mobileMasterMenu > summary::-webkit-details-marker { display: none; }
+  .mobileMasterMenu[open] > summary { background: var(--raised); color: var(--text); }
+  .mobileMasterMenuPanel {
+    position: fixed; right: 10px; bottom: calc(70px + env(safe-area-inset-bottom)); left: 10px;
+    max-height: min(68dvh, 540px); overflow-y: auto; overscroll-behavior: contain;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px;
+    padding: 14px; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--surface); box-shadow: 0 -14px 38px rgb(0 0 0 / .28);
+  }
+  .mobileMasterMenuPanel > strong {
+    grid-column: 1 / -1; padding: 2px 6px 8px; font-size: 14px;
+  }
+  .mobileMasterMenuPanel .navLink {
+    display: flex; min-width: 0; align-items: center; gap: 9px;
+    padding: 11px 10px; border-radius: 8px; font-size: 13px;
+  }
+  .mobileMasterMenuPanel .avatar { width: 20px; height: 20px; font-size: 9px; }
   .masterTopbar { justify-content: space-between; gap: 10px; padding: 0 14px; }
   .masterTopTitle { display: none; }
   .mobileBrand { display: inline; font-weight: 600; color: var(--text); }
@@ -1498,6 +1524,11 @@ table.data tbody tr:hover { background: var(--raised); }
   .rowBetween, .sectionHead, .pageHead, .inlineActions { row-gap: 10px; }
   .inlineActions { flex-wrap: wrap; }
   .card { min-width: 0; }
+  .courseGrid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .courseCard { width: 100%; min-height: 0; }
+  .courseBody { min-height: 180px; }
+  .courseStats { align-items: flex-start; gap: 8px; }
+  .courseStats > span:last-child { text-align: right; }
   .tableWrap::after {
     content: 'Geser tabel untuk melihat kolom lainnya';
     display: block;
@@ -1817,4 +1848,14 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 @media (max-width: 420px) {
   .topbarRight .globalSearchInput { width: 76px; }
   .topbarRight .globalSearchInput:focus { width: 112px; }
+}
+
+@media (max-width: 340px) {
+  .topbar .brand > span:last-child { display: none; }
+  .mobileBrand { max-width: 104px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .masterTopbar .globalSearchInput { width: 92px; }
+  .masterTopbar .globalSearchInput:focus { width: 110px; }
+  .courseBody { padding-inline: 13px; }
+  .courseStats { flex-direction: column; }
+  .courseStats > span:last-child { text-align: left; }
 }

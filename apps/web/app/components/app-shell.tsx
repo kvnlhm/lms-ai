@@ -80,6 +80,37 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
             </Link>
           </nav>
 
+          <details className="mobileMasterMenu">
+            <summary aria-label="Buka seluruh menu Master">
+              <span className="sideIcon"><Dashboard size={18} /></span>
+              <span>Menu</span>
+            </summary>
+            <nav className="mobileMasterMenuPanel" aria-label="Seluruh navigasi Master">
+              <strong>Menu Master</strong>
+              {MASTER_NAV.filter((item) => can(user, item.permission)).map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink key={`mobile-${item.href}`} href={item.href}>
+                    <span className="sideIcon"><Icon size={18} /></span>
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+              <NavLink href="/notifications">
+                <span className="sideIcon"><Dashboard size={18} /></span>
+                Notifikasi
+              </NavLink>
+              <Link className="navLink" href="/courses">
+                <span className="sideIcon"><ExternalLink size={18} /></span>
+                Katalog Pelajar
+              </Link>
+              <Link className="navLink" href="/profile">
+                <UserAvatar user={user} />
+                Profil
+              </Link>
+            </nav>
+          </details>
+
           <div className="sideProfile">
             <Link href="/profile" className="sideProfileLink" aria-label="Buka profil">
               <UserAvatar user={user} />
