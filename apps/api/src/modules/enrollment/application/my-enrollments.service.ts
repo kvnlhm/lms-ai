@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EnrollmentStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
+import { EnrollmentAccessService } from './enrollment-access.service';
 
 export interface MyEnrollmentItem {
   enrollmentId: string;
@@ -28,11 +29,19 @@ export interface MyEnrollmentItem {
 
 @Injectable()
 export class MyEnrollmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: EnrollmentAccessService,
+  ) {}
 
   async list(userId: string): Promise<MyEnrollmentItem[]> {
+    await this.access.ensureAllPublishedCourseAccess(userId);
     const enrollments = await this.prisma.enrollment.findMany({
-      where: { userId, status: { in: [EnrollmentStatus.ACTIVE, EnrollmentStatus.COMPLETED] } },
+      where: {
+        userId,
+        status: { in: [EnrollmentStatus.ACTIVE, EnrollmentStatus.COMPLETED] },
+        course: { status: 'PUBLISHED' },
+      },
       include: {
         course: { include: { category: { select: { name: true } } } },
         courseProgress: true,

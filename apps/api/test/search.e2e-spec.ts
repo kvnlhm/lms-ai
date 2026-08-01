@@ -91,9 +91,18 @@ describe('Pencarian global', () => {
       }
     });
 
-    it('menyembunyikan materi dari kursus yang tidak diikuti pelajar', async () => {
+    it('menampilkan materi terbit walau pelajar belum memiliki enrollment', async () => {
       const luar = await h.prisma.lesson.findFirst({
-        where: { module: { course: { enrollments: { none: { userId: student.userId } } } } },
+        where: {
+          isActive: true,
+          module: {
+            isActive: true,
+            course: {
+              status: 'PUBLISHED',
+              enrollments: { none: { userId: student.userId } },
+            },
+          },
+        },
         select: { title: true },
       });
       if (!luar) return;
@@ -102,8 +111,7 @@ describe('Pencarian global', () => {
       const pelajar = await cari(student, `q=${encodeURIComponent(kata)}`).expect(200);
       const judul = grup(pelajar.body, 'lessons')!.items.map((item) => item.title);
 
-      // Judul materi berbayar tidak boleh dapat dipanen tanpa membayar.
-      expect(judul).not.toContain(luar.title);
+      expect(judul).toContain(luar.title);
     });
 
     it('menyembunyikan topik forum yang disembunyikan dari pelajar', async () => {

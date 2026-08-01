@@ -28,7 +28,7 @@ export default async function HomePage() {
         <p className="pageSub">
           {enrollments.length > 0
             ? `${enrollments.length} kursus tersedia untuk kamu.`
-            : 'Belum ada kursus yang bisa kamu akses.'}
+            : 'Belum ada kursus yang diterbitkan.'}
         </p>
 
         {continueLearning ? (
@@ -42,7 +42,7 @@ export default async function HomePage() {
         {enrollments.length === 0 ? (
           <div className="card empty">
             <p style={{ margin: 0 }}>
-              Kamu belum terdaftar pada kursus mana pun. Hubungi Master untuk mendapatkan akses.
+              Belum ada kursus yang diterbitkan.
             </p>
           </div>
         ) : (

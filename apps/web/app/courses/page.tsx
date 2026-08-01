@@ -94,8 +94,8 @@ function CourseCard({ course }: { course: CourseItem }) {
         {course.shortDescription ? <span className="courseDesc">{course.shortDescription}</span> : null}
         <div className="courseFoot">
           <div className="courseProgressLabel">
-            <span>{course.enrollment ? 'Progres belajar' : 'Status akses'}</span>
-            <strong>{course.enrollment ? `${percent}%` : 'Belum terdaftar'}</strong>
+            <span>Progres belajar</span>
+            <strong>{percent}%</strong>
           </div>
           <div className="progress" role="img" aria-label={`Progres ${percent} persen`}>
             <span style={{ width: `${percent}%` }} />
@@ -105,9 +105,7 @@ function CourseCard({ course }: { course: CourseItem }) {
             <span>
               {course.enrollment?.status === 'COMPLETED'
                 ? 'Selesai'
-                : course.enrollment
-                  ? 'Sedang berjalan'
-                  : 'Lihat silabus'}
+                : 'Sedang berjalan'}
             </span>
           </div>
         </div>

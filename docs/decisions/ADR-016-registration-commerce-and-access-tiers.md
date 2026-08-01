@@ -17,9 +17,12 @@ WhatsApp. Seluruh atribut paket harus dapat diubah oleh Master.
   lifetime.
 - Paket mengatur harga, durasi akses, dan materi promosi. Daftar kursus paket
   hanya menjadi kurasi/presentasi, bukan batas otorisasi.
-- Pembayaran yang sah memberikan membership akademi dan enrollment untuk
-  seluruh kursus berstatus `PUBLISHED`. Kursus yang diterbitkan kemudian juga
-  otomatis diberikan kepada seluruh member berbayar yang masa aksesnya aktif.
+- Pendaftaran dan pembayaran tetap memprovisikan akun, tetapi bukan batas
+  otorisasi konten. Setiap akun yang berhasil login dapat mengakses seluruh
+  kursus berstatus `PUBLISHED`.
+- Enrollment dibuat otomatis sebagai wadah progres belajar, bukan sebagai
+  gerbang akses. Status pembayaran dan masa paket tidak menutup konten bagi
+  pengguna yang sudah terautentikasi.
 - Webhook hanya diproses setelah signature SHA-512 valid dan status diambil
   kembali dari Midtrans. Event webhook memiliki idempotency key unik.
 - Pembuatan/penggunaan akun, enrollment, progress awal, order `PAID`, dan outbox
@@ -34,8 +37,8 @@ WhatsApp. Seluruh atribut paket harus dapat diubah oleh Master.
 ## Consequences
 
 - Modul `commerce` menjadi pemilik paket, order, dan webhook pembayaran.
-- Batas waktu akses 6/12 bulan atau lifetime tetap diterapkan pada setiap
-  enrollment yang dibuat dari membership.
+- Durasi paket 6/12 bulan atau lifetime tetap tersimpan sebagai data commerce,
+  tetapi tidak digunakan untuk menolak akses konten.
 - Midtrans Server Key tidak pernah masuk browser; Client Key boleh diberikan
   bersama respons checkout untuk memuat Snap.
 - Refund dicatat, tetapi pencabutan akses otomatis setelah refund belum

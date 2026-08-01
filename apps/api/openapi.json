@@ -4511,6 +4511,433 @@
         ]
       }
     },
+    "/api/v1/registration/tiers": {
+      "get": {
+        "operationId": "CommerceController_publicTiers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AccessTierDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Daftar paket registrasi yang aktif",
+        "tags": [
+          "registration"
+        ]
+      }
+    },
+    "/api/v1/registration/checkout": {
+      "post": {
+        "operationId": "CommerceController_checkout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCheckoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CheckoutResponseDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Membuat order dan sesi Midtrans Snap",
+        "tags": [
+          "registration"
+        ]
+      }
+    },
+    "/api/v1/registration/orders/{orderCode}": {
+      "get": {
+        "operationId": "CommerceController_orderStatus",
+        "parameters": [
+          {
+            "name": "orderCode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RegistrationOrderStatusDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Melihat status order registrasi tanpa data pribadi",
+        "tags": [
+          "registration"
+        ]
+      }
+    },
+    "/api/v1/webhooks/midtrans": {
+      "post": {
+        "operationId": "CommerceController_midtransWebhook",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookAcceptedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menerima notifikasi transaksi Midtrans yang ditandatangani",
+        "tags": [
+          "registration"
+        ]
+      }
+    },
+    "/api/v1/admin/access-tiers": {
+      "get": {
+        "operationId": "CommerceController_adminTiers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AccessTierDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "registration"
+        ]
+      },
+      "post": {
+        "operationId": "CommerceController_createTier",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccessTierDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AccessTierDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "registration"
+        ]
+      }
+    },
+    "/api/v1/admin/access-tiers/{tierId}": {
+      "patch": {
+        "operationId": "CommerceController_updateTier",
+        "parameters": [
+          {
+            "name": "tierId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccessTierDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AccessTierDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "registration"
+        ]
+      }
+    },
     "/api/v1/learn/courses/{courseId}": {
       "get": {
         "operationId": "LearnController_course",
@@ -8172,433 +8599,6 @@
         ]
       }
     },
-    "/api/v1/registration/tiers": {
-      "get": {
-        "operationId": "CommerceController_publicTiers",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/AccessTierDto"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Daftar paket registrasi yang aktif",
-        "tags": [
-          "registration"
-        ]
-      }
-    },
-    "/api/v1/registration/checkout": {
-      "post": {
-        "operationId": "CommerceController_checkout",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCheckoutDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CheckoutResponseDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Membuat order dan sesi Midtrans Snap",
-        "tags": [
-          "registration"
-        ]
-      }
-    },
-    "/api/v1/registration/orders/{orderCode}": {
-      "get": {
-        "operationId": "CommerceController_orderStatus",
-        "parameters": [
-          {
-            "name": "orderCode",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/RegistrationOrderStatusDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Melihat status order registrasi tanpa data pribadi",
-        "tags": [
-          "registration"
-        ]
-      }
-    },
-    "/api/v1/webhooks/midtrans": {
-      "post": {
-        "operationId": "CommerceController_midtransWebhook",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/WebhookAcceptedDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Menerima notifikasi transaksi Midtrans yang ditandatangani",
-        "tags": [
-          "registration"
-        ]
-      }
-    },
-    "/api/v1/admin/access-tiers": {
-      "get": {
-        "operationId": "CommerceController_adminTiers",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/AccessTierDto"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "registration"
-        ]
-      },
-      "post": {
-        "operationId": "CommerceController_createTier",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAccessTierDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/AccessTierDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "registration"
-        ]
-      }
-    },
-    "/api/v1/admin/access-tiers/{tierId}": {
-      "patch": {
-        "operationId": "CommerceController_updateTier",
-        "parameters": [
-          {
-            "name": "tierId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAccessTierDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/AccessTierDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "registration"
-        ]
-      }
-    },
     "/api/v1/admin/audit-logs": {
       "get": {
         "operationId": "AuditLogController_list",
@@ -10618,7 +10618,7 @@
           },
           "enrollment": {
             "nullable": true,
-            "description": "Null bila pengguna belum terdaftar pada kursus ini.",
+            "description": "Progres akses yang dibuat otomatis untuk pengguna terautentikasi.",
             "allOf": [
               {
                 "$ref": "#/components/schemas/CourseEnrollmentSummaryDto"
@@ -11891,6 +11891,270 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          }
+        }
+      },
+      "TierCourseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "thumbnailUrl": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title"
+        ]
+      },
+      "AccessTierDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "priceIdr": {
+            "type": "number"
+          },
+          "durationMonths": {
+            "type": "number",
+            "nullable": true
+          },
+          "isLifetime": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "position": {
+            "type": "number"
+          },
+          "courses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TierCourseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "priceIdr",
+          "isLifetime",
+          "isActive",
+          "position",
+          "courses"
+        ]
+      },
+      "CheckoutResponseDto": {
+        "type": "object",
+        "properties": {
+          "orderCode": {
+            "type": "string"
+          },
+          "snapToken": {
+            "type": "string"
+          },
+          "redirectUrl": {
+            "type": "string"
+          },
+          "clientKey": {
+            "type": "string"
+          },
+          "isProduction": {
+            "type": "boolean"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderCode",
+          "snapToken",
+          "redirectUrl",
+          "clientKey",
+          "isProduction",
+          "expiresAt"
+        ]
+      },
+      "CreateCheckoutDto": {
+        "type": "object",
+        "properties": {
+          "tierId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string",
+            "example": "6281234567890"
+          },
+          "termsAccepted": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "tierId",
+          "fullName",
+          "email",
+          "phone",
+          "termsAccepted"
+        ]
+      },
+      "RegistrationOrderStatusDto": {
+        "type": "object",
+        "properties": {
+          "orderCode": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "emailDeliveryStatus": {
+            "type": "string"
+          },
+          "whatsAppDeliveryStatus": {
+            "type": "string"
+          },
+          "accessEndsAt": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "orderCode",
+          "status",
+          "emailDeliveryStatus",
+          "whatsAppDeliveryStatus"
+        ]
+      },
+      "WebhookAcceptedDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "accepted"
+        ]
+      },
+      "CreateAccessTierDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Pro 12 Bulan"
+          },
+          "slug": {
+            "type": "string",
+            "example": "pro-12-bulan"
+          },
+          "description": {
+            "type": "string"
+          },
+          "priceIdr": {
+            "type": "number",
+            "example": 1499000
+          },
+          "durationMonths": {
+            "type": "number",
+            "nullable": true,
+            "example": 12,
+            "description": "Jumlah bulan. Null berarti akses lifetime."
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          },
+          "position": {
+            "type": "number",
+            "default": 0
+          },
+          "courseIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "priceIdr",
+          "courseIds"
+        ]
+      },
+      "UpdateAccessTierDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Pro 12 Bulan"
+          },
+          "slug": {
+            "type": "string",
+            "example": "pro-12-bulan"
+          },
+          "description": {
+            "type": "string"
+          },
+          "priceIdr": {
+            "type": "number",
+            "example": 1499000
+          },
+          "durationMonths": {
+            "type": "number",
+            "nullable": true,
+            "example": 12,
+            "description": "Jumlah bulan. Null berarti akses lifetime."
+          },
+          "isActive": {
+            "type": "boolean",
+            "default": true
+          },
+          "position": {
+            "type": "number",
+            "default": 0
+          },
+          "courseIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -13693,270 +13957,6 @@
             "type": "number",
             "minimum": 5,
             "maximum": 600
-          }
-        }
-      },
-      "TierCourseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "thumbnailUrl": {
-            "type": "object",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "slug",
-          "title"
-        ]
-      },
-      "AccessTierDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "priceIdr": {
-            "type": "number"
-          },
-          "durationMonths": {
-            "type": "number",
-            "nullable": true
-          },
-          "isLifetime": {
-            "type": "boolean"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "position": {
-            "type": "number"
-          },
-          "courses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TierCourseDto"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "slug",
-          "name",
-          "priceIdr",
-          "isLifetime",
-          "isActive",
-          "position",
-          "courses"
-        ]
-      },
-      "CheckoutResponseDto": {
-        "type": "object",
-        "properties": {
-          "orderCode": {
-            "type": "string"
-          },
-          "snapToken": {
-            "type": "string"
-          },
-          "redirectUrl": {
-            "type": "string"
-          },
-          "clientKey": {
-            "type": "string"
-          },
-          "isProduction": {
-            "type": "boolean"
-          },
-          "expiresAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "orderCode",
-          "snapToken",
-          "redirectUrl",
-          "clientKey",
-          "isProduction",
-          "expiresAt"
-        ]
-      },
-      "CreateCheckoutDto": {
-        "type": "object",
-        "properties": {
-          "tierId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "fullName": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "phone": {
-            "type": "string",
-            "example": "6281234567890"
-          },
-          "termsAccepted": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "tierId",
-          "fullName",
-          "email",
-          "phone",
-          "termsAccepted"
-        ]
-      },
-      "RegistrationOrderStatusDto": {
-        "type": "object",
-        "properties": {
-          "orderCode": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "emailDeliveryStatus": {
-            "type": "string"
-          },
-          "whatsAppDeliveryStatus": {
-            "type": "string"
-          },
-          "accessEndsAt": {
-            "type": "object",
-            "nullable": true
-          }
-        },
-        "required": [
-          "orderCode",
-          "status",
-          "emailDeliveryStatus",
-          "whatsAppDeliveryStatus"
-        ]
-      },
-      "WebhookAcceptedDto": {
-        "type": "object",
-        "properties": {
-          "accepted": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "accepted"
-        ]
-      },
-      "CreateAccessTierDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Pro 12 Bulan"
-          },
-          "slug": {
-            "type": "string",
-            "example": "pro-12-bulan"
-          },
-          "description": {
-            "type": "string"
-          },
-          "priceIdr": {
-            "type": "number",
-            "example": 1499000
-          },
-          "durationMonths": {
-            "type": "number",
-            "nullable": true,
-            "example": 12,
-            "description": "Jumlah bulan. Null berarti akses lifetime."
-          },
-          "isActive": {
-            "type": "boolean",
-            "default": true
-          },
-          "position": {
-            "type": "number",
-            "default": 0
-          },
-          "courseIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        },
-        "required": [
-          "name",
-          "slug",
-          "priceIdr",
-          "courseIds"
-        ]
-      },
-      "UpdateAccessTierDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Pro 12 Bulan"
-          },
-          "slug": {
-            "type": "string",
-            "example": "pro-12-bulan"
-          },
-          "description": {
-            "type": "string"
-          },
-          "priceIdr": {
-            "type": "number",
-            "example": 1499000
-          },
-          "durationMonths": {
-            "type": "number",
-            "nullable": true,
-            "example": 12,
-            "description": "Jumlah bulan. Null berarti akses lifetime."
-          },
-          "isActive": {
-            "type": "boolean",
-            "default": true
-          },
-          "position": {
-            "type": "number",
-            "default": 0
-          },
-          "courseIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
           }
         }
       },

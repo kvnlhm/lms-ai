@@ -139,7 +139,9 @@ Target awal:
 | Completion request diulang | Response konsisten, progress tidak bertambah ganda |
 | Dua completion concurrent | Progress tetap benar |
 | Optional lesson selesai | Tidak mengubah required percentage secara salah |
-| Enrollment expired | Lesson access ditolak |
+| Pengguna login tanpa enrollment | Enrollment progres dibuat otomatis dan lesson terbit dapat dibuka |
+| Enrollment expired/removed | Diaktifkan otomatis tanpa menghapus progres dan lesson terbit dapat dibuka |
+| Pengguna tanpa sesi | Course, lesson, dan playback tetap ditolak |
 | Course archived | Existing history tetap tersedia sesuai rule |
 | Student A meminta progress B | Ditolak tanpa data leakage |
 | Master tanpa export permission | Ditolak |
@@ -162,7 +164,7 @@ Target awal:
   - Course draft.
   - Course published.
   - Enrollment active.
-  - Enrollment expired.
+  - Enrollment expired untuk pengujian reaktivasi otomatis.
   - Required dan optional lesson.
   - Discussion open dan locked.
 
@@ -216,8 +218,8 @@ Production release memerlukan:
 
 ### Playback
 
-- Active enrollment memperoleh short-lived URL.
-- No enrollment, expired enrollment, suspended account, locked lesson, dan processing video ditolak.
+- Pengguna terautentikasi memperoleh short-lived URL untuk video pada course terbit; enrollment progres dibuat otomatis bila belum ada.
+- Pengguna tanpa sesi, suspended account, locked lesson, course non-published, dan processing video ditolak.
 - Token expiry tersedia.
 - Playback token tidak muncul di log.
 - Watermark traceable.
