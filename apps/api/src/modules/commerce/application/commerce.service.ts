@@ -247,6 +247,16 @@ export class CommerceService {
       throw AppError.validation({ grossAmount: ['Nominal pembayaran tidak sesuai dengan order.'] });
     }
     const nextStatus = mapPaymentStatus(status);
+    // Paket adalah membership akademi. Daftar kursus pada paket hanya dipakai
+    // untuk presentasi/kurasi di halaman harga; hak akses pembayaran selalu
+    // mencakup seluruh kursus yang sudah terbit.
+    const publishedCourses = nextStatus === PaymentOrderStatus.PAID
+      ? await this.prisma.course.findMany({
+          where: { status: PublicationStatus.PUBLISHED },
+          select: { id: true },
+          orderBy: { createdAt: 'asc' },
+        })
+      : [];
     const unusablePassword =
       nextStatus === PaymentOrderStatus.PAID ? await this.credentials.hashUnusablePassword() : null;
     try {
@@ -311,9 +321,9 @@ export class CommerceService {
           });
         }
 
-        for (const tierCourse of order.tier.courses) {
+        for (const course of publishedCourses) {
           const existing = await tx.enrollment.findUnique({
-            where: { userId_courseId: { userId: user.id, courseId: tierCourse.courseId } },
+            where: { userId_courseId: { userId: user.id, courseId: course.id } },
             select: { id: true, accessEndsAt: true },
           });
           const effectiveEnd =
@@ -333,7 +343,7 @@ export class CommerceService {
             : await tx.enrollment.create({
                 data: {
                   userId: user.id,
-                  courseId: tierCourse.courseId,
+                  courseId: course.id,
                   status: EnrollmentStatus.ACTIVE,
                   accessStartsAt: now,
                   accessEndsAt,
@@ -343,7 +353,7 @@ export class CommerceService {
             where: {
               isActive: true,
               isRequired: true,
-              module: { courseId: tierCourse.courseId, isActive: true },
+              module: { courseId: course.id, isActive: true },
             },
           });
           await tx.courseProgress.upsert({
@@ -378,7 +388,7 @@ export class CommerceService {
             orderId: order.id,
             userId: user.id,
             tierId: order.tierId,
-            courseIds: order.tier.courses.map((course) => course.courseId),
+            courseIds: publishedCourses.map((course) => course.id),
           },
         });
         return { notify: true as const, orderId: order.id, userId: user.id };
