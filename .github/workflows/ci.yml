@@ -43,7 +43,13 @@ jobs:
       NEXT_PUBLIC_API_URL: http://localhost:3001
       SESSION_COOKIE_SECURE: "false"
       MFA_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      # Ketiganya, bukan hanya video. Tanpa dua yang terakhir, unggahan
+      # thumbnail dan foto profil jatuh ke default `/data/...` dan runner —
+      # yang tidak berjalan sebagai root — membalas EACCES. Ini tidak pernah
+      # terlihat di mesin pengembangan, tempat `mkdir /data` berhasil.
       VIDEO_STORAGE_PATH: /tmp/lms-ci-videos
+      AVATAR_STORAGE_PATH: /tmp/lms-ci-avatars
+      COURSE_THUMBNAIL_STORAGE_PATH: /tmp/lms-ci-course-thumbnails
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
