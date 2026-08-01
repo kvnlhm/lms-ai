@@ -3603,7 +3603,220 @@
             }
           }
         },
-        "summary": "Menautkan lesson ke video YouTube unlisted",
+        "summary": "Menambahkan video YouTube ke perpustakaan",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/admin/videos": {
+      "get": {
+        "operationId": "VideoController_library",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Isi perpustakaan video beserta pemakaiannya",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/admin/lessons/{lessonId}/video": {
+      "put": {
+        "operationId": "VideoController_attach",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachLessonVideoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Memasang video perpustakaan pada sebuah pelajaran",
+        "tags": [
+          "video"
+        ]
+      },
+      "delete": {
+        "operationId": "VideoController_detach",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Melepas video dari pelajaran tanpa menghapus berkasnya",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/admin/videos/{videoAssetId}": {
+      "delete": {
+        "operationId": "VideoController_destroy",
+        "parameters": [
+          {
+            "name": "videoAssetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus aset perpustakaan yang tidak dipakai pelajaran mana pun",
         "tags": [
           "video"
         ]
@@ -11277,10 +11490,6 @@
       "CreateVideoUploadIntentDto": {
         "type": "object",
         "properties": {
-          "lessonId": {
-            "type": "string",
-            "format": "uuid"
-          },
           "title": {
             "type": "string"
           },
@@ -11297,7 +11506,6 @@
           }
         },
         "required": [
-          "lessonId",
           "title",
           "fileName",
           "mimeType",
@@ -11307,10 +11515,6 @@
       "CreateYoutubeVideoDto": {
         "type": "object",
         "properties": {
-          "lessonId": {
-            "type": "string",
-            "format": "uuid"
-          },
           "title": {
             "type": "string"
           },
@@ -11320,9 +11524,20 @@
           }
         },
         "required": [
-          "lessonId",
           "title",
           "url"
+        ]
+      },
+      "AttachLessonVideoDto": {
+        "type": "object",
+        "properties": {
+          "videoAssetId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "videoAssetId"
         ]
       },
       "CreatePlaybackSessionDto": {

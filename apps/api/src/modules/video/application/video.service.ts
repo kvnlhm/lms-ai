@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PlaybackStatus, Prisma, VideoProvider, VideoStatus } from '@prisma/client';
+import { PlaybackStatus, VideoProvider, VideoStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { chmod, mkdir, rename, rm } from 'node:fs/promises';
@@ -15,7 +15,6 @@ import { EnrollmentAccessService } from '../../enrollment/application/enrollment
 import type { LessonVideoCleanupPort } from '../../learning-catalog/application/lesson-video-cleanup.port';
 
 interface UploadIntent {
-  lessonId: string;
   title: string;
   fileName: string;
   mimeType: string;
@@ -23,10 +22,16 @@ interface UploadIntent {
 }
 
 interface YoutubeVideoInput {
-  lessonId: string;
   title: string;
   url: string;
 }
+
+/** Status yang berarti berkasnya masih dalam perjalanan dan belum boleh disentuh. */
+const PENDING_STATUSES = new Set<VideoStatus>([
+  VideoStatus.CREATED,
+  VideoStatus.UPLOADING,
+  VideoStatus.PROCESSING,
+]);
 
 const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 const YOUTUBE_HOSTS = new Set(['youtube.com', 'm.youtube.com', 'youtube-nocookie.com']);
@@ -91,45 +96,29 @@ export class VideoService implements LessonVideoCleanupPort {
         sizeBytes: [`Ukuran video harus antara 1 dan ${this.config.maxUploadBytes} byte.`],
       });
     }
-    const lesson = await this.prisma.lesson.findUnique({
-      where: { id: input.lessonId },
-      select: { id: true, contentType: true },
-    });
-    if (!lesson) throw AppError.notFound();
-    if (lesson.contentType !== 'VIDEO') {
-      throw AppError.validation({ lessonId: ['Lesson bukan bertipe VIDEO.'] });
-    }
-
+    // Tidak ada pelajaran yang disebut di sini. Unggahan masuk ke perpustakaan
+    // lebih dulu, lalu pelajaran memilihnya lewat `attachToLesson`. Itulah yang
+    // membuat satu berkas dapat dipakai banyak pelajaran tanpa disalin.
     const providerVideoId = randomUUID();
-    try {
-      const asset = await this.prisma.videoAsset.create({
-        data: {
-          lessonId: input.lessonId,
-          createdBy: userId,
-          provider: VideoProvider.SELF_HOSTED,
-          providerVideoId,
-          originalName: input.fileName.replace(/[^\w.\- ]/g, '_').slice(0, 255),
-          title: input.title,
-          mimeType: input.mimeType,
-          sizeBytes: BigInt(input.sizeBytes),
-        },
-      });
-      return {
-        videoAssetId: asset.id,
-        provider: asset.provider,
+    const asset = await this.prisma.videoAsset.create({
+      data: {
+        createdBy: userId,
+        provider: VideoProvider.SELF_HOSTED,
         providerVideoId,
-        uploadUrl: `/api/v1/admin/videos/${asset.id}/content`,
-        method: 'PUT',
-        headers: { 'Content-Type': 'video/mp4', 'Content-Length': String(input.sizeBytes) },
-      };
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw AppError.validation({
-          lessonId: ['Upload video lain untuk lesson ini sedang berlangsung. Tunggu hingga selesai.'],
-        });
-      }
-      throw error;
-    }
+        originalName: input.fileName.replace(/[^\w.\- ]/g, '_').slice(0, 255),
+        title: input.title,
+        mimeType: input.mimeType,
+        sizeBytes: BigInt(input.sizeBytes),
+      },
+    });
+    return {
+      videoAssetId: asset.id,
+      provider: asset.provider,
+      providerVideoId,
+      uploadUrl: `/api/v1/admin/videos/${asset.id}/content`,
+      method: 'PUT',
+      headers: { 'Content-Type': 'video/mp4', 'Content-Length': String(input.sizeBytes) },
+    };
   }
 
   async upload(assetId: string, userId: string, stream: Readable, contentLength: number | undefined) {
@@ -174,35 +163,17 @@ export class VideoService implements LessonVideoCleanupPort {
         throw new Error('Konten bukan MP4 yang valid atau ukurannya tidak lengkap.');
       }
       await rename(tempPath, finalPath);
-      const replacedAssets = await this.prisma.$transaction(async (tx) => {
-        const previous = await tx.videoAsset.findMany({
-          where: {
-            lessonId: asset.lessonId,
-            id: { not: asset.id },
-            status: VideoStatus.AVAILABLE,
-            deletedAt: null,
-          },
-          select: { id: true, objectKey: true },
-        });
-        const replacedAt = new Date();
-        if (previous.length > 0) {
-          await tx.videoAsset.updateMany({
-            where: { id: { in: previous.map(({ id }) => id) } },
-            data: { status: VideoStatus.DELETED, deletedAt: replacedAt },
-          });
-        }
-        await tx.videoAsset.update({
-          where: { id: asset.id },
-          data: { objectKey, status: VideoStatus.AVAILABLE, processingError: null },
-        });
-        return previous;
+      // Tidak ada aset lain yang digantikan atau dihapus di sini.
+      //
+      // Dulu unggahan baru langsung menandai video lama milik pelajaran itu
+      // terhapus dan membuang berkasnya. Dalam model perpustakaan hal itu
+      // berbahaya: berkas yang dibuang bisa saja masih dipakai pelajaran lain.
+      // Melepas dan membuang kini menjadi tindakan eksplisit lewat
+      // `detachFromLesson` dan `deleteAsset`.
+      await this.prisma.videoAsset.update({
+        where: { id: asset.id },
+        data: { objectKey, status: VideoStatus.AVAILABLE, processingError: null },
       });
-      await Promise.allSettled(
-        replacedAssets
-          .map(({ objectKey: previousObjectKey }) => previousObjectKey)
-          .filter((previousObjectKey): previousObjectKey is string => Boolean(previousObjectKey))
-          .map((previousObjectKey) => rm(join(this.config.storagePath, previousObjectKey), { force: true })),
-      );
       return {
         videoAssetId: asset.id,
         provider: asset.provider,
@@ -225,11 +196,11 @@ export class VideoService implements LessonVideoCleanupPort {
   }
 
   /**
-   * Menautkan lesson ke video YouTube alih-alih berkas yang diunggah ke sini.
+   * Menambahkan video YouTube ke perpustakaan.
    *
    * Tidak digandengkan ke `VIDEO_PROVIDER`: setelan itu menentukan ke mana
-   * berkas diunggah untuk seluruh deployment, sedangkan YouTube adalah pilihan
-   * per pelajaran yang tidak memakai penyimpanan kita sama sekali.
+   * berkas diunggah untuk seluruh deployment, sedangkan YouTube adalah sumber
+   * yang tidak memakai penyimpanan kita sama sekali.
    */
   async createYoutubeVideo(input: YoutubeVideoInput, userId: string) {
     const youtubeVideoId = parseYoutubeVideoId(input.url);
@@ -239,51 +210,19 @@ export class VideoService implements LessonVideoCleanupPort {
       });
     }
 
-    const lesson = await this.prisma.lesson.findUnique({
-      where: { id: input.lessonId },
-      select: { id: true, contentType: true },
+    const asset = await this.prisma.videoAsset.create({
+      data: {
+        createdBy: userId,
+        provider: VideoProvider.YOUTUBE,
+        // Pegangan internal, bukan ID YouTube: kolomnya unik global, sehingga
+        // memakai ID YouTube akan melarang satu video masuk perpustakaan dua kali.
+        providerVideoId: randomUUID(),
+        sourceUrl: `https://www.youtube.com/watch?v=${youtubeVideoId}`,
+        title: input.title,
+        // Tidak ada berkas yang kita kuasai, jadi metadata berkas dibiarkan kosong.
+        status: VideoStatus.AVAILABLE,
+      },
     });
-    if (!lesson) throw AppError.notFound();
-    if (lesson.contentType !== 'VIDEO') {
-      throw AppError.validation({ lessonId: ['Lesson bukan bertipe VIDEO.'] });
-    }
-
-    const { asset, replaced } = await this.prisma.$transaction(async (tx) => {
-      const previous = await tx.videoAsset.findMany({
-        where: { lessonId: input.lessonId, status: VideoStatus.AVAILABLE, deletedAt: null },
-        select: { id: true, objectKey: true },
-      });
-      const replacedAt = new Date();
-      if (previous.length > 0) {
-        await tx.videoAsset.updateMany({
-          where: { id: { in: previous.map(({ id }) => id) } },
-          data: { status: VideoStatus.DELETED, deletedAt: replacedAt },
-        });
-      }
-      const created = await tx.videoAsset.create({
-        data: {
-          lessonId: input.lessonId,
-          createdBy: userId,
-          provider: VideoProvider.YOUTUBE,
-          // Pegangan internal, bukan ID YouTube: kolomnya unik global, sehingga
-          // memakai ID YouTube akan melarang satu video dipakai di dua lesson.
-          providerVideoId: randomUUID(),
-          sourceUrl: `https://www.youtube.com/watch?v=${youtubeVideoId}`,
-          title: input.title,
-          // Tidak ada berkas yang kita kuasai, jadi metadata berkas dibiarkan kosong.
-          status: VideoStatus.AVAILABLE,
-        },
-      });
-      return { asset: created, replaced: previous };
-    });
-
-    // Berkas self-hosted yang digantikan tidak lagi punya perujuk.
-    await Promise.allSettled(
-      replaced
-        .map(({ objectKey }) => objectKey)
-        .filter((objectKey): objectKey is string => Boolean(objectKey))
-        .map((objectKey) => rm(join(this.config.storagePath, objectKey), { force: true })),
-    );
 
     return {
       videoAssetId: asset.id,
@@ -294,17 +233,168 @@ export class VideoService implements LessonVideoCleanupPort {
     };
   }
 
+  /** Isi perpustakaan, beserta pelajaran yang memakai tiap aset. */
+  async listLibrary() {
+    const assets = await this.prisma.videoAsset.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        provider: true,
+        status: true,
+        originalName: true,
+        sizeBytes: true,
+        sourceUrl: true,
+        createdAt: true,
+        lessons: {
+          select: {
+            id: true,
+            title: true,
+            module: { select: { course: { select: { id: true, title: true } } } },
+          },
+          orderBy: { title: 'asc' },
+        },
+      },
+    });
+
+    return {
+      items: assets.map((asset) => ({
+        videoAssetId: asset.id,
+        title: asset.title,
+        provider: asset.provider,
+        status: asset.status,
+        originalName: asset.originalName,
+        // BigInt tidak dapat diserialkan ke JSON, dan ukuran berkas video
+        // melampaui Number.MAX_SAFE_INTEGER jauh sebelum itu jadi masalah nyata
+        // — tetap dikirim sebagai string supaya tidak ada pembulatan diam-diam.
+        sizeBytes: asset.sizeBytes === null ? null : String(asset.sizeBytes),
+        sourceUrl: asset.sourceUrl,
+        createdAt: asset.createdAt.toISOString(),
+        usedBy: asset.lessons.map((lesson) => ({
+          lessonId: lesson.id,
+          lessonTitle: lesson.title,
+          courseId: lesson.module.course.id,
+          courseTitle: lesson.module.course.title,
+        })),
+      })),
+      // Hanya berkas yang benar-benar memakai disk kita yang dijumlahkan;
+      // video YouTube tidak menempati apa pun di sini.
+      totalBytes: String(
+        assets.reduce((total, asset) => total + (asset.sizeBytes ?? BigInt(0)), BigInt(0)),
+      ),
+    };
+  }
+
+  /** Memasang aset perpustakaan pada sebuah pelajaran. */
+  async attachToLesson(lessonId: string, videoAssetId: string) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: { id: true, contentType: true },
+    });
+    if (!lesson) throw AppError.notFound();
+    if (lesson.contentType !== 'VIDEO') {
+      throw AppError.validation({ lessonId: ['Lesson bukan bertipe VIDEO.'] });
+    }
+
+    const asset = await this.prisma.videoAsset.findFirst({
+      where: { id: videoAssetId, deletedAt: null },
+      select: { id: true, status: true },
+    });
+    if (!asset) throw AppError.notFound();
+    if (asset.status !== VideoStatus.AVAILABLE) {
+      throw AppError.validation({
+        videoAssetId: ['Video belum siap dipakai. Tunggu unggahannya selesai.'],
+      });
+    }
+
+    await this.prisma.lesson.update({
+      where: { id: lessonId },
+      data: { videoAssetId: asset.id },
+    });
+    return { lessonId, videoAssetId: asset.id };
+  }
+
+  /**
+   * Melepas video dari pelajaran tanpa menyentuh berkasnya.
+   *
+   * Berkas tetap di perpustakaan karena pelajaran lain mungkin memakainya.
+   * Membuangnya dari disk adalah tindakan terpisah lewat `deleteAsset`.
+   */
+  async detachFromLesson(lessonId: string) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: { id: true, videoAssetId: true },
+    });
+    if (!lesson) throw AppError.notFound();
+    if (lesson.videoAssetId === null) return { lessonId, videoAssetId: null };
+
+    await this.prisma.$transaction(async (tx) => {
+      // Sesi yang masih menunjuk pelajaran ini tidak lagi punya video; kunci
+      // asingnya juga menolak pelajaran dilepas selama sesi masih ada.
+      await tx.videoPlaybackSession.deleteMany({ where: { lessonId } });
+      await tx.lesson.update({ where: { id: lessonId }, data: { videoAssetId: null } });
+    });
+    return { lessonId, videoAssetId: null };
+  }
+
+  /**
+   * Membuang aset dari perpustakaan beserta berkasnya.
+   *
+   * Ditolak selama masih ada pelajaran yang memakainya. Inilah satu-satunya
+   * jalan berkas video hilang dari disk, sehingga tidak ada penghapusan yang
+   * terjadi sebagai efek samping tindakan lain.
+   */
+  async deleteAsset(videoAssetId: string) {
+    const asset = await this.prisma.videoAsset.findFirst({
+      where: { id: videoAssetId, deletedAt: null },
+      select: {
+        id: true,
+        objectKey: true,
+        status: true,
+        _count: { select: { lessons: true } },
+      },
+    });
+    if (!asset) throw AppError.notFound();
+    if (asset._count.lessons > 0) {
+      throw AppError.validation({
+        videoAssetId: [
+          `Video masih dipakai ${asset._count.lessons} pelajaran. Lepas dulu dari pelajarannya.`,
+        ],
+      });
+    }
+    if (PENDING_STATUSES.has(asset.status)) {
+      throw AppError.validation({ videoAssetId: ['Tunggu unggahan selesai sebelum menghapus.'] });
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.videoPlaybackSession.deleteMany({ where: { videoAssetId: asset.id } });
+      await tx.videoAsset.delete({ where: { id: asset.id } });
+    });
+    if (asset.objectKey) {
+      await rm(join(this.config.storagePath, asset.objectKey), { force: true });
+    }
+    return { videoAssetId: asset.id, deleted: true };
+  }
+
   async createPlaybackSession(lessonId: string, userId: string, deviceId?: string) {
     const access = await this.access.assertLessonAccess(userId, lessonId);
-    const asset = await this.prisma.videoAsset.findFirst({
-      where: { lessonId, status: VideoStatus.AVAILABLE, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: { videoAsset: true },
     });
+    const asset =
+      lesson?.videoAsset && lesson.videoAsset.deletedAt === null &&
+      lesson.videoAsset.status === VideoStatus.AVAILABLE
+        ? lesson.videoAsset
+        : null;
     if (!asset) throw new AppError('FILE_NOT_AVAILABLE', 409, 'Video belum tersedia.');
     const expiresAt = new Date(Date.now() + this.config.playbackTtlSeconds * 1000);
     const playback = await this.prisma.videoPlaybackSession.create({
       data: {
         videoAssetId: asset.id,
+        // Konteks pelajaran ikut disimpan; lihat komentar pada kolomnya.
+        lessonId,
         userId,
         enrollmentId: access.enrollmentId,
         deviceId,
@@ -344,38 +434,31 @@ export class VideoService implements LessonVideoCleanupPort {
     if (!playback?.videoAsset.objectKey || playback.videoAsset.status !== VideoStatus.AVAILABLE) {
       throw AppError.notFound();
     }
-    await this.access.assertLessonAccess(userId, playback.videoAsset.lessonId);
+    // Hak diperiksa terhadap pelajaran yang tercatat pada sesinya, bukan yang
+    // diturunkan dari asetnya. Satu aset kini dapat dipakai banyak pelajaran,
+    // sehingga aset tidak lagi dapat menjawab pelajaran mana yang berlaku.
+    await this.access.assertLessonAccess(userId, playback.lessonId);
     return playback.videoAsset.objectKey;
   }
 
+  /**
+   * Melepaskan pelajaran yang akan dihapus dari video yang dipakainya.
+   *
+   * Aset itu sendiri tidak ikut dihapus: ia milik perpustakaan, bukan milik
+   * pelajaran, dan mungkin masih dipakai pelajaran lain. Berkas yang tidak lagi
+   * dipakai siapa pun dibuang lewat halaman media, bukan sebagai efek samping
+   * penghapusan pelajaran.
+   */
   async removeForLessons(lessonIds: string[]): Promise<void> {
     if (lessonIds.length === 0) return;
-    const assets = await this.prisma.videoAsset.findMany({
-      where: { lessonId: { in: lessonIds } },
-      select: { id: true, objectKey: true, status: true },
-    });
-    const pendingStatuses = new Set<VideoStatus>([
-      VideoStatus.CREATED,
-      VideoStatus.UPLOADING,
-      VideoStatus.PROCESSING,
-    ]);
-    if (assets.some(({ status }) => pendingStatuses.has(status))) {
-      throw AppError.validation({
-        video: ['Tunggu upload video selesai sebelum menghapus pelajaran.'],
-      });
-    }
-    const assetIds = assets.map(({ id }) => id);
     await this.prisma.$transaction(async (tx) => {
-      if (assetIds.length > 0) {
-        await tx.videoPlaybackSession.deleteMany({ where: { videoAssetId: { in: assetIds } } });
-        await tx.videoAsset.deleteMany({ where: { id: { in: assetIds } } });
-      }
+      // Kunci asing dari sesi ke pelajaran bersifat Restrict, jadi sesi harus
+      // pergi lebih dulu agar pelajarannya dapat dihapus pemanggil.
+      await tx.videoPlaybackSession.deleteMany({ where: { lessonId: { in: lessonIds } } });
+      await tx.lesson.updateMany({
+        where: { id: { in: lessonIds } },
+        data: { videoAssetId: null },
+      });
     });
-    await Promise.allSettled(
-      assets
-        .map(({ objectKey }) => objectKey)
-        .filter((objectKey): objectKey is string => Boolean(objectKey))
-        .map((objectKey) => rm(join(this.config.storagePath, objectKey), { force: true })),
-    );
   }
 }

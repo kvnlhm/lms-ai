@@ -357,6 +357,10 @@ model Lesson {
   title            String
   description      String?
   contentType      LessonContentType @default(VIDEO) @map("content_type")
+  /// Aset dari perpustakaan video yang dipakai pelajaran ini. Dapat menunjuk
+  /// aset yang sama dengan pelajaran lain; penghapusan aset ditolak selama
+  /// masih ada yang menunjuknya.
+  videoAssetId     String?           @map("video_asset_id") @db.Uuid
   textContent      String?           @map("text_content")
   externalUrl      String?           @map("external_url")
   position         Int
@@ -374,12 +378,14 @@ model Lesson {
   lastForCourse CourseProgress[]     @relation("LastLesson")
   prerequisites LessonPrerequisite[] @relation("LessonSide")
   requiredBy    LessonPrerequisite[] @relation("PrerequisiteSide")
-  videoAssets   VideoAsset[]
+  videoAsset       VideoAsset?          @relation("LessonVideo", fields: [videoAssetId], references: [id], onDelete: Restrict)
+  playbackSessions VideoPlaybackSession[]
   forumTopics   ForumTopic[]
   bookmarks     UserBookmark[]
 
   @@unique([moduleId, position])
   @@index([moduleId, isActive])
+  @@index([videoAssetId])
   @@map("lessons")
 }
 
@@ -509,9 +515,11 @@ model PaymentWebhookEvent {
   @@map("payment_webhook_events")
 }
 
+/// Aset video adalah barang perpustakaan yang berdiri sendiri, bukan milik satu
+/// pelajaran. Pelajaran yang menunjuk ke aset lewat `lessons.video_asset_id`,
+/// sehingga satu berkas dapat dipakai berapa pun pelajaran tanpa disalin.
 model VideoAsset {
   id              String        @id @default(uuid()) @db.Uuid
-  lessonId        String        @map("lesson_id") @db.Uuid
   createdBy       String        @map("created_by") @db.Uuid
   provider        VideoProvider @default(SELF_HOSTED)
   providerVideoId String        @unique @map("provider_video_id")
@@ -530,17 +538,25 @@ model VideoAsset {
   updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz(6)
 
-  lesson           Lesson                 @relation(fields: [lessonId], references: [id], onDelete: Restrict)
   creator          User                   @relation("VideoAssetCreator", fields: [createdBy], references: [id], onDelete: Restrict)
   playbackSessions VideoPlaybackSession[]
+  lessons          Lesson[]               @relation("LessonVideo")
 
-  @@index([lessonId, status])
+  @@index([status])
   @@map("video_assets")
 }
 
 model VideoPlaybackSession {
   id              String         @id @default(uuid()) @db.Uuid
   videoAssetId    String         @map("video_asset_id") @db.Uuid
+  /// Pelajaran yang sedang dibuka pelajar saat sesi dibuat.
+  ///
+  /// Disimpan sendiri, bukan diturunkan dari asetnya: satu aset kini dapat
+  /// dipakai banyak pelajaran, sehingga aset tidak lagi dapat menjawab
+  /// "pelajaran mana yang haknya harus diperiksa". Tanpa kolom ini, pelajar
+  /// yang berhak atas satu pelajaran dapat memutar berkas lewat konteks
+  /// pelajaran lain yang kebetulan memakai video sama.
+  lessonId        String         @map("lesson_id") @db.Uuid
   userId          String         @map("user_id") @db.Uuid
   enrollmentId    String         @map("enrollment_id") @db.Uuid
   deviceId        String?        @map("device_id")
@@ -551,11 +567,13 @@ model VideoPlaybackSession {
   endedAt         DateTime?      @map("ended_at") @db.Timestamptz(6)
 
   videoAsset VideoAsset @relation(fields: [videoAssetId], references: [id], onDelete: Restrict)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Restrict)
   user       User       @relation(fields: [userId], references: [id], onDelete: Restrict)
   enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
 
   @@index([userId, status, expiresAt])
   @@index([videoAssetId, status])
+  @@index([lessonId])
   @@map("video_playback_sessions")
 }
 

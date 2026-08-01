@@ -1,4 +1,17 @@
-import { Body, Controller, Get, Header, HttpCode, Param, ParseUUIDPipe, Post, Put, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Header,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PERMISSIONS } from '@lms/contracts';
 import type { Request, Response } from 'express';
@@ -7,6 +20,7 @@ import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { VideoService } from '../application/video.service';
 import {
+  AttachLessonVideoDto,
   CreatePlaybackSessionDto,
   CreateVideoUploadIntentDto,
   CreateYoutubeVideoDto,
@@ -28,10 +42,48 @@ export class VideoController {
   @Post('admin/videos/youtube')
   @HttpCode(201)
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
-  @ApiOperation({ summary: 'Menautkan lesson ke video YouTube unlisted' })
+  @ApiOperation({ summary: 'Menambahkan video YouTube ke perpustakaan' })
   @ApiErrors(401, 403, 404, 422)
   createYoutube(@Body() dto: CreateYoutubeVideoDto, @CurrentUser() user: AuthenticatedUser) {
     return this.videos.createYoutubeVideo(dto, user.id);
+  }
+
+  @Get('admin/videos')
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({ summary: 'Isi perpustakaan video beserta pemakaiannya' })
+  @ApiErrors(401, 403)
+  library() {
+    return this.videos.listLibrary();
+  }
+
+  @Put('admin/lessons/:lessonId/video')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({ summary: 'Memasang video perpustakaan pada sebuah pelajaran' })
+  @ApiErrors(401, 403, 404, 422)
+  attach(
+    @Param('lessonId', new ParseUUIDPipe()) lessonId: string,
+    @Body() dto: AttachLessonVideoDto,
+  ) {
+    return this.videos.attachToLesson(lessonId, dto.videoAssetId);
+  }
+
+  @Delete('admin/lessons/:lessonId/video')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({ summary: 'Melepas video dari pelajaran tanpa menghapus berkasnya' })
+  @ApiErrors(401, 403, 404)
+  detach(@Param('lessonId', new ParseUUIDPipe()) lessonId: string) {
+    return this.videos.detachFromLesson(lessonId);
+  }
+
+  @Delete('admin/videos/:videoAssetId')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({ summary: 'Menghapus aset perpustakaan yang tidak dipakai pelajaran mana pun' })
+  @ApiErrors(401, 403, 404, 422)
+  destroy(@Param('videoAssetId', new ParseUUIDPipe()) videoAssetId: string) {
+    return this.videos.deleteAsset(videoAssetId);
   }
 
   @Put('admin/videos/:videoAssetId/content')

@@ -205,9 +205,17 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
     setError(null);
     setReasons([]);
     try {
-      unwrap(
+      // Dua langkah sejak video menjadi barang perpustakaan: tautannya masuk
+      // perpustakaan dulu, lalu dipasang pada pelajaran ini.
+      const asset = unwrap(
         await client().POST('/api/v1/admin/videos/youtube', {
-          body: { lessonId, title, url },
+          body: { title, url },
+        }),
+      ) as unknown as { videoAssetId: string };
+      unwrap(
+        await client().PUT('/api/v1/admin/lessons/{lessonId}/video', {
+          params: { path: { lessonId } },
+          body: { videoAssetId: asset.videoAssetId },
         }),
       );
       setYoutubeLessonId(null);
@@ -258,14 +266,13 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       const intent = unwrap(
         await client().POST('/api/v1/admin/videos/upload-intents', {
           body: {
-            lessonId,
             title,
             fileName: file.name,
             mimeType: 'video/mp4',
             sizeBytes: file.size,
           },
         }),
-      ) as unknown as { uploadUrl: string; method: string };
+      ) as unknown as { uploadUrl: string; method: string; videoAssetId: string };
 
       await uploadFile(intent.uploadUrl, intent.method, file, (percent) => {
         setUpload({
@@ -276,6 +283,15 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
           message: percent >= 100 ? 'Memvalidasi dan menyimpan video…' : `Mengunggah ${percent}%`,
         });
       });
+
+      // Berkasnya kini ada di perpustakaan; pemasangan ke pelajaran adalah
+      // langkah tersendiri, dan itulah yang membuatnya bisa dipakai ulang.
+      unwrap(
+        await client().PUT('/api/v1/admin/lessons/{lessonId}/video', {
+          params: { path: { lessonId } },
+          body: { videoAssetId: intent.videoAssetId },
+        }),
+      );
 
       setUpload({
         lessonId,

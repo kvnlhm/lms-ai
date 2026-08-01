@@ -737,9 +737,61 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Menautkan lesson ke video YouTube unlisted */
+        /** Menambahkan video YouTube ke perpustakaan */
         post: operations["VideoController_createYoutube"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Isi perpustakaan video beserta pemakaiannya */
+        get: operations["VideoController_library"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/lessons/{lessonId}/video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Memasang video perpustakaan pada sebuah pelajaran */
+        put: operations["VideoController_attach"];
+        post?: never;
+        /** Melepas video dari pelajaran tanpa menghapus berkasnya */
+        delete: operations["VideoController_detach"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/videos/{videoAssetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Menghapus aset perpustakaan yang tidak dipakai pelajaran mana pun */
+        delete: operations["VideoController_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2496,8 +2548,6 @@ export interface components {
             completionRule?: "MANUAL" | "OPENED" | "MINIMUM_ACTIVE_SECONDS" | "VIDEO_PERCENTAGE";
         };
         CreateVideoUploadIntentDto: {
-            /** Format: uuid */
-            lessonId: string;
             title: string;
             /** @example lesson-01.mp4 */
             fileName: string;
@@ -2506,11 +2556,13 @@ export interface components {
             sizeBytes: number;
         };
         CreateYoutubeVideoDto: {
-            /** Format: uuid */
-            lessonId: string;
             title: string;
             /** @example https://www.youtube.com/watch?v=dQw4w9WgXcQ */
             url: string;
+        };
+        AttachLessonVideoDto: {
+            /** Format: uuid */
+            videoAssetId: string;
         };
         CreatePlaybackSessionDto: {
             deviceId?: string;
@@ -5734,6 +5786,164 @@ export interface operations {
                 "application/json": components["schemas"]["CreateYoutubeVideoDto"];
             };
         };
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoController_library: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoController_attach: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachLessonVideoDto"];
+            };
+        };
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoController_detach: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoController_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                videoAssetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             401: {
                 headers: {
