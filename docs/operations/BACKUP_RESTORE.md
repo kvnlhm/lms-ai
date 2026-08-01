@@ -282,6 +282,23 @@ Minimal setiap tiga bulan:
 
 Backup dianggap belum valid sampai berhasil direstore.
 
+### Drill 1 Agustus 2026
+
+Dijalankan setelah migrasi `20260801040000_video_asset_library`, karena drill
+sebelumnya (31 Juli) memakai skema lama dan tidak lagi membuktikan apa pun
+tentang bentuk yang sekarang.
+
+Checkpoint `20260801T071442Z` direstore ke container PostgreSQL 16 terpisah:
+
+- Jumlah baris cocok persis dengan `MANIFEST.txt` pada keenam tabel yang
+  dihitung.
+- `lessons.video_asset_id` ada, `video_assets.lesson_id` sudah tidak ada —
+  arah relasi yang baru ikut terbawa, bukan hanya datanya.
+- Empat pelajaran bervideo tetap tertaut, 21 migrasi tercatat selesai.
+
+Yang belum dicakup drill ini: menjalankan critical E2E flow terhadap database
+hasil restore, dan memulihkan volume unggahan. Keduanya masih menunggu.
+
 ---
 
 ## 7. Ownership
