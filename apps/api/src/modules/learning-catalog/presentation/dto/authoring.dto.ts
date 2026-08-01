@@ -17,7 +17,7 @@ import {
 } from 'class-validator';
 
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const;
-const CONTENT_TYPES = ['VIDEO', 'TEXT', 'PDF', 'EXTERNAL_LINK'] as const;
+const CONTENT_TYPES = ['VIDEO', 'TEXT', 'PDF', 'EXTERNAL_LINK', 'QUIZ'] as const;
 const COMPLETION_RULES = ['MANUAL', 'OPENED', 'MINIMUM_ACTIVE_SECONDS', 'VIDEO_PERCENTAGE'] as const;
 const STATUSES = ['DRAFT', 'PUBLISHED', 'ARCHIVED'] as const;
 

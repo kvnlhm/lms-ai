@@ -9,5 +9,8 @@ import { MyLearningController } from './presentation/controllers/my-learning.con
   imports: [EnrollmentModule],
   controllers: [LessonProgressController, MyLearningController],
   providers: [LessonProgressService, LearningHistoryService],
+  // Modul kuis memakainya untuk menandai pelajaran selesai setelah lulus,
+  // alih-alih menulis sendiri ke tabel progres milik modul ini.
+  exports: [LessonProgressService],
 })
 export class LearningProgressModule {}

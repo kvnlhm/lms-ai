@@ -147,6 +147,12 @@ Target awal:
 | Analytics terlambat | Progress tetap tampil benar |
 | Worker memproses event dua kali | Aggregate tidak ganda |
 | AI service down | Core LMS tetap berfungsi |
+| Pelajar membaca kuis sebelum mengirim | Respons tidak memuat `isCorrect` sama sekali |
+| Pelajar menandai selesai pelajaran kuis | Ditolak; hanya kelulusan yang menyelesaikannya |
+| Percobaan kuis melebihi batas | Ditolak server, bukan hanya disembunyikan di UI |
+| Pilihan jawaban milik soal lain dikirim | Ditolak `422`, bukan dinilai salah |
+| Master menghapus soal yang sudah dijawab | Ditolak; riwayat percobaan tetap utuh |
+| Kursus dengan pelajaran kuis tanpa soal | Tidak dapat diterbitkan |
 
 ---
 

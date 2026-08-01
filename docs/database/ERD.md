@@ -836,6 +836,80 @@ seluruh riwayat pengumuman sekaligus.
 
 ---
 
+## 12b. Quiz
+
+Memenuhi PRD 7.17. Kuis menempel pada satu pelajaran berjenis `QUIZ`
+(`quizzes.lesson_id` unik), bukan berdiri sendiri, sehingga urutan, prasyarat,
+penanda wajib, dan perhitungan progres pelajaran berlaku apa adanya tanpa
+tabel tandingan.
+
+```text
+QUIZZES
+- id
+- lesson_id            UK, FK → lessons, ON DELETE CASCADE
+- passing_score
+- max_attempts         NULL = tanpa batas
+- show_feedback
+- created_at
+- updated_at
+
+QUIZ_QUESTIONS
+- id
+- quiz_id              FK → quizzes, ON DELETE CASCADE
+- prompt
+- explanation
+- type                 SINGLE_CHOICE | MULTIPLE_CHOICE
+- points
+- position             UK bersama quiz_id
+- created_at
+- updated_at
+
+QUIZ_OPTIONS
+- id
+- question_id          FK → quiz_questions, ON DELETE CASCADE
+- text
+- is_correct
+- position             UK bersama question_id
+- created_at
+
+QUIZ_ATTEMPTS
+- id
+- quiz_id              FK → quizzes, ON DELETE CASCADE
+- enrollment_id        FK → enrollments, ON DELETE CASCADE
+- attempt_number       UK bersama (quiz_id, enrollment_id)
+- score_percent
+- earned_points
+- total_points
+- passed
+- submitted_at
+
+QUIZ_ANSWERS
+- id
+- attempt_id           FK → quiz_attempts, ON DELETE CASCADE
+- question_id          FK → quiz_questions, ON DELETE CASCADE
+- selected_option_ids  uuid[]
+- is_correct
+- earned_points
+```
+
+`quiz_options.is_correct` adalah satu-satunya tempat kunci jawaban disimpan dan
+tidak pernah direplikasi. Dengan begitu hanya ada satu kolom yang perlu dijaga
+agar tidak ikut terkirim ke Pelajar, dan pemeriksaannya dapat dilakukan dengan
+membaca kueri sisi pelajar saja.
+
+`quiz_attempts` memakai unik `(quiz_id, enrollment_id, attempt_number)` sebagai
+penjaga balapan: dua pengiriman bersamaan tidak dapat sama-sama menjadi
+percobaan terakhir yang tersisa, sehingga batas percobaan tidak bisa dilewati
+dengan menekan kirim dua kali.
+
+`quiz_answers.selected_option_ids` sengaja tanpa kunci asing ke `quiz_options`.
+Baris ini adalah catatan keadaan lampau; menguncinya ke pilihan yang masih ada
+akan membuat Master tidak dapat memperbaiki teks pilihan tanpa merusak riwayat.
+Sebaliknya, penghapusan soal yang sudah pernah dijawab ditolak di lapisan
+aplikasi supaya `quiz_answers` tidak kehilangan konteksnya.
+
+---
+
 ## 13. Error Events
 
 Memenuhi PRD 12.7. Satu baris mewakili satu jenis galat, bukan satu kejadian:

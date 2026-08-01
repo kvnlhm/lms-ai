@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { EnrollmentStatus, LessonProgressStatus, Prisma } from '@prisma/client';
+import { EnrollmentStatus, LessonContentType, LessonProgressStatus, Prisma } from '@prisma/client';
 import { PrismaService, type PrismaTransaction } from '../../../infrastructure/prisma/prisma.service';
 import { OutboxWriter } from '../../../infrastructure/outbox/outbox.writer';
+import { AppError } from '../../../shared/errors/app-error';
+import type { CourseAccess } from '../../enrollment/application/enrollment-access.service';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
 import { flattenLessons, nextIncomplete } from '../../learning-delivery/application/lesson-navigation';
 import { calculateProgress } from './progress-calculation';
@@ -76,114 +78,145 @@ export class LessonProgressService {
   }
 
   /**
-   * Menandai pelajaran selesai.
+   * Menandai pelajaran selesai atas permintaan pelajar.
+   *
+   * Pelajaran berjenis kuis ditolak di sini: penyelesaiannya hanya boleh lahir
+   * dari penilaian server atas jawaban yang dikirim, bukan dari klien yang
+   * menyatakan dirinya sudah selesai. Tanpa penjagaan ini setiap kuis dapat
+   * dilewati dengan satu permintaan biasa ke endpoint ini.
+   */
+  async complete(command: CompleteLessonCommand): Promise<CompleteLessonResult> {
+    const access = await this.access.assertLessonAccess(command.userId, command.lessonId);
+
+    const lesson = await this.prisma.lesson.findUniqueOrThrow({
+      where: { id: command.lessonId },
+      select: { contentType: true },
+    });
+    if (lesson.contentType === LessonContentType.QUIZ) {
+      throw AppError.validation({
+        lesson: ['Pelajaran kuis selesai dengan mengerjakan kuisnya sampai lulus.'],
+      });
+    }
+
+    return this.prisma.$transaction((tx) => this.completeWithin(tx, access, command));
+  }
+
+  /**
+   * Menandai pelajaran selesai di dalam transaksi milik pemanggil.
    *
    * Seluruh perubahan berada dalam satu transaksi (Architecture bagian 13):
    * status pelajaran, hitung ulang progres kursus, penyelesaian kursus, dan
    * penulisan outbox. Notifikasi serta analytics diproses worker setelah
    * commit, jadi keduanya tidak dapat menggagalkan penyelesaian pelajaran.
+   *
+   * Transaksinya diterima dari luar, bukan dibuka sendiri, supaya modul kuis
+   * dapat menyimpan hasil percobaan dan menandai pelajaran selesai sebagai satu
+   * kesatuan — kalau tidak, kegagalan di antara keduanya menyisakan percobaan
+   * yang lulus tetapi pelajaran yang belum selesai, sementara jatah percobaan
+   * pelajar sudah terpakai.
    */
-  async complete(command: CompleteLessonCommand): Promise<CompleteLessonResult> {
-    const access = await this.access.assertLessonAccess(command.userId, command.lessonId);
+  async completeWithin(
+    tx: PrismaTransaction,
+    access: CourseAccess,
+    command: CompleteLessonCommand,
+  ): Promise<CompleteLessonResult> {
     const now = new Date();
 
-    return this.prisma.$transaction(async (tx) => {
-      const transitioned = await markLessonCompleted(tx, {
+    const transitioned = await markLessonCompleted(tx, {
+      enrollmentId: access.enrollmentId,
+      lessonId: command.lessonId,
+      activeSeconds: command.activeSeconds ?? 0,
+      evidence: {
+        activeSeconds: command.activeSeconds ?? null,
+        videoPercentage: command.videoPercentage ?? null,
+      },
+    });
+
+    const counts = await countRequiredLessons(tx, access.courseId, access.enrollmentId);
+    const { percent, isCourseComplete } = calculateProgress(counts);
+
+    const previous = await tx.courseProgress.findUnique({
+      where: { enrollmentId: access.enrollmentId },
+      select: { completedAt: true },
+    });
+    const alreadyComplete = previous?.completedAt != null;
+    const completedAt = isCourseComplete ? (previous?.completedAt ?? now) : null;
+
+    await tx.courseProgress.upsert({
+      where: { enrollmentId: access.enrollmentId },
+      create: {
         enrollmentId: access.enrollmentId,
-        lessonId: command.lessonId,
-        activeSeconds: command.activeSeconds ?? 0,
-        evidence: {
+        requiredLessonsTotal: counts.requiredTotal,
+        requiredLessonsComplete: counts.requiredCompleted,
+        progressPercent: new Prisma.Decimal(percent),
+        lastLessonId: command.lessonId,
+        startedAt: now,
+        lastActivityAt: now,
+        completedAt,
+        version: 1,
+      },
+      update: {
+        requiredLessonsTotal: counts.requiredTotal,
+        requiredLessonsComplete: counts.requiredCompleted,
+        progressPercent: new Prisma.Decimal(percent),
+        lastLessonId: command.lessonId,
+        lastActivityAt: now,
+        completedAt,
+        startedAt: previous ? undefined : now,
+        version: { increment: 1 },
+      },
+    });
+
+    let enrollmentStatus = access.status;
+    if (isCourseComplete && !alreadyComplete) {
+      await tx.enrollment.update({
+        where: { id: access.enrollmentId },
+        data: { status: EnrollmentStatus.COMPLETED, completedAt: now },
+      });
+      enrollmentStatus = EnrollmentStatus.COMPLETED;
+    }
+
+    // Event hanya ditulis pada perubahan status yang sesungguhnya, sehingga
+    // percobaan ulang tidak menghasilkan notifikasi ganda.
+    if (transitioned) {
+      await this.outbox.append(tx, {
+        eventType: 'learning.lesson_completed',
+        aggregateType: 'enrollment',
+        aggregateId: access.enrollmentId,
+        payload: {
+          userId: command.userId,
+          courseId: access.courseId,
+          lessonId: command.lessonId,
+          learningSessionId: command.sessionId ?? null,
           activeSeconds: command.activeSeconds ?? null,
           videoPercentage: command.videoPercentage ?? null,
+          courseProgressPercent: percent,
+          occurredAt: now.toISOString(),
         },
       });
+    }
 
-      const counts = await countRequiredLessons(tx, access.courseId, access.enrollmentId);
-      const { percent, isCourseComplete } = calculateProgress(counts);
-
-      const previous = await tx.courseProgress.findUnique({
-        where: { enrollmentId: access.enrollmentId },
-        select: { completedAt: true },
-      });
-      const alreadyComplete = previous?.completedAt != null;
-      const completedAt = isCourseComplete ? (previous?.completedAt ?? now) : null;
-
-      await tx.courseProgress.upsert({
-        where: { enrollmentId: access.enrollmentId },
-        create: {
-          enrollmentId: access.enrollmentId,
-          requiredLessonsTotal: counts.requiredTotal,
-          requiredLessonsComplete: counts.requiredCompleted,
-          progressPercent: new Prisma.Decimal(percent),
-          lastLessonId: command.lessonId,
-          startedAt: now,
-          lastActivityAt: now,
-          completedAt,
-          version: 1,
-        },
-        update: {
-          requiredLessonsTotal: counts.requiredTotal,
-          requiredLessonsComplete: counts.requiredCompleted,
-          progressPercent: new Prisma.Decimal(percent),
-          lastLessonId: command.lessonId,
-          lastActivityAt: now,
-          completedAt,
-          startedAt: previous ? undefined : now,
-          version: { increment: 1 },
+    if (isCourseComplete && !alreadyComplete) {
+      await this.outbox.append(tx, {
+        eventType: 'learning.course_completed',
+        aggregateType: 'enrollment',
+        aggregateId: access.enrollmentId,
+        payload: {
+          userId: command.userId,
+          courseId: access.courseId,
+          completedAt: now.toISOString(),
         },
       });
+    }
 
-      let enrollmentStatus = access.status;
-      if (isCourseComplete && !alreadyComplete) {
-        await tx.enrollment.update({
-          where: { id: access.enrollmentId },
-          data: { status: EnrollmentStatus.COMPLETED, completedAt: now },
-        });
-        enrollmentStatus = EnrollmentStatus.COMPLETED;
-      }
+    const nextLessonId = await resolveNextLesson(tx, access.courseId, access.enrollmentId);
 
-      // Event hanya ditulis pada perubahan status yang sesungguhnya, sehingga
-      // percobaan ulang tidak menghasilkan notifikasi ganda.
-      if (transitioned) {
-        await this.outbox.append(tx, {
-          eventType: 'learning.lesson_completed',
-          aggregateType: 'enrollment',
-          aggregateId: access.enrollmentId,
-          payload: {
-            userId: command.userId,
-            courseId: access.courseId,
-            lessonId: command.lessonId,
-            learningSessionId: command.sessionId ?? null,
-            activeSeconds: command.activeSeconds ?? null,
-            videoPercentage: command.videoPercentage ?? null,
-            courseProgressPercent: percent,
-            occurredAt: now.toISOString(),
-          },
-        });
-      }
-
-      if (isCourseComplete && !alreadyComplete) {
-        await this.outbox.append(tx, {
-          eventType: 'learning.course_completed',
-          aggregateType: 'enrollment',
-          aggregateId: access.enrollmentId,
-          payload: {
-            userId: command.userId,
-            courseId: access.courseId,
-            completedAt: now.toISOString(),
-          },
-        });
-      }
-
-      const nextLessonId = await resolveNextLesson(tx, access.courseId, access.enrollmentId);
-
-      return {
-        lessonStatus: LessonProgressStatus.COMPLETED,
-        courseProgress: percent,
-        courseStatus: enrollmentStatus,
-        nextLessonId,
-      };
-    });
+    return {
+      lessonStatus: LessonProgressStatus.COMPLETED,
+      courseProgress: percent,
+      courseStatus: enrollmentStatus,
+      nextLessonId,
+    };
   }
 }
 

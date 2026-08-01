@@ -264,7 +264,7 @@ Master dapat:
   penyedia. Penjadwalan sesi langsung dengan tautan yang ditempel Master
   termasuk dalam cakupan; lihat 7.16 dan ADR-019.
 - Sertifikat otomatis.
-- Quiz dan ujian.
+- Ujian berjadwal dengan pengawasan.
 - Assignment dan penilaian manual.
 - Gamification.
 - Poin dan leaderboard.
@@ -574,6 +574,7 @@ Contoh tindakan:
 - Teks atau artikel.
 - PDF atau dokumen.
 - Tautan eksternal.
+- Kuis; aturannya pada 7.17.
 
 ### Data Materi
 
@@ -956,6 +957,63 @@ ADR-019.
 - Foto harus melalui validasi file.
 - Pengguna tidak dapat mengubah role.
 - Perubahan profil tercatat dengan timestamp.
+
+---
+
+## 7.17 Kuis
+
+Kuis adalah satu jenis materi, bukan entitas yang berdiri sendiri di samping
+materi. Bentuk itu dipilih supaya kuis langsung mewarisi seluruh perkakas yang
+sudah ada pada pelajaran: urutan, prasyarat, penanda wajib, perhitungan progres,
+dan penentuan pelajaran berikutnya. Kuis yang berdiri sendiri akan menuntut
+semua itu dibangun ulang.
+
+### Data Kuis
+
+- Ambang lulus dalam persen.
+- Batas percobaan; boleh kosong yang berarti tanpa batas.
+- Penanda apakah jawaban benar diperlihatkan setelah pengiriman.
+- Daftar soal berurutan, masing-masing dengan bobot poin dan penjelasan opsional.
+- Dua jenis soal: pilihan tunggal dan pilihan ganda.
+
+### Fitur Master
+
+- Menyusun, mengubah, dan mengurutkan soal beserta pilihan jawabannya.
+- Menentukan ambang lulus, batas percobaan, dan tampil tidaknya umpan balik.
+- Menghapus kuis yang belum pernah dikerjakan.
+
+### Fitur Pelajar
+
+- Mengerjakan kuis pada pelajaran yang diikutinya.
+- Melihat nilai, jumlah poin, dan sisa percobaan setelah mengirim.
+- Melihat jawaban benar beserta penjelasannya, bila Master menyalakannya.
+
+### Penilaian
+
+- Soal pilihan ganda dinilai utuh: seluruh pilihan benar harus tertandai dan
+  tidak boleh ada pilihan salah yang ikut. Nilai sebagian tidak dipakai.
+- Nilai adalah jumlah poin yang diperoleh dibagi total poin, dibulatkan dua
+  desimal, lalu dibandingkan dengan ambang lulus.
+
+### Acceptance Criteria
+
+- Kunci jawaban tidak pernah dikirim ke Pelajar sebelum jawabannya masuk.
+- Penilaian sepenuhnya dilakukan server; klien tidak pernah mengirimkan nilai.
+- Pelajaran berjenis kuis hanya dapat diselesaikan dengan lulus kuisnya, dan
+  endpoint penyelesaian pelajaran biasa menolak pelajaran tersebut.
+- Batas percobaan ditegakkan server, termasuk terhadap dua pengiriman bersamaan.
+- Penyimpanan percobaan dan penyelesaian pelajaran terjadi dalam satu transaksi.
+- Kursus tidak dapat diterbitkan selama masih ada pelajaran kuis tanpa soal.
+- Soal yang sudah pernah dijawab tidak dapat dihapus, agar riwayat tetap utuh.
+- Kuis yang sudah pernah dikerjakan tidak dapat dihapus.
+
+### Tidak Termasuk
+
+- Batas waktu pengerjaan.
+- Pengacakan urutan soal.
+- Soal isian, esai, atau menjodohkan.
+- Bank soal yang dipakai ulang lintas pelajaran.
+- Nilai sebagian pada soal pilihan ganda.
 
 ---
 
@@ -1644,7 +1702,6 @@ Batas waktu dapat dibuat configurable pada fase berikutnya.
 
 ## P2 — Pengembangan Lanjutan
 
-- Quiz.
 - Assignment.
 - Certificate.
 - Email notification.
@@ -1789,7 +1846,7 @@ Mitigasi:
 - Mencatat durasi aktivitas.
 - Mencatat interaksi materi.
 - Menggunakan syarat penyelesaian yang berbeda.
-- Menambahkan quiz pada fase lanjutan.
+- Memakai materi kuis, yang hanya selesai bila jawabannya benar (7.17).
 
 ### Risiko: Data analytics tidak akurat
 

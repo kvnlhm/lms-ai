@@ -1074,6 +1074,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/lessons/{lessonId}/quiz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kuis pelajaran beserta kunci jawaban */
+        get: operations["AdminQuizController_get"];
+        /** Menyimpan pengaturan dan seluruh soal kuis */
+        put: operations["AdminQuizController_save"];
+        post?: never;
+        /** Menghapus kuis yang belum pernah dikerjakan */
+        delete: operations["AdminQuizController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/learn/lessons/{lessonId}/quiz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Soal kuis tanpa kunci jawaban beserta sisa percobaan */
+        get: operations["QuizController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/learn/lessons/{lessonId}/quiz/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mengirim jawaban kuis dan menerima nilainya */
+        post: operations["QuizController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/learn/courses/{courseId}/forum/topics": {
         parameters: {
             query?: never;
@@ -2307,7 +2360,7 @@ export interface components {
             position: number;
             estimatedMinutes: number;
             /** @enum {string} */
-            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK" | "QUIZ";
             isRequired: boolean;
             isPreview: boolean;
         };
@@ -2380,7 +2433,7 @@ export interface components {
             title: string;
             description?: string | null;
             /** @enum {string} */
-            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK" | "QUIZ";
             textContent?: string | null;
             externalUrl?: string | null;
             position: number;
@@ -2511,7 +2564,7 @@ export interface components {
             title: string;
             description?: string;
             /** @enum {string} */
-            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK" | "QUIZ";
             textContent?: string;
             externalUrl?: string;
             estimatedMinutes?: number;
@@ -2531,7 +2584,7 @@ export interface components {
             title?: string;
             description?: string;
             /** @enum {string} */
-            contentType?: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            contentType?: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK" | "QUIZ";
             textContent?: string;
             externalUrl?: string;
             estimatedMinutes?: number;
@@ -2689,7 +2742,7 @@ export interface components {
             title: string;
             position: number;
             /** @enum {string} */
-            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK" | "QUIZ";
             estimatedMinutes: number;
             isRequired: boolean;
             /** @enum {string} */
@@ -2740,7 +2793,7 @@ export interface components {
             title: string;
             description?: string | null;
             /** @enum {string} */
-            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK";
+            contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK" | "QUIZ";
             content: components["schemas"]["LessonContentDto"];
             /** Format: uuid */
             moduleId: string;
@@ -2853,6 +2906,143 @@ export interface components {
         LearningHistoryPageDto: {
             items: components["schemas"]["LearningHistoryItemDto"][];
             nextCursor?: string | null;
+        };
+        AdminQuizOptionDto: {
+            /** Format: uuid */
+            id: string;
+            text: string;
+            /** @description Kunci jawaban; hanya muncul pada endpoint Master. */
+            isCorrect: boolean;
+            position: number;
+        };
+        AdminQuizQuestionDto: {
+            /** Format: uuid */
+            id: string;
+            prompt: string;
+            explanation?: string | null;
+            /** @enum {string} */
+            type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
+            points: number;
+            position: number;
+            options: components["schemas"]["AdminQuizOptionDto"][];
+        };
+        AdminQuizDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            lessonId: string;
+            /** @example 70 */
+            passingScore: number;
+            maxAttempts?: number | null;
+            showFeedback: boolean;
+            /** @description Jumlah percobaan yang sudah tercatat dari seluruh pelajar. */
+            attemptCount: number;
+            totalPoints: number;
+            /** Format: date-time */
+            updatedAt: string;
+            questions: components["schemas"]["AdminQuizQuestionDto"][];
+        };
+        SaveQuizOptionDto: {
+            /** @example Model bahasa besar */
+            text: string;
+            /** @description Kunci jawaban. Tidak pernah dikirim ke Pelajar. */
+            isCorrect: boolean;
+        };
+        SaveQuizQuestionDto: {
+            /**
+             * Format: uuid
+             * @description Diisi untuk soal yang sudah ada agar riwayat jawabannya tetap menunjuk soal ini.
+             */
+            id?: string;
+            /** @example Apa kepanjangan LLM? */
+            prompt: string;
+            /** @description Penjelasan yang tampil bersama umpan balik. */
+            explanation?: string;
+            /** @enum {string} */
+            type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
+            /** @default 1 */
+            points?: number;
+            options: components["schemas"]["SaveQuizOptionDto"][];
+        };
+        SaveQuizDto: {
+            /** @example 70 */
+            passingScore: number;
+            /** @description Batas percobaan. Kosong berarti tanpa batas. */
+            maxAttempts?: number | null;
+            /** @default true */
+            showFeedback?: boolean;
+            questions: components["schemas"]["SaveQuizQuestionDto"][];
+        };
+        LearnerQuizOptionDto: {
+            /** Format: uuid */
+            id: string;
+            text: string;
+        };
+        LearnerQuizQuestionDto: {
+            /** Format: uuid */
+            id: string;
+            prompt: string;
+            /** @enum {string} */
+            type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE";
+            points: number;
+            position: number;
+            /** @description Tanpa penanda benar atau salah. */
+            options: components["schemas"]["LearnerQuizOptionDto"][];
+        };
+        LearnerQuizDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            lessonId: string;
+            /** @example 70 */
+            passingScore: number;
+            /** @description Null berarti tanpa batas. */
+            maxAttempts?: number | null;
+            showFeedback: boolean;
+            totalPoints: number;
+            attemptsUsed: number;
+            attemptsLeft?: number | null;
+            passed: boolean;
+            bestScorePercent?: number | null;
+            /** Format: date-time */
+            lastAttemptAt?: string | null;
+            questions: components["schemas"]["LearnerQuizQuestionDto"][];
+        };
+        QuizReviewItemDto: {
+            /** Format: uuid */
+            questionId: string;
+            prompt: string;
+            explanation?: string | null;
+            isCorrect: boolean;
+            earnedPoints: number;
+            points: number;
+            selectedOptionIds: string[];
+            correctOptionIds: string[];
+        };
+        QuizAttemptResultDto: {
+            attemptNumber: number;
+            /** @example 83.33 */
+            scorePercent: number;
+            earnedPoints: number;
+            totalPoints: number;
+            passingScore: number;
+            passed: boolean;
+            attemptsLeft?: number | null;
+            /** @description Benar bila kelulusan ini menandai pelajarannya selesai. */
+            lessonCompleted: boolean;
+            courseProgress?: number | null;
+            /** Format: uuid */
+            nextLessonId?: string | null;
+            /** @description Null bila Master mematikan umpan balik untuk kuis ini. */
+            review?: components["schemas"]["QuizReviewItemDto"][] | null;
+        };
+        SubmitQuizAnswerDto: {
+            /** Format: uuid */
+            questionId: string;
+            selectedOptionIds: string[];
+        };
+        SubmitQuizDto: {
+            answers: components["schemas"]["SubmitQuizAnswerDto"][];
         };
         ForumAuthorDto: {
             /** Format: uuid */
@@ -6813,6 +7003,290 @@ export interface operations {
                 };
             };
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminQuizController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminQuizDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminQuizController_save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveQuizDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminQuizDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminQuizController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kuis dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    QuizController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LearnerQuizDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    QuizController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitQuizDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["QuizAttemptResultDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -7,6 +7,7 @@ import { ApiError, serverClient, unwrap } from '../../../lib/api';
 import { requireUser } from '../../../lib/session';
 import { BookmarkButton } from './bookmark-button';
 import { CompleteButton } from './complete-button';
+import { QuizRunner } from './quiz-runner';
 import { VideoPlayer } from './video-player';
 
 export const dynamic = 'force-dynamic';
@@ -89,17 +90,30 @@ export default async function LessonPage({ params }: Props) {
 
             {lesson.description ? <p className="lessonText">{lesson.description}</p> : null}
             {lesson.content.text ? <p className="lessonText">{lesson.content.text}</p> : null}
+
+            {lesson.contentType === 'QUIZ' ? (
+              <QuizRunner
+                courseId={courseId}
+                lessonId={lessonId}
+                nextLessonId={lesson.nextLessonId ?? null}
+              />
+            ) : null}
           </div>
 
           <div className="playerFoot">
             <BookmarkButton lessonId={lessonId} initiallyBookmarked={lesson.bookmarked} />
-            <CompleteButton
-              courseId={courseId}
-              lessonId={lessonId}
-              nextLessonId={lesson.nextLessonId ?? null}
-              alreadyCompleted={isCompleted}
-              openedAt={Date.now()}
-            />
+            {/* Materi kuis tidak punya tombol "tandai selesai": penyelesaiannya
+                lahir dari nilai yang dihitung server, dan endpoint biasa memang
+                menolak pelajaran berjenis kuis. */}
+            {lesson.contentType === 'QUIZ' ? null : (
+              <CompleteButton
+                courseId={courseId}
+                lessonId={lessonId}
+                nextLessonId={lesson.nextLessonId ?? null}
+                alreadyCompleted={isCompleted}
+                openedAt={Date.now()}
+              />
+            )}
           </div>
         </div>
 
@@ -190,6 +204,12 @@ function LessonStage({ lesson, position }: { lesson: LearnLesson; position: numb
   }
 
   if (lesson.contentType === 'TEXT') {
+    return null;
+  }
+
+  // Kuis punya panggungnya sendiri di bawah deskripsi, jadi tidak ada kotak
+  // media yang perlu digambar di sini.
+  if (lesson.contentType === 'QUIZ') {
     return null;
   }
 

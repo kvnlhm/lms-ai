@@ -665,6 +665,7 @@ VIDEO
 TEXT
 PDF
 EXTERNAL_LINK
+QUIZ
 ```
 
 `completionRule`:
@@ -691,6 +692,138 @@ VIDEO_PERCENTAGE
   ]
 }
 ```
+
+## GET `/admin/lessons/{lessonId}/quiz`
+
+Satu-satunya endpoint yang mengembalikan `isCorrect`. Menuntut `courses.manage`.
+`404` bila pelajaran belum memiliki kuis.
+
+## PUT `/admin/lessons/{lessonId}/quiz`
+
+Menyimpan pengaturan dan seluruh soal sekaligus. Soal yang sudah tersimpan
+dikenali lewat `id` dan diperbarui di tempat; soal yang tidak ikut dikirim
+dianggap dihapus, dan penghapusan ditolak `409` bila soal itu pernah dijawab.
+
+```json
+{
+  "passingScore": 70,
+  "maxAttempts": 3,
+  "showFeedback": true,
+  "questions": [
+    {
+      "id": "uuid",
+      "prompt": "Apa kepanjangan LLM?",
+      "explanation": "string",
+      "type": "SINGLE_CHOICE",
+      "points": 1,
+      "options": [
+        { "text": "Large Language Model", "isCorrect": true },
+        { "text": "Long Learning Method", "isCorrect": false }
+      ]
+    }
+  ]
+}
+```
+
+`type`:
+
+```text
+SINGLE_CHOICE
+MULTIPLE_CHOICE
+```
+
+`maxAttempts` kosong berarti tanpa batas. `422` bila soal pilihan tunggal tidak
+memiliki tepat satu jawaban benar, atau pelajarannya bukan berjenis `QUIZ`.
+
+## DELETE `/admin/lessons/{lessonId}/quiz`
+
+`204` bila terhapus, `409` bila kuis sudah pernah dikerjakan.
+
+## GET `/learn/lessons/{lessonId}/quiz`
+
+Soal tanpa kunci jawaban, beserta keadaan percobaan pemanggil.
+
+```json
+{
+  "data": {
+    "id": "uuid",
+    "lessonId": "uuid",
+    "passingScore": 70,
+    "maxAttempts": 3,
+    "showFeedback": true,
+    "totalPoints": 4,
+    "attemptsUsed": 1,
+    "attemptsLeft": 2,
+    "passed": false,
+    "bestScorePercent": 50,
+    "lastAttemptAt": "2026-08-01T09:00:00Z",
+    "questions": [
+      {
+        "id": "uuid",
+        "prompt": "string",
+        "type": "SINGLE_CHOICE",
+        "points": 1,
+        "position": 1,
+        "options": [{ "id": "uuid", "text": "string" }]
+      }
+    ]
+  }
+}
+```
+
+`404` bila pelajarannya bukan kuis, kuisnya belum ada, atau pemanggil tidak
+memiliki akses — keberadaan kuis tidak boleh dapat disimpulkan.
+
+## POST `/learn/lessons/{lessonId}/quiz/attempts`
+
+Request:
+
+```json
+{
+  "answers": [
+    { "questionId": "uuid", "selectedOptionIds": ["uuid"] }
+  ]
+}
+```
+
+Seluruh soal wajib dijawab. Response `201`:
+
+```json
+{
+  "data": {
+    "attemptNumber": 2,
+    "scorePercent": 100,
+    "earnedPoints": 4,
+    "totalPoints": 4,
+    "passingScore": 70,
+    "passed": true,
+    "attemptsLeft": 0,
+    "lessonCompleted": true,
+    "courseProgress": 62.5,
+    "nextLessonId": "uuid",
+    "review": [
+      {
+        "questionId": "uuid",
+        "prompt": "string",
+        "explanation": "string",
+        "isCorrect": true,
+        "earnedPoints": 1,
+        "points": 1,
+        "selectedOptionIds": ["uuid"],
+        "correctOptionIds": ["uuid"]
+      }
+    ]
+  }
+}
+```
+
+`review` bernilai `null` bila `showFeedback` mati. `409` bila kuis sudah lulus
+atau jatah percobaan habis; `422` bila ada soal yang belum dijawab, pilihan
+bukan milik soalnya, atau soal pilihan tunggal diberi lebih dari satu jawaban.
+
+Penyimpanan percobaan dan penyelesaian pelajaran terjadi dalam satu transaksi,
+sehingga tidak ada keadaan di mana jatah percobaan berkurang tetapi pelajaran
+belum tercatat selesai.
 
 ---
 
@@ -799,6 +932,10 @@ Optional idempotent activity endpoint.
 ```
 
 ## POST `/learn/lessons/{lessonId}/complete`
+
+Ditolak `422` untuk pelajaran berjenis `QUIZ`; penyelesaiannya hanya boleh lahir
+dari penilaian server atas jawaban yang dikirim, bukan dari klien yang
+menyatakan dirinya selesai.
 
 Header:
 

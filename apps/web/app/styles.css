@@ -1871,3 +1871,164 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .courseStats { flex-direction: column; }
   .courseStats > span:last-child { text-align: left; }
 }
+
+/* ── Kuis ───────────────────────────────────────────────────── */
+
+/* Penyusun soal milik Master. Kotaknya sejajar dengan `.lessonEditForm` agar
+   terbaca sebagai panel yang sama-sama menempel pada satu materi. */
+.quizEditor {
+  margin: 0 14px 14px 54px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--raised) 58%, var(--surface));
+}
+.quizEmpty { margin: 0; color: var(--muted); font-size: 13px; }
+.quizSettings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 0 14px;
+  padding-bottom: 6px;
+}
+.quizSettings .field input { width: 100%; background: var(--surface); }
+.quizSettings .checkRow { grid-column: 1 / -1; padding-bottom: 16px; }
+.quizQuestion {
+  margin-bottom: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.quizQuestionHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.quizQuestionHead .inlineActions { margin-left: auto; }
+.quizQuestion .field textarea { min-height: 66px; }
+.quizQuestionMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+}
+.quizOptionList { margin: 0 0 14px; padding: 0; list-style: none; }
+.quizOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.quizOptionMark { display: inline-flex; }
+.quizOptionMark input { width: 17px; height: 17px; accent-color: var(--good); }
+.quizOptionText {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+}
+.quizOptionText:focus { outline: none; border-color: var(--accent); }
+.quizEditorActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+.quizEditorSpacer { flex: 1; }
+
+/* Pengerjaan oleh pelajar. */
+.quizRunner {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--raised);
+}
+.quizRunnerHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.quizRunnerHead strong { font-size: 15px; }
+.quizRunnerHead p { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
+.quizRunnerHead .pill { margin-left: auto; }
+.quizScore {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+}
+.quizScore strong { display: block; font-size: 17px; }
+.quizScore p { margin: 5px 0 0; font-size: 13px; line-height: 1.55; }
+.quizScoreGood { background: var(--good-soft); color: var(--good); }
+.quizScoreBad { background: var(--danger-soft); color: var(--danger); }
+.quizQuestionList { margin: 0 0 18px; padding: 0; list-style: none; }
+.quizQuestionCard {
+  margin-bottom: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.quizPrompt {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.quizHint { margin: 6px 0 12px; color: var(--muted); font-size: 12px; }
+.quizChoiceList { margin: 0; padding: 0; list-style: none; }
+/* Seluruh baris menjadi sasaran klik, bukan lingkaran kecilnya saja — itu yang
+   membedakan kuis yang nyaman dikerjakan di layar sentuh dari yang tidak. */
+.quizChoice {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 7px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.quizChoice:hover { border-color: var(--accent); }
+.quizChoice input { width: 17px; height: 17px; flex: none; accent-color: var(--accent); }
+.quizChoice input:disabled { cursor: not-allowed; }
+/* Warna bukan satu-satunya penanda: kalimat "Benar." atau "Belum benar." di
+   bawah tiap soal menyampaikan hasil yang sama tanpa bergantung pada warna. */
+.quizChoiceCorrect {
+  border-color: var(--good);
+  background: var(--good-soft);
+  color: var(--good);
+}
+.quizChoiceWrong {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.quizVerdictGood { margin: 10px 0 0; color: var(--good); font-size: 12.5px; line-height: 1.55; }
+.quizVerdictBad { margin: 10px 0 0; color: var(--danger); font-size: 12.5px; line-height: 1.55; }
+.quizRunnerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+  .quizEditor { margin-left: 14px; }
+  .quizSettings,
+  .quizQuestionMeta { grid-template-columns: minmax(0, 1fr); }
+}

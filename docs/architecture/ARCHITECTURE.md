@@ -402,6 +402,7 @@ apps/api/src/modules/
 ├── enrollment/
 ├── learning-delivery/
 ├── learning-progress/
+├── quiz/
 ├── community/
 ├── communication/
 ├── analytics/
@@ -540,6 +541,20 @@ Memiliki:
 - Continue learning.
 - Completion.
 - Learning history.
+
+## 8.7a Quiz
+
+Memiliki:
+
+- Penyusunan soal dan kunci jawaban.
+- Penilaian pengiriman jawaban.
+- Batas percobaan.
+
+Berdiri sebagai module tersendiri, bukan bagian dari learning-catalog, karena
+ia memegang dua hal yang tidak dimiliki katalog: kunci jawaban yang harus
+dijaga agar tidak ikut terkirim, dan penilaian yang menentukan penyelesaian
+pelajaran. Untuk menandai pelajaran selesai ia memanggil application service
+milik learning-progress, bukan menulis langsung ke tabel progres.
 
 ## 8.8 Community
 

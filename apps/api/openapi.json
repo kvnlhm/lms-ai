@@ -5161,6 +5161,418 @@
         ]
       }
     },
+    "/api/v1/admin/lessons/{lessonId}/quiz": {
+      "get": {
+        "operationId": "AdminQuizController_get",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminQuizDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Kuis pelajaran beserta kunci jawaban",
+        "tags": [
+          "admin-catalog"
+        ]
+      },
+      "put": {
+        "operationId": "AdminQuizController_save",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveQuizDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminQuizDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menyimpan pengaturan dan seluruh soal kuis",
+        "tags": [
+          "admin-catalog"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminQuizController_remove",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Kuis dihapus."
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus kuis yang belum pernah dikerjakan",
+        "tags": [
+          "admin-catalog"
+        ]
+      }
+    },
+    "/api/v1/learn/lessons/{lessonId}/quiz": {
+      "get": {
+        "operationId": "QuizController_get",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LearnerQuizDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Soal kuis tanpa kunci jawaban beserta sisa percobaan",
+        "tags": [
+          "learning-delivery"
+        ]
+      }
+    },
+    "/api/v1/learn/lessons/{lessonId}/quiz/attempts": {
+      "post": {
+        "operationId": "QuizController_submit",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitQuizDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/QuizAttemptResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengirim jawaban kuis dan menerima nilainya",
+        "tags": [
+          "learning-delivery"
+        ]
+      }
+    },
     "/api/v1/learn/courses/{courseId}/forum/topics": {
       "get": {
         "operationId": "ForumController_listTopics",
@@ -10661,7 +11073,8 @@
               "VIDEO",
               "TEXT",
               "PDF",
-              "EXTERNAL_LINK"
+              "EXTERNAL_LINK",
+              "QUIZ"
             ]
           },
           "isRequired": {
@@ -10939,7 +11352,8 @@
               "VIDEO",
               "TEXT",
               "PDF",
-              "EXTERNAL_LINK"
+              "EXTERNAL_LINK",
+              "QUIZ"
             ]
           },
           "textContent": {
@@ -11396,7 +11810,8 @@
               "VIDEO",
               "TEXT",
               "PDF",
-              "EXTERNAL_LINK"
+              "EXTERNAL_LINK",
+              "QUIZ"
             ]
           },
           "textContent": {
@@ -11451,7 +11866,8 @@
               "VIDEO",
               "TEXT",
               "PDF",
-              "EXTERNAL_LINK"
+              "EXTERNAL_LINK",
+              "QUIZ"
             ]
           },
           "textContent": {
@@ -11941,7 +12357,8 @@
               "VIDEO",
               "TEXT",
               "PDF",
-              "EXTERNAL_LINK"
+              "EXTERNAL_LINK",
+              "QUIZ"
             ]
           },
           "estimatedMinutes": {
@@ -12110,7 +12527,8 @@
               "VIDEO",
               "TEXT",
               "PDF",
-              "EXTERNAL_LINK"
+              "EXTERNAL_LINK",
+              "QUIZ"
             ]
           },
           "content": {
@@ -12478,6 +12896,483 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "AdminQuizOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          },
+          "isCorrect": {
+            "type": "boolean",
+            "description": "Kunci jawaban; hanya muncul pada endpoint Master."
+          },
+          "position": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "isCorrect",
+          "position"
+        ]
+      },
+      "AdminQuizQuestionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SINGLE_CHOICE",
+              "MULTIPLE_CHOICE"
+            ]
+          },
+          "points": {
+            "type": "number"
+          },
+          "position": {
+            "type": "number"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminQuizOptionDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "prompt",
+          "type",
+          "points",
+          "position",
+          "options"
+        ]
+      },
+      "AdminQuizDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lessonId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "passingScore": {
+            "type": "number",
+            "example": 70
+          },
+          "maxAttempts": {
+            "type": "number",
+            "nullable": true
+          },
+          "showFeedback": {
+            "type": "boolean"
+          },
+          "attemptCount": {
+            "type": "number",
+            "description": "Jumlah percobaan yang sudah tercatat dari seluruh pelajar."
+          },
+          "totalPoints": {
+            "type": "number"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminQuizQuestionDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "lessonId",
+          "passingScore",
+          "showFeedback",
+          "attemptCount",
+          "totalPoints",
+          "updatedAt",
+          "questions"
+        ]
+      },
+      "SaveQuizOptionDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "example": "Model bahasa besar"
+          },
+          "isCorrect": {
+            "type": "boolean",
+            "description": "Kunci jawaban. Tidak pernah dikirim ke Pelajar."
+          }
+        },
+        "required": [
+          "text",
+          "isCorrect"
+        ]
+      },
+      "SaveQuizQuestionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Diisi untuk soal yang sudah ada agar riwayat jawabannya tetap menunjuk soal ini."
+          },
+          "prompt": {
+            "type": "string",
+            "example": "Apa kepanjangan LLM?"
+          },
+          "explanation": {
+            "type": "string",
+            "description": "Penjelasan yang tampil bersama umpan balik."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SINGLE_CHOICE",
+              "MULTIPLE_CHOICE"
+            ]
+          },
+          "points": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 1
+          },
+          "options": {
+            "minItems": 2,
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SaveQuizOptionDto"
+            }
+          }
+        },
+        "required": [
+          "prompt",
+          "type",
+          "options"
+        ]
+      },
+      "SaveQuizDto": {
+        "type": "object",
+        "properties": {
+          "passingScore": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 70
+          },
+          "maxAttempts": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 20,
+            "description": "Batas percobaan. Kosong berarti tanpa batas."
+          },
+          "showFeedback": {
+            "type": "boolean",
+            "default": true
+          },
+          "questions": {
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SaveQuizQuestionDto"
+            }
+          }
+        },
+        "required": [
+          "passingScore",
+          "questions"
+        ]
+      },
+      "LearnerQuizOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ]
+      },
+      "LearnerQuizQuestionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SINGLE_CHOICE",
+              "MULTIPLE_CHOICE"
+            ]
+          },
+          "points": {
+            "type": "number"
+          },
+          "position": {
+            "type": "number"
+          },
+          "options": {
+            "description": "Tanpa penanda benar atau salah.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearnerQuizOptionDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "prompt",
+          "type",
+          "points",
+          "position",
+          "options"
+        ]
+      },
+      "LearnerQuizDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lessonId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "passingScore": {
+            "type": "number",
+            "example": 70
+          },
+          "maxAttempts": {
+            "type": "number",
+            "nullable": true,
+            "description": "Null berarti tanpa batas."
+          },
+          "showFeedback": {
+            "type": "boolean"
+          },
+          "totalPoints": {
+            "type": "number"
+          },
+          "attemptsUsed": {
+            "type": "number"
+          },
+          "attemptsLeft": {
+            "type": "number",
+            "nullable": true
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "bestScorePercent": {
+            "type": "number",
+            "nullable": true
+          },
+          "lastAttemptAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LearnerQuizQuestionDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "lessonId",
+          "passingScore",
+          "showFeedback",
+          "totalPoints",
+          "attemptsUsed",
+          "passed",
+          "questions"
+        ]
+      },
+      "QuizReviewItemDto": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string",
+            "nullable": true
+          },
+          "isCorrect": {
+            "type": "boolean"
+          },
+          "earnedPoints": {
+            "type": "number"
+          },
+          "points": {
+            "type": "number"
+          },
+          "selectedOptionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "correctOptionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "questionId",
+          "prompt",
+          "isCorrect",
+          "earnedPoints",
+          "points",
+          "selectedOptionIds",
+          "correctOptionIds"
+        ]
+      },
+      "QuizAttemptResultDto": {
+        "type": "object",
+        "properties": {
+          "attemptNumber": {
+            "type": "number"
+          },
+          "scorePercent": {
+            "type": "number",
+            "example": 83.33
+          },
+          "earnedPoints": {
+            "type": "number"
+          },
+          "totalPoints": {
+            "type": "number"
+          },
+          "passingScore": {
+            "type": "number"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "attemptsLeft": {
+            "type": "number",
+            "nullable": true
+          },
+          "lessonCompleted": {
+            "type": "boolean",
+            "description": "Benar bila kelulusan ini menandai pelajarannya selesai."
+          },
+          "courseProgress": {
+            "type": "number",
+            "nullable": true
+          },
+          "nextLessonId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "review": {
+            "nullable": true,
+            "description": "Null bila Master mematikan umpan balik untuk kuis ini.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuizReviewItemDto"
+            }
+          }
+        },
+        "required": [
+          "attemptNumber",
+          "scorePercent",
+          "earnedPoints",
+          "totalPoints",
+          "passingScore",
+          "passed",
+          "lessonCompleted"
+        ]
+      },
+      "SubmitQuizAnswerDto": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "selectedOptionIds": {
+            "minItems": 1,
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "questionId",
+          "selectedOptionIds"
+        ]
+      },
+      "SubmitQuizDto": {
+        "type": "object",
+        "properties": {
+          "answers": {
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubmitQuizAnswerDto"
+            }
+          }
+        },
+        "required": [
+          "answers"
         ]
       },
       "ForumAuthorDto": {

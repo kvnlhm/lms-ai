@@ -31,7 +31,7 @@ export interface ModuleInput {
 export interface LessonInput {
   title: string;
   description?: string;
-  contentType: 'VIDEO' | 'TEXT' | 'PDF' | 'EXTERNAL_LINK';
+  contentType: 'VIDEO' | 'TEXT' | 'PDF' | 'EXTERNAL_LINK' | 'QUIZ';
   textContent?: string;
   externalUrl?: string;
   estimatedMinutes?: number;
@@ -215,17 +215,31 @@ export class CourseAuthoringService {
   async publish(courseId: string) {
     await this.findOrFail(courseId);
 
-    const [activeModuleCount, activeLessonCount, requiredLessonCount] = await Promise.all([
-      this.prisma.courseModule.count({ where: { courseId, isActive: true } }),
-      this.prisma.lesson.count({
-        where: { isActive: true, module: { courseId, isActive: true } },
-      }),
-      this.prisma.lesson.count({
-        where: { isActive: true, isRequired: true, module: { courseId, isActive: true } },
-      }),
-    ]);
+    const [activeModuleCount, activeLessonCount, requiredLessonCount, emptyQuizLessonCount] =
+      await Promise.all([
+        this.prisma.courseModule.count({ where: { courseId, isActive: true } }),
+        this.prisma.lesson.count({
+          where: { isActive: true, module: { courseId, isActive: true } },
+        }),
+        this.prisma.lesson.count({
+          where: { isActive: true, isRequired: true, module: { courseId, isActive: true } },
+        }),
+        this.prisma.lesson.count({
+          where: {
+            isActive: true,
+            contentType: 'QUIZ',
+            module: { courseId, isActive: true },
+            OR: [{ quiz: null }, { quiz: { questions: { none: {} } } }],
+          },
+        }),
+      ]);
 
-    const verdict = checkPublishable({ activeModuleCount, activeLessonCount, requiredLessonCount });
+    const verdict = checkPublishable({
+      activeModuleCount,
+      activeLessonCount,
+      requiredLessonCount,
+      emptyQuizLessonCount,
+    });
     if (!verdict.publishable) {
       throw AppError.validation({ course: verdict.reasons });
     }

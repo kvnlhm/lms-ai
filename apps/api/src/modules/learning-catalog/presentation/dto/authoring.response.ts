@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
 const STATUSES = ['DRAFT', 'PUBLISHED', 'ARCHIVED'];
-const CONTENT_TYPES = ['VIDEO', 'TEXT', 'PDF', 'EXTERNAL_LINK'];
+const CONTENT_TYPES = ['VIDEO', 'TEXT', 'PDF', 'EXTERNAL_LINK', 'QUIZ'];
 const COMPLETION_RULES = ['MANUAL', 'OPENED', 'MINIMUM_ACTIVE_SECONDS', 'VIDEO_PERCENTAGE'];
 
 export class AdminCategoryDto {

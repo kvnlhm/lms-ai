@@ -14,6 +14,7 @@ import { SessionGuard } from './modules/identity/presentation/guards/session.gua
 import { LearningCatalogModule } from './modules/learning-catalog/learning-catalog.module';
 import { LearningDeliveryModule } from './modules/learning-delivery/learning-delivery.module';
 import { LearningProgressModule } from './modules/learning-progress/learning-progress.module';
+import { QuizModule } from './modules/quiz/quiz.module';
 import { ForumModule } from './modules/forum/forum.module';
 import { LiveSessionModule } from './modules/live-session/live-session.module';
 import { AnnouncementModule } from './modules/announcement/announcement.module';
@@ -55,6 +56,7 @@ import { CommerceModule } from './modules/commerce/commerce.module';
     EnrollmentModule,
     LearningDeliveryModule,
     LearningProgressModule,
+    QuizModule,
     VideoModule,
     ForumModule,
     NotificationModule,

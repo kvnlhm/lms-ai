@@ -8,6 +8,8 @@ export interface PublicationInput {
   activeModuleCount: number;
   activeLessonCount: number;
   requiredLessonCount: number;
+  /** Pelajaran berjenis kuis yang belum punya satu pun soal. */
+  emptyQuizLessonCount: number;
 }
 
 export interface PublicationVerdict {
@@ -28,6 +30,14 @@ export function checkPublishable(input: PublicationInput): PublicationVerdict {
     // Tanpa pelajaran wajib, progres kursus tidak akan pernah bergerak dari
     // nol karena perhitungannya memakai jumlah pelajaran wajib sebagai penyebut.
     reasons.push('Kursus harus memiliki minimal satu pelajaran wajib.');
+  }
+  if (input.emptyQuizLessonCount > 0) {
+    // Pelajaran kuis hanya bisa diselesaikan dengan lulus kuisnya. Bila
+    // soalnya belum ada, pelajaran itu mustahil diselesaikan — dan bila ia
+    // wajib, progres kursus tidak akan pernah mencapai 100%.
+    reasons.push(
+      `${input.emptyQuizLessonCount} pelajaran kuis belum memiliki soal, sehingga tidak dapat diselesaikan pelajar.`,
+    );
   }
 
   return { publishable: reasons.length === 0, reasons };

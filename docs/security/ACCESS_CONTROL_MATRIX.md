@@ -22,7 +22,9 @@ Role bukan satu-satunya kontrol. Backend tetap memeriksa resource ownership, enr
 | Manage enrollment | Yes | No | `enrollments.manage` |
 | View own progress | Yes | Yes | Own enrollment |
 | View another user progress | Yes | No | `analytics.read` or `users.read` |
-| Complete lesson | No | Yes | Active enrollment and lesson access |
+| Complete lesson | No | Yes | Active enrollment and lesson access; ditolak untuk lesson berjenis `QUIZ` |
+| Author quiz questions | Yes | No | `courses.manage`; satu-satunya jalur yang mengembalikan `isCorrect` |
+| Take quiz | No | Yes | Active enrollment; kunci jawaban dikirim hanya setelah pengiriman, dan hanya bila `showFeedback` |
 | Create discussion | Yes | Yes | Student requires course access |
 | Edit own discussion | Yes | Yes | Discussion not locked |
 | Edit others' discussion | Moderator | No | `discussions.moderate` |
@@ -63,6 +65,16 @@ Student dapat mengakses jika memiliki course access. Owner dapat mengedit selama
 - Discussion belum locked.
 - Discussion belum hidden.
 - Edit masih diizinkan oleh business rule.
+
+### Quiz
+
+Kunci jawaban (`quiz_options.is_correct`) hanya boleh keluar lewat endpoint
+`/admin/lessons/{lessonId}/quiz`, yang menuntut `courses.manage`. Endpoint
+pelajar memilih kolom satu per satu tanpa kolom itu, bukan mengandalkan
+`include` yang akan diam-diam ikut membawanya bila relasi berubah.
+
+Penilaian dan penegakan batas percobaan sepenuhnya di server. Klien tidak
+pernah mengirimkan nilai, dan nilai yang dikirim klien tidak pernah dipercaya.
 
 ### Analytics
 

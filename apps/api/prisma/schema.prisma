@@ -51,6 +51,16 @@ enum LessonContentType {
   TEXT
   PDF
   EXTERNAL_LINK
+  QUIZ
+}
+
+/// SINGLE_CHOICE tepat satu jawaban benar; MULTIPLE_CHOICE menuntut seluruh
+/// pilihan benar terpilih dan tidak satu pun yang salah. Benar/salah tidak
+/// dibuat sebagai jenis tersendiri karena penilaiannya sama persis dengan
+/// SINGLE_CHOICE berisi dua pilihan.
+enum QuizQuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
 }
 
 enum CompletionRule {
@@ -382,6 +392,7 @@ model Lesson {
   playbackSessions VideoPlaybackSession[]
   forumTopics   ForumTopic[]
   bookmarks     UserBookmark[]
+  quiz          Quiz?
 
   @@unique([moduleId, position])
   @@index([moduleId, isActive])
@@ -398,6 +409,113 @@ model LessonPrerequisite {
 
   @@id([lessonId, prerequisiteLessonId])
   @@map("lesson_prerequisites")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Quiz (PRD 7.17)
+// ─────────────────────────────────────────────────────────────
+
+/// Satu kuis menempel pada satu pelajaran berjenis QUIZ.
+///
+/// Kuis tidak dibuat sebagai barang perpustakaan seperti aset video: soal
+/// selalu ditulis untuk konteks pelajarannya, dan menyalakan pemakaian ulang
+/// akan menuntut versi soal tersendiri agar riwayat percobaan lama tetap
+/// terbaca.
+model Quiz {
+  id           String   @id @default(uuid()) @db.Uuid
+  lessonId     String   @unique @map("lesson_id") @db.Uuid
+  /// Ambang lulus dalam persen, 0 sampai 100.
+  passingScore Int      @default(70) @map("passing_score")
+  /// Batas percobaan; null berarti tanpa batas.
+  maxAttempts  Int?     @map("max_attempts")
+  /// Bila benar, jawaban yang benar diperlihatkan setelah pengiriman.
+  /// Selama bernilai salah, kunci jawaban tidak pernah meninggalkan server.
+  showFeedback Boolean  @default(true) @map("show_feedback")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id          String           @id @default(uuid()) @db.Uuid
+  quizId      String           @map("quiz_id") @db.Uuid
+  prompt      String
+  /// Penjelasan yang ditampilkan bersama umpan balik setelah pengiriman.
+  explanation String?
+  type        QuizQuestionType @default(SINGLE_CHOICE)
+  points      Int              @default(1)
+  position    Int
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  quiz    Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options QuizOption[]
+  answers QuizAnswer[]
+
+  @@unique([quizId, position])
+  @@map("quiz_questions")
+}
+
+model QuizOption {
+  id         String   @id @default(uuid()) @db.Uuid
+  questionId String   @map("question_id") @db.Uuid
+  text       String
+  isCorrect  Boolean  @default(false) @map("is_correct")
+  position   Int
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, position])
+  @@map("quiz_options")
+}
+
+/// Satu pengiriman jawaban. Nilai dihitung server dan disimpan di sini, jadi
+/// hasil yang pernah dilihat pelajar tetap dapat ditelusuri meskipun soalnya
+/// kemudian diubah Master.
+model QuizAttempt {
+  id            String   @id @default(uuid()) @db.Uuid
+  quizId        String   @map("quiz_id") @db.Uuid
+  enrollmentId  String   @map("enrollment_id") @db.Uuid
+  attemptNumber Int      @map("attempt_number")
+  scorePercent  Decimal  @map("score_percent") @db.Decimal(5, 2)
+  earnedPoints  Int      @map("earned_points")
+  totalPoints   Int      @map("total_points")
+  passed        Boolean
+  submittedAt   DateTime @default(now()) @map("submitted_at") @db.Timestamptz(6)
+
+  quiz       Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  enrollment Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  answers    QuizAnswer[]
+
+  // Nomor percobaan unik per peserta menjadi penjaga balapan: dua pengiriman
+  // bersamaan tidak dapat sama-sama menjadi percobaan ke-3, sehingga batas
+  // percobaan tidak bisa dilewati dengan menekan kirim dua kali.
+  @@unique([quizId, enrollmentId, attemptNumber])
+  @@index([enrollmentId, submittedAt])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id                String   @id @default(uuid()) @db.Uuid
+  attemptId         String   @map("attempt_id") @db.Uuid
+  questionId        String   @map("question_id") @db.Uuid
+  /// Pilihan yang ditandai pelajar. Disimpan sebagai larik agar satu baris
+  /// mewakili satu soal, termasuk soal berjawaban ganda.
+  selectedOptionIds String[] @map("selected_option_ids") @db.Uuid
+  isCorrect         Boolean  @map("is_correct")
+  earnedPoints      Int      @map("earned_points")
+
+  attempt  QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@map("quiz_answers")
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -424,6 +542,7 @@ model Enrollment {
   courseProgress   CourseProgress?
   lessonProgress   LessonProgress[]
   playbackSessions VideoPlaybackSession[]
+  quizAttempts     QuizAttempt[]
 
   @@unique([userId, courseId])
   @@index([courseId, status])

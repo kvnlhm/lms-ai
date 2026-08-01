@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
-const CONTENT_TYPES = ['VIDEO', 'TEXT', 'PDF', 'EXTERNAL_LINK'];
+const CONTENT_TYPES = ['VIDEO', 'TEXT', 'PDF', 'EXTERNAL_LINK', 'QUIZ'];
 const ENROLLMENT_STATUSES = ['ACTIVE', 'COMPLETED', 'REMOVED', 'EXPIRED'];
 
 export class CourseCategoryDto {

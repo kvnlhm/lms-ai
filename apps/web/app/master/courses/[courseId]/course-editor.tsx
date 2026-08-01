@@ -12,6 +12,7 @@ import {
 import { ChevronDown, ChevronUp, Edit, Trash } from '../../../components/icons';
 import { VideoLibraryPicker } from '../../../components/video-library-picker';
 import { StatusPill } from '../../../components/status-pill';
+import { QuizEditor } from './quiz-editor';
 
 type CourseDetail = Schemas['AdminCourseDetailDto'];
 type Module = Schemas['AdminModuleWithLessonsDto'];
@@ -22,6 +23,7 @@ const CONTENT_TYPES = [
   { value: 'VIDEO', label: 'Video' },
   { value: 'PDF', label: 'PDF' },
   { value: 'EXTERNAL_LINK', label: 'Tautan luar' },
+  { value: 'QUIZ', label: 'Kuis' },
 ] as const;
 
 const COMPLETION_RULES = [
@@ -68,6 +70,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   const [youtubeLessonId, setYoutubeLessonId] = useState<string | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [pickerLesson, setPickerLesson] = useState<{ id: string; title: string } | null>(null);
+  const [quizLessonId, setQuizLessonId] = useState<string | null>(null);
 
   /**
    * Menjalankan satu mutation.
@@ -505,6 +508,21 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             Pilih dari perpustakaan
                           </button>
                         ) : null}
+                        {lesson.contentType === 'QUIZ' ? (
+                          <button
+                            className="btnTiny"
+                            type="button"
+                            disabled={busy !== null}
+                            onClick={() =>
+                              setQuizLessonId((current) =>
+                                current === lesson.id ? null : lesson.id,
+                              )
+                            }
+                            aria-expanded={quizLessonId === lesson.id}
+                          >
+                            Susun soal
+                          </button>
+                        ) : null}
                         {lesson.contentType === 'VIDEO' ? (
                           <button
                             className="btnTiny"
@@ -634,6 +652,16 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                           </div>
                           <small>{upload.message}</small>
                         </div>
+                      ) : null}
+                      {quizLessonId === lesson.id ? (
+                        <QuizEditor
+                          lessonId={lesson.id}
+                          lessonTitle={lesson.title}
+                          onClose={() => {
+                            setQuizLessonId(null);
+                            router.refresh();
+                          }}
+                        />
                       ) : null}
                       {editingLessonId === lesson.id ? (
                         <LessonEditForm
@@ -940,19 +968,30 @@ function LessonEditForm({
             disabled={disabled}
           />
         </div>
-        <div className="field">
-          <label htmlFor={`lesson-completion-${lesson.id}`}>Aturan selesai</label>
-          <select
-            id={`lesson-completion-${lesson.id}`}
-            name="completionRule"
-            defaultValue={lesson.completionRule}
-            disabled={disabled}
-          >
-            {COMPLETION_RULES.map((rule) => (
-              <option key={rule.value} value={rule.value}>{rule.label}</option>
-            ))}
-          </select>
-        </div>
+        {/* Materi kuis selesai hanya dengan lulus kuisnya, jadi pilihan aturan
+            selesai tidak berlaku di sana dan tidak ditampilkan. */}
+        {contentType === 'QUIZ' ? (
+          <div className="field">
+            <span className="fieldHint">
+              Aturan selesai untuk kuis sudah tetap: pelajar selesai setelah nilainya mencapai
+              ambang lulus.
+            </span>
+          </div>
+        ) : (
+          <div className="field">
+            <label htmlFor={`lesson-completion-${lesson.id}`}>Aturan selesai</label>
+            <select
+              id={`lesson-completion-${lesson.id}`}
+              name="completionRule"
+              defaultValue={lesson.completionRule}
+              disabled={disabled}
+            >
+              {COMPLETION_RULES.map((rule) => (
+                <option key={rule.value} value={rule.value}>{rule.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       <div className="lessonOptions">
         <label className="checkRow">
@@ -1134,6 +1173,13 @@ function AddLessonForm({
           <div className="lessonCreateNotice lessonEditFull">
             Setelah materi disimpan, unggah MP4, pilih video dari perpustakaan, atau tautkan YouTube
             melalui tombol yang muncul pada materi tersebut.
+          </div>
+        ) : null}
+        {contentType === 'QUIZ' ? (
+          <div className="lessonCreateNotice lessonEditFull">
+            Setelah materi disimpan, susun soalnya lewat tombol “Susun soal”. Pelajar hanya dapat
+            menyelesaikan materi kuis dengan mencapai ambang lulus, bukan dengan menandainya selesai
+            sendiri, jadi kursus belum dapat diterbitkan selama soalnya masih kosong.
           </div>
         ) : null}
         <div className="field">
