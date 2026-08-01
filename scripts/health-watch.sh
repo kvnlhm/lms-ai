@@ -37,7 +37,7 @@ mkdir -p "$STATE_DIR"
 
 resend_key() {
   local api
-  api="$(docker ps --format '{{.Names}}' | grep "^api-${APP_UUID}-" | head -1 || true)"
+  api="$(docker ps --format '{{.Names}}' | grep -E "^api-${APP_UUID}(-|\$)" | head -1 || true)"
   # Justru ketika API-nya mati kunci ini paling dibutuhkan, jadi ada cadangan:
   # container API mana pun, lalu berkas cadangan yang ditulis saat sehat.
   [[ -n "$api" ]] || api="$(docker ps --format '{{.Names}}' | grep '^api-' | head -1 || true)"
@@ -92,7 +92,7 @@ PY
 # Memeriksa satu layanan. Mengembalikan keterangan kosong bila sehat.
 check_service() {
   local service="$1" line name status health
-  line="$(docker ps -a --filter "name=^${service}-${APP_UUID}-" --format '{{.Names}}|{{.State}}|{{.Status}}' | head -1 || true)"
+  line="$(docker ps -a --filter "name=^${service}-${APP_UUID}(-|\$)" --format '{{.Names}}|{{.State}}|{{.Status}}' | head -1 || true)"
 
   if [[ -z "$line" ]]; then
     printf '%s: tidak ada containernya sama sekali' "$service"

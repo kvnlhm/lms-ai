@@ -26,11 +26,16 @@ gagal() { printf '  ✗ %b\n' "$*"; merah=1; }
 
 [[ -n "$APP_UUID" ]] || { echo "LMS_APP_UUID belum diset." >&2; exit 2; }
 
-resolve() { docker ps --format '{{.Names}}' | grep "^${1}-${APP_UUID}-" | head -1 || true; }
+# Nama container Coolify punya dua bentuk: dengan akhiran waktu deploy
+# (`gateway-UUID-1234567890`) dan tanpa akhiran (`gateway-UUID`) sejak
+# "consistent container name" dinyalakan. Pola di bawah menerima keduanya —
+# mencari `UUID-` saja akan berhenti menemukan apa pun setelah pergantian itu,
+# dan gejalanya adalah laporan "semua container mati" pada sistem yang sehat.
+resolve() { docker ps --format '{{.Names}}' | grep -E "^${1}-${APP_UUID}(-|\$)" | head -1 || true; }
 
 echo "1. Container"
 for service in "${SERVICES[@]}"; do
-  line="$(docker ps -a --filter "name=^${service}-${APP_UUID}-" --format '{{.State}}|{{.Status}}' | head -1 || true)"
+  line="$(docker ps -a --filter "name=^${service}-${APP_UUID}(-|\$)" --format '{{.State}}|{{.Status}}' | head -1 || true)"
   if [[ -z "$line" ]]; then
     gagal "${service}: tidak ada containernya"
   elif [[ "${line%%|*}" != "running" ]]; then

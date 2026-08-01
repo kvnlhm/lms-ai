@@ -51,7 +51,7 @@ log() {
 # untuk dijaga, dan otomatis ikut ketika kuncinya dirotasi.
 resend_key() {
   local api
-  api="$(docker ps --format '{{.Names}}' | grep "^api-${APP_UUID}-" | head -1 || true)"
+  api="$(docker ps --format '{{.Names}}' | grep -E "^api-${APP_UUID}(-|\$)" | head -1 || true)"
   # Cadangan tanpa UUID: justru ketika UUID-nya salah backup akan gagal, dan
   # saat itulah peringatannya paling dibutuhkan. Membaca kunci dari container
   # API mana pun yang berjalan sudah cukup untuk mengirim satu surat.
@@ -124,7 +124,7 @@ trap 'code=$?; [[ $code -eq 0 ]] || { log "GAGAL tak terduga, keluar dengan kode
 # membackup container yang salah.
 resolve_container() {
   local prefix="$1" matches
-  matches="$(docker ps --format '{{.Names}}' | grep "^${prefix}" || true)"
+  matches="$(docker ps --format '{{.Names}}' | grep -E "^${prefix}(-|\$)" || true)"
   [[ -n "$matches" ]] || die "container dengan prefiks '${prefix}' tidak berjalan."
   [[ "$(wc -l <<<"$matches")" -eq 1 ]] || die "container '${prefix}' lebih dari satu:\n${matches}"
   printf '%s' "$matches"
@@ -176,7 +176,7 @@ if [[ "${1:-}" == "--test-alert" ]]; then
   exit 0
 fi
 
-PG_CONTAINER="$(resolve_container "postgres-${APP_UUID}-")"
+PG_CONTAINER="$(resolve_container "postgres-${APP_UUID}")"
 STAMP="$(date -u '+%Y%m%dT%H%M%SZ')"
 WORK="$(mktemp -d)"
 trap 'rm -rf -- "$WORK" "$ALERT_FLAG"' EXIT

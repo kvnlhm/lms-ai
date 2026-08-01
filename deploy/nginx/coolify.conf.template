@@ -5,8 +5,25 @@ server {
 
     client_max_body_size ${VIDEO_MAX_UPLOAD_BYTES};
 
+    # DNS internal Docker.
+    #
+    # Tanpa ini nginx menerjemahkan nama `api` dan `web` satu kali saat menyala,
+    # lalu memakai alamat itu selamanya. Selama gateway ikut dibuat ulang pada
+    # setiap deploy hal itu tidak pernah terasa — nginx selalu baru. Begitu
+    # gateway bertahan hidup melewati deploy, container di belakangnya berganti
+    # alamat dan nginx akan terus menembak alamat mati sampai ada yang sadar.
+    #
+    # `valid=10s` membatasi berapa lama hasil terjemahan disimpan, sehingga
+    # gateway mengikuti container baru dalam hitungan detik.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+
     location /api/ {
-        proxy_pass http://api:3001;
+        # Lewat variabel, bukan nama langsung: hanya bentuk inilah yang membuat
+        # nginx menerjemahkan ulang nama tiap kali, bukan sekali saat menyala.
+        # Karena memakai variabel, URI aslinya harus disebut eksplisit —
+        # sebaliknya nginx akan meneruskan permintaan tanpa path.
+        set $api_upstream "api:3001";
+        proxy_pass http://$api_upstream$request_uri;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -15,6 +32,21 @@ server {
         proxy_request_buffering off;
         proxy_read_timeout 3600s;
         proxy_send_timeout 3600s;
+
+        # Hanya berlaku ketika nginx sendiri gagal menjangkau API. Galat 5xx
+        # yang datang *dari* API diteruskan apa adanya, karena `proxy_intercept_errors`
+        # sengaja dibiarkan mati — menelan badan JSON milik API dan menggantinya
+        # dengan halaman akan merusak setiap klien yang membacanya.
+        error_page 502 503 504 = @api_tidak_tersedia;
+    }
+
+    # Balasan untuk pemanggil API: JSON, bukan halaman, dengan bentuk amplop
+    # galat yang sama seperti yang dipakai API.
+    location @api_tidak_tersedia {
+        default_type application/json;
+        add_header Retry-After 20 always;
+        add_header Cache-Control "no-store" always;
+        return 503 '{"error":{"code":"SERVICE_UNAVAILABLE","message":"Layanan sedang diperbarui. Coba lagi sebentar lagi."}}';
     }
 
     # Hanya respons X-Accel-Redirect dari API yang dapat membuka file.
@@ -27,11 +59,28 @@ server {
     }
 
     location / {
-        proxy_pass http://web:3000;
+        set $web_upstream "web:3000";
+        proxy_pass http://$web_upstream$request_uri;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+
+        # `=503` menyeragamkan statusnya. Tanpa itu halaman ini terkirim dengan
+        # 502, yang berarti "gateway rusak" — padahal yang benar adalah
+        # "sementara tidak tersedia", dan hanya 503 yang dipasangkan dengan
+        # Retry-After oleh peramban maupun mesin pengindeks.
+        error_page 502 503 504 =503 /__pemeliharaan.html;
+    }
+
+    # Halaman yang dilihat pengunjung selama web berganti container. Jauh lebih
+    # baik daripada "no available server" milik Traefik, yang terbaca seperti
+    # situsnya hilang.
+    location = /__pemeliharaan.html {
+        internal;
+        root /usr/share/nginx/pemeliharaan;
+        add_header Retry-After 20 always;
+        add_header Cache-Control "no-store" always;
     }
 }

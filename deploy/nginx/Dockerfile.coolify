@@ -1,3 +1,6 @@
 FROM nginx:1.27-alpine
 
 COPY deploy/nginx/coolify.conf.template /etc/nginx/templates/default.conf.template
+# Halaman pemeliharaan ikut ke dalam image, bukan dipasang lewat volume: ia
+# justru dibutuhkan tepat ketika layanan lain sedang tidak ada.
+COPY deploy/nginx/pemeliharaan/ /usr/share/nginx/pemeliharaan/

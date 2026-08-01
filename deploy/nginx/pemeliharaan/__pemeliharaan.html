@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <!-- Memuat ulang sendiri, karena jendelanya hanya belasan detik dan
+         pengunjung tidak seharusnya perlu tahu kapan harus mencoba lagi. -->
+    <meta http-equiv="refresh" content="15" />
+    <title>Sedang diperbarui · AIPreneur Academy</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --latar: #f6f7f9;
+        --kartu: #ffffff;
+        --tinta: #16181d;
+        --redup: #5c6270;
+        --garis: #e3e6ec;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --latar: #0f1115;
+          --kartu: #171a21;
+          --tinta: #f2f4f8;
+          --redup: #9aa1b1;
+          --garis: #262b36;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--latar);
+        color: var(--tinta);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.6;
+      }
+      main {
+        max-width: 30rem;
+        width: 100%;
+        background: var(--kartu);
+        border: 1px solid var(--garis);
+        border-radius: 16px;
+        padding: 32px;
+        text-align: center;
+      }
+      .tanda {
+        display: inline-grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: #2f6feb;
+        color: #fff;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-bottom: 20px;
+      }
+      h1 { font-size: 1.35rem; margin: 0 0 12px; }
+      p { margin: 0 0 8px; color: var(--redup); }
+      .kecil { font-size: 0.875rem; margin-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="tanda" aria-hidden="true">AI</span>
+      <h1>Sedang diperbarui</h1>
+      <p>Akademi sedang memasang pembaruan. Biasanya selesai dalam beberapa detik.</p>
+      <p>Progres belajarmu aman dan tidak terpengaruh.</p>
+      <p class="kecil">Halaman ini akan mencoba memuat ulang sendiri.</p>
+    </main>
+  </body>
+</html>
