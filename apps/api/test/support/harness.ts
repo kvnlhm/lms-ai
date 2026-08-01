@@ -22,13 +22,32 @@ export interface Harness {
  * Transaksi, constraint unik, dan perilaku session adalah hal yang justru
  * ingin diuji di sini, jadi dependensi tidak digantikan test double.
  */
-export async function startHarness(): Promise<Harness> {
-  // Poller latar akan berlomba dengan test dan membuat hasilnya tidak pasti.
-  // Test yang memang menguji penjadwal memanggil satu siklusnya secara manual.
-  process.env.ANNOUNCEMENT_SCHEDULER_ENABLED ??= 'false';
-  // 230 test dari satu alamat akan menabrak pembatas laju global. Spec yang
-  // memang menguji pembatasnya menyalakannya sendiri.
-  process.env.RATE_LIMIT_ENABLED ??= 'false';
+export interface HarnessOptions {
+  /**
+   * Menyalakan pembatas laju global dengan anggaran tertentu. Hanya spec yang
+   * memang menguji pembatasnya yang memakai ini; sisanya berjalan tanpa
+   * pembatas karena 235 test dari satu alamat pasti menabraknya.
+   */
+  rateLimit?: { max: number; windowSeconds: number };
+}
+
+export async function startHarness(options: HarnessOptions = {}): Promise<Harness> {
+  // Seluruh variabel di bawah ditulis tanpa syarat, bukan dengan `??=`.
+  //
+  // Jest memakai ulang satu proses untuk beberapa berkas spec, dan
+  // `process.env` dimiliki proses — bukan berkas. Dengan `??=`, spec pembatas
+  // laju yang menyalakan RATE_LIMIT_MAX=8 mewariskan angka itu ke setiap spec
+  // yang kebetulan berjalan sesudahnya di worker yang sama, sehingga ratusan
+  // test membalas 429. Hasilnya bergantung pada urutan penjadwalan jest:
+  // hijau di satu mesin, merah di mesin lain, tanpa satu pun perubahan kode.
+  process.env.ANNOUNCEMENT_SCHEDULER_ENABLED = 'false';
+  if (options.rateLimit) {
+    process.env.RATE_LIMIT_ENABLED = 'true';
+    process.env.RATE_LIMIT_MAX = String(options.rateLimit.max);
+    process.env.RATE_LIMIT_WINDOW_SECONDS = String(options.rateLimit.windowSeconds);
+  } else {
+    process.env.RATE_LIMIT_ENABLED = 'false';
+  }
 
   const app = await createApp();
   await app.init();

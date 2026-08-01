@@ -1,12 +1,4 @@
 import request from 'supertest';
-
-// Dinyalakan sebelum harness memuat konfigurasi. Spec lain sengaja
-// mematikannya karena 230 test dari satu alamat akan menabrak batasnya.
-process.env.RATE_LIMIT_ENABLED = 'true';
-process.env.RATE_LIMIT_MAX = '8';
-process.env.RATE_LIMIT_WINDOW_SECONDS = '60';
-
-// eslint-disable-next-line import/first
 import { login, prefix, startHarness, type Harness, type Session } from './support/harness';
 
 const MASTER = { email: 'master@akademionline.id', password: 'Master#Lokal12345' };
@@ -16,7 +8,10 @@ describe('Pembatas laju global', () => {
   let master: Session;
 
   beforeAll(async () => {
-    h = await startHarness();
+    // Anggarannya diminta lewat harness, bukan lewat process.env di puncak
+    // berkas: env yang ditulis di sini akan bocor ke spec lain di worker jest
+    // yang sama dan membuat seluruh suite membalas 429.
+    h = await startHarness({ rateLimit: { max: 8, windowSeconds: 60 } });
     await bersihkan();
     master = await login(h.server, MASTER.email, MASTER.password);
   });
