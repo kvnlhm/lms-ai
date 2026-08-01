@@ -143,10 +143,29 @@ Kata sandi role sengaja tidak disimpan. Saat restore, kata sandi diambil dari
 environment variable Coolify (`POSTGRES_PASSWORD`), sehingga arsip yang bocor
 tidak sekaligus membocorkan kredensial database.
 
-### Yang belum terpenuhi
+### Lapisan kedua: snapshot VPS Hostinger
 
-Dua hal pada §1 dan §4 belum tercapai dan masih menunggu keputusan tujuan
-penyimpanan:
+Paket VPS menyertakan backup mingguan seluruh mesin, disimpan pada
+infrastruktur Hostinger — bukan pada disk VPS ini. Terkonfirmasi aktif, dengan
+backup terakhir selesai 31 Juli 2026 22:48:55.
+
+Ini menutup skenario kehilangan disk atau kehilangan mesin, dan berarti
+pernyataan "seluruh salinan berada pada disk yang sama" tidak lagi berlaku
+seluruhnya. Tetapi ia menjawab pertanyaan yang berbeda dari checkpoint di §4a:
+
+| | Snapshot VPS | Checkpoint `backup.sh` |
+|---|---|---|
+| Frekuensi | Mingguan | Harian |
+| Cakupan | Seluruh mesin | Database dan volume unggahan |
+| Granularitas restore | Seluruh mesin sekaligus | Satu database, atau satu tabel |
+| Konsistensi | Crash-consistent; PostgreSQL memulihkan diri lewat WAL | Dump logis yang sudah dibaca ulang `pg_restore --list` |
+| Bukti keutuhan | Tidak ada | `MANIFEST.txt` berisi jumlah baris dan `SHA256SUMS` |
+
+Konsekuensi yang perlu disadari: pada kehilangan VPS total, kehilangan data
+dapat mencapai **tujuh hari** — bukan 24 jam — karena checkpoint harian ikut
+hilang bersama disknya. Itulah celah yang ditutup §4b.
+
+### Yang belum terpenuhi
 
 - **Encryption at rest.** Arsip hanya dilindungi permission `0600` di server,
   dan mengandalkan enkripsi sisi penyedia setelah diunggah. Arsipnya sendiri
