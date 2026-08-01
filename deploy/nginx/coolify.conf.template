@@ -16,6 +16,25 @@ server {
     # `valid=10s` membatasi berapa lama hasil terjemahan disimpan, sehingga
     # gateway mengikuti container baru dalam hitungan detik.
     resolver 127.0.0.11 valid=10s ipv6=off;
+    # Bila DNS internal sendiri tidak menjawab, permintaan harus gagal cepat
+    # lalu jatuh ke halaman pemeliharaan. Tanpa batas ini nginx menggantung
+    # menunggu jawaban yang tidak akan datang, dan pengunjung melihat halaman
+    # kosong yang berputar — lebih buruk daripada pesan yang jujur.
+    resolver_timeout 3s;
+    proxy_connect_timeout 3s;
+
+    # Kesehatan gateway itu sendiri, tidak menyentuh api maupun web.
+    #
+    # Sebelumnya healthcheck container ini memanggil /api/v1/health/live lewat
+    # dirinya sendiri, sehingga gateway dinyatakan sakit selama API belum
+    # menyala. Itu keliru: yang ingin diketahui adalah "nginx melayani", bukan
+    # "seluruh tumpukan sudah siap" — dan dengan syarat lama gateway tidak
+    # pernah bisa menyala lebih dulu untuk menyajikan halaman pemeliharaan.
+    location = /__gateway-health {
+        access_log off;
+        add_header Content-Type text/plain always;
+        return 200 'ok';
+    }
 
     location /api/ {
         # Lewat variabel, bukan nama langsung: hanya bentuk inilah yang membuat

@@ -166,11 +166,15 @@ services:
       - '8080'
     volumes:
       - video-data:/data/videos:ro
-    depends_on:
-      web:
-        condition: service_healthy
+    # Sengaja tanpa depends_on.
+    #
+    # Dulu gateway menunggu web sehat, sehingga ia selalu yang terakhir menyala
+    # dan seluruh waktu boot api lalu web menjadi jendela mati bagi pengunjung.
+    # Sekarang gateway menyala lebih dulu: nginx menerjemahkan nama backend
+    # setiap permintaan, jadi ia menyusul sendiri begitu web muncul, dan selama
+    # menunggu ia menyajikan halaman "sedang diperbarui".
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--spider', 'http://localhost:8080/api/v1/health/live']
+      test: ['CMD', 'wget', '--quiet', '--spider', 'http://localhost:8080/__gateway-health']
       interval: 10s
       timeout: 5s
       retries: 20
