@@ -8,6 +8,7 @@ import { NavLink } from './nav-link';
 import { ThemeToggle } from './theme-toggle';
 import { ImpersonationBanner } from './impersonation-banner';
 import { GlobalSearch } from './global-search';
+import { MobileNavigation } from './mobile-navigation';
 
 const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
@@ -95,6 +96,35 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
         </aside>
         <div className="masterMain">
           <header className="masterTopbar">
+            <MobileNavigation title="Menu Master">
+              <nav className="mobileDrawerNav" aria-label="Navigasi Master mobile">
+                {MASTER_NAV.filter((item) => can(user, item.permission)).map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink key={`drawer-${item.href}`} href={item.href}>
+                      <span className="sideIcon"><Icon size={18} /></span>
+                      {item.label}
+                    </NavLink>
+                  );
+                })}
+                <NavLink href="/notifications">
+                  <span className="sideIcon"><Dashboard size={18} /></span>
+                  Notifikasi
+                </NavLink>
+                <Link className="navLink" href="/courses">
+                  <span className="sideIcon"><ExternalLink size={18} /></span>
+                  Katalog Pelajar
+                </Link>
+                <Link className="navLink" href="/profile">
+                  <UserAvatar user={user} />
+                  Profil
+                </Link>
+              </nav>
+              <div className="mobileDrawerActions">
+                <ThemeToggle />
+                <LogoutButton />
+              </div>
+            </MobileNavigation>
             <span className="mobileBrand">AIPreneur Academy</span>
             <span className="masterTopTitle">Workspace Master</span>
             <GlobalSearch />
@@ -109,6 +139,26 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
     <>
       {user.isImpersonating ? <ImpersonationBanner /> : null}
       <header className="topbar">
+        <MobileNavigation title="AIPreneur Academy">
+          <nav className="mobileDrawerNav" aria-label="Navigasi Pelajar mobile">
+            {[
+              ...LEARNER_NAV,
+              ...MASTER_NAV.filter((item) => can(user, item.permission)),
+            ].map((item) => (
+              <NavLink key={`drawer-${item.href}`} href={item.href}>
+                {item.label}
+              </NavLink>
+            ))}
+            <Link className="navLink" href="/profile">
+              <UserAvatar user={user} />
+              Profil
+            </Link>
+          </nav>
+          <div className="mobileDrawerActions">
+            <ThemeToggle />
+            <LogoutButton />
+          </div>
+        </MobileNavigation>
         <Link href="/" className="brand" aria-label="LMS AIPrenuer, ke beranda">
           <span className="brandMark" aria-hidden="true">
             AO

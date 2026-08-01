@@ -91,6 +91,12 @@
 
 * { box-sizing: border-box; }
 
+html {
+  min-width: 320px;
+  overflow-x: clip;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -100,12 +106,15 @@ body {
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-wrap: anywhere;
 }
 
 a { color: inherit; text-decoration: none; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent-hot); outline-offset: 2px; border-radius: 4px; }
 svg { display: block; }
+img, video, canvas, iframe { max-width: 100%; }
+input, select, textarea { min-width: 0; }
 
 .srOnly {
   position: absolute; width: 1px; height: 1px;
@@ -388,7 +397,12 @@ svg { display: block; }
 .pageHeadMain { flex: 1; min-width: 240px; }
 .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
 
-.tableWrap { overflow-x: auto; }
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
 table.data { width: 100%; border-collapse: collapse; min-width: 680px; }
 table.data th {
   padding: 11px 14px; text-align: left; white-space: nowrap;
@@ -508,9 +522,10 @@ table.data tbody tr:hover { background: var(--raised); }
   padding: 20px; background: rgba(0,0,0,.68); backdrop-filter: blur(5px);
 }
 .modalCard {
-  width: min(720px, 100%); max-height: calc(100vh - 40px); overflow: auto;
+  width: min(720px, 100%); max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); overflow: auto;
   padding: 26px; border-radius: var(--r-lg); border: 1px solid var(--line);
   background: var(--surface); box-shadow: var(--shadow);
+  overscroll-behavior: contain;
 }
 .tierEditModal .sectionHead h2 { margin: 5px 0 0; }
 
@@ -874,6 +889,46 @@ table.data tbody tr:hover { background: var(--raised); }
 .sideProfileText strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .sideProfileText small { margin-top: 3px; color: #777d87; font-size: 11px; }
 .sideProfile .iconBtn { width: 30px; height: 30px; }
+.mobileNavigation { display: none; }
+.mobileMenuButton {
+  width: 38px; height: 38px; display: grid; place-items: center; flex: none;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--surface);
+}
+.hamburgerIcon { width: 18px; display: grid; gap: 4px; }
+.hamburgerIcon i { height: 2px; display: block; border-radius: 2px; background: currentColor; }
+.mobileDrawerOverlay {
+  position: fixed; inset: 0; z-index: 80; width: 100%; height: 100%;
+  background: rgb(0 0 0 / .58); cursor: default;
+}
+.mobileDrawer {
+  position: fixed; inset: 0 auto 0 0; z-index: 81; width: min(86vw, 340px);
+  display: flex; flex-direction: column; background: var(--surface);
+  border-right: 1px solid var(--line); box-shadow: 18px 0 50px rgb(0 0 0 / .26);
+  animation: mobileDrawerIn .18s ease-out;
+}
+@keyframes mobileDrawerIn { from { transform: translateX(-100%); } }
+.mobileDrawerHead {
+  min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; border-bottom: 1px solid var(--line);
+}
+.mobileDrawerHead > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mobileDrawerHead strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.mobileDrawerClose {
+  width: 38px; height: 38px; display: grid; place-items: center; flex: none;
+  border-radius: 9px; background: var(--raised); font-size: 26px; line-height: 1;
+}
+.mobileDrawerBody { min-height: 0; display: flex; flex: 1; flex-direction: column; overflow-y: auto; padding: 12px; }
+.mobileDrawerNav { display: grid; gap: 4px; }
+.mobileDrawerNav .navLink {
+  min-height: 44px; display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: 9px; font-size: 14px;
+}
+.mobileDrawerNav .navLink[aria-current='page'] { background: var(--accent); color: var(--accent-ink); }
+.mobileDrawerNav .avatar { width: 22px; height: 22px; font-size: 9px; }
+.mobileDrawerActions {
+  display: flex; align-items: center; gap: 8px; margin-top: auto;
+  padding: 14px 4px 4px; border-top: 1px solid var(--line);
+}
 .masterMain { min-width: 0; background: var(--surface); }
 .masterTopbar {
   height: 52px; position: sticky; top: 0; z-index: 15;
@@ -1355,19 +1410,15 @@ table.data tbody tr:hover { background: var(--raised); }
 }
 @media (max-width: 680px) {
   .masterShell { display: block; }
-  .masterSidebar {
-    position: fixed; top: auto; bottom: 0; left: 0; right: 0; z-index: 40;
-    width: 100%; height: 64px; padding: 7px 12px;
-    flex-direction: row; align-items: center; border-right: 0; border-top: 1px solid #e0e3e7;
-  }
-  .workspaceSwitch, .sideLabel, .sideProfile, .sideNav > a:last-child { display: none; }
-  .sideNav { display: flex; width: 100%; justify-content: space-around; margin: 0; }
-  .sideNav .navLink { display: grid; gap: 1px; justify-items: center; font-size: 10px; padding: 5px 12px; }
-  .sideIcon { font-size: 18px; }
-  .masterTopbar { justify-content: flex-start; padding: 0 16px; }
+  .masterSidebar { display: none; }
+  .mobileNavigation { display: block; flex: none; }
+  .masterTopbar { justify-content: space-between; gap: 10px; padding: 0 14px; }
   .masterTopTitle { display: none; }
   .mobileBrand { display: inline; font-weight: 600; color: var(--text); }
-  .masterContent { width: min(100% - 28px, 1380px); padding-top: 24px; padding-bottom: 96px; }
+  .masterContent {
+    width: min(100% - 28px, 1380px); padding-top: 24px;
+    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+  }
   .metricGrid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .analyticsMetricGrid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .analyticsMetric { min-height: 114px; padding: 15px; }
@@ -1407,6 +1458,102 @@ table.data tbody tr:hover { background: var(--raised); }
   .sessionRow .btn { margin-left: 23px; }
   .profileGrid { grid-template-columns: 1fr; }
   .profileFull { grid-column: auto; }
+}
+
+/* ── Responsivitas lintas perangkat ────────────────────────── */
+@media (max-width: 900px) {
+  .topbar {
+    height: auto;
+    min-height: var(--topbar);
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding-block: 9px;
+  }
+  .brand { order: 1; }
+  .topbarRight { order: 2; margin-left: auto; }
+  .mainNav {
+    order: 3;
+    width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mainNav::-webkit-scrollbar { display: none; }
+  .mainNav .navLink {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .wrap, .wrapNarrow { width: calc(100% - 28px); padding-top: 22px; }
+  .pageTitle { font-size: clamp(23px, 7vw, 27px); }
+  .sectionTitle { margin-top: 28px; }
+
+  .topbar { min-height: 56px; flex-wrap: nowrap; padding-inline: 12px; }
+  .topbar > .mobileNavigation { display: block; order: 0; }
+  .brand { gap: 8px; }
+  .brandMark { width: 28px; height: 28px; }
+  .topbarRight { gap: 3px; }
+  .topbarRight > .globalSearch, .topbarRight > .iconBtn { display: none; }
+  .mainNav { display: none; }
+
+  .registrationShell { padding-inline: 14px; }
+  .registrationHeader { min-height: 64px; gap: 10px; }
+  .registrationHeader .brand > span:last-child { display: none; }
+  .registrationHero { margin: 34px auto 30px; }
+  .registrationHero h1 { font-size: clamp(30px, 10vw, 42px); }
+  .registrationHero p { font-size: 15px; }
+  .tierCard, .registrationDetails { padding: 20px; }
+
+  .modalBackdrop {
+    place-items: end center;
+    padding: 12px 0 0;
+  }
+  .modalCard {
+    max-height: calc(100dvh - 12px);
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+  }
+
+  .rowBetween, .sectionHead, .pageHead, .inlineActions { row-gap: 10px; }
+  .inlineActions { flex-wrap: wrap; }
+  .card { min-width: 0; }
+  .courseGrid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .courseCard { width: 100%; min-height: 0; }
+  .courseBody { min-height: 180px; }
+  .courseStats { align-items: flex-start; gap: 8px; }
+  .courseStats > span:last-child { text-align: right; }
+  .tableWrap::after {
+    content: 'Geser tabel untuk melihat kolom lainnya';
+    display: block;
+    width: max-content;
+    padding: 8px 12px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 420px) {
+  body { font-size: 14px; }
+  input, select, textarea { font-size: 16px !important; }
+  .iconBtn { width: 32px; height: 32px; }
+  .avatar { width: 30px; height: 30px; }
+
+  .metricGrid, .analyticsMetricGrid { grid-template-columns: 1fr; }
+  .userFilterBar { grid-template-columns: 1fr; }
+  .userSearch { grid-column: auto; }
+  .userListHead { align-items: stretch; flex-direction: column; }
+  .userListHead .btn, .userCreateActions .btn { width: 100%; }
+  .userCreateActions { flex-direction: column-reverse; }
+  .masterFormPanel, .masterRecordCard { padding: 16px; }
+  .lessonActions { justify-content: flex-start; }
+  .addForm > * { width: 100%; }
+  .btn { white-space: normal; text-align: center; }
 }
 
 /* ── Utilitas forum, insight, dan sesi langsung ────────────── */
@@ -1679,4 +1826,35 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 @media (max-width: 720px) {
   .globalSearchInput { width: 120px; }
   .globalSearchInput:focus { width: 160px; }
+}
+
+@media (max-width: 600px) {
+  .topbarRight .globalSearchInput { width: 96px; max-width: 28vw; }
+  .topbarRight .globalSearchInput:focus { width: 132px; max-width: 38vw; }
+  .masterTopbar .globalSearchInput { width: 108px; max-width: 36vw; }
+  .masterTopbar .globalSearchInput:focus { width: 132px; max-width: 42vw; }
+  .globalSearchPanel {
+    position: fixed;
+    top: 112px;
+    right: 14px;
+    left: 14px;
+    width: auto;
+    max-height: min(65vh, 520px);
+  }
+  .masterTopbar .globalSearchPanel { top: 60px; }
+}
+
+@media (max-width: 420px) {
+  .topbarRight .globalSearchInput { width: 76px; }
+  .topbarRight .globalSearchInput:focus { width: 112px; }
+}
+
+@media (max-width: 340px) {
+  .topbar .brand > span:last-child { display: none; }
+  .mobileBrand { display: none; }
+  .masterTopbar .globalSearchInput { width: 92px; }
+  .masterTopbar .globalSearchInput:focus { width: 110px; }
+  .courseBody { padding-inline: 13px; }
+  .courseStats { flex-direction: column; }
+  .courseStats > span:last-child { text-align: left; }
 }
