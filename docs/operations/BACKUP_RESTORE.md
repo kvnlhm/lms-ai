@@ -148,16 +148,58 @@ tidak sekaligus membocorkan kredensial database.
 Dua hal pada §1 dan §4 belum tercapai dan masih menunggu keputusan tujuan
 penyimpanan:
 
-- **Offsite.** Seluruh salinan masih berada pada disk VPS yang sama dengan
-  produksi — belum memenuhi syarat "failure domain berbeda". Kehilangan disk
-  saat ini tetap berarti kehilangan backup.
-- **Encryption at rest.** Arsip hanya dilindungi permission `0600`.
+- **Encryption at rest.** Arsip hanya dilindungi permission `0600` di server,
+  dan mengandalkan enkripsi sisi penyedia setelah diunggah. Arsipnya sendiri
+  belum dienkripsi sebelum meninggalkan server, sehingga siapa pun yang dapat
+  membaca keranjang objek dapat membaca isinya.
 
-Keduanya sebaiknya diselesaikan bersamaan: enkripsi baru benar-benar berguna
-ketika arsipnya meninggalkan server.
+## 4b. Salinan di Luar Server
+
+Setiap checkpoint diunggah ke penyimpanan objek S3-compatible segera setelah
+salinan lokalnya utuh dan terpangkas. Dirancang untuk Cloudflare R2, tetapi
+tidak terikat padanya — konfigurasinya hanya endpoint, bucket, dan sepasang
+kunci.
+
+Urutannya disengaja: unggahan berjalan **setelah** checkpoint lokal selesai.
+Bila unggahannya gagal, yang di server tetap ada dan sah; yang hilang hanya
+salinan keduanya, dan itulah yang dikatakan pesan peringatannya.
+
+**Verifikasi.** Setelah diunggah, ukurannya dibandingkan, lalu objeknya
+diunduh kembali dan di-sha256 terhadap berkas lokal. Ukuran yang cocok hanya
+membuktikan sesuatu sampai di sana, bukan bahwa isinya sama. Untuk arsip yang
+sudah terlalu besar untuk diunduh setiap malam, `LMS_OFFSITE_VERIFY=ukuran`
+membatasi pemeriksaan pada jumlah byte saja — dengan konsekuensi yang harus
+disadari.
+
+**Retensi** dijalankan setelah unggahan berhasil, bukan sebelumnya. Memangkas
+lebih dulu akan mengurangi jumlah salinan justru pada malam ketika unggahannya
+gagal.
+
+**Kredensial** tidak pernah masuk repository ini, yang bersifat publik. Cron
+memuatnya dari `/etc/lms-backup.env` dengan permission `600`. Selama keempat
+nilainya kosong, backup tetap berjalan normal dan hanya mencatat bahwa salinan
+offsite dilewati.
+
+| Variabel | Isi |
+|---|---|
+| `LMS_S3_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
+| `LMS_S3_BUCKET` | Nama bucket |
+| `LMS_S3_ACCESS_KEY_ID` | Access Key ID token R2 |
+| `LMS_S3_SECRET_ACCESS_KEY` | Secret Access Key token R2 |
+| `LMS_S3_REGION` | `auto` untuk R2 |
+| `LMS_OFFSITE_KEEP` | Jumlah checkpoint yang disimpan di luar server |
+
+`backup.sh --test-offsite` menulis, membaca, lalu menghapus satu berkas kecil
+untuk membuktikan kredensial, jangkauan jaringan, dan izin hapus — tanpa
+menunggu backup malam dan tanpa mengotori keranjang.
+
+rclone dijalankan di dalam container, jadi VPS tidak perlu memasangnya.
+Rahasianya diteruskan lewat `-e NAMA` tanpa nilai, sehingga tidak pernah muncul
+pada baris perintah yang dapat dibaca `ps`.
 
 RPO nyata saat ini 24 jam, bukan 15 menit seperti target §1, karena belum ada
-PITR/WAL archiving.
+PITR/WAL archiving. Salinan di luar server tidak mengubah angka itu — ia
+menutup syarat "failure domain berbeda" pada §1, bukan jarak antar-checkpoint.
 
 ---
 

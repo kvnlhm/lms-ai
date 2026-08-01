@@ -18,10 +18,15 @@
 # yaitu ketika salinannya dibutuhkan. Keberhasilan sengaja tidak mengirim
 # apa-apa — surat rutin yang selalu datang justru melatih orang mengabaikannya.
 #
+# Checkpoint juga diunggah ke penyimpanan objek di luar server bila
+# dikonfigurasi. Tanpa itu database dan seluruh salinannya berada pada disk yang
+# sama, sehingga satu kegagalan disk menghapus keduanya sekaligus.
+#
 # Pemakaian:
-#   backup.sh              # ambil checkpoint lalu pangkas yang kedaluwarsa
-#   backup.sh --prune-only # hanya pangkas
-#   backup.sh --test-alert # kirim satu peringatan contoh, lalu berhenti
+#   backup.sh                # ambil checkpoint, pangkas, lalu unggah offsite
+#   backup.sh --prune-only   # hanya pangkas yang lokal
+#   backup.sh --test-alert   # kirim satu peringatan contoh, lalu berhenti
+#   backup.sh --test-offsite # uji tulis, baca, dan hapus ke penyimpanan objek
 #
 set -Eeuo pipefail
 
@@ -41,6 +46,28 @@ COUNTED_TABLES=(users enrollments lesson_progress registration_orders video_asse
 
 ALERT_TO="${LMS_ALERT_TO:-}"
 ALERT_FROM="${LMS_ALERT_FROM:-AIPreneur Academy Alerts <alerts@send.aipreneur.co.id>}"
+
+# Salinan di luar server, memenuhi BACKUP_RESTORE.md §1: backup yang hanya ada
+# di disk yang sama dengan databasenya bukan backup terhadap kegagalan disk.
+#
+# Kredensial dibaca dari environment, tidak pernah dari repository ini — repo
+# ini publik. Cron memuatnya dari /etc/lms-backup.env yang hanya dapat dibaca
+# root. Bila salah satu kosong, unggahan dilewati dengan catatan di log,
+# sehingga skrip ini tetap berguna sebelum tujuan offsite dipasang.
+S3_ENDPOINT="${LMS_S3_ENDPOINT:-}"
+S3_BUCKET="${LMS_S3_BUCKET:-}"
+S3_ACCESS_KEY_ID="${LMS_S3_ACCESS_KEY_ID:-}"
+S3_SECRET_ACCESS_KEY="${LMS_S3_SECRET_ACCESS_KEY:-}"
+# R2 tidak punya region sungguhan; `auto` adalah nilai yang diminta Cloudflare.
+S3_REGION="${LMS_S3_REGION:-auto}"
+S3_PREFIX="${LMS_S3_PREFIX:-daily}"
+OFFSITE_KEEP="${LMS_OFFSITE_KEEP:-30}"
+# `penuh` mengunduh kembali objeknya lalu membandingkan sha256 dengan berkas
+# lokal — satu-satunya pemeriksaan yang benar-benar membuktikan byte-nya utuh
+# di sana. `ukuran` hanya membandingkan jumlah byte, untuk arsip yang sudah
+# terlalu besar untuk diunduh setiap malam.
+OFFSITE_VERIFY="${LMS_OFFSITE_VERIFY:-penuh}"
+RCLONE_IMAGE="${LMS_RCLONE_IMAGE:-rclone/rclone:1.68}"
 
 log() {
   printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*" | tee -a "$LOG_FILE" >&2
@@ -148,6 +175,97 @@ prune_bucket() {
   [[ "$removed" -eq 0 ]] || log "pangkas $(basename "$dir"): $removed checkpoint dihapus."
 }
 
+offsite_dikonfigurasi() {
+  [[ -n "$S3_ENDPOINT" && -n "$S3_BUCKET" && -n "$S3_ACCESS_KEY_ID" && -n "$S3_SECRET_ACCESS_KEY" ]]
+}
+
+# Menjalankan rclone di dalam container, karena VPS ini tidak memasang rclone
+# dan tidak perlu memasangnya.
+#
+# Rahasia diteruskan dengan `-e NAMA` tanpa nilai, sehingga docker mengambilnya
+# dari environment proses ini. Bentuk `-e NAMA=nilai` akan menaruh kunci pada
+# baris perintah, tempat siapa pun yang menjalankan `ps` dapat membacanya.
+rclone_jalan() {
+  local mount_args=()
+  if [[ -n "${1:-}" && "$1" == "--mount" ]]; then
+    mount_args=(-v "$2:$3:ro")
+    shift 3
+  fi
+  RCLONE_CONFIG_OFFSITE_TYPE=s3 \
+  RCLONE_CONFIG_OFFSITE_PROVIDER=Cloudflare \
+  RCLONE_CONFIG_OFFSITE_ENV_AUTH=false \
+  RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID="$S3_ACCESS_KEY_ID" \
+  RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY="$S3_SECRET_ACCESS_KEY" \
+  RCLONE_CONFIG_OFFSITE_ENDPOINT="$S3_ENDPOINT" \
+  RCLONE_CONFIG_OFFSITE_REGION="$S3_REGION" \
+  docker run --rm --network host "${mount_args[@]}" \
+    -e RCLONE_CONFIG_OFFSITE_TYPE \
+    -e RCLONE_CONFIG_OFFSITE_PROVIDER \
+    -e RCLONE_CONFIG_OFFSITE_ENV_AUTH \
+    -e RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID \
+    -e RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY \
+    -e RCLONE_CONFIG_OFFSITE_ENDPOINT \
+    -e RCLONE_CONFIG_OFFSITE_REGION \
+    --entrypoint rclone "$RCLONE_IMAGE" "$@"
+}
+
+# Menghapus salinan offsite terlama, meniru aturan yang sama dengan lokal.
+# Dijalankan setelah unggahan berhasil, bukan sebelumnya: memangkas lebih dulu
+# akan mengurangi jumlah salinan justru pada malam ketika unggahan gagal.
+offsite_pangkas() {
+  local daftar hapus jumlah=0
+  daftar="$(rclone_jalan lsf "offsite:${S3_BUCKET}/${S3_PREFIX}" 2>/dev/null |
+    grep -E '^lms-[0-9]{8}T[0-9]{6}Z\.tar$' | sort -r || true)"
+  hapus="$(printf '%s\n' "$daftar" | tail -n "+$((OFFSITE_KEEP + 1))" || true)"
+  while read -r objek; do
+    [[ -n "$objek" ]] || continue
+    rclone_jalan deletefile "offsite:${S3_BUCKET}/${S3_PREFIX}/${objek}" >/dev/null 2>&1 || {
+      log "offsite: gagal menghapus ${objek}, dibiarkan."
+      continue
+    }
+    jumlah=$((jumlah + 1))
+  done <<<"$hapus"
+  [[ "$jumlah" -eq 0 ]] || log "offsite: $jumlah salinan lama dihapus."
+}
+
+offsite_unggah() {
+  local arsip="$1" nama ukuran_lokal ukuran_jauh sha_lokal sha_jauh
+  nama="$(basename "$arsip")"
+
+  if ! offsite_dikonfigurasi; then
+    log "offsite: tidak dikonfigurasi, unggahan dilewati. Salinan hanya ada di server ini."
+    return 0
+  fi
+
+  log "offsite: mengunggah ${nama} ke ${S3_BUCKET}/${S3_PREFIX}."
+  rclone_jalan --mount "$(dirname "$arsip")" /arsip \
+    copyto "/arsip/${nama}" "offsite:${S3_BUCKET}/${S3_PREFIX}/${nama}" \
+    --s3-no-check-bucket --retries 3 --low-level-retries 5 >/dev/null 2>&1 ||
+    die "unggahan offsite gagal untuk ${nama}. Checkpoint lokal tetap utuh di ${arsip}."
+
+  ukuran_lokal="$(stat -c '%s' "$arsip")"
+  ukuran_jauh="$(rclone_jalan size "offsite:${S3_BUCKET}/${S3_PREFIX}/${nama}" --json 2>/dev/null |
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])' 2>/dev/null || echo '')"
+  [[ "$ukuran_jauh" == "$ukuran_lokal" ]] ||
+    die "ukuran salinan offsite tidak cocok: lokal ${ukuran_lokal} byte, di ${S3_BUCKET} ${ukuran_jauh:-tidak terbaca} byte."
+
+  if [[ "$OFFSITE_VERIFY" == "penuh" ]]; then
+    # Diunduh kembali dan di-hash. Ukuran yang cocok hanya membuktikan sesuatu
+    # sampai di sana, bukan bahwa isinya sama — dan backup yang tidak pernah
+    # dibuktikan baru ketahuan rusak pada saat paling buruk.
+    sha_lokal="$(sha256sum "$arsip" | awk '{print $1}')"
+    sha_jauh="$(rclone_jalan cat "offsite:${S3_BUCKET}/${S3_PREFIX}/${nama}" 2>/dev/null |
+      sha256sum | awk '{print $1}')"
+    [[ "$sha_lokal" == "$sha_jauh" ]] ||
+      die "sha256 salinan offsite berbeda dari berkas lokal untuk ${nama}."
+    log "offsite: terverifikasi utuh (sha256 cocok, ${ukuran_lokal} byte)."
+  else
+    log "offsite: ukuran cocok (${ukuran_lokal} byte); verifikasi isi dilewati."
+  fi
+
+  offsite_pangkas
+}
+
 prune_all() {
   prune_bucket "$BACKUP_ROOT/daily" "$DAILY_KEEP"
   prune_bucket "$BACKUP_ROOT/weekly" "$WEEKLY_KEEP"
@@ -173,6 +291,31 @@ command -v docker >/dev/null || die "docker tidak tersedia."
 if [[ "${1:-}" == "--test-alert" ]]; then
   alert "Uji peringatan backup LMS" \
     "Ini hanya uji jalur peringatan. Tidak ada backup yang gagal."
+  exit 0
+fi
+
+# Membuktikan kredensial, jangkauan jaringan, dan izin tulis tanpa menunggu
+# backup malam — dan tanpa mengotori keranjang dengan berkas yang menyerupai
+# checkpoint sungguhan.
+if [[ "${1:-}" == "--test-offsite" ]]; then
+  offsite_dikonfigurasi || die "offsite belum dikonfigurasi: isi LMS_S3_ENDPOINT, LMS_S3_BUCKET, LMS_S3_ACCESS_KEY_ID, dan LMS_S3_SECRET_ACCESS_KEY."
+  UJI_DIR="$(mktemp -d)"
+  trap 'rm -rf -- "$UJI_DIR" "$ALERT_FLAG"' EXIT
+  UJI_NAMA="uji-offsite-$(date -u '+%Y%m%dT%H%M%SZ').txt"
+  printf 'Uji tulis dari %s pada %s\n' "$(hostname)" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >"$UJI_DIR/$UJI_NAMA"
+
+  log "offsite: menguji tulis ke ${S3_BUCKET}/${S3_PREFIX}."
+  rclone_jalan --mount "$UJI_DIR" /arsip \
+    copyto "/arsip/${UJI_NAMA}" "offsite:${S3_BUCKET}/${S3_PREFIX}/${UJI_NAMA}" \
+    --s3-no-check-bucket --retries 2 >/dev/null 2>&1 || die "uji tulis offsite gagal."
+
+  UJI_ISI="$(rclone_jalan cat "offsite:${S3_BUCKET}/${S3_PREFIX}/${UJI_NAMA}" 2>/dev/null || true)"
+  [[ "$UJI_ISI" == "$(cat "$UJI_DIR/$UJI_NAMA")" ]] || die "uji baca offsite tidak cocok dengan yang ditulis."
+
+  rclone_jalan deletefile "offsite:${S3_BUCKET}/${S3_PREFIX}/${UJI_NAMA}" >/dev/null 2>&1 ||
+    die "uji hapus offsite gagal; kredensial mungkin hanya berizin tulis."
+
+  log "offsite: uji tulis, baca, dan hapus berhasil."
   exit 0
 fi
 
@@ -257,5 +400,10 @@ if [[ "$(date -u '+%d')" == "01" ]]; then
 fi
 
 prune_all
+
+# Diunggah setelah checkpoint lokal utuh dan terpangkas. Urutan ini penting:
+# kalau unggahannya gagal, yang di server tetap ada dan sah — kegagalannya
+# hanya soal salinan kedua, dan itulah yang dikatakan pesan peringatannya.
+offsite_unggah "$ARCHIVE"
 
 log "selesai: $ARCHIVE ($(du -h "$ARCHIVE" | cut -f1)), migrasi ${MIGRATION:-?}."
