@@ -65,13 +65,23 @@ jobs:
           PGPASSWORD: lms_ci_password
         run: |
           createdb -h localhost -U lms lms_shadow
+          # Path relatif terhadap apps/api, bukan akar repo: `pnpm --filter`
+          # menjalankan perintahnya di direktori paketnya. Versi pertama
+          # gerbang ini memakai path dari akar, sehingga ia selalu gagal
+          # dengan "file or directory not found" — merah, tetapi tidak pernah
+          # benar-benar memeriksa apa pun.
           diff=$(pnpm --filter @lms/api exec prisma migrate diff \
-            --from-migrations apps/api/prisma/migrations \
-            --to-schema-datamodel apps/api/prisma/schema.prisma \
+            --from-migrations prisma/migrations \
+            --to-schema-datamodel prisma/schema.prisma \
             --shadow-database-url "postgresql://lms:lms_ci_password@localhost:5432/lms_shadow?schema=public" \
             --script)
           echo "$diff"
-          if ! echo "$diff" | grep -q "This is an empty migration"; then
+          # Yang dinilai adalah ada tidaknya pernyataan SQL, bukan kalimat
+          # "This is an empty migration" — kalimat itu milik Prisma dan dapat
+          # berubah tanpa memberi tahu siapa pun, dan bila berubah gerbangnya
+          # menjadi hijau selamanya tanpa ada yang menyadari.
+          sisa=$(printf '%s\n' "$diff" | grep -v '^--' | grep -v '^[[:space:]]*$' || true)
+          if [ -n "$sisa" ]; then
             echo "::error::schema.prisma dan migrasi tidak sepakat. Jalankan prisma migrate diff dan tambahkan migrasinya."
             exit 1
           fi
