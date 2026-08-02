@@ -4,6 +4,7 @@ import type { Schemas } from '@lms/api-client';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Plus } from '../../components/icons';
+import { Modal } from '../../components/modal';
 import { useNotifier } from '../../components/notifier';
 import { StatusPill } from '../../components/status-pill';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
@@ -141,26 +142,20 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
           className="btn"
           type="button"
           aria-expanded={showCreate}
-          aria-controls="create-user-panel"
-          onClick={() => {
-            setShowCreate((value) => !value);
-          }}
+          onClick={() => setShowCreate(true)}
         >
           <Plus size={16} />
-          {showCreate ? 'Tutup formulir' : 'Tambah pengguna'}
+          Tambah pengguna
         </button>
       </div>
 
       {showCreate ? (
-        <section className="card userCreateCard" id="create-user-panel">
-          <div className="panelHead">
-            <div>
-              <h2>Undang pengguna baru</h2>
-              <p className="pageSub">
-                Akun dibuat sebagai Pelajar aktif. Bagikan tautan undangan secara aman.
-              </p>
-            </div>
-          </div>
+        <Modal
+          title="Undang pengguna baru"
+          description="Akun dibuat sebagai Pelajar aktif. Bagikan tautan undangan secara aman."
+          busy={busy !== null}
+          onClose={() => setShowCreate(false)}
+        >
           <form onSubmit={create}>
             <div className="userCreateGrid">
               <div className="field">
@@ -214,7 +209,7 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
               </button>
             </div>
           </form>
-        </section>
+        </Modal>
       ) : null}
 
 

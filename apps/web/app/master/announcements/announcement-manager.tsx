@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Modal } from '../../components/modal';
 import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../lib/browser-api';
 
@@ -45,6 +46,7 @@ function toLocalInputValue(date: Date): string {
 
 export function AnnouncementManager({ courses }: { courses: { id: string; title: string }[] }) {
   const notifier = useNotifier();
+  const [composeOpen, setComposeOpen] = useState(false);
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -81,26 +83,30 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
     void load();
   }, [load]);
 
-  async function run(action: string, task: () => Promise<unknown>, success: string) {
-    if (busy) return;
+  async function run(action: string, task: () => Promise<unknown>, success: string): Promise<boolean> {
+    if (busy) return false;
     setBusy(action);
     try {
       await task();
       notifier.success(success);
       await load();
+      return true;
     } catch (caught) {
       void notifier.error('Tindakan gagal dijalankan', {
         text: caught instanceof ApiError ? caught.message : undefined,
         reasons: caught instanceof ApiError ? Object.values(caught.fields ?? {}).flat() : [],
       });
+      return false;
     } finally {
       setBusy(null);
     }
   }
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault();
-    void run(
+    // Modal hanya menutup bila benar-benar tersimpan; bila gagal, isian yang
+    // sudah diketik tetap ada untuk diperbaiki.
+    const ok = await run(
       'create',
       async () => {
         await browserClient().POST('/api/v1/admin/announcements', {
@@ -119,6 +125,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
       },
       'Draft pengumuman tersimpan.',
     );
+    if (ok) setComposeOpen(false);
   }
 
   return (
@@ -129,14 +136,24 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
         </p>
       ) : null}
 
-      <form className="card stack masterFormPanel" onSubmit={submit}>
-        <div className="masterPanelHead">
-          <div>
-            <span className="eyebrow">Pesan baru</span>
-            <h2 className="sectionTitle">Tulis pengumuman</h2>
-            <p>Sampaikan informasi penting kepada seluruh pengguna atau peserta kursus tertentu.</p>
-          </div>
+      <div className="masterListHead">
+        <div>
+          <span className="eyebrow">Pesan baru</span>
+          <h2 className="sectionTitle">Tulis pengumuman</h2>
         </div>
+        <button className="btn" type="button" disabled={busy !== null} onClick={() => setComposeOpen(true)}>
+          Tulis pengumuman
+        </button>
+      </div>
+
+      {composeOpen ? (
+        <Modal
+          title="Tulis pengumuman"
+          description="Sampaikan informasi penting kepada seluruh pengguna atau peserta kursus tertentu."
+          busy={busy !== null}
+          onClose={() => setComposeOpen(false)}
+        >
+      <form className="stack" onSubmit={submit}>
         <label className="field">
           <span>Judul</span>
           <input
@@ -225,10 +242,17 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
         <small className="muted">
           Tersimpan sebagai draft. Pelajar baru melihatnya setelah kamu menekan Terbitkan.
         </small>
-        <button className="btn btnBlock" type="submit" disabled={busy !== null}>
-          {busy === 'create' ? 'Menyimpan…' : 'Simpan draft'}
-        </button>
+        <div className="lessonEditActions">
+          <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => setComposeOpen(false)}>
+            Batal
+          </button>
+          <button className="btn" type="submit" disabled={busy !== null}>
+            {busy === 'create' ? 'Menyimpan…' : 'Simpan draft'}
+          </button>
+        </div>
       </form>
+        </Modal>
+      ) : null}
 
       <div className="masterListHead">
         <div>

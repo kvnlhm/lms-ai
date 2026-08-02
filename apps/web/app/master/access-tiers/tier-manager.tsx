@@ -2,6 +2,7 @@
 
 import type { Schemas } from '@lms/api-client';
 import { useState, type FormEvent } from 'react';
+import { Modal } from '../../components/modal';
 import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 
@@ -43,6 +44,7 @@ export function AccessTierManager({
   const [editingDraft, setEditingDraft] = useState<TierDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const notifier = useNotifier();
+  const [createOpen, setCreateOpen] = useState(false);
 
   async function create() {
     setBusy(true);
@@ -55,6 +57,7 @@ export function AccessTierManager({
       setTiers((current) => [...current, tier].sort((a, b) => a.position - b.position));
       setDraft(emptyDraft);
       notifier.success('Paket berhasil dibuat dan siap ditampilkan.');
+      setCreateOpen(false);
     } catch (error) {
       void notifier.error('Paket belum dapat disimpan', {
         text: error instanceof ApiError ? error.message : undefined,
@@ -95,11 +98,29 @@ export function AccessTierManager({
       <section className="card tierAdminForm">
         <h2>Buat paket baru</h2>
         <p className="pageSub">Gunakan lifetime bila akses tidak memiliki tanggal berakhir.</p>
-        <TierFields draft={draft} courses={courses} onChange={setDraft} />
-        <button className="btn" onClick={() => void create()} disabled={busy} type="button">
-          {busy ? 'Menyimpan…' : 'Buat paket'}
+        <button className="btn" onClick={() => setCreateOpen(true)} disabled={busy} type="button">
+          Buat paket
         </button>
       </section>
+
+      {createOpen ? (
+        <Modal
+          title="Buat paket baru"
+          description="Gunakan lifetime bila akses tidak memiliki tanggal berakhir."
+          busy={busy}
+          onClose={() => setCreateOpen(false)}
+        >
+          <TierFields draft={draft} courses={courses} onChange={setDraft} />
+          <div className="lessonEditActions">
+            <button className="btn btnGhost" onClick={() => setCreateOpen(false)} disabled={busy} type="button">
+              Batal
+            </button>
+            <button className="btn" onClick={() => void create()} disabled={busy} type="button">
+              {busy ? 'Menyimpan…' : 'Buat paket'}
+            </button>
+          </div>
+        </Modal>
+      ) : null}
 
       <section className="tierAdminList">
         <div className="sectionHead">

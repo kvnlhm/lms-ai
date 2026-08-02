@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Modal } from '../../components/modal';
 import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../lib/browser-api';
 
@@ -32,6 +33,7 @@ function toLocalInputValue(date: Date): string {
 
 export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
   const notifier = useNotifier();
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -86,6 +88,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
       setDescription('');
       setJoinUrl('');
       notifier.success('Sesi dijadwalkan.');
+      setScheduleOpen(false);
       await load();
     } catch (caught) {
       void notifier.error('Sesi gagal dijadwalkan', {
@@ -136,14 +139,24 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
         </p>
       ) : null}
 
-      <form className="card stack masterFormPanel" onSubmit={create}>
-        <div className="masterPanelHead">
-          <div>
-            <span className="eyebrow">Buat jadwal</span>
-            <h2 className="sectionTitle">Jadwalkan sesi baru</h2>
-            <p>Pilih kursus, tentukan waktu, lalu masukkan tautan ruang pertemuan.</p>
-          </div>
+      <div className="masterListHead">
+        <div>
+          <span className="eyebrow">Buat jadwal</span>
+          <h2 className="sectionTitle">Jadwalkan sesi baru</h2>
         </div>
+        <button className="btn" type="button" disabled={busy !== null} onClick={() => setScheduleOpen(true)}>
+          Jadwalkan sesi
+        </button>
+      </div>
+
+      {scheduleOpen ? (
+        <Modal
+          title="Jadwalkan sesi baru"
+          description="Pilih kursus, tentukan waktu, lalu masukkan tautan ruang pertemuan."
+          busy={busy !== null}
+          onClose={() => setScheduleOpen(false)}
+        >
+      <form className="stack" onSubmit={create}>
         <label className="field">
           <span>Kursus</span>
           <select
@@ -222,10 +235,17 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
             />
           </label>
         </div>
-        <button className="btn btnBlock" type="submit" disabled={busy !== null}>
-          {busy === 'create' ? 'Menyimpan…' : 'Jadwalkan'}
-        </button>
+        <div className="lessonEditActions">
+          <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => setScheduleOpen(false)}>
+            Batal
+          </button>
+          <button className="btn" type="submit" disabled={busy !== null}>
+            {busy === 'create' ? 'Menyimpan…' : 'Jadwalkan'}
+          </button>
+        </div>
       </form>
+        </Modal>
+      ) : null}
 
       <div className="masterListHead">
         <div>

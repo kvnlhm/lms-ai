@@ -83,7 +83,7 @@ export function Modal({
 
   return (
     <div
-      className="modalBackdrop"
+      className="formModalBackdrop"
       onMouseDown={(event) => {
         // Klik latar tidak menutup formulir yang sedang diisi: satu klik
         // meleset akan membuang seluruh isian tanpa cara mengembalikannya.
@@ -93,21 +93,21 @@ export function Modal({
     >
       <div
         ref={panel}
-        className="modalPanel"
+        className="formModalPanel"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modalTitle"
-        aria-describedby={description ? 'modalDescription' : undefined}
+        aria-labelledby="formModalTitle"
+        aria-describedby={description ? 'formModalDescription' : undefined}
       >
-        <div className="modalHead">
-          <div className="modalHeadText">
-            <h2 id="modalTitle">{title}</h2>
-            {description ? <p id="modalDescription">{description}</p> : null}
+        <div className="formModalHead">
+          <div className="formModalHeadText">
+            <h2 id="formModalTitle">{title}</h2>
+            {description ? <p id="formModalDescription">{description}</p> : null}
           </div>
           <button
             ref={tutup}
             type="button"
-            className="modalClose"
+            className="formModalClose"
             onClick={onClose}
             disabled={busy}
             aria-label="Tutup formulir"
@@ -116,7 +116,7 @@ export function Modal({
           </button>
         </div>
 
-        <div className="modalBody">{children}</div>
+        <div className="formModalBody">{children}</div>
       </div>
     </div>
   );
