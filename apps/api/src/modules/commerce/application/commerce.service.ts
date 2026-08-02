@@ -70,6 +70,7 @@ export class CommerceService {
 
   async createTier(input: CreateAccessTierDto) {
     await this.assertCourses(input.courseIds);
+    assertHargaNormalMasukAkal(input.originalPriceIdr, input.priceIdr);
     try {
       const tier = await this.prisma.accessTier.create({
         data: {
@@ -77,6 +78,7 @@ export class CommerceService {
           slug: input.slug,
           description: input.description?.trim() || null,
           priceIdr: input.priceIdr,
+          originalPriceIdr: input.originalPriceIdr ?? null,
           durationMonths: input.durationMonths ?? null,
           isActive: input.isActive ?? true,
           position: input.position ?? 0,
@@ -93,8 +95,15 @@ export class CommerceService {
   }
 
   async updateTier(tierId: string, input: UpdateAccessTierDto) {
-    await this.assertTier(tierId);
+    const sekarang = await this.assertTier(tierId);
     if (input.courseIds) await this.assertCourses(input.courseIds);
+    // Dibandingkan terhadap nilai yang akan berlaku setelah perubahan, bukan
+    // hanya yang dikirim: menurunkan harga jual saja pun dapat membuat harga
+    // normal yang lama menjadi tidak masuk akal.
+    assertHargaNormalMasukAkal(
+      input.originalPriceIdr !== undefined ? input.originalPriceIdr : sekarang.originalPriceIdr,
+      input.priceIdr !== undefined ? input.priceIdr : sekarang.priceIdr,
+    );
     try {
       const tier = await this.prisma.$transaction(async (tx) => {
         if (input.courseIds) {
@@ -109,6 +118,9 @@ export class CommerceService {
               ? { description: input.description?.trim() || null }
               : {}),
             ...(input.priceIdr !== undefined ? { priceIdr: input.priceIdr } : {}),
+            ...(input.originalPriceIdr !== undefined
+              ? { originalPriceIdr: input.originalPriceIdr }
+              : {}),
             ...(input.durationMonths !== undefined
               ? { durationMonths: input.durationMonths }
               : {}),
@@ -433,12 +445,15 @@ export class CommerceService {
     });
   }
 
-  private async assertTier(tierId: string): Promise<void> {
+  private async assertTier(
+    tierId: string,
+  ): Promise<{ priceIdr: number; originalPriceIdr: number | null }> {
     const tier = await this.prisma.accessTier.findUnique({
       where: { id: tierId },
-      select: { id: true },
+      select: { id: true, priceIdr: true, originalPriceIdr: true },
     });
     if (!tier) throw AppError.notFound();
+    return { priceIdr: tier.priceIdr, originalPriceIdr: tier.originalPriceIdr };
   }
 
   private async assertCourses(courseIds: string[]): Promise<void> {
@@ -468,6 +483,7 @@ export class CommerceService {
       name: tier.name,
       description: tier.description,
       priceIdr: tier.priceIdr,
+      originalPriceIdr: tier.originalPriceIdr,
       durationMonths: tier.durationMonths,
       isLifetime: tier.durationMonths === null,
       isActive: tier.isActive,
@@ -525,4 +541,22 @@ export function mapPaymentStatus(status: MidtransStatus): PaymentOrderStatus {
   }
   if (status.transaction_status === 'failure') return PaymentOrderStatus.FAILED;
   return PaymentOrderStatus.PENDING;
+}
+
+/**
+ * Harga normal hanya berarti bila lebih tinggi dari harga jualnya.
+ *
+ * Angka yang sama atau lebih rendah menghasilkan coretan yang menjanjikan
+ * potongan yang tidak ada — persoalan kejujuran harga, bukan sekadar tampilan.
+ */
+function assertHargaNormalMasukAkal(
+  originalPriceIdr: number | null | undefined,
+  priceIdr: number,
+): void {
+  if (originalPriceIdr === null || originalPriceIdr === undefined) return;
+  if (originalPriceIdr <= priceIdr) {
+    throw AppError.validation({
+      originalPriceIdr: ['Harga normal harus lebih tinggi daripada harga jual.'],
+    });
+  }
 }

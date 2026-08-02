@@ -44,6 +44,21 @@ export class CreateAccessTierDto {
   @ApiPropertyOptional({
     type: Number,
     nullable: true,
+    example: 2_999_000,
+    description:
+      'Harga sebelum diskon, ditampilkan tercoret di samping harga jual. ' +
+      'Null berarti paket ini tampil dengan satu harga saja.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(2_000_000_000)
+  originalPriceIdr?: number | null;
+
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
     example: 12,
     description: 'Jumlah bulan. Null berarti akses lifetime.',
   })

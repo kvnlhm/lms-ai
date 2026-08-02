@@ -107,7 +107,12 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
                   ))}
                 </ul>
                 <span className="tierPriceLabel">Investasi belajar</span>
-                <span className="tierPrice">{formatRupiah(tier.priceIdr)}</span>
+                <span className="tierPriceRow">
+                  {hargaCoret(tier) !== null ? (
+                    <s className="tierPriceWas">{formatRupiah(hargaCoret(tier)!)}</s>
+                  ) : null}
+                  <span className="tierPrice">{formatRupiah(tier.priceIdr)}</span>
+                </span>
                 <span className="tierChoose" aria-hidden="true">
                   {selected ? 'Paket dipilih' : 'Pilih paket'}
                 </span>
@@ -165,6 +170,9 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
         {terpilih ? (
           <div className="regTotal">
             <span>{terpilih.name}</span>
+            {hargaCoret(terpilih) !== null ? (
+              <s className="regTotalWas">{formatRupiah(hargaCoret(terpilih)!)}</s>
+            ) : null}
             <strong>{formatRupiah(terpilih.priceIdr)}</strong>
             <small>
               {terpilih.isLifetime
@@ -180,6 +188,18 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
       </section>
     </form>
   );
+}
+
+/**
+ * Harga yang layak dicoret, atau null bila tidak ada.
+ *
+ * Nilai yang tidak lebih tinggi dari harga jual sengaja diperlakukan sebagai
+ * tidak ada — aturan yang sama ditegakkan API saat paketnya disimpan, jadi
+ * data lama pun tidak dapat memunculkan coretan yang menyesatkan.
+ */
+function hargaCoret(tier: Tier): number | null {
+  const normal = tier.originalPriceIdr;
+  return typeof normal === 'number' && normal > tier.priceIdr ? normal : null;
 }
 
 function formatRupiah(value: number): string {

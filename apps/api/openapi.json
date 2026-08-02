@@ -12364,6 +12364,10 @@
           "priceIdr": {
             "type": "number"
           },
+          "originalPriceIdr": {
+            "type": "number",
+            "nullable": true
+          },
           "durationMonths": {
             "type": "number",
             "nullable": true
@@ -12514,6 +12518,12 @@
             "type": "number",
             "example": 1499000
           },
+          "originalPriceIdr": {
+            "type": "number",
+            "nullable": true,
+            "example": 2999000,
+            "description": "Harga sebelum diskon, ditampilkan tercoret di samping harga jual. Null berarti paket ini tampil dengan satu harga saja."
+          },
           "durationMonths": {
             "type": "number",
             "nullable": true,
@@ -12560,6 +12570,12 @@
           "priceIdr": {
             "type": "number",
             "example": 1499000
+          },
+          "originalPriceIdr": {
+            "type": "number",
+            "nullable": true,
+            "example": 2999000,
+            "description": "Harga sebelum diskon, ditampilkan tercoret di samping harga jual. Null berarti paket ini tampil dengan satu harga saja."
           },
           "durationMonths": {
             "type": "number",

@@ -2745,6 +2745,7 @@ export interface components {
             name: string;
             description?: string | null;
             priceIdr: number;
+            originalPriceIdr?: number | null;
             durationMonths?: number | null;
             isLifetime: boolean;
             isActive: boolean;
@@ -2790,6 +2791,11 @@ export interface components {
             /** @example 1499000 */
             priceIdr: number;
             /**
+             * @description Harga sebelum diskon, ditampilkan tercoret di samping harga jual. Null berarti paket ini tampil dengan satu harga saja.
+             * @example 2999000
+             */
+            originalPriceIdr?: number | null;
+            /**
              * @description Jumlah bulan. Null berarti akses lifetime.
              * @example 12
              */
@@ -2808,6 +2814,11 @@ export interface components {
             description?: string;
             /** @example 1499000 */
             priceIdr?: number;
+            /**
+             * @description Harga sebelum diskon, ditampilkan tercoret di samping harga jual. Null berarti paket ini tampil dengan satu harga saja.
+             * @example 2999000
+             */
+            originalPriceIdr?: number | null;
             /**
              * @description Jumlah bulan. Null berarti akses lifetime.
              * @example 12

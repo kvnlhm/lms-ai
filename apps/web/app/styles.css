@@ -2511,3 +2511,11 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .regFoot { justify-content: center; }
   .regFoot > .btn { width: 100%; justify-content: center; }
 }
+
+/* Harga normal yang dicoret. Hanya tampil bila paketnya memang menyimpan
+   angka itu dan nilainya lebih tinggi dari harga jual — dua pemeriksaan yang
+   sama juga ditegakkan API, supaya coretannya tidak pernah menjanjikan
+   potongan yang tidak ada. */
+.tierPriceRow { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.tierPriceWas { color: var(--muted); font-size: 14px; text-decoration-thickness: 1px; }
+.regTotalWas { color: var(--muted); font-size: 15px; text-decoration-thickness: 1px; }

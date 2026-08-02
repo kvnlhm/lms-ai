@@ -14,6 +14,7 @@ interface TierDraft {
   slug: string;
   description: string;
   priceIdr: string;
+  originalPriceIdr: string;
   duration: string;
   position: string;
   isActive: boolean;
@@ -25,6 +26,7 @@ const emptyDraft: TierDraft = {
   slug: '',
   description: '',
   priceIdr: '',
+  originalPriceIdr: '',
   duration: '6',
   position: '0',
   isActive: true,
@@ -146,6 +148,7 @@ export function AccessTierManager({
                 slug: tier.slug,
                 description: tier.description ?? '',
                 priceIdr: String(tier.priceIdr),
+                originalPriceIdr: tier.originalPriceIdr === null ? '' : String(tier.originalPriceIdr),
                 duration: tier.isLifetime ? 'lifetime' : String(tier.durationMonths),
                 position: String(tier.position),
                 isActive: tier.isActive,
@@ -191,6 +194,17 @@ function TierFields({
       <label className="field"><span>Nama paket</span><input required minLength={3} value={draft.name} onChange={(e) => update({ name: e.target.value, slug: draft.slug || slugify(e.target.value) })} /></label>
       <label className="field"><span>Slug</span><input required value={draft.slug} onChange={(e) => update({ slug: slugify(e.target.value) })} /></label>
       <label className="field"><span>Harga (Rupiah)</span><input required type="number" min={0} value={draft.priceIdr} onChange={(e) => update({ priceIdr: e.target.value })} /></label>
+      <label className="field">
+        <span>Harga normal (opsional)</span>
+        <input
+          type="number"
+          min={0}
+          placeholder="Kosongkan bila tidak sedang diskon"
+          value={draft.originalPriceIdr}
+          onChange={(e) => update({ originalPriceIdr: e.target.value })}
+        />
+        <span className="fieldHint">Ditampilkan tercoret di samping harga jual. Harus lebih tinggi dari harga jual.</span>
+      </label>
       <div className="field">
         <span>Masa akses (bulan)</span>
         <input
@@ -244,6 +258,7 @@ function payload(draft: TierDraft) {
     slug: draft.slug,
     description: draft.description || undefined,
     priceIdr: Number(draft.priceIdr),
+    originalPriceIdr: draft.originalPriceIdr.trim() === '' ? null : Number(draft.originalPriceIdr),
     durationMonths: draft.duration === 'lifetime' ? null : Number(draft.duration),
     position: Number(draft.position),
     isActive: draft.isActive,

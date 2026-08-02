@@ -559,6 +559,9 @@ model AccessTier {
   name           String
   description    String?
   priceIdr       Int      @map("price_idr")
+  /// Harga sebelum diskon, untuk ditampilkan tercoret di samping harga jual.
+  /// Opsional: paket tanpa nilai ini tampil dengan satu harga saja.
+  originalPriceIdr Int?   @map("original_price_idr")
   durationMonths Int?     @map("duration_months")
   isActive       Boolean  @default(true) @map("is_active")
   position       Int      @default(0)
