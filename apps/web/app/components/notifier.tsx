@@ -34,15 +34,24 @@ import { AlertTriangle, Check, Info, X } from './icons';
  * yang dimaksud.
  */
 
+/** `false`/`null` berarti dibatalkan; string adalah isian dari dialog prompt. */
+type DialogResult = boolean | string | null;
+
 interface DialogRequest {
-  kind: 'error' | 'info' | 'confirm';
+  kind: 'error' | 'info' | 'confirm' | 'prompt';
   title: string;
   text?: string;
   reasons?: string[];
   confirmLabel?: string;
   cancelLabel?: string;
   danger?: boolean;
-  resolve: (nilai: boolean) => void;
+  label?: string;
+  placeholder?: string;
+  defaultValue?: string;
+  multiline?: boolean;
+  /** Panjang minimum isian; dijaga di dalam dialog supaya tidak perlu ditutup dulu. */
+  minLength?: number;
+  resolve: (nilai: DialogResult) => void;
 }
 
 interface Toast {
@@ -65,6 +74,20 @@ export interface ConfirmOptions extends AlertOptions {
   danger?: boolean;
 }
 
+export interface PromptOptions extends ConfirmOptions {
+  /** Label kolom isian. */
+  label?: string;
+  placeholder?: string;
+  defaultValue?: string;
+  /** Memakai textarea alih-alih input satu baris. */
+  multiline?: boolean;
+  /**
+   * Panjang minimum. Dijaga di dalam dialog: menutup dialog lebih dulu lalu
+   * memunculkan galat terpisah membuat isian yang sudah diketik hilang.
+   */
+  minLength?: number;
+}
+
 export interface Notifier {
   /** Dialog galat yang harus ditutup. Mengembalikan promise agar dapat di-await bila perlu. */
   error: (title: string, options?: AlertOptions) => Promise<void>;
@@ -74,6 +97,8 @@ export interface Notifier {
   success: (message: string) => void;
   /** Konfirmasi ya/tidak. `false` bila dibatalkan atau ditutup dengan Escape. */
   confirm: (title: string, options?: ConfirmOptions) => Promise<boolean>;
+  /** Meminta satu isian teks. `null` bila dibatalkan. Hasilnya sudah di-trim. */
+  prompt: (title: string, options?: PromptOptions) => Promise<string | null>;
 }
 
 const NotifierContext = createContext<Notifier | null>(null);
@@ -98,8 +123,8 @@ export function NotifierProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const notifier = useMemo<Notifier>(() => {
-    function bukaDialog(request: Omit<DialogRequest, 'resolve'>): Promise<boolean> {
-      return new Promise<boolean>((resolve) => {
+    function bukaDialog(request: Omit<DialogRequest, 'resolve'>): Promise<DialogResult> {
+      return new Promise<DialogResult>((resolve) => {
         setDialog((sebelumnya) => {
           // Dialog yang tergeser tetap diselesaikan promise-nya, supaya
           // pemanggil yang menunggunya tidak menggantung selamanya.
@@ -122,12 +147,17 @@ export function NotifierProvider({ children }: { children: ReactNode }) {
         await bukaDialog({ kind: 'info', title, ...options });
       },
       success: (message) => tambahToast('good', message),
-      confirm: (title, options) => bukaDialog({ kind: 'confirm', title, ...options }),
+      confirm: async (title, options) =>
+        (await bukaDialog({ kind: 'confirm', title, ...options })) === true,
+      prompt: async (title, options) => {
+        const hasil = await bukaDialog({ kind: 'prompt', title, ...options });
+        return typeof hasil === 'string' ? hasil : null;
+      },
     };
   }, []);
 
   const selesaikan = useCallback(
-    (nilai: boolean) => {
+    (nilai: DialogResult) => {
       dialog?.resolve(nilai);
       setDialog(null);
     },
@@ -148,14 +178,20 @@ function AlertDialog({
   onClose,
 }: {
   request: DialogRequest;
-  onClose: (nilai: boolean) => void;
+  onClose: (nilai: DialogResult) => void;
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const utama = useRef<HTMLButtonElement>(null);
+  const isian = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
+  const [nilai, setNilai] = useState(request.defaultValue ?? '');
+  const [galatIsian, setGalatIsian] = useState<string | null>(null);
 
   useEffect(() => {
     const sebelumnya = document.activeElement as HTMLElement | null;
-    utama.current?.focus();
+    // Pada prompt, kursor langsung berada di kolomnya: pengguna datang ke sini
+    // untuk mengetik, bukan untuk menekan tombol.
+    if (isian.current) isian.current.focus();
+    else utama.current?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -195,8 +231,30 @@ function AlertDialog({
     };
   }, [onClose]);
 
-  const konfirmasi = request.kind === 'confirm';
+  const isiTeks = request.kind === 'prompt';
+  const konfirmasi = request.kind === 'confirm' || isiTeks;
   const nadaBahaya = request.kind === 'error' || (konfirmasi && request.danger);
+
+  function kirim() {
+    if (!isiTeks) {
+      onClose(true);
+      return;
+    }
+    const bersih = nilai.trim();
+    const minimal = request.minLength ?? 1;
+    if (bersih.length < minimal) {
+      // Dijaga di sini, bukan dengan menutup dialog lalu memunculkan galat
+      // terpisah: menutup dialog membuang apa yang sudah diketik.
+      setGalatIsian(
+        minimal === 1
+          ? 'Kolom ini belum diisi.'
+          : `Isian minimal ${minimal} karakter.`,
+      );
+      isian.current?.focus();
+      return;
+    }
+    onClose(bersih);
+  }
 
   return (
     <div
@@ -245,6 +303,49 @@ function AlertDialog({
           </div>
         ) : null}
 
+        {isiTeks ? (
+          <div className="field alertField">
+            {request.label ? <label htmlFor="alertInput">{request.label}</label> : null}
+            {request.multiline ? (
+              <textarea
+                id="alertInput"
+                ref={isian}
+                value={nilai}
+                placeholder={request.placeholder}
+                aria-invalid={galatIsian ? true : undefined}
+                onChange={(event) => {
+                  setNilai(event.target.value);
+                  setGalatIsian(null);
+                }}
+              />
+            ) : (
+              <input
+                id="alertInput"
+                ref={isian}
+                value={nilai}
+                placeholder={request.placeholder}
+                aria-invalid={galatIsian ? true : undefined}
+                onChange={(event) => {
+                  setNilai(event.target.value);
+                  setGalatIsian(null);
+                }}
+                onKeyDown={(event) => {
+                  // Enter mengirim, seperti window.prompt yang digantikannya.
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    kirim();
+                  }
+                }}
+              />
+            )}
+            {galatIsian ? (
+              <span className="fieldError" role="alert">
+                {galatIsian}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="alertActions">
           {konfirmasi ? (
             <button type="button" className="btn btnGhost" onClick={() => onClose(false)}>
@@ -255,7 +356,7 @@ function AlertDialog({
             ref={utama}
             type="button"
             className={nadaBahaya && konfirmasi ? 'btn btnDangerSolid' : 'btn'}
-            onClick={() => onClose(true)}
+            onClick={kirim}
           >
             {request.confirmLabel ?? (konfirmasi ? 'Lanjutkan' : 'Mengerti')}
           </button>

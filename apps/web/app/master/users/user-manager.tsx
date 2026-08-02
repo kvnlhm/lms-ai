@@ -44,18 +44,21 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
   }
 
   async function suspend(user: User) {
-    const reason = window.prompt(
-      `Alasan menangguhkan ${user.fullName} (minimal 3 karakter):`,
-    )?.trim();
+    // Panjang minimum yang sama ditegakkan di API. Dijaga di dalam dialognya
+    // supaya Master melihat penyebabnya tanpa kehilangan apa yang sudah
+    // diketik, bukan menerima galat validasi setelah alasannya terlanjur
+    // terkirim.
+    const reason = await notifier.prompt(`Tangguhkan ${user.fullName}?`, {
+      text: 'Alasannya tercatat di audit log dan dapat dibaca kembali nanti.',
+      label: 'Alasan penangguhan',
+      placeholder: 'Misalnya: berbagi akun dengan orang lain',
+      multiline: true,
+      minLength: 3,
+      confirmLabel: 'Tangguhkan',
+      danger: true,
+    });
     if (!reason) return;
-    // Aturan yang sama ditegakkan di API. Diperiksa lebih dulu di sini supaya
-    // Master melihat penyebabnya, bukan sekadar galat validasi tanpa konteks.
-    if (reason.length < 3) {
-      void notifier.error('Alasan terlalu pendek', {
-        text: 'Alasan penangguhan minimal 3 karakter agar tercatat jelas di audit log.',
-      });
-      return;
-    }
+
     await run(user.id, async () => {
       unwrap(
         await browserClient().POST('/api/v1/admin/users/{userId}/suspend', {

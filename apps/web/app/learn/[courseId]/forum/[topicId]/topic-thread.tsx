@@ -81,9 +81,18 @@ export function TopicThread({
     );
   }
 
-  const reportContent = (target: { topicId?: string; replyId?: string }) => {
-    const reason = window.prompt('Apa yang perlu Master ketahui tentang konten ini?')?.trim();
-    if (!reason || reason.length < 5) return;
+  const reportContent = async (target: { topicId?: string; replyId?: string }) => {
+    // Batas 5 karakter dijaga di dalam dialog. Sebelumnya laporan yang terlalu
+    // pendek dibuang diam-diam: dialognya tertutup dan tidak ada yang terjadi,
+    // sehingga pelapor mengira laporannya terkirim.
+    const reason = await notifier.prompt('Laporkan konten ini?', {
+      text: 'Laporan dibaca Master beserta tautan ke konten yang kamu laporkan.',
+      label: 'Apa yang perlu Master ketahui?',
+      multiline: true,
+      minLength: 5,
+      confirmLabel: 'Kirim laporan',
+    });
+    if (!reason) return;
     return run(
       'report',
       () => browserClient().POST('/api/v1/learn/forum/reports', { body: { ...target, reason } }),

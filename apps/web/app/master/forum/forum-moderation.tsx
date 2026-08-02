@@ -89,12 +89,20 @@ export function ForumModeration() {
     }
   }
 
-  const setStatus = (topic: ModerationTopic, status: ModerationTopic['status']) => {
-    const reason =
-      status === 'HIDDEN'
-        ? window.prompt('Alasan menyembunyikan diskusi ini?')?.trim()
-        : undefined;
-    if (status === 'HIDDEN' && !reason) return;
+  const setStatus = async (topic: ModerationTopic, status: ModerationTopic['status']) => {
+    let reason: string | undefined;
+    if (status === 'HIDDEN') {
+      const diisi = await notifier.prompt('Sembunyikan diskusi ini?', {
+        text: `"${topic.title}" tidak akan terlihat pelajar. Alasannya tercatat di audit log.`,
+        label: 'Alasan menyembunyikan',
+        multiline: true,
+        minLength: 3,
+        confirmLabel: 'Sembunyikan',
+        danger: true,
+      });
+      if (!diisi) return;
+      reason = diisi;
+    }
     return run(
       `status-${topic.id}`,
       () =>
@@ -106,10 +114,21 @@ export function ForumModeration() {
     );
   };
 
-  const banUser = (topic: ModerationTopic, scope: 'course' | 'global') => {
-    const reason = window.prompt(
-      `Alasan mencabut hak berdiskusi ${topic.author.fullName}?`,
-    )?.trim();
+  const banUser = async (topic: ModerationTopic, scope: 'course' | 'global') => {
+    const reason = await notifier.prompt(
+      `Cabut hak berdiskusi ${topic.author.fullName}?`,
+      {
+        text:
+          scope === 'course'
+            ? 'Pencabutan berlaku pada kursus ini saja.'
+            : 'Pencabutan berlaku di seluruh kursus.',
+        label: 'Alasan pencabutan',
+        multiline: true,
+        minLength: 3,
+        confirmLabel: 'Cabut hak',
+        danger: true,
+      },
+    );
     if (!reason) return;
     return run(
       `ban-${topic.id}`,
