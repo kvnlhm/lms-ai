@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { Schemas } from '@lms/api-client';
 import Link from 'next/link';
-import { ArrowLeft } from '../components/icons';
+import { ArrowLeft, Plus } from '../components/icons';
 import { serverClient, unwrap } from '../lib/api';
 import { RegistrationForm } from './registration-form';
 import { BrandMark } from '../components/brand-mark';
@@ -98,10 +98,6 @@ export default async function RegisterPage() {
           bisnis, dan konten. Praktis, fun, dan full praktik. Biar kamu nggak ketinggalan era AI
           lagi.
         </p>
-        <p className="regHeroBy">
-          <strong>Freddie Kashawan</strong>
-          <span>AI-Driven Practitioner Business</span>
-        </p>
       </section>
 
       <RegistrationForm tiers={tiers} />
@@ -147,7 +143,10 @@ export default async function RegisterPage() {
             <details key={item.tanya}>
               <summary>
                 <span className="regFaqNumber">{index + 1}</span>
-                {item.tanya}
+                <span className="regFaqQuestion">{item.tanya}</span>
+                <span className="regFaqToggle" aria-hidden="true">
+                  <Plus size={17} />
+                </span>
               </summary>
               <p>{item.jawab}</p>
             </details>

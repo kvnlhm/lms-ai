@@ -2416,12 +2416,6 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   margin: 0 auto; max-width: 58ch; color: var(--text-2);
   font-size: 15px; line-height: 1.7;
 }
-.regHeroBy {
-  margin: 4px 0 0; display: grid; gap: 2px;
-  font-size: 14px; line-height: 1.4;
-}
-.regHeroBy span { color: var(--muted); font-size: 12.5px; }
-
 /* Kartu formulir. Border-nya tegas karena ia satu-satunya blok yang menuntut
    tindakan di halaman yang sebagian besar berisi bacaan. */
 .regCard {
@@ -2488,6 +2482,16 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 }
 .regFaq summary::-webkit-details-marker { display: none; }
 .regFaq summary:hover { background: var(--raised); }
+.regFaqQuestion { flex: 1; min-width: 0; }
+
+/* Tanda tambah yang berputar 45° saat terbuka, sehingga menjadi tanda silang.
+   Satu lambang untuk dua keadaan: mengajak membuka, lalu menawarkan menutup. */
+.regFaqToggle {
+  flex: none; display: grid; place-items: center;
+  color: var(--muted); transition: transform 0.18s ease, color 0.18s ease;
+}
+.regFaq summary:hover .regFaqToggle { color: var(--text); }
+.regFaq details[open] .regFaqToggle { transform: rotate(45deg); color: var(--accent-text); }
 .regFaqNumber {
   flex: none; width: 24px; height: 24px; display: grid; place-items: center;
   border-radius: var(--r-sm); background: var(--accent-soft);
