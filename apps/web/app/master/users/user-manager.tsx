@@ -18,7 +18,6 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
   const [credentialUrl, setCredentialUrl] = useState<string | null>(null);
   const [credentialLabel, setCredentialLabel] = useState('Tautan');
   const [showCreate, setShowCreate] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -105,6 +104,18 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
     });
   }
 
+  async function confirmRemoveUser(user: User) {
+    const lanjut = await notifier.confirm('Hapus pengguna?', {
+      text:
+        `Akun ${user.fullName} akan dinonaktifkan, seluruh sesi dicabut, dan data ` +
+        'pribadinya dihapus. Histori belajar anonim tetap dipertahankan untuk ' +
+        'integritas laporan.',
+      confirmLabel: 'Ya, hapus pengguna',
+      danger: true,
+    });
+    if (lanjut) await removeUser(user);
+  }
+
   async function removeUser(user: User) {
     await run(`delete-${user.id}`, async () => {
       unwrap(
@@ -112,7 +123,6 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
           params: { path: { userId: user.id } },
         }),
       );
-      setDeleteTarget(null);
     });
   }
 
@@ -282,7 +292,7 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                         </button>
                       )}
                       {item.role === 'STUDENT' ? (
-                        <button className="btnTiny userDangerAction" type="button" disabled={busy !== null} onClick={() => setDeleteTarget(item)}>
+                        <button className="btnTiny userDangerAction" type="button" disabled={busy !== null} onClick={() => void confirmRemoveUser(item)}>
                           Hapus
                         </button>
                       ) : null}
@@ -300,34 +310,6 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
         </div>
       </section>
 
-      {deleteTarget ? (
-        <div className="confirmOverlay" role="presentation" onMouseDown={() => setDeleteTarget(null)}>
-          <div
-            className="confirmDialog"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="delete-user-title"
-            aria-describedby="delete-user-description"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <span className="confirmDangerIcon" aria-hidden="true">!</span>
-            <h2 id="delete-user-title">Hapus pengguna?</h2>
-            <p id="delete-user-description">
-              Akun <strong>{deleteTarget.fullName}</strong> akan dinonaktifkan, seluruh sesi
-              dicabut, dan data pribadinya dihapus. Histori belajar anonim tetap dipertahankan
-              untuk integritas laporan.
-            </p>
-            <div className="confirmActions">
-              <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => setDeleteTarget(null)}>
-                Batal
-              </button>
-              <button className="btn userDeleteConfirm" type="button" disabled={busy !== null} onClick={() => void removeUser(deleteTarget)}>
-                {busy === `delete-${deleteTarget.id}` ? 'Menghapus…' : 'Ya, hapus pengguna'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }

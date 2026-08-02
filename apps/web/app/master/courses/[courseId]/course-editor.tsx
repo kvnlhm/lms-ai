@@ -56,10 +56,6 @@ type UploadState = {
   message: string;
 };
 
-type DeleteConfirmation =
-  | { kind: 'MODULE'; id: string; title: string; lessonCount: number }
-  | { kind: 'LESSON'; id: string; title: string };
-
 export function CourseEditor({ course }: { course: CourseDetail }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -71,7 +67,6 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   const [addLessonModuleId, setAddLessonModuleId] = useState<string | null>(null);
   const [addModuleOpen, setAddModuleOpen] = useState(false);
   const [upload, setUpload] = useState<UploadState | null>(null);
-  const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation | null>(null);
   const [youtubeLessonId, setYoutubeLessonId] = useState<string | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [pickerLesson, setPickerLesson] = useState<{ id: string; title: string } | null>(null);
@@ -222,15 +217,26 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       ),
     );
 
-  async function confirmDelete() {
-    if (!deleteConfirmation) return;
-    const target = deleteConfirmation;
-    setDeleteConfirmation(null);
-    if (target.kind === 'MODULE') {
-      await removeModule(target.id);
-    } else {
-      await removeLesson(target.id);
-    }
+  async function confirmRemoveModule(courseModule: Module) {
+    const jumlah = courseModule.lessons.length;
+    const lanjut = await notifier.confirm('Hapus bagian?', {
+      text:
+        `"${courseModule.title}" akan dihapus permanen.` +
+        (jumlah > 0 ? ` ${jumlah} pelajaran di dalamnya juga akan dihapus.` : '') +
+        ' Tindakan ini tidak dapat dibatalkan.',
+      confirmLabel: 'Hapus permanen',
+      danger: true,
+    });
+    if (lanjut) await removeModule(courseModule.id);
+  }
+
+  async function confirmRemoveLesson(lesson: Lesson) {
+    const lanjut = await notifier.confirm('Hapus pelajaran?', {
+      text: `"${lesson.title}" akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`,
+      confirmLabel: 'Hapus permanen',
+      danger: true,
+    });
+    if (lanjut) await removeLesson(lesson.id);
   }
 
   const updateLesson = (
@@ -485,12 +491,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                   <button
                     className="iconAction btnDanger"
                     onClick={() =>
-                      setDeleteConfirmation({
-                        kind: 'MODULE',
-                        id: courseModule.id,
-                        title: courseModule.title,
-                        lessonCount: courseModule.lessons.length,
-                      })
+                      void confirmRemoveModule(courseModule)
                     }
                     disabled={busy !== null}
                     aria-label={`Hapus bagian ${courseModule.title}`}
@@ -614,11 +615,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                           <button
                             className="iconAction btnDanger"
                             onClick={() =>
-                              setDeleteConfirmation({
-                                kind: 'LESSON',
-                                id: lesson.id,
-                                title: lesson.title,
-                              })
+                              void confirmRemoveLesson(lesson)
                             }
                             disabled={busy !== null}
                             aria-label={`Hapus pelajaran ${lesson.title}`}
@@ -812,56 +809,6 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
         </div>
       ) : null}
 
-      {deleteConfirmation ? (
-        <div
-          className="confirmOverlay"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !busy) setDeleteConfirmation(null);
-          }}
-        >
-          <section
-            className="confirmDialog"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="delete-dialog-title"
-            aria-describedby="delete-dialog-description"
-          >
-            <span className="confirmDangerIcon" aria-hidden="true">
-              <Trash size={22} />
-            </span>
-            <h2 id="delete-dialog-title">
-              Hapus {deleteConfirmation.kind === 'MODULE' ? 'bagian' : 'pelajaran'}?
-            </h2>
-            <p id="delete-dialog-description">
-              <strong>“{deleteConfirmation.title}”</strong> akan dihapus permanen.
-              {deleteConfirmation.kind === 'MODULE' && deleteConfirmation.lessonCount > 0
-                ? ` ${deleteConfirmation.lessonCount} pelajaran di dalamnya juga akan dihapus.`
-                : ''}
-              {' '}Tindakan ini tidak dapat dibatalkan.
-            </p>
-            <div className="confirmActions">
-              <button
-                className="btnSecondary"
-                type="button"
-                onClick={() => setDeleteConfirmation(null)}
-                disabled={busy !== null}
-                autoFocus
-              >
-                Batal
-              </button>
-              <button
-                className="btnDangerSolid"
-                type="button"
-                onClick={() => void confirmDelete()}
-                disabled={busy !== null}
-              >
-                Hapus permanen
-              </button>
-            </div>
-          </section>
-        </div>
-      ) : null}
 
       {pickerLesson ? (
         <VideoLibraryPicker
