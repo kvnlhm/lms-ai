@@ -262,7 +262,13 @@ function AlertDialog({
       onMouseDown={(event) => {
         // Hanya klik pada latar yang menutup, bukan klik yang dimulai di
         // dalam panel lalu dilepas di luar saat menyeret teks.
-        if (event.target === event.currentTarget) onClose(false);
+        if (event.target !== event.currentTarget) return;
+        // Prompt yang sudah diisi tidak ikut tertutup. Satu klik meleset akan
+        // membuang alasan penangguhan yang baru saja diketik, dan tidak ada
+        // cara mengembalikannya. window.prompt yang digantikannya pun tidak
+        // menutup saat diklik di luar.
+        if (isiTeks && nilai.trim() !== '') return;
+        onClose(false);
       }}
     >
       <div
@@ -274,13 +280,7 @@ function AlertDialog({
         aria-describedby={request.text || request.reasons?.length ? 'alertBody' : undefined}
       >
         <span
-          className={
-            nadaBahaya
-              ? 'alertIcon alertIconDanger'
-              : konfirmasi
-                ? 'alertIcon alertIconInfo'
-                : 'alertIcon alertIconInfo'
-          }
+          className={nadaBahaya ? 'alertIcon alertIconDanger' : 'alertIcon alertIconInfo'}
           aria-hidden="true"
         >
           {nadaBahaya ? <AlertTriangle size={28} /> : <Info size={28} />}
