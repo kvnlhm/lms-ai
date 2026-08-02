@@ -13,7 +13,7 @@ export function activationEmail(input: {
 }): OutgoingEmail {
   return {
     to: input.to,
-    subject: 'Aktifkan akun AIPreneur Academy',
+    subject: 'Aktifkan akun Academy AIPreneur',
     html: layout([
       `<p>Halo ${escapeHtml(input.fullName)},</p>`,
       `<p>Pembayaran paket <strong>${escapeHtml(input.tierName)}</strong> berhasil.</p>`,
@@ -66,7 +66,7 @@ export function passwordResetEmail(input: {
 }): OutgoingEmail {
   return {
     to: input.to,
-    subject: 'Atur ulang password AIPreneur Academy',
+    subject: 'Atur ulang password Academy AIPreneur',
     html: layout([
       `<p>Halo ${escapeHtml(input.fullName)},</p>`,
       '<p>Kami menerima permintaan untuk mengatur ulang password akunmu.</p>',

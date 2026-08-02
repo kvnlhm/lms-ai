@@ -5,7 +5,7 @@ import { serverClient, unwrapList } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
 import { LiveSessionManager } from './live-session-manager';
 
-export const metadata: Metadata = { title: 'Sesi langsung · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Sesi langsung · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function LiveSessionsPage() {

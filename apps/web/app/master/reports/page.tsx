@@ -5,7 +5,7 @@ import { serverClient, unwrapList } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
 import { ReportExporter } from './report-exporter';
 
-export const metadata: Metadata = { title: 'Laporan · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Laporan · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function MasterReportsPage() {

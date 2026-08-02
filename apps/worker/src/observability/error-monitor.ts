@@ -59,7 +59,7 @@ export class WorkerErrorMonitor {
   private readonly alertTo = process.env.ERROR_ALERT_TO;
   private readonly resendKey = process.env.RESEND_API_KEY;
   private readonly fromAddress = process.env.EMAIL_FROM_ADDRESS;
-  private readonly fromName = process.env.EMAIL_FROM_NAME ?? 'AIPreneur Academy';
+  private readonly fromName = process.env.EMAIL_FROM_NAME ?? 'Academy AIPreneur';
 
   constructor(private readonly prisma: PrismaService) {}
 

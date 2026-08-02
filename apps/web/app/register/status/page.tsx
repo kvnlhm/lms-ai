@@ -29,7 +29,7 @@ export default async function RegistrationStatusPage({ searchParams }: Props) {
       <section className="card authCard">
         <span className="brand">
           <span className="brandMark">AI</span>
-          <span>AIPreneur Academy</span>
+          <span>Academy AIPreneur</span>
         </span>
         <h1 className="authTitle">{paid ? 'Pembayaran berhasil.' : statusTitle(order.status)}</h1>
         <p className="authLead">

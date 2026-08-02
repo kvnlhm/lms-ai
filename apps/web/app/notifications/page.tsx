@@ -3,7 +3,7 @@ import { AppShell } from '../components/app-shell';
 import { requireUser } from '../lib/session';
 import { NotificationInbox } from './notification-inbox';
 
-export const metadata: Metadata = { title: 'Notifikasi · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Notifikasi · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function NotificationsPage() {

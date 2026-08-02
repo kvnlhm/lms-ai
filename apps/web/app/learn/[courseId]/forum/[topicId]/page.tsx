@@ -5,7 +5,7 @@ import { ArrowLeft } from '../../../../components/icons';
 import { requireUser } from '../../../../lib/session';
 import { TopicThread } from './topic-thread';
 
-export const metadata: Metadata = { title: 'Diskusi · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Diskusi · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 interface Props {

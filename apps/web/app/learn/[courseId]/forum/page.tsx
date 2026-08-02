@@ -8,7 +8,7 @@ import { ApiError, serverClient } from '../../../lib/api';
 import { requireUser } from '../../../lib/session';
 import { CourseForum } from './course-forum';
 
-export const metadata: Metadata = { title: 'Forum kursus · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Forum kursus · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 type LearnCourse = Schemas['LearnCourseResponseDto'];

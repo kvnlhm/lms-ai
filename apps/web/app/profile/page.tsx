@@ -23,7 +23,7 @@ export default async function ProfilePage() {
           <div className="pageHeadMain">
             <p className="eyebrow">Akun saya</p>
             <h1 className="pageTitle">Profil saya</h1>
-            <p className="pageSub">Perbarui informasi yang terlihat pada akun AIPreneur Academy.</p>
+            <p className="pageSub">Perbarui informasi yang terlihat pada akun Academy AIPreneur.</p>
           </div>
         </div>
         <ProfileForm user={user} />

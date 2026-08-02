@@ -3,7 +3,7 @@ import { AppShell } from '../../components/app-shell';
 import { requirePermission } from '../../lib/session';
 import { VideoLibrary } from './video-library';
 
-export const metadata: Metadata = { title: 'Perpustakaan video · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Perpustakaan video · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function MasterMediaPage() {

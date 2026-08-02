@@ -3,7 +3,7 @@ import { AppShell } from '../../components/app-shell';
 import { requirePermission } from '../../lib/session';
 import { ErrorMonitor } from './error-monitor';
 
-export const metadata: Metadata = { title: 'Galat · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Galat · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function MasterErrorsPage() {

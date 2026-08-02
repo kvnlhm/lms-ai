@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { serverClient, unwrap } from '../lib/api';
 import { RegistrationForm } from './registration-form';
 
-export const metadata: Metadata = { title: 'Daftar · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Daftar · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 type Tier = Schemas['AccessTierDto'];
@@ -20,7 +20,7 @@ export default async function RegisterPage() {
       <header className="registrationHeader">
         <Link href="/login" className="brand">
           <span className="brandMark" aria-hidden="true">AI</span>
-          <span>AIPreneur Academy</span>
+          <span>Academy AIPreneur</span>
         </Link>
         <Link className="btn btnGhost" href="/login">Sudah punya akun? Masuk</Link>
       </header>

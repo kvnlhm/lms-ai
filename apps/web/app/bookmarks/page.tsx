@@ -5,7 +5,7 @@ import { AppShell } from '../components/app-shell';
 import { serverClient, unwrap } from '../lib/api';
 import { requireUser } from '../lib/session';
 
-export const metadata: Metadata = { title: 'Materi ditandai · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Materi ditandai · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 type Bookmark = Schemas['BookmarkDto'];

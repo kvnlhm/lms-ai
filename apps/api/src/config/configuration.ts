@@ -193,7 +193,7 @@ export function loadConfig(): AppConfig {
     email: {
       provider: emailProvider as 'RESEND' | 'DISABLED',
       apiKey: process.env.RESEND_API_KEY || undefined,
-      fromName: process.env.EMAIL_FROM_NAME ?? 'AIPreneur Academy',
+      fromName: process.env.EMAIL_FROM_NAME ?? 'Academy AIPreneur',
       fromAddress: process.env.EMAIL_FROM_ADDRESS || undefined,
     },
     rateLimit: {

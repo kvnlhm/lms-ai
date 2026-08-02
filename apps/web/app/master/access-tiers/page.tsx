@@ -5,7 +5,7 @@ import { serverClient, unwrap, unwrapList } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
 import { AccessTierManager } from './tier-manager';
 
-export const metadata: Metadata = { title: 'Paket Akses · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Paket Akses · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function AccessTiersPage() {

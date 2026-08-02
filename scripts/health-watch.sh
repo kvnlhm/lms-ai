@@ -19,7 +19,7 @@ set -Eeuo pipefail
 
 APP_UUID="${LMS_APP_UUID:-}"
 ALERT_TO="${LMS_ALERT_TO:-}"
-ALERT_FROM="${LMS_ALERT_FROM:-AIPreneur Academy Alerts <alerts@send.aipreneur.co.id>}"
+ALERT_FROM="${LMS_ALERT_FROM:-Academy AIPreneur Alerts <alerts@send.aipreneur.co.id>}"
 SITE_URL="${LMS_SITE_URL:-https://academy.aipreneur.co.id/api/v1/health/ready}"
 STATE_DIR="${LMS_WATCH_STATE_DIR:-/var/lib/lms-health-watch}"
 LOG_FILE="${LMS_WATCH_LOG:-/var/log/lms-health-watch.log}"

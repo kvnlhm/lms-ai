@@ -125,7 +125,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
                 <LogoutButton />
               </div>
             </MobileNavigation>
-            <span className="mobileBrand">AIPreneur Academy</span>
+            <span className="mobileBrand">Academy AIPreneur</span>
             <span className="masterTopTitle">Workspace Master</span>
             <GlobalSearch />
           </header>
@@ -139,7 +139,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
     <>
       {user.isImpersonating ? <ImpersonationBanner /> : null}
       <header className="topbar">
-        <MobileNavigation title="AIPreneur Academy">
+        <MobileNavigation title="Academy AIPreneur">
           <nav className="mobileDrawerNav" aria-label="Navigasi Pelajar mobile">
             {[
               ...LEARNER_NAV,

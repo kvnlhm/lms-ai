@@ -3,7 +3,7 @@ import { AppShell } from '../components/app-shell';
 import { requireUser } from '../lib/session';
 import { AnnouncementFeed } from './announcement-feed';
 
-export const metadata: Metadata = { title: 'Pengumuman · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Pengumuman · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function AnnouncementsPage() {

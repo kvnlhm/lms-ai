@@ -4,7 +4,7 @@ import { AppShell } from '../../components/app-shell';
 import { serverClient, unwrap } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
 
-export const metadata: Metadata = { title: 'Insight pelajar · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Insight pelajar · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 type Insights = Schemas['LearnerInsightsDto'];

@@ -214,7 +214,7 @@ pengiriman menjadi `SKIPPED` tanpa menjatuhkan alur mana pun.
 ```text
 EMAIL_PROVIDER=DISABLED
 RESEND_API_KEY
-EMAIL_FROM_NAME=AIPreneur Academy
+EMAIL_FROM_NAME=Academy AIPreneur
 EMAIL_FROM_ADDRESS
 ```
 

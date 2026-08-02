@@ -45,7 +45,7 @@ VOLUMES=(video-data avatar-data course-thumbnail-data)
 COUNTED_TABLES=(users enrollments lesson_progress registration_orders video_assets forum_topics)
 
 ALERT_TO="${LMS_ALERT_TO:-}"
-ALERT_FROM="${LMS_ALERT_FROM:-AIPreneur Academy Alerts <alerts@send.aipreneur.co.id>}"
+ALERT_FROM="${LMS_ALERT_FROM:-Academy AIPreneur Alerts <alerts@send.aipreneur.co.id>}"
 
 # Salinan di luar server, memenuhi BACKUP_RESTORE.md §1: backup yang hanya ada
 # di disk yang sama dengan databasenya bukan backup terhadap kegagalan disk.

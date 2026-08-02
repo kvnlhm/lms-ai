@@ -8,7 +8,7 @@ function createService(email: Partial<AppConfig['email']>): EmailService {
     email: {
       provider: 'RESEND',
       apiKey: 'kunci-uji',
-      fromName: 'AIPreneur Academy',
+      fromName: 'Academy AIPreneur',
       fromAddress: 'aktivasi@contoh.test',
       ...email,
     },
@@ -47,7 +47,7 @@ describe('EmailService', () => {
     ).resolves.toBe('SENT');
 
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(body.from).toBe('AIPreneur Academy <aktivasi@contoh.test>');
+    expect(body.from).toBe('Academy AIPreneur <aktivasi@contoh.test>');
     expect(body.to).toEqual(['a@b.test']);
   });
 

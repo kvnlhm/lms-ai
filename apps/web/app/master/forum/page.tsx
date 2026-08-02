@@ -3,7 +3,7 @@ import { AppShell } from '../../components/app-shell';
 import { requirePermission } from '../../lib/session';
 import { ForumModeration } from './forum-moderation';
 
-export const metadata: Metadata = { title: 'Forum · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Forum · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function MasterForumPage() {

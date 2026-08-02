@@ -3,7 +3,7 @@ import { AppShell } from '../../components/app-shell';
 import { requirePermission } from '../../lib/session';
 import { AuditLogBrowser } from './audit-log-browser';
 
-export const metadata: Metadata = { title: 'Audit log · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Audit log · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function MasterAuditPage() {

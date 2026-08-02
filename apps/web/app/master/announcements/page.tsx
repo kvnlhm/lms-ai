@@ -5,7 +5,7 @@ import { serverClient, unwrapList } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
 import { AnnouncementManager } from './announcement-manager';
 
-export const metadata: Metadata = { title: 'Pengumuman · AIPreneur Academy' };
+export const metadata: Metadata = { title: 'Pengumuman · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function MasterAnnouncementsPage() {
