@@ -10,7 +10,8 @@ import {
   uploadErrorMessage,
   uploadToLibrary,
 } from '../../../lib/video-upload';
-import { ChevronDown, ChevronUp, Edit, Trash } from '../../../components/icons';
+import { ChevronDown, ChevronUp, Edit, Plus, Trash } from '../../../components/icons';
+import { Modal } from '../../../components/modal';
 import { VideoLibraryPicker } from '../../../components/video-library-picker';
 import { StatusPill } from '../../../components/status-pill';
 import { QuizEditor } from './quiz-editor';
@@ -65,6 +66,10 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   const notifier = useNotifier();
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  // Formulir tambah kini tinggal di dalam modal, jadi yang disimpan adalah
+  // bagian mana yang sedang ditambahi — bukan lagi terbuka atau tidak.
+  const [addLessonModuleId, setAddLessonModuleId] = useState<string | null>(null);
+  const [addModuleOpen, setAddModuleOpen] = useState(false);
   const [upload, setUpload] = useState<UploadState | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<DeleteConfirmation | null>(null);
   const [youtubeLessonId, setYoutubeLessonId] = useState<string | null>(null);
@@ -699,32 +704,90 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                         />
                       ) : null}
                       {editingLessonId === lesson.id ? (
-                        <LessonEditForm
-                          lesson={lesson}
-                          disabled={busy !== null}
-                          onCancel={() => setEditingLessonId(null)}
-                          onSave={async (body) => {
-                            const ok = await updateLesson(lesson.id, body);
-                            if (ok) setEditingLessonId(null);
-                            return ok;
-                          }}
-                        />
+                        <Modal
+                          title="Ubah materi"
+                          description={lesson.title}
+                          busy={busy !== null}
+                          onClose={() => setEditingLessonId(null)}
+                        >
+                          <LessonEditForm
+                            lesson={lesson}
+                            disabled={busy !== null}
+                            onCancel={() => setEditingLessonId(null)}
+                            onSave={async (body) => {
+                              const ok = await updateLesson(lesson.id, body);
+                              if (ok) setEditingLessonId(null);
+                              return ok;
+                            }}
+                          />
+                        </Modal>
                       ) : null}
                     </div>
                   ))
                 )}
 
-                <AddLessonForm
-                  moduleId={courseModule.id}
-                  disabled={busy !== null}
-                  onAdd={(body) => addLesson(courseModule.id, body)}
-                />
+                <div className="addTrigger">
+                  <button
+                    type="button"
+                    className="btn btnGhost"
+                    disabled={busy !== null}
+                    onClick={() => setAddLessonModuleId(courseModule.id)}
+                  >
+                    <Plus size={16} /> Tambah materi
+                  </button>
+                </div>
+                {addLessonModuleId === courseModule.id ? (
+                  <Modal
+                    title="Tambah materi"
+                    description={`Masuk ke bagian "${courseModule.title}"`}
+                    busy={busy !== null}
+                    onClose={() => setAddLessonModuleId(null)}
+                  >
+                    <AddLessonForm
+                      moduleId={courseModule.id}
+                      disabled={busy !== null}
+                      onCancel={() => setAddLessonModuleId(null)}
+                      onAdd={async (body) => {
+                        const ok = await addLesson(courseModule.id, body);
+                        if (ok) setAddLessonModuleId(null);
+                        return ok;
+                      }}
+                    />
+                  </Modal>
+                ) : null}
               </div>
             </article>
           ))
         )}
 
-        <AddModuleForm disabled={busy !== null} onAdd={addModule} />
+        <div className="addTrigger">
+          <button
+            type="button"
+            className="btn"
+            disabled={busy !== null}
+            onClick={() => setAddModuleOpen(true)}
+          >
+            <Plus size={16} /> Tambah bagian
+          </button>
+        </div>
+        {addModuleOpen ? (
+          <Modal
+            title="Tambah bagian"
+            description="Bagian mengelompokkan materi di dalam kursus."
+            busy={busy !== null}
+            onClose={() => setAddModuleOpen(false)}
+          >
+            <AddModuleForm
+              disabled={busy !== null}
+              onCancel={() => setAddModuleOpen(false)}
+              onAdd={async (title) => {
+                const ok = await addModule(title);
+                if (ok) setAddModuleOpen(false);
+                return ok;
+              }}
+            />
+          </Modal>
+        ) : null}
       </section>
 
       {upload && (upload.status === 'SUCCESS' || upload.status === 'ERROR') ? (
@@ -1057,9 +1120,11 @@ function LessonEditForm({
 function AddModuleForm({
   disabled,
   onAdd,
+  onCancel,
 }: {
   disabled: boolean;
   onAdd: (title: string) => Promise<boolean>;
+  onCancel: () => void;
 }) {
   const [title, setTitle] = useState('');
 
@@ -1071,20 +1136,25 @@ function AddModuleForm({
   }
 
   return (
-    <form className="addForm" onSubmit={submit} style={{ borderTop: 0, paddingLeft: 0, paddingRight: 0 }}>
-      <label className="srOnly" htmlFor="new-module">
-        Judul bagian baru
-      </label>
-      <input
-        id="new-module"
-        placeholder="Judul bagian baru, minimal 3 karakter"
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        disabled={disabled}
-      />
-      <button className="btn" type="submit" disabled={disabled || title.trim().length < 3}>
-        Tambah bagian
-      </button>
+    <form onSubmit={submit}>
+      <div className="field">
+        <label htmlFor="new-module">Judul bagian</label>
+        <input
+          id="new-module"
+          placeholder="Minimal 3 karakter"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          disabled={disabled}
+        />
+      </div>
+      <div className="lessonEditActions">
+        <button className="btn btnGhost" type="button" onClick={onCancel} disabled={disabled}>
+          Batal
+        </button>
+        <button className="btn" type="submit" disabled={disabled || title.trim().length < 3}>
+          {disabled ? 'Menyimpan…' : 'Tambah bagian'}
+        </button>
+      </div>
     </form>
   );
 }
@@ -1093,10 +1163,12 @@ function AddLessonForm({
   moduleId,
   disabled,
   onAdd,
+  onCancel,
 }: {
   moduleId: string;
   disabled: boolean;
   onAdd: (body: LessonUpdateInput) => Promise<boolean>;
+  onCancel: () => void;
 }) {
   const [contentType, setContentType] = useState<(typeof CONTENT_TYPES)[number]['value']>('TEXT');
   const [completionRule, setCompletionRule] =
@@ -1286,6 +1358,9 @@ function AddLessonForm({
         </div>
       </details>
       <div className="lessonEditActions">
+        <button className="btn btnGhost" type="button" onClick={onCancel} disabled={disabled}>
+          Batal
+        </button>
         <button className="btn" type="submit" disabled={disabled}>
           {disabled ? 'Menyimpan…' : 'Tambah materi'}
         </button>

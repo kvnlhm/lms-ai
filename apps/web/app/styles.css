@@ -2374,3 +2374,71 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
      menghasilkan salah sentuh di tepinya. */
   .inlineActions { flex-wrap: wrap; gap: 8px; }
 }
+
+/* ── Modal formulir ────────────────────────────────────────── */
+/* Lapisannya di bawah `notifier` (200) supaya dialog galat muncul di atas
+   formulir yang sedang terbuka, dan di atas lembar navigasi Master (70). */
+.modalBackdrop {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-items: center; padding: 24px;
+  background: rgb(0 0 0 / .55);
+  animation: modalFade .14s ease-out;
+}
+@keyframes modalFade { from { opacity: 0; } }
+
+.modalPanel {
+  width: min(100%, 560px); max-height: calc(100vh - 48px); max-height: calc(100dvh - 48px);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); box-shadow: var(--shadow);
+  animation: modalIn .18s cubic-bezier(.2, .9, .3, 1);
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+
+.modalHead {
+  display: flex; align-items: flex-start; gap: 14px; flex: none;
+  padding: 20px 20px 14px; border-bottom: 1px solid var(--line-soft);
+}
+.modalHeadText { flex: 1; min-width: 0; }
+.modalHeadText h2 { margin: 0; font-size: 17px; font-weight: 650; line-height: 1.3; }
+.modalHeadText p { margin: 5px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+.modalClose {
+  width: 36px; height: 36px; flex: none;
+  display: grid; place-items: center; border-radius: var(--r-md);
+  color: var(--muted); background: none; border: 0; cursor: pointer;
+}
+.modalClose:hover:not(:disabled) { background: var(--raised-2); color: var(--text); }
+.modalClose:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Hanya bagian ini yang menggulir, jadi judul dan tombol aksi tetap terlihat
+   pada formulir yang panjang. */
+.modalBody { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 20px; }
+.modalBody .field:last-child { margin-bottom: 0; }
+
+
+@media (max-width: 680px) {
+  /* Formulir dengan enam sampai sepuluh kolom tidak muat di kotak mengambang
+     pada ponsel; menyusutkannya hanya memindahkan sesaknya ke dalam. */
+  .modalBackdrop { padding: 0; place-items: stretch; }
+  .modalPanel {
+    width: 100%; max-height: none; height: 100%;
+    border: 0; border-radius: 0;
+    animation: modalUp .2s cubic-bezier(.2, .9, .3, 1);
+  }
+  @keyframes modalUp { from { transform: translateY(16px); opacity: 0; } }
+  .modalHead { padding: 16px 16px 12px; }
+  .modalBody { padding: 16px; }
+  /* Tombol aksi formulir memakai lebar penuh di ponsel, dan diberi jarak dari
+     kolom terakhir supaya tidak tersentuh saat menggulir. */
+  .modalBody .lessonEditActions { gap: 10px; margin-top: 18px; }
+  .modalBody .lessonEditActions > .btn { flex: 1; justify-content: center; }
+}
+
+/* Baris pemicu formulir: menggantikan formulir yang dulu selalu terbuka di
+   dalam halaman. */
+.addTrigger { display: flex; gap: 10px; padding: 12px 16px 4px; }
+@media (max-width: 680px) {
+  .addTrigger { padding: 12px 12px 4px; }
+  .addTrigger > .btn { flex: 1; justify-content: center; }
+}
