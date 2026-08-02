@@ -84,8 +84,13 @@ export function ReportExporter({ courses }: { courses: { id: string; title: stri
       const query = new URLSearchParams();
       if (report.uses.includes('course') && courseId) query.set('courseId', courseId);
       if (report.uses.includes('range')) {
-        if (from) query.set('from', new Date(from).toISOString());
-        if (to) query.set('to', new Date(to).toISOString());
+        // `new Date('...').toISOString()` melempar bila nilainya bukan tanggal
+        // yang sah, dan fungsi ini dipanggil saat merender setiap kartu — satu
+        // nilai cacat akan menjatuhkan seluruh halaman, bukan satu tautan.
+        const awal = keIso(from);
+        const akhir = keIso(to);
+        if (awal) query.set('from', awal);
+        if (akhir) query.set('to', akhir);
       }
       if (report.uses.includes('inactiveDays') && inactiveDays) {
         query.set('inactiveDays', inactiveDays);
@@ -102,7 +107,7 @@ export function ReportExporter({ courses }: { courses: { id: string; title: stri
       parts.push(courses.find((course) => course.id === courseId)?.title ?? 'kursus terpilih');
     }
     if (report.uses.includes('range') && (from || to)) {
-      parts.push(`${from || 'awal'} sampai ${to || 'sekarang'}`);
+      parts.push(`${formatWaktu(from) ?? 'awal'} sampai ${formatWaktu(to) ?? 'sekarang'}`);
     }
     if (report.uses.includes('inactiveDays')) parts.push(`${inactiveDays} hari tanpa aktivitas`);
     return parts.length > 0 ? parts.join(' · ') : null;
@@ -179,4 +184,24 @@ export function ReportExporter({ courses }: { courses: { id: string; title: stri
       </div>
     </>
   );
+}
+
+/**
+ * Mengubah nilai `datetime-local` menjadi ISO, atau null bila tidak sah.
+ *
+ * Nilai dari peramban seharusnya selalu sah atau kosong, tetapi kegagalannya
+ * di sini tidak berupa tautan yang salah melainkan pengecualian saat render.
+ */
+function keIso(value: string): string | null {
+  if (!value) return null;
+  const waktu = new Date(value);
+  return Number.isNaN(waktu.getTime()) ? null : waktu.toISOString();
+}
+
+/** Waktu penyaring dalam bentuk yang terbaca, bukan format mesin. */
+function formatWaktu(value: string): string | null {
+  if (!value) return null;
+  const waktu = new Date(value);
+  if (Number.isNaN(waktu.getTime())) return null;
+  return waktu.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
 }

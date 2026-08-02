@@ -8,12 +8,32 @@ import { ReportExporter } from './report-exporter';
 export const metadata: Metadata = { title: 'Laporan · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
+/** Batas satu permintaan pada API, dan batas pengaman rantai permintaannya. */
+const UKURAN_HALAMAN = 100;
+const MAKS_HALAMAN = 10;
+
 export default async function MasterReportsPage() {
   const user = await requirePermission('reports.export', '/master/reports');
   const client = await serverClient();
-  const { items: courses } = unwrapList<Schemas['AdminCourseListItemDto']>(
-    await client.GET('/api/v1/admin/courses', { params: { query: { page: 1, pageSize: 100 } } }),
+  // Daftar kursus di sini mengisi penyaring, jadi kursus yang tidak termuat
+  // menjadi kursus yang tidak dapat dilaporkan. Sebelumnya hanya halaman
+  // pertama yang diambil: pada katalog di atas seratus kursus, sebagian
+  // sederhananya hilang dari pilihan tanpa satu pun tanda.
+  const pertama = unwrapList<Schemas['AdminCourseListItemDto']>(
+    await client.GET('/api/v1/admin/courses', {
+      params: { query: { page: 1, pageSize: UKURAN_HALAMAN } },
+    }),
   );
+  const courses = [...pertama.items];
+  const halamanTerakhir = Math.min(pertama.meta.totalPages, MAKS_HALAMAN);
+  for (let halaman = 2; halaman <= halamanTerakhir; halaman += 1) {
+    const lanjutan = unwrapList<Schemas['AdminCourseListItemDto']>(
+      await client.GET('/api/v1/admin/courses', {
+        params: { query: { page: halaman, pageSize: UKURAN_HALAMAN } },
+      }),
+    );
+    courses.push(...lanjutan.items);
+  }
 
   return (
     <AppShell user={user}>
