@@ -4,6 +4,7 @@ import { getCurrentUser } from '../lib/session';
 import { ThemeToggle } from '../components/theme-toggle';
 import { LoginForm } from './login-form';
 import Link from 'next/link';
+import { BrandMark } from '../components/brand-mark';
 
 export const metadata: Metadata = { title: 'Masuk · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
@@ -25,9 +26,7 @@ export default async function LoginPage({ searchParams }: Props) {
       <section className="card authCard" aria-labelledby="login-title">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span className="brand">
-            <span className="brandMark" aria-hidden="true">
-              AO
-            </span>
+            <BrandMark />
             <span>AIPreneur</span>
           </span>
           <ThemeToggle />

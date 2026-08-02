@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft } from '../components/icons';
 import { serverClient, unwrap } from '../lib/api';
 import { RegistrationForm } from './registration-form';
+import { BrandMark } from '../components/brand-mark';
 
 export const metadata: Metadata = { title: 'Daftar · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
@@ -78,7 +79,7 @@ export default async function RegisterPage() {
     <main className="regPage">
       <header className="regTop">
         <Link href="/login" className="brand">
-          <span className="brandMark" aria-hidden="true">AI</span>
+          <BrandMark />
           <span>Academy AIPreneur</span>
         </Link>
       </header>

@@ -133,10 +133,13 @@ input, select, textarea { min-width: 0; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.015em; }
 .brandMark {
   width: 30px; height: 30px; border-radius: 8px;
-  display: grid; place-items: center;
+  display: grid; place-items: center; overflow: hidden; flex: none;
   background: linear-gradient(150deg, var(--accent-hot), var(--accent));
   color: #fff; font-size: 12px; font-weight: 700;
 }
+/* Gambar lambang mengisi kotaknya; gradien di belakangnya tetap ada sebagai
+   cadangan bila gambarnya gagal dimuat. */
+.brandMark img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: inherit; }
 .mainNav { display: flex; gap: 4px; margin: 0 auto; }
 .navLink {
   padding: 7px 16px; border-radius: var(--r-pill);
@@ -2392,7 +2395,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 /* Satu kolom terpusat, mengikuti referensi. Kelas `.tierGrid` dan `.tierCard`
    sengaja tidak diubah: pilihan paketnya tetap seperti sebelumnya. */
 .regPage {
-  width: min(760px, calc(100% - 36px));
+  width: min(940px, calc(100% - 36px));
   margin: 0 auto;
   padding: 26px 0 64px;
   display: grid;
@@ -2400,7 +2403,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 }
 .regTop { display: flex; justify-content: center; }
 
-.regHero { text-align: center; display: grid; gap: 14px; }
+.regHero { text-align: center; display: grid; gap: 14px; width: min(100%, 720px); margin: 0 auto; }
 .regHero h1 {
   margin: 0; font-size: clamp(30px, 6vw, 46px); line-height: 1.14;
   font-weight: 750; letter-spacing: -0.03em; text-wrap: balance;
@@ -2423,7 +2426,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
    tindakan di halaman yang sebagian besar berisi bacaan. */
 .regCard {
   display: grid; gap: 26px;
-  padding: 26px;
+  padding: 30px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
@@ -2448,7 +2451,9 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .regLoginHint { margin: 0; text-align: center; color: var(--muted); font-size: 13.5px; }
 .regLoginHint a { color: var(--accent-text); text-decoration: underline; }
 
-.regSection { display: grid; gap: 14px; }
+/* Kartu memakai lebar penuh halaman, sedangkan naskahnya dibatasi: baris
+   sepanjang 940px melelahkan dibaca, sementara formulir justru butuh ruang. */
+.regSection { display: grid; gap: 14px; width: min(100%, 720px); margin: 0 auto; }
 .regSection h2 {
   margin: 0; font-size: clamp(20px, 3.4vw, 26px); font-weight: 700;
   letter-spacing: -0.02em; text-wrap: balance;

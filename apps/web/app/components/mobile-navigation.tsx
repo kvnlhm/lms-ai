@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { BrandMark } from './brand-mark';
 
 export function MobileNavigation({
   title,
@@ -59,7 +60,7 @@ export function MobileNavigation({
           <aside id={panelId} className="mobileDrawer" aria-label={title}>
             <div className="mobileDrawerHead">
               <div>
-                <span className="brandMark" aria-hidden="true">AI</span>
+                <BrandMark />
                 <strong>{title}</strong>
               </div>
               <button type="button" className="mobileDrawerClose" onClick={() => setOpen(false)}>

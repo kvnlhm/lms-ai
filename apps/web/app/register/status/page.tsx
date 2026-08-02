@@ -2,6 +2,7 @@ import type { Schemas } from '@lms/api-client';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ApiError, serverClient, unwrap } from '../../lib/api';
+import { BrandMark } from '../../components/brand-mark';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,7 @@ export default async function RegistrationStatusPage({ searchParams }: Props) {
     <main className="authShell">
       <section className="card authCard">
         <span className="brand">
-          <span className="brandMark">AI</span>
+          <BrandMark />
           <span>Academy AIPreneur</span>
         </span>
         <h1 className="authTitle">{paid ? 'Pembayaran berhasil.' : statusTitle(order.status)}</h1>

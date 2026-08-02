@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { CurrentUser } from '../lib/session';
 import { can, initials } from '../lib/session';
+import { BrandMark } from './brand-mark';
 import { Bell, Courses, Dashboard, ExternalLink, Users } from './icons';
 import { LogoutButton } from './logout-button';
 import { MasterMobileNav } from './master-mobile-nav';
@@ -74,7 +75,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       <div className="masterShell">
         <aside className="masterSidebar">
           <Link href="/master" className="workspaceSwitch" aria-label="Dashboard AIPreneur">
-            <span className="brandMark">AI</span>
+            <BrandMark />
             <span>
               <strong>AIPreneur</strong>
               <small>Academy</small>
@@ -209,9 +210,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           </div>
         </MobileNavigation>
         <Link href="/" className="brand" aria-label="Academy AIPreneur, ke beranda">
-          <span className="brandMark" aria-hidden="true">
-            AO
-          </span>
+          <BrandMark />
           <span>AIPreneur</span>
         </Link>
 
