@@ -106,10 +106,37 @@ export function LoginForm({ nextPath }: Props) {
     return (
       <form onSubmit={handleMfa} noValidate>
         {mfaMode === 'setup' ? (
-          <div className="notice">
-            <p>Tambahkan akun ini ke aplikasi autentikator, lalu masukkan kode 6 digit.</p>
-            <p><strong>Kunci setup:</strong> <code>{mfaSecret}</code></p>
-            <p>Simpan kunci ini di tempat aman sampai setup berhasil.</p>
+          <div className="notice noticeInfo">
+            <div>
+              <p style={{ margin: 0 }}>
+                Tambahkan akun ini ke aplikasi autentikator — Google Authenticator, Authy, atau
+                sejenisnya — lalu masukkan kode 6 digit yang muncul.
+              </p>
+              <p className="mfaSecretLabel">Kunci setup</p>
+              <div className="mfaSecret">
+                <code>{mfaSecret}</code>
+                <button
+                  type="button"
+                  className="btnTiny"
+                  onClick={() => {
+                    void navigator.clipboard
+                      ?.writeText(mfaSecret ?? '')
+                      .then(() => notifier.success('Kunci setup disalin.'))
+                      .catch(() => {
+                        void notifier.error('Kunci gagal disalin', {
+                          text: 'Salin manual dari kotak di sebelah kiri.',
+                        });
+                      });
+                  }}
+                >
+                  Salin
+                </button>
+              </div>
+              <p style={{ margin: '8px 0 0' }}>
+                Simpan kunci ini di tempat aman sampai setup berhasil. Tanpa kunci atau aplikasi
+                autentikatornya, akun tidak dapat dibuka lagi.
+              </p>
+            </div>
           </div>
         ) : (
           <p className="authLead">Masukkan kode dari aplikasi autentikator.</p>
@@ -134,6 +161,22 @@ export function LoginForm({ nextPath }: Props) {
         </div>
         <button type="submit" className="btn btnBlock" disabled={busy || mfaCode.length !== 6}>
           {busy ? 'Memverifikasi…' : mfaMode === 'setup' ? 'Aktifkan MFA' : 'Verifikasi'}
+        </button>
+        {/* Tanpa jalan kembali, satu-satunya cara keluar dari langkah ini
+            adalah memuat ulang halaman — misalnya ketika ternyata masuk
+            dengan akun yang salah. */}
+        <button
+          type="button"
+          className="btnTiny loginBack"
+          disabled={busy}
+          onClick={() => {
+            setMfaMode(null);
+            setMfaSecret(null);
+            setMfaCode('');
+            setFields({});
+          }}
+        >
+          Kembali, masuk dengan akun lain
         </button>
       </form>
     );

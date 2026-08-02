@@ -2603,3 +2603,20 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 /* Dua jalan keluar dari keadaan "email terkirim": lanjut masuk, atau ulangi
    dengan alamat lain bila yang tadi salah ketik. */
 .forgotAgain { width: 100%; display: grid; justify-items: center; gap: 10px; margin-top: 6px; }
+
+/* ── Langkah autentikator pada halaman masuk ───────────────── */
+.mfaSecretLabel {
+  margin: 12px 0 5px; font-size: 11.5px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase; opacity: 0.85;
+}
+/* Kunci setup ditampilkan utuh dan dapat disalin: mengetiknya ulang dari layar
+   adalah tempat paling mudah membuat salah ketik yang baru ketahuan setelah
+   kodenya ditolak. */
+.mfaSecret { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mfaSecret code {
+  flex: 1; min-width: 0; padding: 8px 10px; border-radius: var(--r-sm);
+  background: var(--surface); font-size: 13px; letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+}
+
+.loginBack { width: 100%; margin-top: 10px; }

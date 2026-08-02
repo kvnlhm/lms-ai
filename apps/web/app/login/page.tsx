@@ -27,7 +27,7 @@ export default async function LoginPage({ searchParams }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span className="brand">
             <BrandMark />
-            <span>AIPreneur</span>
+            <span>Academy AIPreneur</span>
           </span>
           <ThemeToggle />
         </div>
@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: Props) {
 
         <LoginForm nextPath={nextPath} />
         <p className="authFootnote">
-          <Link href="/forgot-password">Lupa password?</Link>
+          <Link href="/forgot-password">Lupa kata sandi?</Link>
         </p>
         <p className="authLead" style={{ marginTop: 12, textAlign: 'center' }}>
           Belum punya akun? <Link href="/register">Lihat paket pendaftaran</Link>
