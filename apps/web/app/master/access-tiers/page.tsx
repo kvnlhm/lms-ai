@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../../components/app-shell';
-import { serverClient, unwrap, unwrapList } from '../../lib/api';
+import { ambilSemuaKursus } from '../../lib/all-courses';
+import { serverClient, unwrap } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
 import { AccessTierManager } from './tier-manager';
 
@@ -11,12 +12,14 @@ export const dynamic = 'force-dynamic';
 export default async function AccessTiersPage() {
   const user = await requirePermission('commerce.manage', '/master/access-tiers');
   const client = await serverClient();
-  const [tiersResponse, coursesResponse] = await Promise.all([
+  // Kursus di sini adalah pilihan isi paket. Yang tidak termuat menjadi kursus
+  // yang tidak dapat dijual — kegagalan yang paling mahal dari ketiganya.
+  const [tiersResponse, semuaKursus] = await Promise.all([
     client.GET('/api/v1/admin/access-tiers'),
-    client.GET('/api/v1/admin/courses', { params: { query: { page: 1, pageSize: 100 } } }),
+    ambilSemuaKursus(),
   ]);
   const tiers = unwrap(tiersResponse) as unknown as Schemas['AccessTierDto'][];
-  const { items: courses } = unwrapList<Schemas['AdminCourseListItemDto']>(coursesResponse);
+  const courses = semuaKursus.courses;
 
   return (
     <AppShell user={user}>

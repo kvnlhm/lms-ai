@@ -3,29 +3,23 @@ import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../components/app-shell';
 import { Courses, Plus, Users } from '../components/icons';
+import { ambilSemuaKursus } from '../lib/all-courses';
 import { serverClient, unwrap, unwrapList } from '../lib/api';
 import { requirePermission } from '../lib/session';
 
 export const metadata: Metadata = { title: 'Dashboard · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
-/** Batas halaman yang diambil API dalam satu permintaan. */
-const UKURAN_HALAMAN = 100;
-/**
- * Batas pengaman agar katalog yang tumbuh tak terduga tidak berubah menjadi
- * puluhan permintaan berantai hanya untuk memuat dashboard.
- */
-const MAKS_HALAMAN = 10;
 
-type Course = Schemas['AdminCourseListItemDto'];
+
 type User = Schemas['AdminUserListItemDto'];
 type Analytics = Schemas['DashboardAnalyticsDto'];
 
 export default async function MasterDashboardPage() {
   const user = await requirePermission('courses.manage', '/master');
   const client = await serverClient();
-  const [courses, students, activeStudents, analyticsResponse] = await Promise.all([
-    client.GET('/api/v1/admin/courses', { params: { query: { page: 1, pageSize: 100 } } }),
+  const [semuaKursus, students, activeStudents, analyticsResponse] = await Promise.all([
+    ambilSemuaKursus(),
     client.GET('/api/v1/admin/users', {
       params: { query: { page: 1, pageSize: 1, role: 'STUDENT' } },
     }),
@@ -36,32 +30,15 @@ export default async function MasterDashboardPage() {
       params: { query: { days: 30 } },
     }),
   ]);
-  const courseList = unwrapList<Course>(courses);
   const studentList = unwrapList<User>(students);
   const activeList = unwrapList<User>(activeStudents);
   const analytics = unwrap<Analytics>(analyticsResponse);
 
-  // Jumlah enrollment, materi, dan kursus terbit dijumlahkan dari daftar
-  // kursus — dan sebelumnya hanya dari halaman pertama. Begitu katalognya
-  // melewati 100 kursus, ketiga angka itu diam-diam menjadi lebih kecil dari
-  // yang sebenarnya: angka yang salah tanpa satu pun tanda bahwa ia salah.
-  // Sisanya kini ikut diambil, dengan batas agar tidak menjadi rantai
-  // permintaan yang panjang.
-  const semuaKursus = [...courseList.items];
-  const halamanTersisa = Math.min(courseList.meta.totalPages, MAKS_HALAMAN);
-  for (let halaman = 2; halaman <= halamanTersisa; halaman += 1) {
-    const lanjutan = unwrapList<Course>(
-      await client.GET('/api/v1/admin/courses', {
-        params: { query: { page: halaman, pageSize: UKURAN_HALAMAN } },
-      }),
-    );
-    semuaKursus.push(...lanjutan.items);
-  }
-  const terhitungPenuh = semuaKursus.length >= courseList.meta.total;
-
-  const enrollmentTotal = semuaKursus.reduce((sum, course) => sum + course.enrollmentCount, 0);
-  const lessonTotal = semuaKursus.reduce((sum, course) => sum + course.lessonCount, 0);
-  const published = semuaKursus.filter((course) => course.status === 'PUBLISHED').length;
+  const daftarKursus = semuaKursus.courses;
+  const terhitungPenuh = semuaKursus.lengkap;
+  const enrollmentTotal = daftarKursus.reduce((sum, course) => sum + course.enrollmentCount, 0);
+  const lessonTotal = daftarKursus.reduce((sum, course) => sum + course.lessonCount, 0);
+  const published = daftarKursus.filter((course) => course.status === 'PUBLISHED').length;
 
   return (
     <AppShell user={user}>
@@ -79,18 +56,18 @@ export default async function MasterDashboardPage() {
           <Metric label="Total Pelajar" value={studentList.meta.total} note={`${activeList.meta.total} aktif`} />
           <Metric
             label="Total Kursus"
-            value={courseList.meta.total}
+            value={semuaKursus.total}
             note={terhitungPenuh ? `${published} diterbitkan` : `${published} diterbitkan dari yang terhitung`}
           />
           <Metric
             label="Enrollment"
             value={enrollmentTotal}
-            note={terhitungPenuh ? 'Akses kursus aktif & historis' : `Dari ${semuaKursus.length} kursus teratas`}
+            note={terhitungPenuh ? 'Akses kursus aktif & historis' : `Dari ${daftarKursus.length} kursus teratas`}
           />
           <Metric
             label="Materi"
             value={lessonTotal}
-            note={terhitungPenuh ? 'Di seluruh kursus' : `Dari ${semuaKursus.length} kursus teratas`}
+            note={terhitungPenuh ? 'Di seluruh kursus' : `Dari ${daftarKursus.length} kursus teratas`}
           />
         </section>
 
@@ -104,7 +81,7 @@ export default async function MasterDashboardPage() {
               <Link className="btnTiny" href="/master/courses">Lihat semua</Link>
             </div>
             <div className="courseQuickList">
-              {courseList.items.slice(0, 5).map((course) => (
+              {daftarKursus.slice(0, 5).map((course) => (
                 <Link key={course.id} href={`/master/courses/${course.id}`} className="courseQuickRow">
                   <span className={`courseThumb${course.thumbnailUrl ? ' hasImage' : ''}`} aria-hidden="true">
                     {course.thumbnailUrl ? <img src={course.thumbnailUrl} alt="" /> : course.title.slice(0, 1)}
@@ -116,7 +93,7 @@ export default async function MasterDashboardPage() {
                   <span className="pill">{course.status === 'PUBLISHED' ? 'Terbit' : course.status === 'DRAFT' ? 'Draf' : 'Arsip'}</span>
                 </Link>
               ))}
-              {courseList.items.length === 0 ? <p className="empty">Belum ada kursus.</p> : null}
+              {daftarKursus.length === 0 ? <p className="empty">Belum ada kursus.</p> : null}
             </div>
           </article>
 

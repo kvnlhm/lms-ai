@@ -1,19 +1,17 @@
 import type { Metadata } from 'next';
-import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../../components/app-shell';
-import { serverClient, unwrapList } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
 import { LiveSessionManager } from './live-session-manager';
+import { ambilSemuaKursus } from '../../lib/all-courses';
 
 export const metadata: Metadata = { title: 'Sesi langsung · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function LiveSessionsPage() {
   const user = await requirePermission('courses.manage', '/master/live-sessions');
-  const client = await serverClient();
-  const { items: courses } = unwrapList<Schemas['AdminCourseListItemDto']>(
-    await client.GET('/api/v1/admin/courses', { params: { query: { page: 1, pageSize: 100 } } }),
-  );
+  // Kursus di sini mengisi penyaring; yang tidak termuat menjadi kursus yang
+  // tidak dapat dipilih sama sekali.
+  const { courses } = await ambilSemuaKursus();
 
   return (
     <AppShell user={user}>
