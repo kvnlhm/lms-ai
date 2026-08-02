@@ -2,8 +2,9 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { CurrentUser } from '../lib/session';
 import { can, initials } from '../lib/session';
-import { Courses, Dashboard, ExternalLink, Users } from './icons';
+import { Bell, Courses, Dashboard, ExternalLink, Users } from './icons';
 import { LogoutButton } from './logout-button';
+import { MasterMobileNav } from './master-mobile-nav';
 import { NavLink } from './nav-link';
 import { ThemeToggle } from './theme-toggle';
 import { ImpersonationBanner } from './impersonation-banner';
@@ -47,6 +48,17 @@ const MASTER_NAV = [
 /** Kerangka halaman untuk area yang membutuhkan autentikasi. */
 export function AppShell({ user, children }: { user: CurrentUser; children: ReactNode }) {
   if (user.role === 'MASTER') {
+    // Bilah bawah hanya memuat tiga tujuan teratas yang boleh diakses; label di
+    // bawah ikon menjadi tidak terbaca bila diisi lebih banyak. Sisanya masuk
+    // lembar "Lainnya", jadi tidak ada tujuan yang hilang.
+    const izinkan = MASTER_NAV.filter((item) => can(user, item.permission));
+    const utama = izinkan.slice(0, 3).map(({ href, label, icon }) => ({ href, label, icon }));
+    const lainnya = [
+      ...izinkan.slice(3).map(({ href, label, icon }) => ({ href, label, icon })),
+      { href: '/notifications', label: 'Notifikasi', icon: Bell },
+      { href: '/courses', label: 'Katalog Pelajar', icon: ExternalLink },
+    ];
+
     return (
       <div className="masterShell">
         <aside className="masterSidebar">
@@ -131,6 +143,32 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           </header>
           {children}
         </div>
+
+        <MasterMobileNav
+          primary={utama}
+          secondary={lainnya}
+          sheetHeader={
+            <>
+              <UserAvatar user={user} />
+              <span className="masterSheetIdentity">
+                <strong>{user.fullName}</strong>
+                <small>{user.email}</small>
+              </span>
+            </>
+          }
+          sheetFooter={
+            <>
+              <Link href="/profile" className="masterSheetRow">
+                <UserAvatar user={user} />
+                <span>Profil</span>
+              </Link>
+              <div className="masterSheetTools">
+                <ThemeToggle />
+                <LogoutButton />
+              </div>
+            </>
+          }
+        />
       </div>
     );
   }

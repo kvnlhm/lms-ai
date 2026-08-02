@@ -2203,3 +2203,97 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .toastStack { right: 12px; left: 12px; bottom: 12px; max-width: none; }
   .alertActions { flex-direction: column-reverse; }
 }
+
+/* ── Navigasi Master untuk layar sentuh ────────────────────── */
+/* Hanya aktif di bawah 680px, ambang yang sama dengan tempat sidebar Master
+   disembunyikan. Sisi pelajar tidak memakai satu pun kelas di blok ini dan
+   tetap pada hamburger serta `.mobileDrawer*` seperti sebelumnya. */
+.masterTabBar { display: none; }
+
+@media (max-width: 680px) {
+  /* Hamburger digantikan bilah bawah — tetapi hanya pada topbar Master.
+     Selektor ini sengaja diikat ke .masterTopbar supaya topbar pelajar,
+     yang memakai kelas .mobileNavigation yang sama, tidak ikut hilang. */
+  .masterTopbar .mobileNavigation { display: none; }
+
+  .masterTabBar {
+    position: fixed; inset: auto 0 0 0; z-index: 60;
+    display: flex; align-items: stretch;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+  }
+  .masterTab {
+    flex: 1; min-width: 0; min-height: 58px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    padding: 8px 4px;
+    color: var(--muted); font-size: 11px; line-height: 1.2;
+  }
+  .masterTab > span {
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .masterTab[aria-current='page'] { color: var(--accent-text); font-weight: 600; }
+
+  /* Isi halaman diberi ruang setinggi bilah supaya tombol terakhir tidak
+     tertutup olehnya.
+     `.wrap` ikut disebut karena Master yang membuka halaman pelajar — katalog,
+     profil, pemutar pelajaran — tetap berada di dalam kerangka Master beserta
+     bilah bawahnya, sementara wadah isinya memakai kelas milik sisi pelajar.
+     Diikat ke `.masterShell` supaya pelajar sungguhan tidak ikut terpengaruh. */
+  .masterContent,
+  .masterShell .wrap {
+    padding-bottom: calc(58px + 28px + env(safe-area-inset-bottom));
+  }
+}
+
+.masterSheetBackdrop {
+  position: fixed; inset: 0; z-index: 70;
+  display: flex; align-items: flex-end;
+  background: rgb(0 0 0 / .5);
+  animation: masterSheetFade .14s ease-out;
+}
+@keyframes masterSheetFade { from { opacity: 0; } }
+
+.masterSheet {
+  width: 100%; max-height: 86vh; max-height: 86dvh; overflow-y: auto;
+  display: flex; flex-direction: column;
+  padding: 8px 14px calc(14px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  border-top: 1px solid var(--line);
+  animation: masterSheetUp .2s cubic-bezier(.2, .9, .3, 1);
+}
+@keyframes masterSheetUp { from { transform: translateY(100%); } }
+.masterSheet:focus { outline: none; }
+
+.masterSheetGrip {
+  width: 38px; height: 4px; margin: 4px auto 12px; flex: none;
+  border-radius: var(--r-pill); background: var(--line);
+}
+
+.masterSheetHead {
+  display: flex; align-items: center; gap: 11px;
+  padding: 2px 6px 14px; border-bottom: 1px solid var(--line-soft);
+}
+.masterSheetIdentity { display: grid; min-width: 0; line-height: 1.25; }
+.masterSheetIdentity strong { font-size: 14px; }
+.masterSheetIdentity small {
+  color: var(--muted); font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.masterSheetBody { display: grid; gap: 2px; padding: 8px 0; }
+
+.masterSheetRow {
+  min-height: 50px; display: flex; align-items: center; gap: 13px;
+  padding: 10px 6px; border-radius: var(--r-md);
+  color: var(--text); font-size: 15px;
+}
+.masterSheetRow:hover { background: var(--raised-2); }
+.masterSheetRow > svg { color: var(--muted); flex: none; }
+
+.masterSheetFoot {
+  display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line-soft);
+}
+.masterSheetTools { display: flex; align-items: center; gap: 8px; padding: 0 6px; }

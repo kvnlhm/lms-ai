@@ -40,6 +40,21 @@ export const Check = (props: IconProps) => (
   </Base>
 );
 
+export const MoreHorizontal = (props: IconProps) => (
+  <Base {...props}>
+    <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
+  </Base>
+);
+
+export const Bell = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M18 8a6 6 0 10-12 0c0 6-2 7-2 7h16s-2-1-2-7z" />
+    <path d="M13.7 20a2 2 0 01-3.4 0" />
+  </Base>
+);
+
 export const AlertTriangle = (props: IconProps) => (
   <Base {...props}>
     <path d="M10.3 3.9L1.8 18.3A2 2 0 003.5 21.3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
