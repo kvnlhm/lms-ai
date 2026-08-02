@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
+import { Check } from '../components/icons';
 import { useNotifier } from '../components/notifier';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
 
@@ -32,13 +34,25 @@ export function ForgotPasswordForm() {
   // menjaga itu — kalau tidak, halamannya sendiri yang membocorkan.
   if (sentTo) {
     return (
-      <div className="notice noticeInfo" role="status">
+      <div className="activationDone" role="status">
+        <span className="payIcon payIconBaik" aria-hidden="true">
+          <Check size={26} strokeWidth={3} />
+        </span>
+        <h2>Periksa emailmu</h2>
         <p>
           Jika <strong>{sentTo}</strong> terdaftar, tautan pemulihan sudah dikirim ke sana.
-        </p>
-        <p>
           Tautannya berlaku singkat dan hanya bisa dipakai sekali. Periksa juga folder spam.
         </p>
+        <div className="forgotAgain">
+          <Link className="btn btnBlock" href="/login">
+            Ke halaman masuk
+          </Link>
+          {/* Jalan keluar bila alamatnya salah ketik: tanpa ini satu-satunya
+              cara mengulang adalah memuat ulang halaman sendiri. */}
+          <button className="btnTiny" type="button" onClick={() => setSentTo(null)}>
+            Kirim ke alamat lain
+          </button>
+        </div>
       </div>
     );
   }
@@ -57,7 +71,7 @@ export function ForgotPasswordForm() {
           disabled={busy}
         />
       </div>
-      <button className="btn" type="submit" disabled={busy}>
+      <button className="btn btnBlock" type="submit" disabled={busy}>
         {busy ? 'Mengirim…' : 'Kirim tautan pemulihan'}
       </button>
     </form>

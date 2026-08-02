@@ -2599,3 +2599,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 /* Petunjuk panjang kata sandi berubah nada begitu syaratnya terpenuhi, supaya
    kemajuannya terlihat tanpa perlu menekan tombol lebih dulu. */
 .activationOk { color: var(--good); }
+
+/* Dua jalan keluar dari keadaan "email terkirim": lanjut masuk, atau ulangi
+   dengan alamat lain bila yang tadi salah ketik. */
+.forgotAgain { width: 100%; display: grid; justify-items: center; gap: 10px; margin-top: 6px; }
