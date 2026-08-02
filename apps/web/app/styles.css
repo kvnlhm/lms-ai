@@ -1079,6 +1079,9 @@ table.data tbody tr:hover { background: var(--raised); }
 .metricCard > span { color: var(--text-2); font-size: 13px; }
 .metricCard > strong { font-size: 30px; line-height: 1.1; letter-spacing: -.04em; }
 .metricCard > small { color: var(--muted); font-size: 12px; }
+/* Keadaan kosong bukan sebuah angka, jadi tidak memakai gaya angka. Ukuran
+   normal dan warna redup menjaganya tetap terbaca sebagai keterangan. */
+.metricEmpty { color: var(--muted); font-size: 15px; line-height: 1.35; }
 .insightSection { margin-top: 34px; }
 .insightSectionHead {
   display: flex; align-items: flex-end; justify-content: space-between; gap: 20px;

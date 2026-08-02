@@ -16,11 +16,24 @@ const RISK_PILL: Record<Risk['level'], { className: string; label: string }> = {
   LOW: { className: 'pill pillGood', label: 'Aman' },
 };
 
-function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
+/**
+ * Satu angka metrik.
+ *
+ * `value` boleh null, dan itu ditampilkan berbeda dari sebuah angka. Sebelumnya
+ * keadaan kosong dikirim sebagai teks "Belum ada data" lalu dirender di dalam
+ * <strong> yang sama — 30px dengan letter-spacing rapat, gaya yang dimaksudkan
+ * untuk bilangan. Pada kartu selebar 146px di layar ponsel, kalimat itu pecah
+ * menjadi tiga baris besar di tempat yang seharusnya berisi satu angka.
+ */
+function Metric({ label, value, hint }: { label: string; value: string | null; hint?: string }) {
   return (
     <div className="card metricCard">
       <span>{label}</span>
-      <strong>{value}</strong>
+      {value === null ? (
+        <span className="metricEmpty">Belum ada data</span>
+      ) : (
+        <strong>{value}</strong>
+      )}
       {hint ? <small>{hint}</small> : null}
     </div>
   );
@@ -108,11 +121,11 @@ export default async function InsightsPage({
             />
             <Metric
               label="Hari paling ramai"
-              value={habit.busiestWeekday ?? 'Belum ada data'}
+              value={habit.busiestWeekday ?? null}
             />
             <Metric
               label="Jam paling ramai"
-              value={habit.busiestHour === null ? 'Belum ada data' : `${habit.busiestHour}.00`}
+              value={habit.busiestHour === null ? null : `${habit.busiestHour}.00`}
               hint="Waktu server"
             />
           </div>
