@@ -73,8 +73,10 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
     return <section className="card empty">Paket pendaftaran belum tersedia.</section>;
   }
 
+  const terpilih = tiers.find((tier) => tier.id === tierId) ?? null;
+
   return (
-    <form className="registrationFlow" onSubmit={submit}>
+    <form className="regCard" onSubmit={submit}>
       <section>
         <h2 className="registrationSectionTitle">Pilih paket yang paling sesuai untukmu</h2>
         <div className="tierGrid">
@@ -115,9 +117,9 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
         </div>
       </section>
 
-      <section className="card registrationDetails">
+      <section className="regDetails">
         <div>
-          <h2>2. Data akun</h2>
+          <h2>Data akun</h2>
           <p className="pageSub">Gunakan email dan WhatsApp aktif untuk menerima akses.</p>
         </div>
         <div className="registrationFields">
@@ -150,9 +152,31 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
           <span>Saya menyetujui syarat layanan dan pemrosesan data untuk aktivasi akun.</span>
         </label>
         {message ? <p className="notice" role="status">{message}</p> : null}
-        <button className="btn btnBlock" disabled={busy || !tierId}>
-          {busy ? 'Memproses…' : 'Lanjut ke pembayaran'}
+
+        <button className="btn btnBlock regSubmit" disabled={busy || !tierId}>
+          {busy ? 'Memproses…' : 'Daftar sekarang'}
         </button>
+
+        {/* Ringkasan harga diletakkan setelah tombol, mengikuti referensi:
+            angka terakhir yang dibaca sebelum membayar adalah yang benar-benar
+            akan ditagihkan. Hanya satu harga yang ditampilkan karena paket di
+            sistem ini memang hanya menyimpan satu harga — tidak ada harga
+            normal untuk dicoret. */}
+        {terpilih ? (
+          <div className="regTotal">
+            <span>{terpilih.name}</span>
+            <strong>{formatRupiah(terpilih.priceIdr)}</strong>
+            <small>
+              {terpilih.isLifetime
+                ? 'Akses selamanya, sekali bayar'
+                : `Akses ${terpilih.durationMonths} bulan, sekali bayar`}
+            </small>
+          </div>
+        ) : null}
+
+        <p className="regLoginHint">
+          Sudah punya akun? <a href="/login">Masuk di sini</a>
+        </p>
       </section>
     </form>
   );

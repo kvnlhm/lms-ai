@@ -495,17 +495,6 @@ table.data tbody tr:hover { background: var(--raised); }
 .checkRow input { width: 16px; height: 16px; accent-color: var(--accent); }
 
 /* Registrasi publik dan pengelolaan paket akses. */
-.registrationShell { min-height: 100vh; padding: 0 24px 80px; }
-.registrationHeader {
-  max-width: 1180px; margin: 0 auto; min-height: 76px;
-  display: flex; align-items: center; justify-content: space-between; gap: 18px;
-  border-bottom: 1px solid var(--line-soft);
-}
-.registrationHero { max-width: 820px; margin: 64px auto 42px; text-align: center; }
-.registrationHero h1 { margin: 12px 0; font-size: clamp(34px, 5vw, 56px); line-height: 1.04; letter-spacing: -.045em; }
-.registrationHero p { max-width: 650px; margin: 0 auto; color: var(--text-2); font-size: 17px; line-height: 1.65; }
-.registrationFlow { max-width: 1180px; margin: 0 auto; display: grid; gap: 32px; }
-.registrationFlow h2 { font-size: 18px; margin: 0 0 16px; }
 .registrationSectionTitle { text-align: center; color: var(--text-2); font-weight: 550; }
 .tierGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
 .tierCard {
@@ -546,7 +535,6 @@ table.data tbody tr:hover { background: var(--raised); }
 }
 .tierCard:not(.selected) .tierChoose { background: var(--raised-2); color: var(--text); }
 .tierCard:hover .tierChoose { background: var(--accent-hot); color: white; }
-.registrationDetails { max-width: 820px; width: 100%; margin: 0 auto; padding: 28px; display: grid; gap: 20px; }
 .registrationFields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .registrationFields .field:last-child { grid-column: 1 / -1; }
 
@@ -576,9 +564,6 @@ table.data tbody tr:hover { background: var(--raised); }
 .tierEditModal .sectionHead h2 { margin: 5px 0 0; }
 
 @media (max-width: 800px) {
-  .registrationHeader { padding: 12px 0; align-items: flex-start; }
-  .registrationHeader .btn { padding-inline: 12px; }
-  .registrationHero { margin-top: 44px; text-align: left; }
   .registrationSectionTitle { text-align: left; }
   .tierGrid { grid-template-columns: 1fr; }
   .tierCard { min-height: auto; }
@@ -1535,13 +1520,7 @@ table.data tbody tr:hover { background: var(--raised); }
   .topbarRight > .globalSearch, .topbarRight > .iconBtn { display: none; }
   .mainNav { display: none; }
 
-  .registrationShell { padding-inline: 14px; }
-  .registrationHeader { min-height: 64px; gap: 10px; }
-  .registrationHeader .brand > span:last-child { display: none; }
-  .registrationHero { margin: 34px auto 30px; }
-  .registrationHero h1 { font-size: clamp(30px, 10vw, 42px); }
-  .registrationHero p { font-size: 15px; }
-  .tierCard, .registrationDetails { padding: 20px; }
+  .tierCard { padding: 20px; }
 
   .modalBackdrop {
     place-items: end center;
@@ -2407,4 +2386,128 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .catalogSearch { flex-wrap: wrap; }
   .catalogSearch label { flex-basis: 100%; }
   .catalogSearch > .btn { flex: 1; justify-content: center; }
+}
+
+/* ── Halaman pendaftaran ───────────────────────────────────── */
+/* Satu kolom terpusat, mengikuti referensi. Kelas `.tierGrid` dan `.tierCard`
+   sengaja tidak diubah: pilihan paketnya tetap seperti sebelumnya. */
+.regPage {
+  width: min(760px, calc(100% - 36px));
+  margin: 0 auto;
+  padding: 26px 0 64px;
+  display: grid;
+  gap: 34px;
+}
+.regTop { display: flex; justify-content: center; }
+
+.regHero { text-align: center; display: grid; gap: 14px; }
+.regHero h1 {
+  margin: 0; font-size: clamp(30px, 6vw, 46px); line-height: 1.14;
+  font-weight: 750; letter-spacing: -0.03em; text-wrap: balance;
+}
+.regHeroTagline {
+  margin: 0; color: var(--accent-text); font-size: 14px; font-weight: 600;
+  line-height: 1.5; text-wrap: balance;
+}
+.regHeroLede {
+  margin: 0 auto; max-width: 58ch; color: var(--text-2);
+  font-size: 15px; line-height: 1.7;
+}
+.regHeroBy {
+  margin: 4px 0 0; display: grid; gap: 2px;
+  font-size: 14px; line-height: 1.4;
+}
+.regHeroBy span { color: var(--muted); font-size: 12.5px; }
+
+/* Kartu formulir. Border-nya tegas karena ia satu-satunya blok yang menuntut
+   tindakan di halaman yang sebagian besar berisi bacaan. */
+.regCard {
+  display: grid; gap: 26px;
+  padding: 26px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+.regDetails { display: grid; gap: 18px; }
+.regDetails h2 { margin: 0; font-size: 17px; font-weight: 650; }
+
+.regSubmit { min-height: 50px; font-size: 15px; }
+
+.regTotal {
+  display: grid; gap: 4px; justify-items: center; text-align: center;
+  padding: 18px; border-radius: var(--r-md);
+  background: var(--raised-2);
+}
+.regTotal > span { color: var(--muted); font-size: 12.5px; }
+.regTotal > strong {
+  color: var(--accent-text); font-size: clamp(26px, 5vw, 34px);
+  font-weight: 750; letter-spacing: -0.03em;
+}
+.regTotal > small { color: var(--muted); font-size: 12px; }
+
+.regLoginHint { margin: 0; text-align: center; color: var(--muted); font-size: 13.5px; }
+.regLoginHint a { color: var(--accent-text); text-decoration: underline; }
+
+.regSection { display: grid; gap: 14px; }
+.regSection h2 {
+  margin: 0; font-size: clamp(20px, 3.4vw, 26px); font-weight: 700;
+  letter-spacing: -0.02em; text-wrap: balance;
+}
+.regSectionSub { margin: -8px 0 0; color: var(--muted); font-size: 13.5px; }
+
+.regCheckList { margin: 0; padding: 0; list-style: none; display: grid; gap: 11px; }
+.regCheckList li {
+  display: flex; gap: 12px; align-items: flex-start;
+  font-size: 15px; line-height: 1.6;
+}
+.regCheckList li > span:first-child { flex: none; line-height: 1.5; }
+
+.regNote {
+  margin: 0; padding: 15px 17px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  background: var(--accent-soft);
+  color: var(--text-2); font-size: 14px; line-height: 1.7;
+}
+
+.regFaq { display: grid; gap: 10px; }
+.regFaq details {
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface); overflow: hidden;
+}
+.regFaq summary {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 15px 17px; cursor: pointer;
+  font-size: 15px; font-weight: 600; line-height: 1.5;
+  list-style: none;
+}
+.regFaq summary::-webkit-details-marker { display: none; }
+.regFaq summary:hover { background: var(--raised); }
+.regFaqNumber {
+  flex: none; width: 24px; height: 24px; display: grid; place-items: center;
+  border-radius: var(--r-sm); background: var(--accent-soft);
+  color: var(--accent-text); font-size: 12px; font-weight: 700;
+}
+.regFaq details[open] summary { border-bottom: 1px solid var(--line-soft); }
+.regFaq details > p {
+  margin: 0; padding: 14px 17px 16px 53px;
+  color: var(--text-2); font-size: 14px; line-height: 1.7;
+}
+
+.regContact { gap: 16px; }
+.regContactLinks { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.regFoot {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 14px; padding-top: 22px; border-top: 1px solid var(--line);
+}
+.regFoot small { color: var(--muted); font-size: 12.5px; }
+
+@media (max-width: 680px) {
+  .regPage { gap: 28px; padding-top: 18px; }
+  .regCard { padding: 18px; gap: 22px; }
+  .regFaq details > p { padding-left: 17px; }
+  .regContactLinks > .btn { flex: 1; justify-content: center; }
+  .regFoot { justify-content: center; }
+  .regFoot > .btn { width: 100%; justify-content: center; }
 }
