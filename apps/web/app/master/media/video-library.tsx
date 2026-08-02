@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Search } from '../../components/icons';
 import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 import {
@@ -35,6 +36,8 @@ export function VideoLibrary() {
   const [error, setError] = useState<string | null>(null);
   const [antrean, setAntrean] = useState<Antrean[]>([]);
   const [mengunggah, setMengunggah] = useState(false);
+  const [cari, setCari] = useState('');
+  const [saring, setSaring] = useState<'semua' | 'dipakai' | 'yatim' | 'bermasalah'>('semua');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -143,6 +146,28 @@ export function VideoLibrary() {
 
   const terpakai = items.filter((item) => item.usedBy.length > 0).length;
   const yatim = items.length - terpakai;
+
+  // Penyaringan dilakukan di klien karena seluruh isi perpustakaan memang
+  // sudah termuat — endpoint-nya mengembalikan semuanya sekaligus. Menambah
+  // perjalanan ke server hanya akan memperlambat sesuatu yang sudah ada di
+  // tangan.
+  const kata = cari.trim().toLowerCase();
+  const tampil = items.filter((item) => {
+    const cocokKata =
+      kata === '' ||
+      item.title.toLowerCase().includes(kata) ||
+      (item.originalName ?? '').toLowerCase().includes(kata) ||
+      item.usedBy.some(
+        (usage) =>
+          usage.courseTitle.toLowerCase().includes(kata) ||
+          usage.lessonTitle.toLowerCase().includes(kata),
+      );
+    if (!cocokKata) return false;
+    if (saring === 'dipakai') return item.usedBy.length > 0;
+    if (saring === 'yatim') return item.usedBy.length === 0;
+    if (saring === 'bermasalah') return item.status !== 'AVAILABLE';
+    return true;
+  });
   const selesai = antrean.filter((entri) => entri.status === 'SELESAI').length;
   const gagal = antrean.filter((entri) => entri.status === 'GAGAL').length;
 
@@ -203,17 +228,59 @@ export function VideoLibrary() {
       ) : (
         <>
           <p className="muted">
-            {items.length} video · {formatBytes(totalBytes)} terpakai di disk · {terpakai} dipakai
-            pelajaran · {yatim} belum dipakai
+            {tampil.length === items.length
+              ? `${items.length} video`
+              : `${tampil.length} dari ${items.length} video`}{' '}
+            · {formatBytes(totalBytes)} terpakai di disk · {terpakai} dipakai pelajaran · {yatim}{' '}
+            belum dipakai
           </p>
+
+          {items.length > 0 ? (
+            <div className="libraryFilter">
+              <label className="userSearch">
+                <span className="srOnly">Cari video</span>
+                <span aria-hidden="true"><Search size={17} /></span>
+                <input
+                  type="search"
+                  value={cari}
+                  onChange={(event) => setCari(event.target.value)}
+                  placeholder="Cari judul, nama berkas, atau pelajaran yang memakainya"
+                />
+              </label>
+              <div className="inlineActions">
+                {(
+                  [
+                    ['semua', 'Semua'],
+                    ['dipakai', 'Dipakai'],
+                    ['yatim', 'Belum dipakai'],
+                    ['bermasalah', 'Bermasalah'],
+                  ] as const
+                ).map(([nilai, label]) => (
+                  <button
+                    key={nilai}
+                    type="button"
+                    className={saring === nilai ? 'btnTiny btnActive' : 'btnTiny'}
+                    aria-pressed={saring === nilai}
+                    onClick={() => setSaring(nilai)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {items.length === 0 ? (
             <p className="muted">
               Perpustakaan masih kosong. Unggah beberapa berkas di atas untuk memulai.
             </p>
+          ) : tampil.length === 0 ? (
+            <p className="muted">
+              Tidak ada video yang cocok dengan penyaringan ini.
+            </p>
           ) : (
             <ul className="masterRecordList">
-              {items.map((item) => (
+              {tampil.map((item) => (
                 <li key={item.videoAssetId} className="masterRecordCard">
                   <div className="masterListHead">
                     <h2 className="cellTitle">{item.title}</h2>

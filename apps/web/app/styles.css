@@ -2623,3 +2623,9 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 /* Kendali halaman pada daftar moderasi forum. */
 .forumPager { justify-content: center; margin-top: 16px; }
+
+/* Penyaring perpustakaan video: kolom pencarian dan tombol status. */
+.libraryFilter { display: grid; gap: 12px; margin-bottom: 4px; }
+@media (min-width: 720px) {
+  .libraryFilter { grid-template-columns: minmax(260px, 1fr) auto; align-items: center; }
+}
