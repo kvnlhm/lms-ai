@@ -25,7 +25,16 @@ import { MoreHorizontal } from './icons';
 export interface MasterNavItem {
   href: string;
   label: string;
-  icon: (props: { size?: number }) => ReactNode;
+  /**
+   * Ikon yang sudah dirender, bukan komponennya.
+   *
+   * `AppShell` adalah server component sedangkan berkas ini client component,
+   * dan fungsi tidak dapat menyeberangi batas keduanya — melewatkan komponen
+   * ikon ke sini membuat seluruh halaman Master gagal dirender. Elemen React
+   * yang sudah jadi dapat diserialisasi, jadi ukurannya ditentukan di sisi
+   * server saat elemennya dibuat.
+   */
+  icon: ReactNode;
 }
 
 export function MasterMobileNav({
@@ -50,7 +59,6 @@ export function MasterMobileNav({
     <>
       <nav className="masterTabBar" aria-label="Navigasi Master">
         {primary.map((item) => {
-          const Icon = item.icon;
           const aktif = item.href === '/master' ? pathname === '/master' : pathname.startsWith(item.href);
           return (
             <Link
@@ -59,7 +67,7 @@ export function MasterMobileNav({
               className="masterTab"
               aria-current={aktif ? 'page' : undefined}
             >
-              <Icon size={21} />
+              {item.icon}
               <span>{item.label}</span>
             </Link>
           );
@@ -77,15 +85,12 @@ export function MasterMobileNav({
 
       {terbuka ? (
         <MasterSheet onClose={() => setTerbuka(false)} header={sheetHeader} footer={sheetFooter}>
-          {secondary.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.href} href={item.href} className="masterSheetRow">
-                <Icon size={19} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+          {secondary.map((item) => (
+            <Link key={item.href} href={item.href} className="masterSheetRow">
+              {item.icon}
+              <span>{item.label}</span>
+            </Link>
+          ))}
         </MasterSheet>
       ) : null}
     </>

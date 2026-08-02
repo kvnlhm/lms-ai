@@ -51,12 +51,23 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
     // Bilah bawah hanya memuat tiga tujuan teratas yang boleh diakses; label di
     // bawah ikon menjadi tidak terbaca bila diisi lebih banyak. Sisanya masuk
     // lembar "Lainnya", jadi tidak ada tujuan yang hilang.
+    // Ikonnya dirender di sini, bukan diteruskan sebagai komponen: berkas ini
+    // server component sedangkan MasterMobileNav client component, dan fungsi
+    // tidak dapat menyeberangi batas keduanya.
     const izinkan = MASTER_NAV.filter((item) => can(user, item.permission));
-    const utama = izinkan.slice(0, 3).map(({ href, label, icon }) => ({ href, label, icon }));
+    const utama = izinkan.slice(0, 3).map(({ href, label, icon: Icon }) => ({
+      href,
+      label,
+      icon: <Icon size={21} />,
+    }));
     const lainnya = [
-      ...izinkan.slice(3).map(({ href, label, icon }) => ({ href, label, icon })),
-      { href: '/notifications', label: 'Notifikasi', icon: Bell },
-      { href: '/courses', label: 'Katalog Pelajar', icon: ExternalLink },
+      ...izinkan.slice(3).map(({ href, label, icon: Icon }) => ({
+        href,
+        label,
+        icon: <Icon size={19} />,
+      })),
+      { href: '/notifications', label: 'Notifikasi', icon: <Bell size={19} /> },
+      { href: '/courses', label: 'Katalog Pelajar', icon: <ExternalLink size={19} /> },
     ];
 
     return (
