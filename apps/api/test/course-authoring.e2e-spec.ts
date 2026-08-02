@@ -95,6 +95,24 @@ describe('Penyusunan kursus oleh Master', () => {
     expect(detail.body.data.category.id).toBe(categoryId);
   });
 
+  it('menyaring daftar kursus menurut kata pencarian', async () => {
+    const penanda = `Zebrafish${Date.now()}`;
+    await asMaster('post', '/admin/courses')
+      .send({ title: `Kursus ${penanda}`, slug: `uji-cari-${Date.now()}`, level: 'BEGINNER' })
+      .expect(201)
+      .then((r) => createdCourseIds.push(r.body.data.id));
+
+    // Parameter `search` sudah didukung sejak lama tetapi tidak pernah diuji,
+    // dan kolomnya baru sekarang tampil di halaman kelola kursus.
+    const hasil = await asMaster('get', `/admin/courses?search=${penanda.toLowerCase()}`).expect(200);
+    const judul = (hasil.body.data as Array<{ title: string }>).map((item) => item.title);
+    expect(judul).toHaveLength(1);
+    expect(judul[0]).toContain(penanda);
+
+    const kosong = await asMaster('get', '/admin/courses?search=zzzkatatidakada').expect(200);
+    expect(kosong.body.data).toHaveLength(0);
+  });
+
   it('menolak slug yang sudah dipakai', async () => {
     const slug = `uji-duplikat-${Date.now()}`;
     await createCourse(slug);

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../../components/app-shell';
+import { Search } from '../../components/icons';
 import { StatusPill } from '../../components/status-pill';
 import { serverClient, unwrapList } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
@@ -19,7 +20,7 @@ const FILTERS = [
 ] as const;
 
 interface Props {
-  searchParams: Promise<{ status?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; search?: string }>;
 }
 
 export default async function MasterCoursesPage({ searchParams }: Props) {
@@ -27,6 +28,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
   const params = await searchParams;
   const page = Number.parseInt(params.page ?? '1', 10) || 1;
   const status = FILTERS.some((f) => f.key === params.status) ? params.status : undefined;
+  const search = params.search?.trim() || undefined;
 
   const client = await serverClient();
   const { items, meta } = unwrapList<AdminCourse>(
@@ -36,6 +38,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
           page,
           pageSize: 20,
           ...(status ? { status: status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' } : {}),
+          ...(search ? { search } : {}),
         },
       },
     }),
@@ -48,7 +51,9 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
           <div className="pageHeadMain">
             <h1 className="pageTitle">Kursus</h1>
             <p className="pageSub">
-              {meta.total} kursus, termasuk draf dan arsip yang tidak tampil di katalog pelajar.
+              {search
+                ? `${meta.total} kursus cocok dengan “${search}”.`
+                : `${meta.total} kursus, termasuk draf dan arsip yang tidak tampil di katalog pelajar.`}
             </p>
           </div>
           <Link className="btn" href="/master/courses/new">
@@ -56,13 +61,35 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
           </Link>
         </div>
 
+        {/* Formulir GET biasa: kata pencariannya tinggal di URL sehingga dapat
+            ditandai dan bertahan saat halaman dimuat ulang. Status yang sedang
+            aktif ikut dibawa agar penyaringannya tidak hilang saat mencari. */}
+        <form className="catalogSearch" action="/master/courses">
+          {status ? <input type="hidden" name="status" value={status} /> : null}
+          <label>
+            <span className="srOnly">Cari kursus</span>
+            <span className="catalogSearchIcon" aria-hidden="true">
+              <Search size={17} />
+            </span>
+            <input type="search" name="search" defaultValue={search ?? ''} placeholder="Cari judul kursus" />
+          </label>
+          <button className="btn" type="submit">
+            Cari
+          </button>
+          {search ? (
+            <Link className="btn btnGhost" href={status ? `/master/courses?status=${status}` : '/master/courses'}>
+              Hapus
+            </Link>
+          ) : null}
+        </form>
+
         <div className="toolbar">
           {FILTERS.map((filter) => {
             const active = filter.key === status;
             return (
               <Link
                 key={filter.label}
-                href={filter.key ? `/master/courses?status=${filter.key}` : '/master/courses'}
+                href={buildHref(filter.key, 1, search)}
                 className={active ? 'pill pillAccent' : 'pill'}
                 aria-current={active ? 'true' : undefined}
               >
@@ -75,9 +102,11 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
         {items.length === 0 ? (
           <div className="card empty">
             <p style={{ margin: 0 }}>
-              {status
-                ? 'Tidak ada kursus dengan status ini.'
-                : 'Belum ada kursus. Mulai dengan membuat kursus baru.'}
+              {search
+                ? `Tidak ada kursus yang cocok dengan “${search}”.`
+                : status
+                  ? 'Tidak ada kursus dengan status ini.'
+                  : 'Belum ada kursus. Mulai dengan membuat kursus baru.'}
             </p>
           </div>
         ) : (
@@ -145,12 +174,15 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
             style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'center' }}
           >
             {meta.page > 1 ? (
-              <Link className="btn btnGhost" href={buildHref(status, meta.page - 1)}>
+              <Link className="btn btnGhost" href={buildHref(status, meta.page - 1, search)}>
                 Sebelumnya
               </Link>
             ) : null}
+            <span className="pill">
+              Halaman {meta.page} dari {meta.totalPages}
+            </span>
             {meta.page < meta.totalPages ? (
-              <Link className="btn btnGhost" href={buildHref(status, meta.page + 1)}>
+              <Link className="btn btnGhost" href={buildHref(status, meta.page + 1, search)}>
                 Berikutnya
               </Link>
             ) : null}
@@ -161,11 +193,19 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
   );
 }
 
-function buildHref(status: string | undefined, page: number): string {
+/**
+ * Tautan yang membawa seluruh keadaan penyaringan.
+ *
+ * Status, halaman, dan kata pencarian harus berjalan bersama: berpindah
+ * halaman yang membuang kata pencarian, atau mengganti status yang membuangnya,
+ * sama-sama melempar pengguna kembali ke daftar penuh tanpa penjelasan.
+ */
+function buildHref(status: string | undefined, page: number, search?: string): string {
   const query = new URLSearchParams();
   if (status) query.set('status', status);
-  query.set('page', String(page));
-  return `/master/courses?${query.toString()}`;
+  if (search) query.set('search', search);
+  if (page > 1) query.set('page', String(page));
+  return query.toString() ? `/master/courses?${query.toString()}` : '/master/courses';
 }
 
 function formatDate(value: string): string {
