@@ -200,14 +200,14 @@ export function EnrollmentManager({
               <tbody>
                 {enrollments.map((enrollment) => (
                   <tr key={enrollment.id}>
-                    <td>
+                    <td data-label="Pelajar">
                       <span className="cellTitle">{enrollment.user.fullName}</span>
                       <span className="cellSub">{enrollment.user.email}</span>
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <StatusPill status={enrollment.status} />
                     </td>
-                    <td>
+                    <td data-label="Progres">
                       <span
                         className="miniTrack"
                         role="img"
@@ -226,8 +226,8 @@ export function EnrollmentManager({
                         {enrollment.progress.requiredLessonsTotal} pelajaran wajib
                       </span>
                     </td>
-                    <td>{formatRelative(enrollment.progress.lastActivityAt ?? null)}</td>
-                    <td className="num">
+                    <td data-label="Terakhir aktif">{formatRelative(enrollment.progress.lastActivityAt ?? null)}</td>
+                    <td className="num cellActions">
                       {enrollment.status === 'REMOVED' || enrollment.status === 'EXPIRED' ? (
                         <button
                           className="btnTiny"

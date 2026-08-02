@@ -2297,3 +2297,52 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line-soft);
 }
 .masterSheetTools { display: flex; align-items: center; gap: 8px; padding: 0 6px; }
+
+/* ── Tabel Master pada layar sempit ────────────────────────── */
+/* Tabel data paling sempit pun 680px — 940px untuk daftar pengguna — sementara
+   layar ponsel sekitar 390px. Menggulirnya ke samping memang berfungsi, tetapi
+   membaca satu baris menuntut tiga kali seret dan kolom judulnya sudah hilang
+   dari layar saat tiba di kolom terakhir.
+   Di bawah 680px setiap baris berubah menjadi kartu, dan nama kolom pindah ke
+   sisi kiri tiap sel lewat `data-label`. Tidak ada markup ganda: tabelnya tetap
+   satu, hanya tampilannya yang berubah.
+   Seluruh aturan diikat ke `.masterShell` karena hanya halaman Master yang
+   memakai `table.data` — pengikatan ini menjaga agar tetap begitu seandainya
+   sisi pelajar kelak memakainya juga. */
+@media (max-width: 680px) {
+  .masterShell .tableWrap { overflow-x: visible; }
+
+  .masterShell table.data { min-width: 0; display: block; }
+  .masterShell table.data thead { display: none; }
+  .masterShell table.data tbody { display: grid; gap: 10px; }
+
+  .masterShell table.data tr {
+    display: block; padding: 2px 0;
+    background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--r-md);
+  }
+  /* Sorotan baris tidak berarti lagi saat barisnya menjadi kartu, dan pada
+     layar sentuh justru menempel setelah disentuh. */
+  .masterShell table.data tbody tr:hover { background: var(--surface); }
+
+  .masterShell table.data td {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    padding: 10px 13px; text-align: left;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .masterShell table.data td:last-child { border-bottom: 0; }
+  .masterShell table.data td::before {
+    content: attr(data-label);
+    flex: none; max-width: 42%;
+    color: var(--muted); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .masterShell table.data td.num { text-align: left; }
+
+  /* Sel tindakan tidak punya nama kolom untuk ditampilkan, dan tombolnya butuh
+     lebar penuh supaya cukup besar disentuh. */
+  .masterShell table.data td.cellActions { display: block; padding: 11px 13px; }
+  .masterShell table.data td.cellActions::before { content: none; }
+  .masterShell table.data .inlineActions { flex-wrap: wrap; gap: 8px; }
+  .masterShell table.data .btnTiny { min-height: 38px; padding: 8px 14px; }
+}

@@ -183,7 +183,7 @@ export function ErrorMonitor() {
             <tbody>
               {items.map((item) => (
                 <tr key={item.id}>
-                  <td>
+                  <td data-label="Galat">
                     <button
                       type="button"
                       className="errorToggle"
@@ -212,17 +212,17 @@ export function ErrorMonitor() {
                       </div>
                     ) : null}
                   </td>
-                  <td>{SOURCE_LABEL[item.source]}</td>
-                  <td className="num">{item.occurrences.toLocaleString('id-ID')}</td>
-                  <td title={formatDate(item.lastSeenAt)}>{relative(item.lastSeenAt)}</td>
-                  <td>
+                  <td data-label="Sumber">{SOURCE_LABEL[item.source]}</td>
+                  <td className="num" data-label="Kejadian">{item.occurrences.toLocaleString('id-ID')}</td>
+                  <td title={formatDate(item.lastSeenAt)} data-label="Terakhir">{relative(item.lastSeenAt)}</td>
+                  <td data-label="Status">
                     <span
                       className={`status ${item.status === 'OPEN' ? 'statusRemoved' : 'statusPublished'}`}
                     >
                       {item.status === 'OPEN' ? 'Terbuka' : 'Selesai'}
                     </span>
                   </td>
-                  <td>
+                  <td className="cellActions">
                     <button
                       type="button"
                       className="btnTiny"

@@ -98,7 +98,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
                 <tbody>
                   {items.map((course) => (
                     <tr key={course.id}>
-                      <td>
+                      <td data-label="Kursus">
                         <span className="courseTableTitle">
                           <span className={`courseThumb${course.thumbnailUrl ? ' hasImage' : ''}`} aria-hidden="true">
                             {course.thumbnailUrl ? <img src={course.thumbnailUrl} alt="" /> : course.title.slice(0, 1)}
@@ -111,14 +111,14 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
                           </span>
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Status">
                         <StatusPill status={course.status} />
                       </td>
-                      <td className="num">{course.moduleCount}</td>
-                      <td className="num">{course.lessonCount}</td>
-                      <td className="num">{course.enrollmentCount}</td>
-                      <td>{formatDate(course.updatedAt)}</td>
-                      <td className="num">
+                      <td className="num" data-label="Bagian">{course.moduleCount}</td>
+                      <td className="num" data-label="Pelajaran">{course.lessonCount}</td>
+                      <td className="num" data-label="Terdaftar">{course.enrollmentCount}</td>
+                      <td data-label="Diperbarui">{formatDate(course.updatedAt)}</td>
+                      <td className="num cellActions">
                         <span className="inlineActions" style={{ justifyContent: 'flex-end' }}>
                           <Link className="btnTiny" href={`/master/courses/${course.id}`}>
                             Kelola

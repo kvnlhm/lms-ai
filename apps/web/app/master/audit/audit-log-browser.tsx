@@ -173,8 +173,8 @@ export function AuditLogBrowser() {
               <tbody>
                 {items.map((entry) => (
                   <tr key={entry.id}>
-                    <td style={{ whiteSpace: 'nowrap' }}>{formatDate(entry.createdAt)}</td>
-                    <td>
+                    <td style={{ whiteSpace: 'nowrap' }} data-label="Waktu">{formatDate(entry.createdAt)}</td>
+                    <td data-label="Pelaku">
                       {entry.actor ? (
                         <>
                           <span className="cellTitle">{entry.actor.fullName}</span>
@@ -186,7 +186,7 @@ export function AuditLogBrowser() {
                         <span className="muted">Akun sudah dihapus</span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Tindakan">
                       <button
                         type="button"
                         className="errorToggle"
@@ -237,11 +237,11 @@ export function AuditLogBrowser() {
                         </div>
                       ) : null}
                     </td>
-                    <td>
+                    <td data-label="Target">
                       <span className="cellTitle">{entry.targetType}</span>
                       {entry.targetId ? <span className="cellSub">{entry.targetId}</span> : null}
                     </td>
-                    <td>{entry.ipAddress ?? '—'}</td>
+                    <td data-label="Asal">{entry.ipAddress ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

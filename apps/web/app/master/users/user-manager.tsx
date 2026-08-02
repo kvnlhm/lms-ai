@@ -254,7 +254,7 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
             <tbody>
               {users.map((item) => (
                 <tr key={item.id}>
-                  <td>
+                  <td data-label="Pengguna">
                     <span className="userIdentity">
                       <span className="userAvatar" aria-hidden="true">{initials(item.fullName)}</span>
                       <span>
@@ -263,11 +263,11 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                       </span>
                     </span>
                   </td>
-                  <td><span className="roleBadge">{item.role === 'MASTER' ? 'Master' : 'Pelajar'}</span></td>
-                  <td><StatusPill status={item.status} /></td>
-                  <td>{formatDate(item.lastLoginAt)}</td>
-                  <td>{formatDate(item.createdAt)}</td>
-                  <td>
+                  <td data-label="Role"><span className="roleBadge">{item.role === 'MASTER' ? 'Master' : 'Pelajar'}</span></td>
+                  <td data-label="Status"><StatusPill status={item.status} /></td>
+                  <td data-label="Login terakhir">{formatDate(item.lastLoginAt)}</td>
+                  <td data-label="Bergabung">{formatDate(item.createdAt)}</td>
+                  <td className="cellActions">
                     <div className="inlineActions">
                       <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => issuePasswordReset(item)}>
                         Reset password
