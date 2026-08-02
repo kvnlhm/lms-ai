@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../components/app-shell';
+import { Search } from '../components/icons';
 import { serverClient, unwrapList } from '../lib/api';
 import { requireUser } from '../lib/session';
 
@@ -12,6 +13,18 @@ type CourseItem = Schemas['CourseListItemDto'];
 
 interface Props {
   searchParams: Promise<{ page?: string; search?: string }>;
+}
+
+/**
+ * Tautan pindah halaman yang tetap membawa kata pencarian.
+ *
+ * Sebelumnya tautannya hanya berisi `page`, sehingga menekan "Berikutnya" akan
+ * membuang pencarian dan mengembalikan pengguna ke katalog penuh.
+ */
+function halamanKe(page: number, search?: string): string {
+  const query = new URLSearchParams({ page: String(page) });
+  if (search) query.set('search', search);
+  return `/courses?${query.toString()}`;
 }
 
 export default async function CoursesPage({ searchParams }: Props) {
@@ -36,6 +49,32 @@ export default async function CoursesPage({ searchParams }: Props) {
             : `${meta.total} kursus terbit · halaman ${meta.page} dari ${meta.totalPages}`}
         </p>
 
+        {/* Formulir GET biasa: halaman ini server component, dan pencarian yang
+            tinggal di URL dapat ditandai, dibagikan, serta bertahan saat halaman
+            dimuat ulang. */}
+        <form className="catalogSearch" action="/courses">
+          <label>
+            <span className="srOnly">Cari kursus</span>
+            <span className="catalogSearchIcon" aria-hidden="true">
+              <Search size={17} />
+            </span>
+            <input
+              type="search"
+              name="search"
+              defaultValue={params.search ?? ''}
+              placeholder="Cari kursus"
+            />
+          </label>
+          <button className="btn" type="submit">
+            Cari
+          </button>
+          {params.search ? (
+            <Link className="btn btnGhost" href="/courses">
+              Hapus
+            </Link>
+          ) : null}
+        </form>
+
         {items.length === 0 ? (
           <div className="card empty" style={{ marginTop: 24 }}>
             <p style={{ margin: 0 }}>
@@ -58,12 +97,12 @@ export default async function CoursesPage({ searchParams }: Props) {
             style={{ display: 'flex', gap: 10, marginTop: 26, justifyContent: 'center' }}
           >
             {meta.page > 1 ? (
-              <Link className="btn btnGhost" href={`/courses?page=${meta.page - 1}`}>
+              <Link className="btn btnGhost" href={halamanKe(meta.page - 1, params.search)}>
                 Sebelumnya
               </Link>
             ) : null}
             {meta.page < meta.totalPages ? (
-              <Link className="btn btnGhost" href={`/courses?page=${meta.page + 1}`}>
+              <Link className="btn btnGhost" href={halamanKe(meta.page + 1, params.search)}>
                 Berikutnya
               </Link>
             ) : null}

@@ -35,6 +35,38 @@ describe('Pencarian global', () => {
     await request(h.server).get(`${prefix}/search?q=kursus`).expect(401);
   });
 
+  // Katalog memiliki pencariannya sendiri, terpisah dari pencarian global.
+  // Sebelumnya tidak diuji sama sekali padahal parameternya sudah didukung;
+  // sekarang kolomnya tampil di halaman kursus, jadi perilakunya dikunci.
+  describe('pencarian di katalog kursus', () => {
+    it('menyaring menurut kata kunci tanpa peka huruf besar-kecil', async () => {
+      const kursus = await h.prisma.course.findFirstOrThrow({
+        where: { status: 'PUBLISHED' },
+        select: { title: true },
+      });
+      const kata = kursus.title.split(' ')[0]!;
+
+      const hasil = await request(h.server)
+        .get(`${prefix}/courses?search=${encodeURIComponent(kata.toUpperCase())}`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+
+      const judul = (hasil.body.data as Array<{ title: string }>).map((item) => item.title);
+      expect(judul.length).toBeGreaterThan(0);
+      expect(judul.every((item) => item.toLowerCase().includes(kata.toLowerCase()))).toBe(true);
+    });
+
+    it('mengembalikan daftar kosong untuk kata kunci yang tidak cocok', async () => {
+      const hasil = await request(h.server)
+        .get(`${prefix}/courses?search=zzzkatatidakada`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+
+      expect(hasil.body.data).toHaveLength(0);
+      expect(hasil.body.meta.total).toBe(0);
+    });
+  });
+
   it('menolak kata kunci yang terlalu pendek', async () => {
     await cari(student, 'q=a').expect(422);
   });

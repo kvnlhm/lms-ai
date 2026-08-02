@@ -2375,3 +2375,36 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .addTrigger { padding: 12px 12px 4px; }
   .addTrigger > .btn { flex: 1; justify-content: center; }
 }
+
+/* ── Kolom kata sandi ──────────────────────────────────────── */
+.passwordField { position: relative; display: block; }
+.passwordField > input { width: 100%; padding-right: 46px; }
+
+.passwordReveal {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border: 0; border-radius: var(--r-sm); background: none;
+  color: var(--muted); cursor: pointer;
+}
+.passwordReveal:hover:not(:disabled) { color: var(--text); background: var(--raised-2); }
+.passwordReveal:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Pencarian katalog kursus ──────────────────────────────── */
+.catalogSearch { display: flex; gap: 10px; margin-top: 20px; }
+.catalogSearch label { position: relative; flex: 1; min-width: 0; display: block; }
+.catalogSearchIcon {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  display: grid; color: var(--muted); pointer-events: none;
+}
+.catalogSearch input {
+  width: 100%; min-height: 44px; padding: 10px 14px 10px 38px;
+  border: 1px solid var(--line); border-radius: var(--r-pill);
+  background: var(--raised); color: var(--text); font: inherit; font-size: 14px;
+}
+.catalogSearch input:focus { outline: none; border-color: var(--accent); }
+
+@media (max-width: 680px) {
+  .catalogSearch { flex-wrap: wrap; }
+  .catalogSearch label { flex-basis: 100%; }
+  .catalogSearch > .btn { flex: 1; justify-content: center; }
+}

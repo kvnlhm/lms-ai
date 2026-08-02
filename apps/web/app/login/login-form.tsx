@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { useNotifier } from '../components/notifier';
+import { PasswordInput } from '../components/password-input';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
 
 interface Props {
@@ -163,10 +164,9 @@ export function LoginForm({ nextPath }: Props) {
 
       <div className="field">
         <label htmlFor="password">Kata sandi</label>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           value={password}

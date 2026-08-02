@@ -40,6 +40,21 @@ export const Check = (props: IconProps) => (
   </Base>
 );
 
+export const Eye = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" />
+    <circle cx="12" cy="12" r="2.8" />
+  </Base>
+);
+
+export const EyeOff = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M10.6 6.7A9.7 9.7 0 0112 6.6c6.4 0 10 5.4 10 5.4a17 17 0 01-3.2 3.7M6.5 8.3A16.6 16.6 0 002 12s3.6 5.4 10 5.4a10 10 0 003.6-.6" />
+    <path d="M9.9 9.9a3 3 0 004.2 4.2" />
+    <path d="M3 3l18 18" />
+  </Base>
+);
+
 export const MoreHorizontal = (props: IconProps) => (
   <Base {...props}>
     <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
