@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { AppShell } from '../components/app-shell';
 import { serverClient, unwrap } from '../lib/api';
 import { requireUser } from '../lib/session';
@@ -6,6 +7,7 @@ import { ProfileForm } from './profile-form';
 import { NotificationPreferencesForm } from './notification-preferences-form';
 import { SessionManager } from './session-manager';
 
+export const metadata: Metadata = { title: 'Profil saya · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 export default async function ProfilePage() {

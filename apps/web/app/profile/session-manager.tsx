@@ -14,6 +14,18 @@ export function SessionManager({ sessions }: { sessions: DeviceSession[] }) {
   const notifier = useNotifier();
 
   async function revoke(session: DeviceSession) {
+    // Mencabut perangkat ini sendiri berarti langsung keluar. Perangkat lain
+    // tidak perlu ditanya: mencabutnya justru tindakan pengamanan yang
+    // memang disengaja, dan pemiliknya tinggal masuk lagi.
+    if (session.isCurrent) {
+      const lanjut = await notifier.confirm('Keluar dari perangkat ini?', {
+        text: 'Kamu akan langsung keluar dan perlu masuk kembali untuk melanjutkan.',
+        confirmLabel: 'Keluar',
+        danger: true,
+      });
+      if (!lanjut) return;
+    }
+
     if (busy) return;
     setBusy(session.id);
     try {
@@ -40,7 +52,7 @@ export function SessionManager({ sessions }: { sessions: DeviceSession[] }) {
     <section className="card profileSection">
       <div className="profileSectionHead">
         <h2>Perangkat aktif</h2>
-        <p>Cabut akses perangkat yang tidak Anda kenali.</p>
+        <p>Cabut akses perangkat yang tidak kamu kenali.</p>
       </div>
       <div className="sessionList">
         {sessions.map((session) => (
