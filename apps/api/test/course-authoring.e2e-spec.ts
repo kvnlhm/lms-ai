@@ -51,6 +51,35 @@ describe('Penyusunan kursus oleh Master', () => {
     expect(response.body.data.publishedAt).toBeNull();
   });
 
+  it('menerima seluruh kolom pengaturan saat kursus dibuat', async () => {
+    const categories = await asMaster('get', '/admin/course-categories').expect(200);
+    const categoryId = (categories.body.data as Array<{ id: string }>)[0]!.id;
+    const slug = `uji-lengkap-${Date.now()}`;
+
+    // Validasi API memakai forbidNonWhitelisted, jadi satu nama kolom yang
+    // meleset menolak seluruh permintaan — bukan mengabaikan kolomnya saja.
+    // Formulir "Tambahkan Kursus" mengirim ketujuh kolom ini sekaligus.
+    const dibuat = await asMaster('post', '/admin/courses')
+      .send({
+        title: 'Kursus Lengkap',
+        slug,
+        level: 'INTERMEDIATE',
+        categoryId,
+        shortDescription: 'Ringkasan singkat',
+        description: 'Deskripsi lengkap kursus.',
+        estimatedMinutes: 90,
+      })
+      .expect(201);
+    createdCourseIds.push(dibuat.body.data.id);
+
+    const detail = await asMaster('get', `/admin/courses/${dibuat.body.data.id}`).expect(200);
+    expect(detail.body.data.level).toBe('INTERMEDIATE');
+    expect(detail.body.data.shortDescription).toBe('Ringkasan singkat');
+    expect(detail.body.data.description).toBe('Deskripsi lengkap kursus.');
+    expect(detail.body.data.estimatedMinutes).toBe(90);
+    expect(detail.body.data.category?.id).toBe(categoryId);
+  });
+
   it('menyediakan kategori dan dapat memasangnya pada kursus', async () => {
     const categories = await asMaster('get', '/admin/course-categories').expect(200);
     expect(categories.body.data.length).toBeGreaterThanOrEqual(5);

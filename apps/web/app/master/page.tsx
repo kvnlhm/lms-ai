@@ -82,7 +82,7 @@ export default async function MasterDashboardPage() {
           <aside className="dashboardActions">
             <Link href="/master/courses/new" className="card actionCard">
               <span className="actionIcon"><Plus size={20} /></span>
-              <span><strong>Buat kursus baru</strong><small>Susun materi pembelajaran.</small></span>
+              <span><strong>Tambahkan kursus</strong><small>Susun materi pembelajaran.</small></span>
             </Link>
             <Link href="/master/users" className="card actionCard">
               <span className="actionIcon"><Users size={20} /></span>

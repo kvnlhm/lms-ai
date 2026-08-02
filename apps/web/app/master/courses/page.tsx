@@ -52,7 +52,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
             </p>
           </div>
           <Link className="btn" href="/master/courses/new">
-            Kursus baru
+            Tambahkan Kursus
           </Link>
         </div>
 
