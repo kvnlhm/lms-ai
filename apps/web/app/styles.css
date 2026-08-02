@@ -2585,3 +2585,17 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .payActions { width: 100%; }
   .payActions > .btn { flex: 1; justify-content: center; }
 }
+
+/* ── Aktivasi akun ─────────────────────────────────────────── */
+.activationBrand { justify-content: center; margin-bottom: 18px; }
+
+/* Keadaan tanpa formulir: berhasil, atau tautan yang tidak lengkap. Keduanya
+   berupa satu pesan dan satu jalan keluar, jadi bentuknya sama. */
+.activationDone { display: grid; justify-items: center; text-align: center; gap: 12px; }
+.activationDone h2 { margin: 4px 0 0; font-size: 20px; font-weight: 700; }
+.activationDone p { margin: 0; max-width: 42ch; color: var(--text-2); font-size: 14px; line-height: 1.65; }
+.activationDone > .btn { margin-top: 8px; }
+
+/* Petunjuk panjang kata sandi berubah nada begitu syaratnya terpenuhi, supaya
+   kemajuannya terlihat tanpa perlu menekan tombol lebih dulu. */
+.activationOk { color: var(--good); }
