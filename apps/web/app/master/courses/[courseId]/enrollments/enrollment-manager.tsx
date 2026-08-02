@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { ApiError, browserClient, unwrap } from '../../../../lib/browser-api';
+import { Modal } from '../../../../components/modal';
 import { useNotifier } from '../../../../components/notifier';
 import { StatusPill } from '../../../../components/status-pill';
 
@@ -32,6 +33,7 @@ export function EnrollmentManager({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const notifier = useNotifier();
+  const [grantOpen, setGrantOpen] = useState(false);
   const [results, setResults] = useState<GrantResult[] | null>(null);
 
   async function run(action: string, fn: () => Promise<unknown>): Promise<void> {
@@ -67,10 +69,14 @@ export function EnrollmentManager({
       );
       // Hasil ditampilkan per pengguna: satu ID yang salah tidak membatalkan
       // pendaftaran yang lain, jadi Master perlu melihat rinciannya.
+      // Hasilnya dirender di luar modal, jadi tetap terbaca setelah modalnya
+      // menutup — dan memang perlu dibaca: satu ID yang gagal tidak
+      // membatalkan yang lain.
       setResults(response.results);
       setSelectedIds([]);
       setMatches([]);
       setSearch('');
+      setGrantOpen(false);
     });
   }
 
@@ -116,7 +122,18 @@ export function EnrollmentManager({
       <section className="card panel" style={{ marginBottom: 20 }}>
         <div className="panelHead">
           <h2>Beri akses</h2>
+          <button className="btn" type="button" disabled={busy !== null} onClick={() => setGrantOpen(true)}>
+            Beri akses pelajar
+          </button>
         </div>
+
+        {grantOpen ? (
+          <Modal
+            title="Beri akses pelajar"
+            description="Cari pelajar, pilih yang ingin didaftarkan, lalu beri akses."
+            busy={busy !== null}
+            onClose={() => setGrantOpen(false)}
+          >
         <form onSubmit={grant}>
           <div className="field">
             <label htmlFor="userSearch">Cari Pelajar</label>
@@ -158,10 +175,17 @@ export function EnrollmentManager({
             </div>
           ) : null}
 
-          <button className="btn" type="submit" disabled={busy !== null || selectedIds.length === 0}>
-            {busy === 'grant' ? 'Memproses…' : 'Beri akses'}
-          </button>
+          <div className="lessonEditActions">
+            <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => setGrantOpen(false)}>
+              Batal
+            </button>
+            <button className="btn" type="submit" disabled={busy !== null || selectedIds.length === 0}>
+              {busy === 'grant' ? 'Memproses…' : 'Beri akses'}
+            </button>
+          </div>
         </form>
+          </Modal>
+        ) : null}
 
         {results ? (
           <div style={{ marginTop: 18 }}>
