@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { useNotifier } from '../components/notifier';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
 
 interface Props {
@@ -13,7 +14,7 @@ export function LoginForm({ nextPath }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const notifier = useNotifier();
   const [fields, setFields] = useState<Record<string, string[]>>({});
   const [mfaMode, setMfaMode] = useState<'setup' | 'verify' | null>(null);
   const [mfaCode, setMfaCode] = useState('');
@@ -25,7 +26,6 @@ export function LoginForm({ nextPath }: Props) {
     if (busy) return;
 
     setBusy(true);
-    setMessage(null);
     setFields({});
 
     try {
@@ -58,11 +58,13 @@ export function LoginForm({ nextPath }: Props) {
     } catch (error) {
       setBusy(false);
       if (error instanceof ApiError) {
-        setMessage(error.message);
+        void notifier.error('Gagal masuk', { text: error.message });
         if (error.fields) setFields(error.fields);
         return;
       }
-      setMessage('Tidak dapat menghubungi server. Periksa koneksi lalu coba lagi.');
+      void notifier.error('Tidak dapat menghubungi server', {
+        text: 'Periksa koneksimu lalu coba lagi.',
+      });
     }
   }
 
@@ -70,7 +72,6 @@ export function LoginForm({ nextPath }: Props) {
     event.preventDefault();
     if (busy || !mfaMode) return;
     setBusy(true);
-    setMessage(null);
     setFields({});
     try {
       const client = browserClient();
@@ -86,11 +87,13 @@ export function LoginForm({ nextPath }: Props) {
     } catch (error) {
       setBusy(false);
       if (error instanceof ApiError) {
-        setMessage(error.message);
+        void notifier.error('Kode belum diterima', { text: error.message });
         if (error.fields) setFields(error.fields);
         return;
       }
-      setMessage('Tidak dapat memverifikasi autentikator. Coba lagi.');
+      void notifier.error('Tidak dapat memverifikasi autentikator', {
+        text: 'Coba lagi sebentar.',
+      });
     }
   }
 
@@ -101,7 +104,6 @@ export function LoginForm({ nextPath }: Props) {
     const codeErrors = fields.code ?? [];
     return (
       <form onSubmit={handleMfa} noValidate>
-        {message ? <p className="notice noticeError" role="alert">{message}</p> : null}
         {mfaMode === 'setup' ? (
           <div className="notice">
             <p>Tambahkan akun ini ke aplikasi autentikator, lalu masukkan kode 6 digit.</p>
@@ -138,12 +140,6 @@ export function LoginForm({ nextPath }: Props) {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      {message ? (
-        <p className="notice noticeError" role="alert">
-          {message}
-        </p>
-      ) : null}
-
       <div className="field">
         <label htmlFor="email">Email</label>
         <input

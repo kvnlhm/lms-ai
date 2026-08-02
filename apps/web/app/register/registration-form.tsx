@@ -2,6 +2,7 @@
 
 import type { Schemas } from '@lms/api-client';
 import { useState, type FormEvent } from 'react';
+import { useNotifier } from '../components/notifier';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
 
 type Tier = Schemas['AccessTierDto'];
@@ -30,6 +31,7 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
   const [phone, setPhone] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const notifier = useNotifier();
   const [message, setMessage] = useState<string | null>(null);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,7 +48,10 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
       window.snap!.pay(checkout.snapToken, {
         onSuccess: () => goToStatus(checkout.orderCode),
         onPending: () => goToStatus(checkout.orderCode),
-        onError: () => setMessage('Pembayaran gagal. Silakan coba lagi.'),
+        onError: () => {
+          setMessage(null);
+          void notifier.error('Pembayaran gagal', { text: 'Silakan coba lagi.' });
+        },
         onClose: () => {
           setBusy(false);
           setMessage('Pembayaran belum diselesaikan. Kamu dapat mencoba lagi.');
@@ -54,11 +59,13 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
       });
     } catch (error) {
       setBusy(false);
-      setMessage(
-        error instanceof ApiError
-          ? error.message
-          : 'Tidak dapat menghubungi layanan pembayaran. Coba lagi.',
-      );
+      setMessage(null);
+      void notifier.error('Pembayaran belum dapat dimulai', {
+        text:
+          error instanceof ApiError
+            ? error.message
+            : 'Tidak dapat menghubungi layanan pembayaran. Coba lagi.',
+      });
     }
   }
 

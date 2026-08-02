@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../lib/browser-api';
 
 type Source = 'API' | 'WEB' | 'WORKER';
@@ -48,6 +49,7 @@ function relative(value: string): string {
 }
 
 export function ErrorMonitor() {
+  const notifier = useNotifier();
   const [items, setItems] = useState<ErrorEvent[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [status, setStatus] = useState<Status | ''>('OPEN');
@@ -96,7 +98,9 @@ export function ErrorMonitor() {
       );
       await load();
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : 'Perubahan gagal disimpan.');
+      void notifier.error('Perubahan gagal disimpan', {
+        text: cause instanceof ApiError ? cause.message : undefined,
+      });
     } finally {
       setBusy(null);
     }

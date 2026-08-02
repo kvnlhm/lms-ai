@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { NotifierProvider } from './components/notifier';
 import './styles.css';
 
 export const metadata: Metadata = {
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="id">
-      <body>{children}</body>
+      <body>
+        <NotifierProvider>{children}</NotifierProvider>
+      </body>
     </html>
   );
 }

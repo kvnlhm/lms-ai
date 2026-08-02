@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../lib/browser-api';
 
 interface LiveSession {
@@ -30,12 +31,11 @@ function toLocalInputValue(date: Date): string {
 }
 
 export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
+  const notifier = useNotifier();
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reasons, setReasons] = useState<string[]>([]);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const [courseId, setCourseId] = useState(courses[0]?.id ?? '');
   const [title, setTitle] = useState('');
@@ -68,9 +68,6 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
     event.preventDefault();
     if (busy) return;
     setBusy('create');
-    setError(null);
-    setReasons([]);
-    setNotice(null);
     try {
       unwrap(
         await browserClient().POST('/api/v1/admin/live-sessions', {
@@ -88,11 +85,13 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
       setTitle('');
       setDescription('');
       setJoinUrl('');
-      setNotice('Sesi dijadwalkan.');
+      notifier.success('Sesi dijadwalkan.');
       await load();
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Sesi gagal dijadwalkan.');
-      if (caught instanceof ApiError) setReasons(Object.values(caught.fields ?? {}).flat());
+      void notifier.error('Sesi gagal dijadwalkan', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+        reasons: caught instanceof ApiError ? Object.values(caught.fields ?? {}).flat() : [],
+      });
     } finally {
       setBusy(null);
     }
@@ -100,20 +99,26 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
 
   async function cancel(session: LiveSession) {
     if (busy) return;
-    if (!window.confirm(`Batalkan "${session.title}"? Pelajar tidak akan melihatnya lagi.`)) return;
+    const lanjut = await notifier.confirm(`Batalkan "${session.title}"?`, {
+      text: 'Pelajar tidak akan melihat sesi ini lagi.',
+      confirmLabel: 'Batalkan sesi',
+      cancelLabel: 'Jangan',
+      danger: true,
+    });
+    if (!lanjut) return;
     setBusy(session.id);
-    setError(null);
-    setNotice(null);
     try {
       await browserClient()
         .DELETE('/api/v1/admin/live-sessions/{sessionId}', {
           params: { path: { sessionId: session.id } },
         })
         .then(ensureSuccess);
-      setNotice('Sesi dibatalkan.');
+      notifier.success('Sesi dibatalkan.');
       await load();
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Sesi gagal dibatalkan.');
+      void notifier.error('Sesi gagal dibatalkan', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+      });
     } finally {
       setBusy(null);
     }
@@ -126,21 +131,9 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
   return (
     <section className="stack masterWorkspace">
       {error ? (
-        <div className="notice noticeError" role="alert">
-          <p>{error}</p>
-          {reasons.length > 0 ? (
-            <ul>
-              {reasons.map((reason) => (
-                <li key={reason}>{reason}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
-      {notice ? (
-        <div className="notice" role="status">
-          {notice}
-        </div>
+        <p className="notice noticeError" role="alert">
+          {error}
+        </p>
       ) : null}
 
       <form className="card stack masterFormPanel" onSubmit={create}>

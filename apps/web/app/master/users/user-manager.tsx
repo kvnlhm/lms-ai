@@ -4,6 +4,7 @@ import type { Schemas } from '@lms/api-client';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Plus } from '../../components/icons';
+import { useNotifier } from '../../components/notifier';
 import { StatusPill } from '../../components/status-pill';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 
@@ -12,7 +13,7 @@ type User = Schemas['AdminUserListItemDto'];
 export function UserManager({ users, total }: { users: User[]; total: number }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const notifier = useNotifier();
   const [credentialUrl, setCredentialUrl] = useState<string | null>(null);
   const [credentialLabel, setCredentialLabel] = useState('Tautan');
   const [showCreate, setShowCreate] = useState(false);
@@ -50,7 +51,9 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
     // Aturan yang sama ditegakkan di API. Diperiksa lebih dulu di sini supaya
     // Master melihat penyebabnya, bukan sekadar galat validasi tanpa konteks.
     if (reason.length < 3) {
-      setError('Alasan penangguhan minimal 3 karakter agar tercatat jelas di audit log.');
+      void notifier.error('Alasan terlalu pendek', {
+        text: 'Alasan penangguhan minimal 3 karakter agar tercatat jelas di audit log.',
+      });
       return;
     }
     await run(user.id, async () => {
@@ -112,12 +115,13 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
   async function run(key: string, action: () => Promise<void>) {
     if (busy) return;
     setBusy(key);
-    setError(null);
     try {
       await action();
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Tidak dapat menghubungi server.');
+      void notifier.error('Tindakan gagal dijalankan', {
+        text: caught instanceof ApiError ? caught.message : 'Tidak dapat menghubungi server.',
+      });
     } finally {
       setBusy(null);
     }
@@ -137,7 +141,6 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
           aria-controls="create-user-panel"
           onClick={() => {
             setShowCreate((value) => !value);
-            setError(null);
           }}
         >
           <Plus size={16} />
@@ -211,7 +214,6 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
         </section>
       ) : null}
 
-      {error ? <p className="notice noticeError userManagerNotice" role="alert">{error}</p> : null}
 
       {credentialUrl ? (
         <div className="notice noticeInfo credentialNotice" role="status">

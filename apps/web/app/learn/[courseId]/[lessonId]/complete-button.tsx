@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
+import { useNotifier } from '../../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 import { ArrowRight, Check } from '../../../components/icons';
 
@@ -21,8 +22,8 @@ export function CompleteButton({
   openedAt,
 }: Props) {
   const router = useRouter();
+  const notifier = useNotifier();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   /**
    * Kunci idempotensi dibuat sekali per pemasangan komponen.
@@ -36,7 +37,6 @@ export function CompleteButton({
   async function handleComplete() {
     if (busy) return;
     setBusy(true);
-    setError(null);
 
     try {
       const result = unwrap(
@@ -66,10 +66,12 @@ export function CompleteButton({
           router.replace(`/login?next=/learn/${courseId}/${lessonId}`);
           return;
         }
-        setError(caught.message);
+        void notifier.error('Pelajaran belum ditandai selesai', { text: caught.message });
         return;
       }
-      setError('Tidak dapat menghubungi server. Progres belum tersimpan; coba lagi.');
+      void notifier.error('Tidak dapat menghubungi server', {
+        text: 'Progres belum tersimpan. Periksa koneksimu lalu coba lagi.',
+      });
     }
   }
 
@@ -94,11 +96,6 @@ export function CompleteButton({
 
   return (
     <>
-      {error ? (
-        <p className="notice noticeError" role="alert" style={{ marginBottom: 4 }}>
-          {error}
-        </p>
-      ) : null}
       <button type="button" className="btn" onClick={handleComplete} disabled={busy}>
         {busy ? 'Menyimpan…' : 'Tandai selesai'}
         {busy ? null : <ArrowRight size={16} />}

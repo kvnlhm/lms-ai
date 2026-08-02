@@ -3,6 +3,7 @@
 import type { Schemas } from '@lms/api-client';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useNotifier } from '../components/notifier';
 import { ApiError, browserClient, ensureSuccess } from '../lib/browser-api';
 
 type DeviceSession = Schemas['DeviceSessionDto'];
@@ -10,12 +11,11 @@ type DeviceSession = Schemas['DeviceSessionDto'];
 export function SessionManager({ sessions }: { sessions: DeviceSession[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const notifier = useNotifier();
 
   async function revoke(session: DeviceSession) {
     if (busy) return;
     setBusy(session.id);
-    setError(null);
     try {
       ensureSuccess(
         await browserClient().DELETE('/api/v1/auth/sessions/{sessionId}', {
@@ -28,7 +28,9 @@ export function SessionManager({ sessions }: { sessions: DeviceSession[] }) {
         router.refresh();
       }
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Tidak dapat menghubungi server.');
+      void notifier.error('Perangkat gagal dicabut', {
+        text: caught instanceof ApiError ? caught.message : 'Tidak dapat menghubungi server.',
+      });
     } finally {
       setBusy(null);
     }
@@ -40,7 +42,6 @@ export function SessionManager({ sessions }: { sessions: DeviceSession[] }) {
         <h2>Perangkat aktif</h2>
         <p>Cabut akses perangkat yang tidak Anda kenali.</p>
       </div>
-      {error ? <p className="notice noticeError profileSessionNotice" role="alert">{error}</p> : null}
       <div className="sessionList">
         {sessions.map((session) => (
           <div className="sessionRow" key={session.id}>

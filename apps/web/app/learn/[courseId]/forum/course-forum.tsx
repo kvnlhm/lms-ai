@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { useNotifier } from '../../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 
 /** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
@@ -20,6 +21,7 @@ function formatDate(value: string): string {
 }
 
 export function CourseForum({ courseId }: { courseId: string }) {
+  const notifier = useNotifier();
   const [topics, setTopics] = useState<TopicSummary[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,9 @@ export function CourseForum({ courseId }: { courseId: string }) {
       setComposing(false);
       await load(search);
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Diskusi gagal dibuat.');
+      void notifier.error('Diskusi gagal dibuat', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+      });
       if (caught instanceof ApiError) setReasons(Object.values(caught.fields ?? {}).flat());
     } finally {
       setBusy(false);

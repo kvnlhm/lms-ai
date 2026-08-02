@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 import {
   fetchLibrary,
@@ -26,6 +27,7 @@ function formatDate(value: string): string {
 }
 
 export function VideoLibrary() {
+  const notifier = useNotifier();
   const [items, setItems] = useState<LibraryAsset[]>([]);
   const [totalBytes, setTotalBytes] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,13 +118,13 @@ export function VideoLibrary() {
     if (busy || mengunggah) return;
     // Berkas hilang dari disk dan tidak dapat dikembalikan dari sini; hanya
     // backup yang bisa. Karena itu penghapusannya dikonfirmasi lebih dulu.
-    if (
-      !window.confirm(`Hapus "${item.title}" beserta berkasnya? Tindakan ini tidak dapat dibatalkan.`)
-    ) {
-      return;
-    }
+    const lanjut = await notifier.confirm(`Hapus "${item.title}" beserta berkasnya?`, {
+      text: 'Berkasnya hilang dari disk dan hanya dapat dikembalikan dari backup.',
+      confirmLabel: 'Hapus video',
+      danger: true,
+    });
+    if (!lanjut) return;
     setBusy(item.videoAssetId);
-    setError(null);
     try {
       unwrap(
         await browserClient().DELETE('/api/v1/admin/videos/{videoAssetId}', {
@@ -131,7 +133,9 @@ export function VideoLibrary() {
       );
       await load();
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Video gagal dihapus.');
+      void notifier.error('Video gagal dihapus', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+      });
     } finally {
       setBusy(null);
     }

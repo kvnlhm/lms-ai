@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { useNotifier } from '../components/notifier';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
 
 type Notification = Schemas['NotificationDto'];
@@ -12,6 +13,7 @@ function formatDate(value: string | Date): string {
 }
 
 export function NotificationInbox() {
+  const notifier = useNotifier();
   const [items, setItems] = useState<Notification[]>([]);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,9 @@ export function NotificationInbox() {
       await browserClient().POST('/api/v1/me/notifications/read-all', {});
       await load(unreadOnly);
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Gagal menandai sudah dibaca.');
+      void notifier.error('Gagal menandai sudah dibaca', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+      });
     } finally {
       setBusy(false);
     }

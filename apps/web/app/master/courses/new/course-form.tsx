@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { useNotifier } from '../../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 
 const LEVELS = [
@@ -12,13 +13,13 @@ const LEVELS = [
 
 export function CourseForm() {
   const router = useRouter();
+  const notifier = useNotifier();
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [shortDescription, setShortDescription] = useState('');
   const [level, setLevel] = useState<(typeof LEVELS)[number]['value']>('BEGINNER');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string[]>>({});
 
   /** Slug diisi otomatis dari judul sampai Master mengubahnya sendiri. */
@@ -32,7 +33,6 @@ export function CourseForm() {
     if (busy) return;
 
     setBusy(true);
-    setMessage(null);
     setFields({});
 
     try {
@@ -51,22 +51,23 @@ export function CourseForm() {
     } catch (error) {
       setBusy(false);
       if (error instanceof ApiError) {
-        setMessage(error.message);
+        // Rinciannya tetap muncul di bawah kolomnya masing-masing; modal
+        // hanya merangkum supaya kegagalannya tidak terlewat.
         if (error.fields) setFields(error.fields);
+        void notifier.error('Kursus belum dibuat', {
+          text: error.message,
+          reasons: Object.values(error.fields ?? {}).flat(),
+        });
         return;
       }
-      setMessage('Tidak dapat menghubungi server. Coba lagi.');
+      void notifier.error('Tidak dapat menghubungi server', {
+        text: 'Kursus belum dibuat. Periksa koneksimu lalu coba lagi.',
+      });
     }
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      {message ? (
-        <p className="notice noticeError" role="alert">
-          {message}
-        </p>
-      ) : null}
-
       <div className="field">
         <label htmlFor="title">Judul kursus</label>
         <input

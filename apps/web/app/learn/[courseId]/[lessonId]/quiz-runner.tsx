@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { useNotifier } from '../../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 import { ArrowRight, Check } from '../../../components/icons';
 
@@ -24,10 +25,10 @@ interface Props {
  */
 export function QuizRunner({ courseId, lessonId, nextLessonId }: Props) {
   const router = useRouter();
+  const notifier = useNotifier();
   const [quiz, setQuiz] = useState<LearnerQuiz | null>(null);
   const [memuat, setMemuat] = useState(true);
   const [galat, setGalat] = useState<string | null>(null);
-  const [alasan, setAlasan] = useState<string[]>([]);
   const [sibuk, setSibuk] = useState(false);
   const [pilihan, setPilihan] = useState<Record<string, string[]>>({});
   const [hasil, setHasil] = useState<AttemptResult | null>(null);
@@ -85,8 +86,6 @@ export function QuizRunner({ courseId, lessonId, nextLessonId }: Props) {
   async function kirim() {
     if (!quiz || sibuk) return;
     setSibuk(true);
-    setGalat(null);
-    setAlasan([]);
 
     try {
       const jawaban = quiz.questions.map((soal) => ({
@@ -112,10 +111,14 @@ export function QuizRunner({ courseId, lessonId, nextLessonId }: Props) {
           router.replace(`/login?next=/learn/${courseId}/${lessonId}`);
           return;
         }
-        setGalat(caught.message);
-        setAlasan(Object.values(caught.fields ?? {}).flat());
+        void notifier.error('Jawaban belum terkirim', {
+          text: caught.message,
+          reasons: Object.values(caught.fields ?? {}).flat(),
+        });
       } else {
-        setGalat('Tidak dapat menghubungi server. Jawaban belum terkirim.');
+        void notifier.error('Tidak dapat menghubungi server', {
+          text: 'Jawaban belum terkirim. Periksa koneksimu lalu coba lagi.',
+        });
       }
     } finally {
       setSibuk(false);
@@ -153,21 +156,6 @@ export function QuizRunner({ courseId, lessonId, nextLessonId }: Props) {
             : `Sisa percobaan: ${sisaPercobaan}`}
         </span>
       </div>
-
-      {galat ? (
-        <div className="notice noticeError" role="alert">
-          <div>
-            {galat}
-            {alasan.length > 0 ? (
-              <ul className="reasonList">
-                {alasan.map((baris) => (
-                  <li key={baris}>{baris}</li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       {hasil ? (
         <div

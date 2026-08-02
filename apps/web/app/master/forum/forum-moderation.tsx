@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 
 /**
@@ -37,13 +38,13 @@ function initials(name: string): string {
 }
 
 export function ForumModeration() {
+  const notifier = useNotifier();
   const [tab, setTab] = useState<'topics' | 'reports' | 'bans'>('topics');
   const [topics, setTopics] = useState<ModerationTopic[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [bans, setBans] = useState<Ban[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -75,14 +76,14 @@ export function ForumModeration() {
   async function run(action: string, task: () => Promise<unknown>, success: string) {
     if (busy) return;
     setBusy(action);
-    setError(null);
-    setNotice(null);
     try {
       await task();
-      setNotice(success);
+      notifier.success(success);
       await load();
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Tindakan gagal dijalankan.');
+      void notifier.error('Tindakan gagal dijalankan', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+      });
     } finally {
       setBusy(null);
     }
@@ -149,11 +150,6 @@ export function ForumModeration() {
       {error ? (
         <div className="notice noticeError" role="alert">
           {error}
-        </div>
-      ) : null}
-      {notice ? (
-        <div className="notice" role="status">
-          {notice}
         </div>
       ) : null}
       {loading ? <p className="stageNote">Memuat data forum…</p> : null}

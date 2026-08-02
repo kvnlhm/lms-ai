@@ -2,6 +2,7 @@
 
 import type { Schemas } from '@lms/api-client';
 import { useState, type FormEvent } from 'react';
+import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 
 type Tier = Schemas['AccessTierDto'];
@@ -41,11 +42,10 @@ export function AccessTierManager({
   const [editing, setEditing] = useState<Tier | null>(null);
   const [editingDraft, setEditingDraft] = useState<TierDraft | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const notifier = useNotifier();
 
   async function create() {
     setBusy(true);
-    setMessage(null);
     try {
       const tier = unwrap(
         await browserClient().POST('/api/v1/admin/access-tiers', {
@@ -54,9 +54,11 @@ export function AccessTierManager({
       ) as unknown as Tier;
       setTiers((current) => [...current, tier].sort((a, b) => a.position - b.position));
       setDraft(emptyDraft);
-      setMessage('Paket berhasil dibuat dan siap ditampilkan.');
+      notifier.success('Paket berhasil dibuat dan siap ditampilkan.');
     } catch (error) {
-      setMessage(error instanceof ApiError ? error.message : 'Paket belum dapat disimpan.');
+      void notifier.error('Paket belum dapat disimpan', {
+        text: error instanceof ApiError ? error.message : undefined,
+      });
     } finally {
       setBusy(false);
     }
@@ -66,7 +68,6 @@ export function AccessTierManager({
     event.preventDefault();
     if (!editing || !editingDraft) return;
     setBusy(true);
-    setMessage(null);
     try {
       const tier = unwrap(
         await browserClient().PATCH('/api/v1/admin/access-tiers/{tierId}', {
@@ -79,9 +80,11 @@ export function AccessTierManager({
       );
       setEditing(null);
       setEditingDraft(null);
-      setMessage('Perubahan paket berhasil disimpan.');
+      notifier.success('Perubahan paket berhasil disimpan.');
     } catch (error) {
-      setMessage(error instanceof ApiError ? error.message : 'Perubahan belum dapat disimpan.');
+      void notifier.error('Perubahan belum dapat disimpan', {
+        text: error instanceof ApiError ? error.message : undefined,
+      });
     } finally {
       setBusy(false);
     }
@@ -93,7 +96,6 @@ export function AccessTierManager({
         <h2>Buat paket baru</h2>
         <p className="pageSub">Gunakan lifetime bila akses tidak memiliki tanggal berakhir.</p>
         <TierFields draft={draft} courses={courses} onChange={setDraft} />
-        {message ? <p className="notice" role="status">{message}</p> : null}
         <button className="btn" onClick={() => void create()} disabled={busy} type="button">
           {busy ? 'Menyimpan…' : 'Buat paket'}
         </button>

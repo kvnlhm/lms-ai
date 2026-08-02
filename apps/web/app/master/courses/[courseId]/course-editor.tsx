@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { useNotifier } from '../../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../../lib/browser-api';
 import {
   attachToLesson,
@@ -61,8 +62,7 @@ type DeleteConfirmation =
 export function CourseEditor({ course }: { course: CourseDetail }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [reasons, setReasons] = useState<string[]>([]);
+  const notifier = useNotifier();
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [upload, setUpload] = useState<UploadState | null>(null);
@@ -81,8 +81,6 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   async function run(action: string, fn: () => Promise<unknown>): Promise<boolean> {
     if (busy) return false;
     setBusy(action);
-    setError(null);
-    setReasons([]);
 
     try {
       await fn();
@@ -90,11 +88,15 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       return true;
     } catch (caught) {
       if (caught instanceof ApiError) {
-        setError(caught.message);
-        // Aturan terbit mengembalikan seluruh alasan sekaligus.
-        if (caught.fields?.course) setReasons(caught.fields.course);
+        void notifier.error('Perubahan belum tersimpan', {
+          text: caught.message,
+          // Aturan terbit mengembalikan seluruh alasan sekaligus.
+          reasons: caught.fields?.course ?? [],
+        });
       } else {
-        setError('Tidak dapat menghubungi server. Perubahan belum tersimpan.');
+        void notifier.error('Tidak dapat menghubungi server', {
+          text: 'Perubahan belum tersimpan. Periksa koneksimu lalu coba lagi.',
+        });
       }
       return false;
     } finally {
@@ -201,12 +203,12 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
     if (busy) return;
     const url = youtubeUrl.trim();
     if (!url) {
-      setError('Tempel tautan YouTube terlebih dahulu.');
+      void notifier.error('Tautan belum diisi', {
+        text: 'Tempel tautan YouTube terlebih dahulu.',
+      });
       return;
     }
     setBusy(`youtube-${lessonId}`);
-    setError(null);
-    setReasons([]);
     try {
       // Dua langkah sejak video menjadi barang perpustakaan: tautannya masuk
       // perpustakaan dulu, lalu dipasang pada pelajaran ini.
@@ -232,10 +234,10 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       });
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Tautan YouTube gagal disimpan.');
-      if (caught instanceof ApiError) {
-        setReasons(Object.values(caught.fields ?? {}).flat());
-      }
+      void notifier.error('Tautan YouTube gagal disimpan', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+        reasons: caught instanceof ApiError ? Object.values(caught.fields ?? {}).flat() : [],
+      });
     } finally {
       setBusy(null);
     }
@@ -245,8 +247,6 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
     if (busy) return;
     const action = `upload-video-${lessonId}`;
     setBusy(action);
-    setError(null);
-    setReasons([]);
     setUpload({
       lessonId,
       fileName: file.name,
@@ -356,21 +356,6 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
           )}
         </div>
       </div>
-
-      {error ? (
-        <div className="notice noticeError" role="alert" style={{ marginBottom: 18 }}>
-          <div>
-            {error}
-            {reasons.length > 0 ? (
-              <ul className="reasonList">
-                {reasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       {course.status === 'DRAFT' ? (
         <p className="notice noticeInfo" style={{ marginBottom: 18 }} role="status">

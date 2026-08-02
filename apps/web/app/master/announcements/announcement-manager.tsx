@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../lib/browser-api';
 
 type Audience = 'ALL_USERS' | 'COURSE_LEARNERS' | 'SPECIFIC_USERS';
@@ -43,12 +44,13 @@ function toLocalInputValue(date: Date): string {
 }
 
 export function AnnouncementManager({ courses }: { courses: { id: string; title: string }[] }) {
+  const notifier = useNotifier();
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  // Hanya kegagalan memuat daftar yang tetap tampil di halaman: tanpa daftar,
+  // pesan itulah satu-satunya isi yang tersisa.
   const [error, setError] = useState<string | null>(null);
-  const [reasons, setReasons] = useState<string[]>([]);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -82,16 +84,15 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
   async function run(action: string, task: () => Promise<unknown>, success: string) {
     if (busy) return;
     setBusy(action);
-    setError(null);
-    setReasons([]);
-    setNotice(null);
     try {
       await task();
-      setNotice(success);
+      notifier.success(success);
       await load();
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Tindakan gagal dijalankan.');
-      if (caught instanceof ApiError) setReasons(Object.values(caught.fields ?? {}).flat());
+      void notifier.error('Tindakan gagal dijalankan', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+        reasons: caught instanceof ApiError ? Object.values(caught.fields ?? {}).flat() : [],
+      });
     } finally {
       setBusy(null);
     }
@@ -123,21 +124,9 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
   return (
     <section className="stack masterWorkspace">
       {error ? (
-        <div className="notice noticeError" role="alert">
-          <p>{error}</p>
-          {reasons.length > 0 ? (
-            <ul>
-              {reasons.map((reason) => (
-                <li key={reason}>{reason}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
-      {notice ? (
-        <div className="notice" role="status">
-          {notice}
-        </div>
+        <p className="notice noticeError" role="alert">
+          {error}
+        </p>
       ) : null}
 
       <form className="card stack masterFormPanel" onSubmit={submit}>
@@ -318,8 +307,13 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
                     className="btnGhost btnSmall"
                     type="button"
                     disabled={busy !== null}
-                    onClick={() => {
-                      if (!window.confirm(`Hapus "${item.title}"? Tindakan ini permanen.`)) return;
+                    onClick={async () => {
+                      const lanjut = await notifier.confirm(`Hapus "${item.title}"?`, {
+                        text: 'Tindakan ini permanen dan tidak dapat dibatalkan.',
+                        confirmLabel: 'Hapus',
+                        danger: true,
+                      });
+                      if (!lanjut) return;
                       void run(
                         `delete-${item.id}`,
                         () =>

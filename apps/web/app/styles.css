@@ -2105,3 +2105,78 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .quizSettings,
   .quizQuestionMeta { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ── Pemberitahuan ─────────────────────────────────────────── */
+/* Dialog untuk galat dan konfirmasi; toast untuk sukses. Alasan pembagiannya
+   ada di app/components/notifier.tsx. */
+.alertBackdrop {
+  position: fixed; inset: 0; z-index: 200;
+  display: grid; place-items: center; padding: 20px;
+  background: rgb(0 0 0 / .55);
+  animation: alertBackdropIn .14s ease-out;
+}
+@keyframes alertBackdropIn { from { opacity: 0; } }
+
+.alertDialog {
+  width: min(100%, 420px); padding: 28px 26px 22px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); box-shadow: var(--shadow);
+  animation: alertDialogIn .18s cubic-bezier(.2, .9, .3, 1.2);
+}
+@keyframes alertDialogIn { from { opacity: 0; transform: scale(.9); } }
+
+.alertIcon {
+  display: grid; place-items: center;
+  width: 62px; height: 62px; margin-bottom: 16px;
+  border-radius: var(--r-pill);
+}
+.alertIconDanger { background: var(--danger-soft); color: var(--danger); }
+.alertIconInfo { background: var(--accent-soft); color: var(--accent-text); }
+
+.alertTitle { margin: 0; font-size: 18px; font-weight: 650; line-height: 1.35; }
+.alertBody { margin-top: 10px; width: 100%; }
+.alertText { margin: 0; font-size: 14px; line-height: 1.55; color: var(--muted); }
+
+.alertReasons {
+  margin: 12px 0 0; padding: 12px 14px; list-style: none;
+  display: flex; flex-direction: column; gap: 6px;
+  text-align: left; font-size: 13px; line-height: 1.5;
+  background: var(--raised-2); border-radius: var(--r-md);
+}
+.alertReasons li { position: relative; padding-left: 16px; }
+.alertReasons li::before { content: '•'; position: absolute; left: 4px; color: var(--muted); }
+
+.alertActions { display: flex; gap: 10px; margin-top: 22px; width: 100%; }
+.alertActions > .btn { flex: 1; justify-content: center; }
+
+.toastStack {
+  position: fixed; z-index: 210; right: 20px; bottom: 20px;
+  display: flex; flex-direction: column; gap: 10px;
+  max-width: min(92vw, 380px); pointer-events: none;
+}
+.toastItem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 12px 12px 14px; pointer-events: auto;
+  font-size: 14px; line-height: 1.45;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); box-shadow: var(--shadow);
+  animation: toastIn .18s ease-out;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px); } }
+.toastItem > span { flex: 1; min-width: 0; }
+.toastGood { border-left: 3px solid var(--good); color: var(--good); }
+.toastDanger { border-left: 3px solid var(--danger); color: var(--danger); }
+
+.toastClose {
+  display: grid; place-items: center; flex: none;
+  width: 24px; height: 24px; padding: 0;
+  background: none; border: none; border-radius: var(--r-sm);
+  color: var(--muted); cursor: pointer;
+}
+.toastClose:hover { background: var(--raised-2); color: var(--text); }
+
+@media (max-width: 720px) {
+  .toastStack { right: 12px; left: 12px; bottom: 12px; max-width: none; }
+  .alertActions { flex-direction: column-reverse; }
+}

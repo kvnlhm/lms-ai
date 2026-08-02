@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { useNotifier } from '../../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../../lib/browser-api';
 import { ChevronDown, ChevronUp, Trash } from '../../../components/icons';
 
@@ -67,11 +68,12 @@ export function QuizEditor({
   lessonTitle: string;
   onClose: () => void;
 }) {
+  const notifier = useNotifier();
   const [memuat, setMemuat] = useState(true);
   const [sibuk, setSibuk] = useState(false);
+  // Hanya kegagalan memuat yang tetap tampil di dalam panel: saat itu tidak ada
+  // apa pun lagi untuk dikerjakan di sini, jadi pesannya adalah isi panelnya.
   const [galat, setGalat] = useState<string | null>(null);
-  const [alasan, setAlasan] = useState<string[]>([]);
-  const [tersimpan, setTersimpan] = useState<string | null>(null);
   const [adaDiServer, setAdaDiServer] = useState(false);
   const [jumlahPercobaan, setJumlahPercobaan] = useState(0);
 
@@ -203,16 +205,11 @@ export function QuizEditor({
     if (sibuk) return;
     const masalah = periksaLokal();
     if (masalah.length > 0) {
-      setGalat('Kuis belum dapat disimpan.');
-      setAlasan(masalah);
-      setTersimpan(null);
+      void notifier.error('Kuis belum dapat disimpan', { reasons: masalah });
       return;
     }
 
     setSibuk(true);
-    setGalat(null);
-    setAlasan([]);
-    setTersimpan(null);
 
     try {
       const quiz = unwrap<AdminQuiz>(
@@ -244,13 +241,19 @@ export function QuizEditor({
       setQuestions((daftar) =>
         daftar.map((soal, index) => ({ ...soal, id: quiz.questions[index]?.id ?? soal.id })),
       );
-      setTersimpan(`Tersimpan: ${quiz.questions.length} soal, total ${quiz.totalPoints} poin.`);
+      notifier.success(
+        `Tersimpan: ${quiz.questions.length} soal, total ${quiz.totalPoints} poin.`,
+      );
     } catch (caught) {
       if (caught instanceof ApiError) {
-        setGalat(caught.message);
-        setAlasan(Object.values(caught.fields ?? {}).flat());
+        void notifier.error('Kuis belum tersimpan', {
+          text: caught.message,
+          reasons: Object.values(caught.fields ?? {}).flat(),
+        });
       } else {
-        setGalat('Tidak dapat menghubungi server. Kuis belum tersimpan.');
+        void notifier.error('Tidak dapat menghubungi server', {
+          text: 'Kuis belum tersimpan. Periksa koneksimu lalu coba lagi.',
+        });
       }
     } finally {
       setSibuk(false);
@@ -260,8 +263,6 @@ export function QuizEditor({
   async function hapus() {
     if (sibuk) return;
     setSibuk(true);
-    setGalat(null);
-    setAlasan([]);
     try {
       ensureSuccess(
         await browserClient().DELETE('/api/v1/admin/lessons/{lessonId}/quiz', {
@@ -270,7 +271,9 @@ export function QuizEditor({
       );
       onClose();
     } catch (caught) {
-      setGalat(caught instanceof ApiError ? caught.message : 'Kuis gagal dihapus.');
+      void notifier.error('Kuis gagal dihapus', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+      });
     } finally {
       setSibuk(false);
     }
@@ -286,6 +289,12 @@ export function QuizEditor({
 
   return (
     <section className="quizEditor" aria-label={`Soal kuis untuk ${lessonTitle}`}>
+      {galat ? (
+        <p className="notice noticeError" role="alert">
+          {galat}
+        </p>
+      ) : null}
+
       <div className="lessonEditHead">
         <div>
           <strong>Soal kuis</strong>
@@ -296,25 +305,6 @@ export function QuizEditor({
         </div>
       </div>
 
-      {galat ? (
-        <div className="notice noticeError" role="alert">
-          <div>
-            {galat}
-            {alasan.length > 0 ? (
-              <ul className="reasonList">
-                {alasan.map((baris) => (
-                  <li key={baris}>{baris}</li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-      {tersimpan ? (
-        <p className="notice noticeSuccess" role="status">
-          {tersimpan}
-        </p>
-      ) : null}
       {jumlahPercobaan > 0 ? (
         <p className="notice noticeInfo" role="status">
           Kuis ini sudah dikerjakan {jumlahPercobaan} kali. Soal yang pernah dijawab tidak dapat

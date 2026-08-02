@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { useNotifier } from '../../../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../../../lib/browser-api';
 
 /** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
@@ -25,10 +26,10 @@ export function TopicThread({
   topicId: string;
   currentUserId: string;
 }) {
+  const notifier = useNotifier();
   const [topic, setTopic] = useState<TopicDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -57,13 +58,14 @@ export function TopicThread({
     if (busy) return;
     setBusy(action);
     setError(null);
-    setNotice(null);
     try {
       await task();
-      if (success) setNotice(success);
+      if (success) notifier.success(success);
       await load();
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Tindakan gagal dijalankan.');
+      void notifier.error('Tindakan gagal dijalankan', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+      });
     } finally {
       setBusy(null);
     }
@@ -94,11 +96,6 @@ export function TopicThread({
       {error ? (
         <div className="notice noticeError" role="alert">
           {error}
-        </div>
-      ) : null}
-      {notice ? (
-        <div className="notice" role="status">
-          {notice}
         </div>
       ) : null}
 

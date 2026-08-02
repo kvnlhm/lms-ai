@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { ApiError, browserClient, unwrap } from '../../../../lib/browser-api';
+import { useNotifier } from '../../../../components/notifier';
 import { StatusPill } from '../../../../components/status-pill';
 
 type Enrollment = Schemas['AdminEnrollmentDto'];
@@ -30,23 +31,23 @@ export function EnrollmentManager({
   const [matches, setMatches] = useState<User[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const notifier = useNotifier();
   const [results, setResults] = useState<GrantResult[] | null>(null);
 
   async function run(action: string, fn: () => Promise<unknown>): Promise<void> {
     if (busy) return;
     setBusy(action);
-    setError(null);
 
     try {
       await fn();
       router.refresh();
     } catch (caught) {
-      setError(
-        caught instanceof ApiError
-          ? caught.message
-          : 'Tidak dapat menghubungi server. Perubahan belum tersimpan.',
-      );
+      void notifier.error('Perubahan belum tersimpan', {
+        text:
+          caught instanceof ApiError
+            ? caught.message
+            : 'Tidak dapat menghubungi server. Periksa koneksimu lalu coba lagi.',
+      });
     } finally {
       setBusy(null);
     }
@@ -76,7 +77,9 @@ export function EnrollmentManager({
   async function findUsers(): Promise<void> {
     const term = search.trim();
     if (term.length < 2) {
-      setError('Ketik minimal 2 karakter nama atau email.');
+      void notifier.error('Kata kunci terlalu pendek', {
+        text: 'Ketik minimal 2 karakter nama atau email.',
+      });
       return;
     }
     await run('search', async () => {
@@ -110,12 +113,6 @@ export function EnrollmentManager({
 
   return (
     <>
-      {error ? (
-        <p className="notice noticeError" role="alert" style={{ marginBottom: 18 }}>
-          {error}
-        </p>
-      ) : null}
-
       <section className="card panel" style={{ marginBottom: 20 }}>
         <div className="panelHead">
           <h2>Beri akses</h2>

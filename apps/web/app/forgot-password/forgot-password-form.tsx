@@ -1,25 +1,27 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { useNotifier } from '../components/notifier';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
 
 export function ForgotPasswordForm() {
+  const notifier = useNotifier();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const email = String(new FormData(event.currentTarget).get('email') ?? '').trim();
     setBusy(true);
-    setError(null);
     try {
       unwrap(
         await browserClient().POST('/api/v1/auth/forgot-password', { body: { email } }),
       );
       setSentTo(email);
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Tidak dapat menghubungi server.');
+      void notifier.error('Tautan pemulihan gagal dikirim', {
+        text: caught instanceof ApiError ? caught.message : 'Tidak dapat menghubungi server.',
+      });
     } finally {
       setBusy(false);
     }
@@ -55,11 +57,6 @@ export function ForgotPasswordForm() {
           disabled={busy}
         />
       </div>
-      {error ? (
-        <p className="fieldError" role="alert">
-          {error}
-        </p>
-      ) : null}
       <button className="btn" type="submit" disabled={busy}>
         {busy ? 'Mengirim…' : 'Kirim tautan pemulihan'}
       </button>
