@@ -739,7 +739,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                 {addLessonModuleId === courseModule.id ? (
                   <Modal
                     title="Tambah materi"
-                    description={`Masuk ke bagian "${courseModule.title}"`}
+                    description={`Masuk ke bagian "${courseModule.title}". Isi yang utama saja — pengaturan lain sudah bernilai otomatis.`}
                     busy={busy !== null}
                     onClose={() => setAddLessonModuleId(null)}
                   >
@@ -982,13 +982,7 @@ function LessonEditForm({
   }
 
   return (
-    <form className="lessonEditForm" onSubmit={submit}>
-      <div className="lessonEditHead">
-        <div>
-          <strong>Edit materi</strong>
-          <p>Isi konten yang akan dibaca atau dibuka oleh Pelajar.</p>
-        </div>
-      </div>
+    <form onSubmit={submit}>
       <div className="lessonEditGrid">
         <div className="field">
           <label htmlFor={`lesson-title-${lesson.id}`}>Judul</label>
@@ -1218,13 +1212,7 @@ function AddLessonForm({
   }
 
   return (
-    <form className="lessonEditForm addLessonForm" onSubmit={submit}>
-      <div className="lessonEditHead">
-        <div>
-          <strong>Tambah materi</strong>
-          <p>Isi yang utama saja. Pengaturan lain sudah diberi nilai otomatis dan tetap bisa diubah.</p>
-        </div>
-      </div>
+    <form onSubmit={submit}>
       <div className="lessonEditGrid">
         <div className="field">
           <label htmlFor={`new-lesson-title-${moduleId}`}>Judul</label>
