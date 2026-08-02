@@ -3,8 +3,16 @@ import type { ReactNode } from 'react';
 import { NotifierProvider } from './components/notifier';
 import './styles.css';
 
+/**
+ * Judul bawaan untuk halaman yang tidak menetapkan judulnya sendiri.
+ *
+ * Sengaja tanpa "| Admin": judul ini juga dipakai beranda, katalog, pemutar
+ * pelajaran, profil, dan halaman atur ulang password — menandai halaman
+ * pelajar sebagai Admin justru menyesatkan. Sisi Master mendapat judulnya
+ * sendiri lewat app/master/layout.tsx.
+ */
 export const metadata: Metadata = {
-  title: 'LMS AIPrenuer',
+  title: 'Academy AIPreneur',
   description: 'Platform pembelajaran coding, AI, bisnis, marketing, dan kesiapan kerja.',
 };
 

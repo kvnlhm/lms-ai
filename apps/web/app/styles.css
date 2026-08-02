@@ -1027,7 +1027,11 @@ table.data tbody tr:hover { background: var(--raised); }
 .masterMain { min-width: 0; background: var(--surface); }
 .masterTopbar {
   height: 52px; position: sticky; top: 0; z-index: 15;
-  display: flex; align-items: center; justify-content: center; gap: 18px;
+  /* Judul di kiri, pencarian di ujung kanan. Paddingnya disamakan dengan
+     sisi kiri-kanan `.masterContent` (100% - 64px) supaya kolom pencarian
+     sejajar dengan tepi kanan isi halaman di bawahnya. */
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  padding: 0 32px;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
   backdrop-filter: blur(12px); border-bottom: 1px solid var(--line-soft);
   color: var(--text-2); font-size: 13px;
@@ -1894,15 +1898,6 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   background: var(--raised); color: var(--text); font: inherit; font-size: 13.5px;
 }
 .globalSearchInput:focus { outline: none; border-color: var(--accent); width: 260px; }
-
-/* Di topbar Master lebarnya tetap, tidak melebar saat difokus. Kedua isi
-   topbar ini dipusatkan berdampingan, jadi kolom yang melebar akan menggeser
-   judul "Workspace Master" di sebelahnya setiap kali kolomnya diklik. Warna
-   tepi sudah cukup menandai fokus tanpa memindahkan apa pun. Aturan ini
-   sengaja dibatasi pada .masterTopbar supaya topbar pelajar tidak ikut
-   berubah — di sana kolomnya berada di ujung kanan dan tidak menggeser apa pun. */
-.masterTopbar .globalSearchInput,
-.masterTopbar .globalSearchInput:focus { width: 240px; }
 
 .globalSearchPanel {
   position: absolute; right: 0; top: calc(100% + 8px); z-index: 40;

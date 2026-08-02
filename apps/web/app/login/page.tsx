@@ -5,7 +5,7 @@ import { ThemeToggle } from '../components/theme-toggle';
 import { LoginForm } from './login-form';
 import Link from 'next/link';
 
-export const metadata: Metadata = { title: 'Masuk · LMS AIPrenuer' };
+export const metadata: Metadata = { title: 'Masuk · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 interface Props {

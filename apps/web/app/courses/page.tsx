@@ -5,7 +5,7 @@ import { AppShell } from '../components/app-shell';
 import { serverClient, unwrapList } from '../lib/api';
 import { requireUser } from '../lib/session';
 
-export const metadata: Metadata = { title: 'Kursus · LMS AIPrenuer' };
+export const metadata: Metadata = { title: 'Kursus · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 type CourseItem = Schemas['CourseListItemDto'];
