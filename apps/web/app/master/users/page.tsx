@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { Schemas } from '@lms/api-client';
 import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
@@ -6,6 +7,7 @@ import { serverClient, unwrapList } from '../../lib/api';
 import { requirePermission } from '../../lib/session';
 import { UserManager } from './user-manager';
 
+export const metadata: Metadata = { title: 'Pengguna · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
 
 type User = Schemas['AdminUserListItemDto'];
@@ -23,6 +25,9 @@ export default async function MasterUsersPage({ searchParams }: Props) {
   const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
   const status = STATUSES.find((value) => value === params.status);
   const role = ROLES.find((value) => value === params.role);
+  // Spasi saja bukan kata pencarian: tanpa dipangkas, "?search=%20" menghasilkan
+  // daftar kosong yang tampak seperti tidak ada pengguna yang cocok.
+  const search = params.search?.trim() || undefined;
   const client = await serverClient();
   const list = unwrapList<User>(
     await client.GET('/api/v1/admin/users', {
@@ -30,7 +35,7 @@ export default async function MasterUsersPage({ searchParams }: Props) {
         query: {
           page,
           pageSize: 20,
-          ...(params.search ? { search: params.search } : {}),
+          ...(search ? { search } : {}),
           ...(status ? { status } : {}),
           ...(role ? { role } : {}),
         },
@@ -45,7 +50,9 @@ export default async function MasterUsersPage({ searchParams }: Props) {
           <div className="pageHeadMain">
             <h1 className="pageTitle">Pengguna</h1>
             <p className="pageSub">
-              Kelola akun, undangan, status akses, dan pemulihan akun pengguna.
+              {search
+                ? `${list.meta.total} pengguna cocok dengan “${search}”.`
+                : 'Kelola akun, undangan, status akses, dan pemulihan akun pengguna.'}
             </p>
           </div>
         </div>
@@ -58,7 +65,7 @@ export default async function MasterUsersPage({ searchParams }: Props) {
               <input
                 type="search"
                 name="search"
-                defaultValue={params.search}
+                defaultValue={search ?? ''}
                 placeholder="Cari nama atau email"
               />
             </label>
@@ -80,7 +87,7 @@ export default async function MasterUsersPage({ searchParams }: Props) {
               </select>
             </label>
             <button className="btn" type="submit">Terapkan</button>
-            {params.search || role || status ? (
+            {search || role || status ? (
               <Link className="btn btnGhost" href="/master/users">
                 Reset
               </Link>
@@ -92,9 +99,18 @@ export default async function MasterUsersPage({ searchParams }: Props) {
 
         {list.meta.totalPages > 1 ? (
           <nav aria-label="Navigasi halaman" className="toolbar" style={{ justifyContent: 'center' }}>
-            {page > 1 ? <Link className="btn btnGhost" href={href(params, page - 1)}>Sebelumnya</Link> : null}
+            {page > 1 ? (
+              <Link className="btn btnGhost" href={href({ search, role, status }, page - 1)}>
+                Sebelumnya
+              </Link>
+            ) : null}
+            <span className="pill">
+              Halaman {list.meta.page} dari {list.meta.totalPages}
+            </span>
             {page < list.meta.totalPages ? (
-              <Link className="btn btnGhost" href={href(params, page + 1)}>Berikutnya</Link>
+              <Link className="btn btnGhost" href={href({ search, role, status }, page + 1)}>
+                Berikutnya
+              </Link>
             ) : null}
           </nav>
         ) : null}
@@ -103,11 +119,22 @@ export default async function MasterUsersPage({ searchParams }: Props) {
   );
 }
 
-function href(params: Awaited<Props['searchParams']>, page: number): string {
+/**
+ * Tautan halaman yang membawa penyaringan yang sedang berlaku.
+ *
+ * Memakai nilai yang sudah tervalidasi, bukan apa pun yang kebetulan datang di
+ * URL: role atau status yang tidak dikenal diabaikan saat memuat data, jadi
+ * meneruskannya ke tautan berikutnya hanya menyalin sampah dari satu halaman
+ * ke halaman berikutnya.
+ */
+function href(
+  filter: { search?: string; role?: string; status?: string },
+  page: number,
+): string {
   const query = new URLSearchParams();
-  if (params.search) query.set('search', params.search);
-  if (params.role) query.set('role', params.role);
-  if (params.status) query.set('status', params.status);
-  query.set('page', String(page));
-  return `/master/users?${query.toString()}`;
+  if (filter.search) query.set('search', filter.search);
+  if (filter.role) query.set('role', filter.role);
+  if (filter.status) query.set('status', filter.status);
+  if (page > 1) query.set('page', String(page));
+  return query.toString() ? `/master/users?${query.toString()}` : '/master/users';
 }
