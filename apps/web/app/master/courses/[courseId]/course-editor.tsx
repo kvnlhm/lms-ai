@@ -124,6 +124,48 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       ),
     );
 
+  /**
+   * Penghapusan permanen, hanya untuk kursus yang belum pernah dipakai.
+   *
+   * Tidak memakai `run` karena halaman ini ikut hilang bersama kursusnya:
+   * `router.refresh()` sesudahnya akan memuat ulang halaman yang sudah tidak
+   * ada. Karena itu kepindahannya ditentukan di sini.
+   *
+   * Server tetap pemegang aturannya. Kursus yang sudah memiliki enrollment
+   * ditolak dengan 409 dan diarahkan ke arsip, supaya riwayat belajar tidak
+   * ikut terhapus.
+   */
+  async function hapusKursus() {
+    if (busy) return;
+    const lanjut = await notifier.confirm(`Hapus kursus "${course.title}"?`, {
+      text:
+        'Seluruh bagian, pelajaran, kuis, dan video di dalamnya ikut terhapus permanen. ' +
+        'Untuk kursus yang sudah pernah dipakai pelajar, gunakan arsip.',
+      confirmLabel: 'Hapus permanen',
+      danger: true,
+    });
+    if (!lanjut) return;
+
+    setBusy('delete');
+    try {
+      ensureSuccess(
+        await client().DELETE('/api/v1/admin/courses/{courseId}', {
+          params: { path: { courseId: course.id } },
+        }),
+      );
+      router.replace('/master/courses');
+      router.refresh();
+    } catch (caught) {
+      setBusy(null);
+      void notifier.error('Kursus tidak dapat dihapus', {
+        text:
+          caught instanceof ApiError
+            ? caught.message
+            : 'Tidak dapat menghubungi server. Kursus belum terhapus.',
+      });
+    }
+  }
+
   const addModule = (title: string) =>
     run('add-module', async () =>
       unwrap(
@@ -354,6 +396,14 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
               {busy === 'archive' ? 'Mengarsipkan…' : 'Arsipkan'}
             </button>
           )}
+          <button
+            className="btnTiny btnDanger"
+            type="button"
+            onClick={hapusKursus}
+            disabled={busy !== null}
+          >
+            {busy === 'delete' ? 'Menghapus…' : 'Hapus kursus'}
+          </button>
         </div>
       </div>
 

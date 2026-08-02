@@ -126,6 +126,25 @@ describe('Penyusunan kursus oleh Master', () => {
     await request(h.server).get(thumbnailPath).expect(404);
   });
 
+  it('menghapus kursus yang belum pernah memiliki enrollment', async () => {
+    const courseId = await createCourse(`uji-hapus-${Date.now()}`);
+    const moduleId = (
+      await asMaster('post', `/admin/courses/${courseId}/modules`)
+        .send({ title: 'Bagian' })
+        .expect(201)
+    ).body.data.id as string;
+    await asMaster('post', `/admin/modules/${moduleId}/lessons`)
+      .send({ title: 'Pelajaran', contentType: 'TEXT' })
+      .expect(201);
+
+    await asMaster('delete', `/admin/courses/${courseId}`).expect(204);
+
+    await asMaster('get', `/admin/courses/${courseId}`).expect(404);
+    // Bagian dan pelajarannya ikut terhapus lewat cascade, tidak menggantung.
+    expect(await h.prisma.courseModule.count({ where: { courseId } })).toBe(0);
+    expect(await h.prisma.lesson.count({ where: { module: { courseId } } })).toBe(0);
+  });
+
   it('menolak penerbitan kursus kosong dan menyebut seluruh alasannya', async () => {
     const courseId = await createCourse(`uji-kosong-${Date.now()}`);
 
