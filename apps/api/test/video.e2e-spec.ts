@@ -155,11 +155,98 @@ describe('Perpustakaan video self-hosted', () => {
       .set('Cookie', master.cookie)
       .expect(200);
 
-    const entri = (library.body.data.items as Array<Record<string, unknown>>).find(
+    const entri = (library.body.data as Array<Record<string, unknown>>).find(
       (item) => item.videoAssetId === videoAssetId,
     );
     expect(entri).toBeDefined();
     expect((entri!.usedBy as unknown[]).length).toBe(2);
+  });
+
+  it('membatasi baris per halaman dan tetap menyebut jumlah seluruh perpustakaan', async () => {
+    // Dulu endpoint ini mengirim seluruh isi perpustakaan sekaligus, tanpa
+    // parameter halaman sama sekali.
+    await unggah('Video halaman satu');
+    await unggah('Video halaman dua');
+
+    const halaman = await request(h.server)
+      .get(`${prefix}/admin/videos`)
+      .query({ page: 1, pageSize: 1 })
+      .set('Cookie', master.cookie)
+      .expect(200);
+
+    expect((halaman.body.data as unknown[]).length).toBe(1);
+    expect(halaman.body.meta.total).toBeGreaterThan(1);
+    expect(halaman.body.meta.totalPages).toBe(halaman.body.meta.total);
+
+    // Halaman kedua berisi baris yang berbeda, bukan pengulangan yang pertama.
+    const berikutnya = await request(h.server)
+      .get(`${prefix}/admin/videos`)
+      .query({ page: 2, pageSize: 1 })
+      .set('Cookie', master.cookie)
+      .expect(200);
+
+    expect(berikutnya.body.data[0].videoAssetId).not.toBe(halaman.body.data[0].videoAssetId);
+  });
+
+  it('mencari video lewat kursus yang memakainya, bukan hanya lewat judulnya sendiri', async () => {
+    // Begitulah Master mengingat sebuah berkas: bukan dari nama filenya,
+    // melainkan dari tempat ia dipakai.
+    // Huruf kecil semua: penanda ini ikut menjadi slug kursus.
+    const penanda = `zebrakopter${Date.now()}`;
+    const videoAssetId = await unggah('Video dengan judul biasa');
+    const { lessonId } = await buatPelajaran(penanda);
+    await pasang(lessonId, videoAssetId);
+
+    const hasil = await request(h.server)
+      .get(`${prefix}/admin/videos`)
+      .query({ search: penanda })
+      .set('Cookie', master.cookie)
+      .expect(200);
+
+    const ditemukan = hasil.body.data as Array<Record<string, unknown>>;
+    expect(ditemukan.length).toBe(1);
+    expect(ditemukan[0].videoAssetId).toBe(videoAssetId);
+  });
+
+  it('menyaring video yang belum dipakai pelajaran mana pun', async () => {
+    const terpakai = await unggah('Video terpasang');
+    const yatim = await unggah('Video menganggur');
+    const { lessonId } = await buatPelajaran(`saring-${Date.now()}`);
+    await pasang(lessonId, terpakai);
+
+    const hasil = await request(h.server)
+      .get(`${prefix}/admin/videos`)
+      .query({ filter: 'ORPHAN', pageSize: 100 })
+      .set('Cookie', master.cookie)
+      .expect(200);
+
+    const id = (hasil.body.data as Array<Record<string, unknown>>).map((v) => v.videoAssetId);
+    expect(id).toContain(yatim);
+    expect(id).not.toContain(terpakai);
+  });
+
+  it('menghitung ringkasan dari seluruh perpustakaan, bukan dari satu halaman', async () => {
+    // Inilah alasan ringkasannya dipisah ke endpoint sendiri. Bila angkanya
+    // ikut dihitung dari baris yang sedang tampil, "12 video" akan berarti
+    // "12 di antara 20 yang kebetulan termuat".
+    await unggah('Video untuk ringkasan');
+
+    const [ringkasan, sehalaman] = await Promise.all([
+      request(h.server).get(`${prefix}/admin/videos/summary`).set('Cookie', master.cookie).expect(200),
+      request(h.server)
+        .get(`${prefix}/admin/videos`)
+        .query({ page: 1, pageSize: 1 })
+        .set('Cookie', master.cookie)
+        .expect(200),
+    ]);
+
+    const angka = ringkasan.body.data as Record<string, number | string>;
+    expect(angka.total).toBe(sehalaman.body.meta.total);
+    expect(angka.total).toBeGreaterThan(1);
+    expect(angka.orphan).toBe((angka.total as number) - (angka.used as number));
+    // Ukuran dijumlahkan basis data atas seluruh aset, bukan atas satu baris
+    // yang sedang tampil.
+    expect(Number(angka.totalBytes)).toBeGreaterThanOrEqual(MP4.length * 2);
   });
 
   it('memeriksa hak terhadap pelajaran pada sesinya, bukan pelajaran lain yang memakai berkas sama', async () => {

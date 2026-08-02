@@ -9,13 +9,15 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PERMISSIONS } from '@lms/contracts';
 import type { Request, Response } from 'express';
-import { ApiErrors } from '../../../shared/http/api-envelope';
+import { ApiEnvelope, ApiEnvelopeList, ApiErrors } from '../../../shared/http/api-envelope';
+import { Paginated } from '../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { VideoService } from '../application/video.service';
@@ -24,6 +26,9 @@ import {
   CreatePlaybackSessionDto,
   CreateVideoUploadIntentDto,
   CreateYoutubeVideoDto,
+  ListVideoLibraryQueryDto,
+  VideoLibraryItemDto,
+  VideoLibrarySummaryDto,
 } from './video.dto';
 
 @ApiTags('video')
@@ -51,9 +56,26 @@ export class VideoController {
   @Get('admin/videos')
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
   @ApiOperation({ summary: 'Isi perpustakaan video beserta pemakaiannya' })
+  @ApiEnvelopeList(VideoLibraryItemDto)
   @ApiErrors(401, 403)
-  library() {
-    return this.videos.listLibrary();
+  async library(@Query() query: ListVideoLibraryQueryDto) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
+    const { total, items } = await this.videos.listLibrary(
+      { search: query.search, filter: query.filter },
+      page,
+      pageSize,
+    );
+    return new Paginated(items, page, pageSize, total);
+  }
+
+  @Get('admin/videos/summary')
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({ summary: 'Jumlah dan besaran seluruh perpustakaan, bukan satu halaman' })
+  @ApiEnvelope(VideoLibrarySummaryDto)
+  @ApiErrors(401, 403)
+  librarySummary() {
+    return this.videos.librarySummary();
   }
 
   @Put('admin/lessons/:lessonId/video')

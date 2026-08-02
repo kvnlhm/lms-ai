@@ -765,6 +765,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/videos/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Jumlah dan besaran seluruh perpustakaan, bukan satu halaman */
+        get: operations["VideoController_librarySummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/lessons/{lessonId}/video": {
         parameters: {
             query?: never;
@@ -2615,6 +2632,38 @@ export interface components {
             title: string;
             /** @example https://www.youtube.com/watch?v=dQw4w9WgXcQ */
             url: string;
+        };
+        VideoLibraryUsageDto: {
+            /** Format: uuid */
+            lessonId: string;
+            lessonTitle: string;
+            /** Format: uuid */
+            courseId: string;
+            courseTitle: string;
+        };
+        VideoLibraryItemDto: {
+            /** Format: uuid */
+            videoAssetId: string;
+            title: string;
+            /** @enum {string} */
+            provider: "SELF_HOSTED" | "BUNNY_STREAM" | "YOUTUBE";
+            /** @enum {string} */
+            status: "CREATED" | "UPLOADING" | "PROCESSING" | "AVAILABLE" | "FAILED" | "DELETED";
+            originalName?: string | null;
+            /** @description String, bukan angka: ukuran berkas video melampaui batas aman JSON. */
+            sizeBytes?: string | null;
+            sourceUrl?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            usedBy: components["schemas"]["VideoLibraryUsageDto"][];
+        };
+        VideoLibrarySummaryDto: {
+            total: number;
+            used: number;
+            orphan: number;
+            problem: number;
+            /** @description Jumlah byte di disk kita; video eksternal tidak dihitung. */
+            totalBytes: string;
         };
         AttachLessonVideoDto: {
             /** Format: uuid */
@@ -6064,6 +6113,50 @@ export interface operations {
     };
     VideoController_library: {
         parameters: {
+            query?: {
+                /** @description Judul, nama berkas, atau pelajaran yang memakainya */
+                search?: string;
+                filter?: "USED" | "ORPHAN" | "PROBLEM" | "AVAILABLE";
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["VideoLibraryItemDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoController_librarySummary: {
+        parameters: {
             query?: never;
             header?: never;
             path?: never;
@@ -6071,6 +6164,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["VideoLibrarySummaryDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;

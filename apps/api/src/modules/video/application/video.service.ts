@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PlaybackStatus, VideoProvider, VideoStatus } from '@prisma/client';
+import { PlaybackStatus, Prisma, VideoProvider, VideoStatus } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { chmod, mkdir, rename, rm } from 'node:fs/promises';
@@ -250,32 +250,78 @@ export class VideoService implements LessonVideoCleanupPort {
     };
   }
 
-  /** Isi perpustakaan, beserta pelajaran yang memakai tiap aset. */
-  async listLibrary() {
-    const assets = await this.prisma.videoAsset.findMany({
-      where: { deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        title: true,
-        provider: true,
-        status: true,
-        originalName: true,
-        sizeBytes: true,
-        sourceUrl: true,
-        createdAt: true,
-        lessons: {
-          select: {
-            id: true,
-            title: true,
-            module: { select: { course: { select: { id: true, title: true } } } },
+  /**
+   * Isi perpustakaan, beserta pelajaran yang memakai tiap aset.
+   *
+   * Dulu seluruh isinya dikirim sekaligus — setiap aset lengkap dengan seluruh
+   * pemakaiannya — dan penyaringan dilakukan di browser. Itu bekerja selama
+   * perpustakaannya kecil, lalu berubah menjadi satu permintaan yang tumbuh
+   * tanpa batas seiring video bertambah. Pencarian dan penyaringan kini
+   * dikerjakan basis data, dan hasilnya berhalaman.
+   */
+  async listLibrary(
+    params: { search?: string; filter?: 'USED' | 'ORPHAN' | 'PROBLEM' | 'AVAILABLE' },
+    page: number,
+    pageSize: number,
+  ) {
+    const where: Prisma.VideoAssetWhereInput = { deletedAt: null };
+
+    if (params.filter === 'USED') where.lessons = { some: {} };
+    if (params.filter === 'ORPHAN') where.lessons = { none: {} };
+    if (params.filter === 'PROBLEM') where.status = { not: VideoStatus.AVAILABLE };
+    if (params.filter === 'AVAILABLE') where.status = VideoStatus.AVAILABLE;
+
+    const kata = params.search?.trim();
+    if (kata) {
+      // Pelajaran dan kursus ikut dicari karena begitulah Master mengingat
+      // sebuah berkas: bukan dari nama filenya, melainkan dari tempat ia
+      // dipakai.
+      where.OR = [
+        { title: { contains: kata, mode: 'insensitive' } },
+        { originalName: { contains: kata, mode: 'insensitive' } },
+        {
+          lessons: {
+            some: {
+              OR: [
+                { title: { contains: kata, mode: 'insensitive' } },
+                { module: { course: { title: { contains: kata, mode: 'insensitive' } } } },
+              ],
+            },
           },
-          orderBy: { title: 'asc' },
         },
-      },
-    });
+      ];
+    }
+
+    const [total, assets] = await this.prisma.$transaction([
+      this.prisma.videoAsset.count({ where }),
+      this.prisma.videoAsset.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          title: true,
+          provider: true,
+          status: true,
+          originalName: true,
+          sizeBytes: true,
+          sourceUrl: true,
+          createdAt: true,
+          lessons: {
+            select: {
+              id: true,
+              title: true,
+              module: { select: { course: { select: { id: true, title: true } } } },
+            },
+            orderBy: { title: 'asc' },
+          },
+        },
+      }),
+    ]);
 
     return {
+      total,
       items: assets.map((asset) => ({
         videoAssetId: asset.id,
         title: asset.title,
@@ -295,11 +341,35 @@ export class VideoService implements LessonVideoCleanupPort {
           courseTitle: lesson.module.course.title,
         })),
       })),
-      // Hanya berkas yang benar-benar memakai disk kita yang dijumlahkan;
+    };
+  }
+
+  /**
+   * Angka yang berlaku untuk seluruh perpustakaan, bukan untuk satu halaman.
+   *
+   * Dihitung basis data lewat count dan sum, bukan dengan memuat seluruh aset
+   * ke memori lalu menjumlahkannya — cara lama itu menjadikan setiap kunjungan
+   * ke halaman media sebagai pembacaan penuh tabel.
+   */
+  async librarySummary() {
+    const where: Prisma.VideoAssetWhereInput = { deletedAt: null };
+    const [total, used, problem, ukuran] = await this.prisma.$transaction([
+      this.prisma.videoAsset.count({ where }),
+      this.prisma.videoAsset.count({ where: { ...where, lessons: { some: {} } } }),
+      this.prisma.videoAsset.count({
+        where: { ...where, status: { not: VideoStatus.AVAILABLE } },
+      }),
+      this.prisma.videoAsset.aggregate({ where, _sum: { sizeBytes: true } }),
+    ]);
+
+    return {
+      total,
+      used,
+      orphan: total - used,
+      problem,
+      // Hanya berkas yang benar-benar memakai disk kita yang punya sizeBytes;
       // video YouTube tidak menempati apa pun di sini.
-      totalBytes: String(
-        assets.reduce((total, asset) => total + (asset.sizeBytes ?? BigInt(0)), BigInt(0)),
-      ),
+      totalBytes: String(ukuran._sum.sizeBytes ?? BigInt(0)),
     };
   }
 

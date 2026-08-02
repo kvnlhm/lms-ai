@@ -6,9 +6,12 @@ import { Search } from '../../components/icons';
 import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 import {
-  fetchLibrary,
+  ambilPerpustakaan,
+  ambilRingkasanPerpustakaan,
   formatBytes,
   type LibraryAsset,
+  type LibraryFilter,
+  type LibrarySummary,
 } from '../../components/video-library-picker';
 import { titleFromFileName, uploadErrorMessage, uploadToLibrary } from '../../lib/video-upload';
 
@@ -23,6 +26,14 @@ interface Antrean {
   message: string;
 }
 
+/** Nilai `null` berarti tanpa penyaring, sama dengan tab "Semua". */
+const TAB: Array<[LibraryFilter | null, string]> = [
+  [null, 'Semua'],
+  ['USED', 'Dipakai'],
+  ['ORPHAN', 'Belum dipakai'],
+  ['PROBLEM', 'Bermasalah'],
+];
+
 function formatDate(value: string): string {
   return new Date(value).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
 }
@@ -30,22 +41,51 @@ function formatDate(value: string): string {
 export function VideoLibrary() {
   const notifier = useNotifier();
   const [items, setItems] = useState<LibraryAsset[]>([]);
-  const [totalBytes, setTotalBytes] = useState<string | null>(null);
+  const [ringkasan, setRingkasan] = useState<LibrarySummary | null>(null);
+  const [total, setTotal] = useState(0);
+  const [halaman, setHalaman] = useState(1);
+  const [totalHalaman, setTotalHalaman] = useState(1);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [antrean, setAntrean] = useState<Antrean[]>([]);
   const [mengunggah, setMengunggah] = useState(false);
   const [cari, setCari] = useState('');
-  const [saring, setSaring] = useState<'semua' | 'dipakai' | 'yatim' | 'bermasalah'>('semua');
+  const [kataTermuat, setKataTermuat] = useState('');
+  const [saring, setSaring] = useState<LibraryFilter | null>(null);
 
-  const load = useCallback(async () => {
+  /**
+   * Pencarian dan penyaringan dikerjakan server sekarang.
+   *
+   * Sebelumnya seluruh perpustakaan diunduh sekaligus dan disaring di browser.
+   * Itu benar selama isinya sedikit; begitu videonya banyak, setiap kunjungan
+   * ke halaman ini menjadi satu pembacaan penuh tabel beserta seluruh
+   * pemakaian tiap aset.
+   */
+  const load = useCallback(async (keyword: string, filter: LibraryFilter | null, page: number) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchLibrary();
-      setItems(data.items);
-      setTotalBytes(data.totalBytes);
+      let { items: batch, meta } = await ambilPerpustakaan({
+        search: keyword || undefined,
+        filter: filter ?? undefined,
+        page,
+      });
+      // Menghapus baris terakhir sebuah halaman akan meninggalkan halaman
+      // kosong yang hanya bisa ditinggalkan lewat tombol Sebelumnya. Dibawa
+      // langsung ke halaman terakhir yang masih ada.
+      if (batch.length === 0 && page > 1 && meta.totalPages >= 1) {
+        ({ items: batch, meta } = await ambilPerpustakaan({
+          search: keyword || undefined,
+          filter: filter ?? undefined,
+          page: meta.totalPages,
+        }));
+      }
+      setItems(batch);
+      setKataTermuat(keyword);
+      setHalaman(meta.page);
+      setTotalHalaman(meta.totalPages);
+      setTotal(meta.total);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Perpustakaan gagal dimuat.');
     } finally {
@@ -53,14 +93,39 @@ export function VideoLibrary() {
     }
   }, []);
 
+  /**
+   * Angka ringkasan berlaku untuk seluruh perpustakaan.
+   *
+   * Dulu ia dihitung dari baris yang kebetulan termuat — benar hanya karena
+   * semuanya memang termuat. Dengan daftar yang berhalaman, cara itu akan
+   * membuat "12 dipakai" berarti "12 dipakai di antara 20 yang sedang tampil".
+   */
+  const muatRingkasan = useCallback(async () => {
+    try {
+      setRingkasan(await ambilRingkasanPerpustakaan());
+    } catch {
+      // Hanya baris angka di atas daftar; kegagalannya tidak perlu menutupi isi.
+    }
+  }, []);
+
+  // Kata kunci ditahan sebentar: pencarian kini menempuh jaringan.
   useEffect(() => {
-    void load();
-  }, [load]);
+    const timer = setTimeout(() => void load(cari.trim(), saring, 1), 250);
+    return () => clearTimeout(timer);
+  }, [load, cari, saring]);
+
+  useEffect(() => {
+    void muatRingkasan();
+  }, [muatRingkasan]);
 
   function perbarui(key: string, patch: Partial<Antrean>) {
     setAntrean((current) =>
       current.map((entri) => (entri.key === key ? { ...entri, ...patch } : entri)),
     );
+  }
+
+  async function segarkan() {
+    await Promise.all([load(kataTermuat, saring, halaman), muatRingkasan()]);
   }
 
   /**
@@ -114,7 +179,8 @@ export function VideoLibrary() {
     }
 
     setMengunggah(false);
-    await load();
+    // Yang baru diunggah berada di halaman pertama karena daftarnya terbaru dulu.
+    await Promise.all([load(kataTermuat, saring, 1), muatRingkasan()]);
   }
 
   async function hapus(item: LibraryAsset) {
@@ -134,7 +200,7 @@ export function VideoLibrary() {
           params: { path: { videoAssetId: item.videoAssetId } },
         }),
       );
-      await load();
+      await segarkan();
     } catch (caught) {
       void notifier.error('Video gagal dihapus', {
         text: caught instanceof ApiError ? caught.message : undefined,
@@ -144,32 +210,9 @@ export function VideoLibrary() {
     }
   }
 
-  const terpakai = items.filter((item) => item.usedBy.length > 0).length;
-  const yatim = items.length - terpakai;
-
-  // Penyaringan dilakukan di klien karena seluruh isi perpustakaan memang
-  // sudah termuat — endpoint-nya mengembalikan semuanya sekaligus. Menambah
-  // perjalanan ke server hanya akan memperlambat sesuatu yang sudah ada di
-  // tangan.
-  const kata = cari.trim().toLowerCase();
-  const tampil = items.filter((item) => {
-    const cocokKata =
-      kata === '' ||
-      item.title.toLowerCase().includes(kata) ||
-      (item.originalName ?? '').toLowerCase().includes(kata) ||
-      item.usedBy.some(
-        (usage) =>
-          usage.courseTitle.toLowerCase().includes(kata) ||
-          usage.lessonTitle.toLowerCase().includes(kata),
-      );
-    if (!cocokKata) return false;
-    if (saring === 'dipakai') return item.usedBy.length > 0;
-    if (saring === 'yatim') return item.usedBy.length === 0;
-    if (saring === 'bermasalah') return item.status !== 'AVAILABLE';
-    return true;
-  });
   const selesai = antrean.filter((entri) => entri.status === 'SELESAI').length;
   const gagal = antrean.filter((entri) => entri.status === 'GAGAL').length;
+  const disaring = kataTermuat !== '' || saring !== null;
 
   return (
     <section className="stack">
@@ -223,108 +266,122 @@ export function VideoLibrary() {
         ) : null}
       </div>
 
+      {ringkasan ? (
+        <p className="muted">
+          {disaring ? `${total} dari ${ringkasan.total} video` : `${ringkasan.total} video`} ·{' '}
+          {formatBytes(ringkasan.totalBytes)} terpakai di disk · {ringkasan.used} dipakai pelajaran ·{' '}
+          {ringkasan.orphan} belum dipakai
+          {ringkasan.problem > 0 ? ` · ${ringkasan.problem} bermasalah` : ''}
+        </p>
+      ) : null}
+
+      {total > 0 || disaring ? (
+        <div className="libraryFilter">
+          <label className="userSearch">
+            <span className="srOnly">Cari video</span>
+            <span aria-hidden="true"><Search size={17} /></span>
+            <input
+              type="search"
+              value={cari}
+              onChange={(event) => setCari(event.target.value)}
+              placeholder="Cari judul, nama berkas, atau pelajaran yang memakainya"
+            />
+          </label>
+          <div className="inlineActions">
+            {TAB.map(([nilai, label]) => (
+              <button
+                key={label}
+                type="button"
+                className={saring === nilai ? 'btnTiny btnActive' : 'btnTiny'}
+                aria-pressed={saring === nilai}
+                onClick={() => setSaring(nilai)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {loading ? (
         <p className="muted">Memuat perpustakaan…</p>
+      ) : items.length === 0 ? (
+        <p className="muted">
+          {disaring
+            ? 'Tidak ada video yang cocok dengan penyaringan ini.'
+            : 'Perpustakaan masih kosong. Unggah beberapa berkas di atas untuk memulai.'}
+        </p>
       ) : (
         <>
-          <p className="muted">
-            {tampil.length === items.length
-              ? `${items.length} video`
-              : `${tampil.length} dari ${items.length} video`}{' '}
-            · {formatBytes(totalBytes)} terpakai di disk · {terpakai} dipakai pelajaran · {yatim}{' '}
-            belum dipakai
-          </p>
+          <ul className="masterRecordList">
+            {items.map((item) => (
+              <li key={item.videoAssetId} className="masterRecordCard">
+                <div className="masterListHead">
+                  <h2 className="cellTitle">{item.title}</h2>
+                  <span className="pill">
+                    {item.provider === 'YOUTUBE' ? 'YouTube' : 'Self-hosted'}
+                  </span>
+                </div>
 
-          {items.length > 0 ? (
-            <div className="libraryFilter">
-              <label className="userSearch">
-                <span className="srOnly">Cari video</span>
-                <span aria-hidden="true"><Search size={17} /></span>
-                <input
-                  type="search"
-                  value={cari}
-                  onChange={(event) => setCari(event.target.value)}
-                  placeholder="Cari judul, nama berkas, atau pelajaran yang memakainya"
-                />
-              </label>
-              <div className="inlineActions">
-                {(
-                  [
-                    ['semua', 'Semua'],
-                    ['dipakai', 'Dipakai'],
-                    ['yatim', 'Belum dipakai'],
-                    ['bermasalah', 'Bermasalah'],
-                  ] as const
-                ).map(([nilai, label]) => (
+                <p className="cellSub">
+                  {item.originalName ?? item.sourceUrl ?? '—'} · {formatBytes(item.sizeBytes)} ·{' '}
+                  {item.status} · ditambahkan {formatDate(item.createdAt)}
+                </p>
+
+                {item.usedBy.length === 0 ? (
+                  <p className="muted">Belum dipakai pelajaran mana pun.</p>
+                ) : (
+                  <ul className="reasonList">
+                    {item.usedBy.map((usage) => (
+                      <li key={usage.lessonId}>
+                        <Link href={`/master/courses/${usage.courseId}`}>
+                          {usage.courseTitle} — {usage.lessonTitle}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="inlineActions">
                   <button
-                    key={nilai}
                     type="button"
-                    className={saring === nilai ? 'btnTiny btnActive' : 'btnTiny'}
-                    aria-pressed={saring === nilai}
-                    onClick={() => setSaring(nilai)}
+                    className="btn btnDanger btnSmall"
+                    // Dibiarkan dapat ditekan meski masih dipakai: pesan dari
+                    // server menyebut berapa pelajaran yang memakainya, yang
+                    // lebih berguna daripada tombol mati tanpa penjelasan.
+                    disabled={busy === item.videoAssetId || mengunggah}
+                    onClick={() => void hapus(item)}
                   >
-                    {label}
+                    {busy === item.videoAssetId ? 'Menghapus…' : 'Hapus'}
                   </button>
-                ))}
-              </div>
-            </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {totalHalaman > 1 ? (
+            <nav className="toolbar enrollmentPager" aria-label="Navigasi halaman perpustakaan">
+              <button
+                className="btn btnGhost"
+                type="button"
+                disabled={halaman <= 1 || loading}
+                onClick={() => void load(kataTermuat, saring, halaman - 1)}
+              >
+                Sebelumnya
+              </button>
+              <span className="pill">
+                Halaman {halaman} dari {totalHalaman} · {total} video
+              </span>
+              <button
+                className="btn btnGhost"
+                type="button"
+                disabled={halaman >= totalHalaman || loading}
+                onClick={() => void load(kataTermuat, saring, halaman + 1)}
+              >
+                Berikutnya
+              </button>
+            </nav>
           ) : null}
-
-          {items.length === 0 ? (
-            <p className="muted">
-              Perpustakaan masih kosong. Unggah beberapa berkas di atas untuk memulai.
-            </p>
-          ) : tampil.length === 0 ? (
-            <p className="muted">
-              Tidak ada video yang cocok dengan penyaringan ini.
-            </p>
-          ) : (
-            <ul className="masterRecordList">
-              {tampil.map((item) => (
-                <li key={item.videoAssetId} className="masterRecordCard">
-                  <div className="masterListHead">
-                    <h2 className="cellTitle">{item.title}</h2>
-                    <span className="pill">
-                      {item.provider === 'YOUTUBE' ? 'YouTube' : 'Self-hosted'}
-                    </span>
-                  </div>
-
-                  <p className="cellSub">
-                    {item.originalName ?? item.sourceUrl ?? '—'} · {formatBytes(item.sizeBytes)} ·{' '}
-                    {item.status} · ditambahkan {formatDate(item.createdAt)}
-                  </p>
-
-                  {item.usedBy.length === 0 ? (
-                    <p className="muted">Belum dipakai pelajaran mana pun.</p>
-                  ) : (
-                    <ul className="reasonList">
-                      {item.usedBy.map((usage) => (
-                        <li key={usage.lessonId}>
-                          <Link href={`/master/courses/${usage.courseId}`}>
-                            {usage.courseTitle} — {usage.lessonTitle}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-
-                  <div className="inlineActions">
-                    <button
-                      type="button"
-                      className="btn btnDanger btnSmall"
-                      // Dibiarkan dapat ditekan meski masih dipakai: pesan dari
-                      // server menyebut berapa pelajaran yang memakainya, yang
-                      // lebih berguna daripada tombol mati tanpa penjelasan.
-                      disabled={busy === item.videoAssetId || mengunggah}
-                      onClick={() => void hapus(item)}
-                    >
-                      {busy === item.videoAssetId ? 'Menghapus…' : 'Hapus'}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
         </>
       )}
     </section>

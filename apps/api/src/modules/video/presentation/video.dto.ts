@@ -1,5 +1,92 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from 'class-validator';
+import { VideoProvider, VideoStatus } from '@prisma/client';
+import { Type } from 'class-transformer';
+import {
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
+
+/**
+ * Tiga yang pertama sama persis dengan tab penyaring di halaman perpustakaan.
+ * `AVAILABLE` dipakai pemilih video saat menyusun pelajaran: aset yang masih
+ * diunggah akan ditolak server, jadi menawarkannya hanya mengundang klik yang
+ * gagal.
+ */
+export const VIDEO_LIBRARY_FILTERS = ['USED', 'ORPHAN', 'PROBLEM', 'AVAILABLE'] as const;
+export type VideoLibraryFilter = (typeof VIDEO_LIBRARY_FILTERS)[number];
+
+export class ListVideoLibraryQueryDto {
+  @ApiPropertyOptional({ description: 'Judul, nama berkas, atau pelajaran yang memakainya' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  search?: string;
+
+  @ApiPropertyOptional({ enum: VIDEO_LIBRARY_FILTERS })
+  @IsOptional()
+  @IsIn(VIDEO_LIBRARY_FILTERS)
+  filter?: VideoLibraryFilter;
+
+  @ApiPropertyOptional({ type: Number, default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ type: Number, default: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number;
+}
+
+export class VideoLibraryUsageDto {
+  @ApiProperty({ format: 'uuid' }) lessonId!: string;
+  @ApiProperty() lessonTitle!: string;
+  @ApiProperty({ format: 'uuid' }) courseId!: string;
+  @ApiProperty() courseTitle!: string;
+}
+
+export class VideoLibraryItemDto {
+  @ApiProperty({ format: 'uuid' }) videoAssetId!: string;
+  @ApiProperty() title!: string;
+  @ApiProperty({ enum: VideoProvider }) provider!: VideoProvider;
+  @ApiProperty({ enum: VideoStatus }) status!: VideoStatus;
+  @ApiPropertyOptional({ type: String, nullable: true }) originalName!: string | null;
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: 'String, bukan angka: ukuran berkas video melampaui batas aman JSON.',
+  })
+  sizeBytes!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) sourceUrl!: string | null;
+  @ApiProperty({ format: 'date-time' }) createdAt!: string;
+  @ApiProperty({ type: [VideoLibraryUsageDto] }) usedBy!: VideoLibraryUsageDto[];
+}
+
+/**
+ * Angka-angka yang harus dihitung dari seluruh perpustakaan, bukan dari satu
+ * halaman. Dipisah ke endpointnya sendiri justru supaya daftarnya boleh
+ * berhalaman tanpa membuat ringkasannya ikut berbohong.
+ */
+export class VideoLibrarySummaryDto {
+  @ApiProperty() total!: number;
+  @ApiProperty() used!: number;
+  @ApiProperty() orphan!: number;
+  @ApiProperty() problem!: number;
+  @ApiProperty({ description: 'Jumlah byte di disk kita; video eksternal tidak dihitung.' })
+  totalBytes!: string;
+}
 
 // Tidak ada `lessonId` pada kedua DTO di bawah: unggahan dan tautan YouTube
 // masuk ke perpustakaan, lalu dipasang ke pelajaran lewat endpoint terpisah.

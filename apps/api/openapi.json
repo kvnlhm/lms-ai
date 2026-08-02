@@ -3622,8 +3622,75 @@
     "/api/v1/admin/videos": {
       "get": {
         "operationId": "VideoController_library",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Judul, nama berkas, atau pelajaran yang memakainya",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "USED",
+                "ORPHAN",
+                "PROBLEM",
+                "AVAILABLE"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/VideoLibraryItemDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -3646,6 +3713,60 @@
           }
         },
         "summary": "Isi perpustakaan video beserta pemakaiannya",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/admin/videos/summary": {
+      "get": {
+        "operationId": "VideoController_librarySummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/VideoLibrarySummaryDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Jumlah dan besaran seluruh perpustakaan, bukan satu halaman",
         "tags": [
           "video"
         ]
@@ -11977,6 +12098,121 @@
         "required": [
           "title",
           "url"
+        ]
+      },
+      "VideoLibraryUsageDto": {
+        "type": "object",
+        "properties": {
+          "lessonId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lessonTitle": {
+            "type": "string"
+          },
+          "courseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "courseTitle": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lessonId",
+          "lessonTitle",
+          "courseId",
+          "courseTitle"
+        ]
+      },
+      "VideoLibraryItemDto": {
+        "type": "object",
+        "properties": {
+          "videoAssetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "SELF_HOSTED",
+              "BUNNY_STREAM",
+              "YOUTUBE"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CREATED",
+              "UPLOADING",
+              "PROCESSING",
+              "AVAILABLE",
+              "FAILED",
+              "DELETED"
+            ]
+          },
+          "originalName": {
+            "type": "string",
+            "nullable": true
+          },
+          "sizeBytes": {
+            "type": "string",
+            "nullable": true,
+            "description": "String, bukan angka: ukuran berkas video melampaui batas aman JSON."
+          },
+          "sourceUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VideoLibraryUsageDto"
+            }
+          }
+        },
+        "required": [
+          "videoAssetId",
+          "title",
+          "provider",
+          "status",
+          "createdAt",
+          "usedBy"
+        ]
+      },
+      "VideoLibrarySummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "used": {
+            "type": "number"
+          },
+          "orphan": {
+            "type": "number"
+          },
+          "problem": {
+            "type": "number"
+          },
+          "totalBytes": {
+            "type": "string",
+            "description": "Jumlah byte di disk kita; video eksternal tidak dihitung."
+          }
+        },
+        "required": [
+          "total",
+          "used",
+          "orphan",
+          "problem",
+          "totalBytes"
         ]
       },
       "AttachLessonVideoDto": {
