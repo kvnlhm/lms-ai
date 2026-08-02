@@ -2620,3 +2620,6 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 }
 
 .loginBack { width: 100%; margin-top: 10px; }
+
+/* Kendali halaman pada daftar moderasi forum. */
+.forumPager { justify-content: center; margin-top: 16px; }

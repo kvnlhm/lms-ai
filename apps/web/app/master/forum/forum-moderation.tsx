@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { useNotifier } from '../../components/notifier';
-import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
+import { ApiError, browserClient, unwrap, unwrapList } from '../../lib/browser-api';
 
 /**
  * Bentuknya datang dari OpenAPI.
@@ -37,6 +37,46 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
+function Halaman({
+  page,
+  totalPages,
+  onChange,
+  disabled,
+}: {
+  page: number;
+  totalPages: number;
+  onChange: (halaman: number) => void;
+  disabled: boolean;
+}) {
+  if (totalPages <= 1) return null;
+  return (
+    <nav className="toolbar forumPager" aria-label="Navigasi halaman">
+      <button
+        type="button"
+        className="btnTiny"
+        disabled={disabled || page <= 1}
+        onClick={() => onChange(page - 1)}
+      >
+        Sebelumnya
+      </button>
+      <span className="pill">
+        Halaman {page} dari {totalPages}
+      </span>
+      <button
+        type="button"
+        className="btnTiny"
+        disabled={disabled || page >= totalPages}
+        onClick={() => onChange(page + 1)}
+      >
+        Berikutnya
+      </button>
+    </nav>
+  );
+}
+
+/** Baris per halaman pada daftar moderasi. */
+const UKURAN_HALAMAN = 25;
+
 export function ForumModeration() {
   const notifier = useNotifier();
   const [tab, setTab] = useState<'topics' | 'reports' | 'bans'>('topics');
@@ -44,6 +84,12 @@ export function ForumModeration() {
   const [reports, setReports] = useState<Report[]>([]);
   const [bans, setBans] = useState<Ban[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  // Halaman per daftar. Tanpa ini, isi di luar lima puluh baris pertama tidak
+  // pernah dapat dijangkau — laporan ke-51 mustahil ditangani.
+  const [topicPage, setTopicPage] = useState(1);
+  const [reportPage, setReportPage] = useState(1);
+  const [topicMeta, setTopicMeta] = useState({ total: 0, totalPages: 1 });
+  const [reportMeta, setReportMeta] = useState({ total: 0, totalPages: 1 });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,21 +99,30 @@ export function ForumModeration() {
     try {
       const client = browserClient();
       const [topicsResponse, reportsResponse, bansResponse] = await Promise.all([
-        client.GET('/api/v1/admin/forum/topics', { params: { query: { page: 1, pageSize: 50 } } }),
+        client.GET('/api/v1/admin/forum/topics', {
+          params: { query: { page: topicPage, pageSize: UKURAN_HALAMAN } },
+        }),
         client.GET('/api/v1/admin/forum/reports', {
-          params: { query: { status: 'PENDING', page: 1, pageSize: 50 } },
+          params: { query: { status: 'PENDING', page: reportPage, pageSize: UKURAN_HALAMAN } },
         }),
         client.GET('/api/v1/admin/forum/bans', { params: { query: { activeOnly: true } } }),
       ]);
-      setTopics(unwrap(topicsResponse) as ModerationTopic[]);
-      setReports(unwrap(reportsResponse) as Report[]);
+      // `unwrapList` dipakai, bukan `unwrap`: metanya membawa jumlah
+      // sebenarnya. Sebelumnya angka pada label tab diambil dari panjang
+      // larik yang sudah terpotong, sehingga 200 diskusi terbaca "50".
+      const daftarTopik = unwrapList<ModerationTopic>(topicsResponse);
+      const daftarLaporan = unwrapList<Report>(reportsResponse);
+      setTopics(daftarTopik.items);
+      setTopicMeta({ total: daftarTopik.meta.total, totalPages: daftarTopik.meta.totalPages });
+      setReports(daftarLaporan.items);
+      setReportMeta({ total: daftarLaporan.meta.total, totalPages: daftarLaporan.meta.totalPages });
       setBans(unwrap(bansResponse) as Ban[]);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Data forum gagal dimuat.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [topicPage, reportPage]);
 
   useEffect(() => {
     void load();
@@ -149,8 +204,8 @@ export function ForumModeration() {
       <nav className="tabRow masterForumTabs" aria-label="Bagian moderasi forum">
         {(
           [
-            ['topics', `Diskusi (${topics.length})`],
-            ['reports', `Laporan (${reports.length})`],
+            ['topics', `Diskusi (${topicMeta.total})`],
+            ['reports', `Laporan menunggu (${reportMeta.total})`],
             ['bans', `Dicabut (${bans.length})`],
           ] as const
         ).map(([key, label]) => (
@@ -283,6 +338,14 @@ export function ForumModeration() {
           </ul>
         )
       ) : null}
+      {!loading && tab === 'topics' ? (
+        <Halaman
+          page={topicPage}
+          totalPages={topicMeta.totalPages}
+          onChange={setTopicPage}
+          disabled={busy !== null}
+        />
+      ) : null}
 
       {!loading && tab === 'reports' ? (
         reports.length === 0 ? (
@@ -364,6 +427,14 @@ export function ForumModeration() {
             ))}
           </ul>
         )
+      ) : null}
+      {!loading && tab === 'reports' ? (
+        <Halaman
+          page={reportPage}
+          totalPages={reportMeta.totalPages}
+          onChange={setReportPage}
+          disabled={busy !== null}
+        />
       ) : null}
 
       {!loading && tab === 'bans' ? (

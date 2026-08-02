@@ -1,6 +1,6 @@
 'use client';
 
-import { ApiError, createApiClient, ensureSuccess, unwrap } from '@lms/api-client';
+import { ApiError, createApiClient, ensureSuccess, unwrap, unwrapList } from '@lms/api-client';
 
 /** Basis URL yang dipakai browser; harus dapat dijangkau dari perangkat pengguna. */
 export function browserApiUrl(): string {
@@ -30,4 +30,4 @@ export function browserClient() {
   return createApiClient(browserApiUrl(), token ? { 'X-CSRF-Token': token } : undefined);
 }
 
-export { ApiError, ensureSuccess, unwrap };
+export { ApiError, ensureSuccess, unwrap, unwrapList };
