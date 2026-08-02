@@ -2666,3 +2666,29 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .auditTime { white-space: nowrap; }
 .auditCount { margin-bottom: 12px; }
 .auditNoSnapshot { margin: 0; font-size: 12.5px; }
+
+/* Penyaring katalog: kotak cari melebar, pilihan tetap selebar isinya. */
+.catalogSearch { flex-wrap: wrap; }
+.catalogSearch .catalogSelect { flex: 0 0 auto; min-width: 148px; }
+.catalogSelect select {
+  width: 100%; min-height: 44px; padding: 10px 14px;
+  border: 1px solid var(--line); border-radius: var(--r-pill);
+  background: var(--raised); color: var(--text); font: inherit; font-size: 14px;
+}
+.catalogSelect select:focus { outline: none; border-color: var(--accent); }
+.catalogActive { margin-top: 12px; }
+.catalogGrid { margin-top: 24px; }
+.catalogEmpty { margin-top: 24px; }
+.catalogEmpty .btnTiny { display: inline-block; margin-top: 12px; }
+.catalogPager {
+  display: flex; gap: 10px; align-items: center; justify-content: center; margin-top: 26px;
+}
+
+/* Kartu katalog memuat empat keterangan, terlalu banyak untuk space-between. */
+.courseStatsWrap { flex-wrap: wrap; justify-content: flex-start; gap: 3px 9px; }
+.courseStatsWrap span + span::before { content: '·'; margin-right: 9px; color: var(--line); }
+
+@media (max-width: 680px) {
+  .catalogSearch .catalogSelect { flex: 1 1 140px; }
+}
+.courseCategory { margin-top: 4px; }

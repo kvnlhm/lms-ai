@@ -24,6 +24,29 @@ export class CourseCatalogService {
    * tidak pernah muncul di sini, termasuk untuk Master — pengelolaan memakai
    * endpoint /admin terpisah.
    */
+  /**
+   * Kategori yang dapat dipakai menyaring katalog.
+   *
+   * Dihitung dari kursus terbit, bukan dari seluruh daftar kategori: kategori
+   * yang isinya masih draf akan muncul sebagai pilihan yang selalu kosong.
+   */
+  async categories(): Promise<Array<{ name: string; slug: string; courseCount: number }>> {
+    const rows = await this.prisma.courseCategory.findMany({
+      where: { courses: { some: { status: PublicationStatus.PUBLISHED } } },
+      select: {
+        name: true,
+        slug: true,
+        _count: { select: { courses: { where: { status: PublicationStatus.PUBLISHED } } } },
+      },
+      orderBy: { name: 'asc' },
+    });
+    return rows.map((row) => ({
+      name: row.name,
+      slug: row.slug,
+      courseCount: row._count.courses,
+    }));
+  }
+
   async list(
     query: CatalogQuery,
     userId: string,

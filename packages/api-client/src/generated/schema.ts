@@ -484,6 +484,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/courses/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kategori yang memiliki kursus terbit, untuk mengisi penyaring */
+        get: operations["CoursesController_categories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/courses/{courseId}": {
         parameters: {
             query?: never;
@@ -2371,6 +2388,12 @@ export interface components {
             publishedAt?: string | null;
             /** @description Progres akses yang dibuat otomatis untuk pengguna terautentikasi. */
             enrollment?: components["schemas"]["CourseEnrollmentSummaryDto"] | null;
+        };
+        PublicCourseCategoryDto: {
+            name: string;
+            slug: string;
+            /** @description Jumlah kursus terbit pada kategori ini. */
+            courseCount: number;
         };
         CourseSyllabusLessonDto: {
             /** Format: uuid */
@@ -4992,6 +5015,36 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CoursesController_categories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PublicCourseCategoryDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

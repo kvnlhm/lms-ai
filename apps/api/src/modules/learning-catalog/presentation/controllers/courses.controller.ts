@@ -1,7 +1,16 @@
 import { Controller, Get, Header, Param, ParseUUIDPipe, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiEnvelope, ApiEnvelopeList, ApiErrors } from '../../../../shared/http/api-envelope';
-import { CourseDetailDto, CourseListItemDto } from '../dto/course.response';
+import {
+  ApiEnvelope,
+  ApiEnvelopeArray,
+  ApiEnvelopeList,
+  ApiErrors,
+} from '../../../../shared/http/api-envelope';
+import {
+  CourseDetailDto,
+  CourseListItemDto,
+  PublicCourseCategoryDto,
+} from '../dto/course.response';
 import { Paginated } from '../../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../../identity/domain/session';
 import { CurrentUser } from '../../../identity/presentation/decorators';
@@ -38,6 +47,16 @@ export class CoursesController {
   async list(@Query() query: ListCoursesDto, @CurrentUser() user: AuthenticatedUser) {
     const { items, total } = await this.catalog.list(query, user.id);
     return new Paginated(items, query.page, query.pageSize, total);
+  }
+
+  // Wajib berada di atas `:courseId`; kalau tidak, `/courses/categories` akan
+  // tertelan sebagai id kursus dan ditolak sebagai UUID yang tidak sah.
+  @Get('categories')
+  @ApiOperation({ summary: 'Kategori yang memiliki kursus terbit, untuk mengisi penyaring' })
+  @ApiEnvelopeArray(PublicCourseCategoryDto)
+  @ApiErrors(401)
+  async categories() {
+    return this.catalog.categories();
   }
 
   @Get(':courseId')

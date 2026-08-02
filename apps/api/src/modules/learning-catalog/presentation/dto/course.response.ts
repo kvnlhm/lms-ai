@@ -9,6 +9,20 @@ export class CourseCategoryDto {
   @ApiProperty() slug!: string;
 }
 
+/**
+ * Kategori untuk mengisi penyaring katalog.
+ *
+ * Hanya kategori yang benar-benar memiliki kursus terbit yang dikirim: sebuah
+ * pilihan yang selalu menghasilkan daftar kosong bukan pilihan, melainkan
+ * jebakan.
+ */
+export class PublicCourseCategoryDto {
+  @ApiProperty() name!: string;
+  @ApiProperty() slug!: string;
+  @ApiProperty({ description: 'Jumlah kursus terbit pada kategori ini.' })
+  courseCount!: number;
+}
+
 export class CourseEnrollmentSummaryDto {
   @ApiProperty({ enum: ENROLLMENT_STATUSES }) status!: string;
   @ApiProperty({ example: 25.5 }) progressPercent!: number;

@@ -124,9 +124,7 @@ function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
       </span>
       <div className="courseBody">
         <span className="courseName">{course.title}</span>
-        <span className="eyebrow" style={{ marginTop: 4 }}>
-          {course.category ?? 'Tanpa kategori'}
-        </span>
+        <span className="eyebrow courseCategory">{course.category ?? 'Tanpa kategori'}</span>
         {course.shortDescription ? <span className="courseDesc">{course.shortDescription}</span> : null}
         <div className="courseFoot">
           <div className="courseProgressLabel">
@@ -137,7 +135,15 @@ function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
           </div>
           <div className="courseStats">
             <span>{progress.requiredLessonsCompleted} dari {progress.requiredLessonsTotal} materi wajib</span>
-            <span>{enrollment.status === 'COMPLETED' ? 'Selesai' : 'Sedang berjalan'}</span>
+            <span>
+              {/* Tiga keadaan, bukan dua: kursus yang belum pernah dibuka
+                  sebelumnya juga disebut "Sedang berjalan". */}
+              {enrollment.status === 'COMPLETED'
+                ? 'Selesai'
+                : progress.percent > 0
+                  ? 'Sedang berjalan'
+                  : 'Belum dimulai'}
+            </span>
           </div>
         </div>
       </div>

@@ -1963,6 +1963,53 @@
         ]
       }
     },
+    "/api/v1/courses/categories": {
+      "get": {
+        "operationId": "CoursesController_categories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/PublicCourseCategoryDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Kategori yang memiliki kursus terbit, untuk mengisi penyaring",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
     "/api/v1/courses/{courseId}": {
       "get": {
         "operationId": "CoursesController_detail",
@@ -11201,6 +11248,26 @@
           "level",
           "estimatedMinutes",
           "moduleCount"
+        ]
+      },
+      "PublicCourseCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "courseCount": {
+            "type": "number",
+            "description": "Jumlah kursus terbit pada kategori ini."
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "courseCount"
         ]
       },
       "CourseSyllabusLessonDto": {

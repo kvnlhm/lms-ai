@@ -65,6 +65,79 @@ describe('Pencarian global', () => {
       expect(hasil.body.data).toHaveLength(0);
       expect(hasil.body.meta.total).toBe(0);
     });
+
+    // Penyaring kategori dan tingkat sudah lama diterima API tetapi tidak
+    // pernah dapat diminta dari halaman katalog. Sekarang keduanya tampil,
+    // jadi perilakunya dikunci.
+    it('menyaring menurut kategori', async () => {
+      const kategori = await h.prisma.courseCategory.findFirstOrThrow({
+        where: { courses: { some: { status: 'PUBLISHED' } } },
+        select: { slug: true },
+      });
+
+      const hasil = await request(h.server)
+        .get(`${prefix}/courses?category=${kategori.slug}&pageSize=100`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+
+      const isi = hasil.body.data as Array<{ category: { slug: string } | null }>;
+      expect(isi.length).toBeGreaterThan(0);
+      expect(isi.every((item) => item.category?.slug === kategori.slug)).toBe(true);
+    });
+
+    it('menyaring menurut tingkat', async () => {
+      const kursus = await h.prisma.course.findFirstOrThrow({
+        where: { status: 'PUBLISHED' },
+        select: { level: true },
+      });
+
+      const hasil = await request(h.server)
+        .get(`${prefix}/courses?level=${kursus.level}&pageSize=100`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+
+      const isi = hasil.body.data as Array<{ level: string }>;
+      expect(isi.length).toBeGreaterThan(0);
+      expect(isi.every((item) => item.level === kursus.level)).toBe(true);
+    });
+
+    it('menolak tingkat yang bukan salah satu nilai yang sah', async () => {
+      await request(h.server)
+        .get(`${prefix}/courses?level=ngawur`)
+        .set('Cookie', student.cookie)
+        .expect(422);
+    });
+
+    it('hanya menawarkan kategori yang benar-benar punya kursus terbit', async () => {
+      // Sebuah pilihan penyaring yang selalu menghasilkan daftar kosong bukan
+      // pilihan, melainkan jebakan. Kategori berisi draf saja tidak boleh ikut.
+      const sunyi = await h.prisma.courseCategory.create({
+        data: { name: `Kategori sunyi ${Date.now()}`, slug: `sunyi-${Date.now()}` },
+        select: { id: true, slug: true },
+      });
+
+      try {
+        const hasil = await request(h.server)
+          .get(`${prefix}/courses/categories`)
+          .set('Cookie', student.cookie)
+          .expect(200);
+
+        const daftar = hasil.body.data as Array<{ slug: string; courseCount: number }>;
+        expect(daftar.some((item) => item.slug === sunyi.slug)).toBe(false);
+        expect(daftar.length).toBeGreaterThan(0);
+        expect(daftar.every((item) => item.courseCount > 0)).toBe(true);
+
+        // Angkanya harus cocok dengan hasil penyaringan yang sesungguhnya.
+        const pertama = daftar[0]!;
+        const disaring = await request(h.server)
+          .get(`${prefix}/courses?category=${pertama.slug}&pageSize=100`)
+          .set('Cookie', student.cookie)
+          .expect(200);
+        expect(disaring.body.meta.total).toBe(pertama.courseCount);
+      } finally {
+        await h.prisma.courseCategory.delete({ where: { id: sunyi.id } });
+      }
+    });
   });
 
   it('menolak kata kunci yang terlalu pendek', async () => {
