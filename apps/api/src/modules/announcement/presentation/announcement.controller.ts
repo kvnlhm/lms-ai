@@ -12,12 +12,13 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PERMISSIONS } from '@lms/contracts';
-import { ApiEnvelope, ApiEnvelopeArray, ApiErrors } from '../../../shared/http/api-envelope';
+import { ApiEnvelope, ApiEnvelopeList, ApiErrors } from '../../../shared/http/api-envelope';
 import { Paginated } from '../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { AnnouncementService } from '../application/announcement.service';
 import {
+  AdminAnnouncementDto,
   AnnouncementUnreadCountDto,
   CreateAnnouncementDto,
   LearnerAnnouncementDto,
@@ -35,7 +36,7 @@ export class AnnouncementController {
 
   @Get('me/announcements')
   @ApiOperation({ summary: 'Pengumuman yang relevan dan sedang aktif untukku' })
-  @ApiEnvelopeArray(LearnerAnnouncementDto)
+  @ApiEnvelopeList(LearnerAnnouncementDto)
   @ApiErrors(401)
   async mine(@Query() query: LearnerAnnouncementQueryDto, @CurrentUser() user: AuthenticatedUser) {
     const page = query.page ?? 1;
@@ -68,6 +69,7 @@ export class AnnouncementController {
   @Get('admin/announcements')
   @RequirePermissions(PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   @ApiOperation({ summary: 'Seluruh pengumuman termasuk draft dan yang diarsipkan' })
+  @ApiEnvelopeList(AdminAnnouncementDto)
   @ApiErrors(401, 403)
   async list(@Query() query: ListAnnouncementQueryDto) {
     const page = query.page ?? 1;

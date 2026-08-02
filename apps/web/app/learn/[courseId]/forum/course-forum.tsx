@@ -4,10 +4,13 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { useNotifier } from '../../../components/notifier';
-import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
+import { ApiError, browserClient, unwrap, unwrapList } from '../../../lib/browser-api';
 
 /** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
 type TopicSummary = Schemas['ForumTopicListItemDto'];
+
+/** Sengaja lebih kecil dari batas lama: sisanya kini dapat dijangkau. */
+const UKURAN_HALAMAN = 20;
 
 const STATUS_LABEL: Record<TopicSummary['status'], string> = {
   OPEN: 'Terbuka',
@@ -23,8 +26,13 @@ function formatDate(value: string): string {
 export function CourseForum({ courseId }: { courseId: string }) {
   const notifier = useNotifier();
   const [topics, setTopics] = useState<TopicSummary[]>([]);
+  const [total, setTotal] = useState(0);
+  const [halaman, setHalaman] = useState(1);
+  const [totalHalaman, setTotalHalaman] = useState(1);
+  const [kataTermuat, setKataTermuat] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [memuatLagi, setMemuatLagi] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reasons, setReasons] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -32,32 +40,44 @@ export function CourseForum({ courseId }: { courseId: string }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
 
+  /**
+   * Halaman pertama menggantikan isi, halaman berikutnya menyambung.
+   *
+   * Sebelumnya lima puluh diskusi pertama diperlakukan sebagai seluruh forum,
+   * sehingga percakapan yang lebih lama tidak dapat dibuka lagi — pada kursus
+   * yang ramai, itu berarti sebagian besar isinya.
+   */
   const load = useCallback(
-    async (keyword: string) => {
-      setLoading(true);
+    async (keyword: string, page: number) => {
+      if (page === 1) setLoading(true);
+      else setMemuatLagi(true);
       setError(null);
       try {
-        const response = await browserClient().GET(
-          '/api/v1/learn/courses/{courseId}/forum/topics',
-          {
+        const { items, meta } = unwrapList<TopicSummary>(
+          await browserClient().GET('/api/v1/learn/courses/{courseId}/forum/topics', {
             params: {
               path: { courseId },
-              query: { page: 1, pageSize: 50, ...(keyword ? { search: keyword } : {}) },
+              query: { page, pageSize: UKURAN_HALAMAN, ...(keyword ? { search: keyword } : {}) },
             },
-          },
+          }),
         );
-        setTopics(unwrap(response) as TopicSummary[]);
+        setTopics((current) => (page === 1 ? items : [...current, ...items]));
+        setKataTermuat(keyword);
+        setHalaman(meta.page);
+        setTotalHalaman(meta.totalPages);
+        setTotal(meta.total);
       } catch (caught) {
         setError(caught instanceof ApiError ? caught.message : 'Diskusi gagal dimuat.');
       } finally {
         setLoading(false);
+        setMemuatLagi(false);
       }
     },
     [courseId],
   );
 
   useEffect(() => {
-    void load('');
+    void load('', 1);
   }, [load]);
 
   async function submit() {
@@ -75,7 +95,8 @@ export function CourseForum({ courseId }: { courseId: string }) {
       setTitle('');
       setBody('');
       setComposing(false);
-      await load(search);
+      // Kembali ke halaman pertama: diskusi baru berada di sana.
+      await load(search.trim(), 1);
     } catch (caught) {
       void notifier.error('Diskusi gagal dibuat', {
         text: caught instanceof ApiError ? caught.message : undefined,
@@ -93,7 +114,7 @@ export function CourseForum({ courseId }: { courseId: string }) {
           className="forumSearch"
           onSubmit={(event) => {
             event.preventDefault();
-            void load(search.trim());
+            void load(search.trim(), 1);
           }}
           role="search"
         >
@@ -212,6 +233,22 @@ export function CourseForum({ courseId }: { courseId: string }) {
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {!loading && halaman < totalHalaman ? (
+        <div className="muatLagi">
+          <p className="muted">
+            Menampilkan {topics.length} dari {total} diskusi
+          </p>
+          <button
+            className="btnSecondary"
+            type="button"
+            disabled={memuatLagi}
+            onClick={() => void load(kataTermuat, halaman + 1)}
+          >
+            {memuatLagi ? 'Memuat…' : 'Muat lebih banyak'}
+          </button>
+        </div>
       ) : null}
     </section>
   );

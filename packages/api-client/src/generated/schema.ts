@@ -3462,6 +3462,39 @@ export interface components {
         AnnouncementUnreadCountDto: {
             unread: number;
         };
+        AnnouncementCourseRefDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+        };
+        AnnouncementCreatorDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+        };
+        AnnouncementCountDto: {
+            targets: number;
+            readState: number;
+        };
+        AdminAnnouncementDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            body: string;
+            /** @enum {string} */
+            audience: "ALL_USERS" | "COURSE_LEARNERS" | "SPECIFIC_USERS";
+            /** @enum {string} */
+            status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+            /** Format: date-time */
+            publishedAt?: string | null;
+            /** Format: date-time */
+            endsAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            course?: components["schemas"]["AnnouncementCourseRefDto"] | null;
+            creator: components["schemas"]["AnnouncementCreatorDto"];
+            _count: components["schemas"]["AnnouncementCountDto"];
+        };
         CreateAnnouncementDto: {
             title: string;
             body: string;
@@ -8900,7 +8933,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["NotificationDto"][];
-                        meta: components["schemas"]["ResponseMetaDto"];
+                        meta: components["schemas"]["PaginatedMetaDto"];
                     };
                 };
             };
@@ -9022,7 +9055,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["LearnerAnnouncementDto"][];
-                        meta: components["schemas"]["ResponseMetaDto"];
+                        meta: components["schemas"]["PaginatedMetaDto"];
                     };
                 };
             };
@@ -9108,6 +9141,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAnnouncementDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;

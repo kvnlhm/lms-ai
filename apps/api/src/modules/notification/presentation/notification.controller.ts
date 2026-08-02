@@ -1,6 +1,6 @@
 import { Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiEnvelope, ApiEnvelopeArray, ApiErrors } from '../../../shared/http/api-envelope';
+import { ApiEnvelope, ApiEnvelopeList, ApiErrors } from '../../../shared/http/api-envelope';
 import { Paginated } from '../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser } from '../../identity/presentation/decorators';
@@ -19,7 +19,7 @@ export class NotificationController {
 
   @Get()
   @ApiOperation({ summary: 'Notifikasi milik sendiri, terbaru lebih dulu' })
-  @ApiEnvelopeArray(NotificationDto)
+  @ApiEnvelopeList(NotificationDto)
   @ApiErrors(401)
   async list(@Query() query: ListNotificationsQueryDto, @CurrentUser() user: AuthenticatedUser) {
     const page = query.page ?? 1;

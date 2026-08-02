@@ -8083,7 +8083,7 @@
                       }
                     },
                     "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
                     }
                   }
                 }
@@ -8278,7 +8278,7 @@
                       }
                     },
                     "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
                     }
                   }
                 }
@@ -8424,6 +8424,31 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminAnnouncementDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -14696,6 +14721,122 @@
         },
         "required": [
           "unread"
+        ]
+      },
+      "AnnouncementCourseRefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "AnnouncementCreatorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fullName"
+        ]
+      },
+      "AnnouncementCountDto": {
+        "type": "object",
+        "properties": {
+          "targets": {
+            "type": "number"
+          },
+          "readState": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "targets",
+          "readState"
+        ]
+      },
+      "AdminAnnouncementDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "audience": {
+            "type": "string",
+            "enum": [
+              "ALL_USERS",
+              "COURSE_LEARNERS",
+              "SPECIFIC_USERS"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "ARCHIVED"
+            ]
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "course": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AnnouncementCourseRefDto"
+              }
+            ]
+          },
+          "creator": {
+            "$ref": "#/components/schemas/AnnouncementCreatorDto"
+          },
+          "_count": {
+            "$ref": "#/components/schemas/AnnouncementCountDto"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "audience",
+          "status",
+          "createdAt",
+          "creator",
+          "_count"
         ]
       },
       "CreateAnnouncementDto": {

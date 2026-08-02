@@ -1,32 +1,23 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import type { Schemas } from '@lms/api-client';
 import { useNotifier } from '../../components/notifier';
-import { ApiError, browserClient, ensureSuccess, unwrap } from '../../lib/browser-api';
+import { ApiError, browserClient, ensureSuccess, unwrap, unwrapList } from '../../lib/browser-api';
 
-type Source = 'API' | 'WEB' | 'WORKER';
-type Status = 'OPEN' | 'RESOLVED';
-
-interface ErrorEvent {
-  id: string;
-  fingerprint: string;
-  source: Source;
-  status: Status;
-  type: string;
-  message: string;
-  stack: string | null;
-  context: Record<string, unknown> | null;
-  occurrences: number;
-  firstSeenAt: string;
-  lastSeenAt: string;
-  resolvedAt: string | null;
-}
+/** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
+type ErrorEvent = Schemas['ErrorEventDto'];
+type Source = ErrorEvent['source'];
+type Status = ErrorEvent['status'];
 
 interface Summary {
   open: number;
   resolved: number;
   lastDay: number;
 }
+
+/** Sengaja lebih kecil dari batas lama: sisanya kini dapat dijangkau. */
+const UKURAN_HALAMAN = 20;
 
 const SOURCE_LABEL: Record<Source, string> = {
   API: 'API',
@@ -51,6 +42,9 @@ function relative(value: string): string {
 export function ErrorMonitor() {
   const notifier = useNotifier();
   const [items, setItems] = useState<ErrorEvent[]>([]);
+  const [total, setTotal] = useState(0);
+  const [halaman, setHalaman] = useState(1);
+  const [totalHalaman, setTotalHalaman] = useState(1);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [status, setStatus] = useState<Status | ''>('OPEN');
   const [source, setSource] = useState<Source | ''>('');
@@ -59,32 +53,47 @@ export function ErrorMonitor() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const query: Record<string, string | number> = { page: 1, pageSize: 50 };
-      if (status) query.status = status;
-      if (source) query.source = source;
+  /**
+   * Sebelumnya lima puluh galat pertama diperlakukan sebagai seluruhnya.
+   * Ringkasan di atas tetap menghitung semuanya, jadi angka "belum ditangani"
+   * bisa menyebut lebih banyak daripada yang dapat ditandai selesai — dan
+   * sisanya tidak dapat dijangkau untuk ditangani.
+   */
+  const load = useCallback(
+    async (page: number) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const query: Record<string, string | number> = { page, pageSize: UKURAN_HALAMAN };
+        if (status) query.status = status;
+        if (source) query.source = source;
 
-      const [list, stats] = await Promise.all([
-        browserClient().GET('/api/v1/admin/errors', { params: { query } }),
-        browserClient().GET('/api/v1/admin/errors/summary', {}),
-      ]);
+        const [list, stats] = await Promise.all([
+          browserClient().GET('/api/v1/admin/errors', { params: { query } }),
+          browserClient().GET('/api/v1/admin/errors/summary', {}),
+        ]);
 
-      setItems(unwrap(list) as unknown as ErrorEvent[]);
-      setSummary(unwrap(stats) as unknown as Summary);
-    } catch (cause) {
-      setError(
-        cause instanceof ApiError ? cause.message : 'Daftar galat tidak dapat dimuat sekarang.',
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [status, source]);
+        const hasil = unwrapList<ErrorEvent>(list);
+        setItems(hasil.items);
+        setHalaman(hasil.meta.page);
+        setTotalHalaman(hasil.meta.totalPages);
+        setTotal(hasil.meta.total);
+        setSummary(unwrap(stats) as unknown as Summary);
+      } catch (cause) {
+        setError(
+          cause instanceof ApiError ? cause.message : 'Daftar galat tidak dapat dimuat sekarang.',
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [status, source],
+  );
 
+  // Penyaring yang berubah selalu dimulai dari halaman pertama: nomor halaman
+  // lama tidak bermakna pada kumpulan hasil yang berbeda.
   useEffect(() => {
-    void load();
+    void load(1);
   }, [load]);
 
   const act = async (id: string, action: 'resolve' | 'reopen') => {
@@ -96,7 +105,7 @@ export function ErrorMonitor() {
           params: { path: { errorId: id } },
         } as never),
       );
-      await load();
+      await load(halaman);
     } catch (cause) {
       void notifier.error('Perubahan gagal disimpan', {
         text: cause instanceof ApiError ? cause.message : undefined,
@@ -146,7 +155,12 @@ export function ErrorMonitor() {
             <option value="WORKER">Worker</option>
           </select>
         </label>
-        <button type="button" className="btn btnGhost" onClick={() => void load()} disabled={loading}>
+        <button
+          type="button"
+          className="btn btnGhost"
+          onClick={() => void load(halaman)}
+          disabled={loading}
+        >
           {loading ? 'Memuat…' : 'Muat ulang'}
         </button>
       </div>
@@ -244,6 +258,30 @@ export function ErrorMonitor() {
           </table>
         </div>
       )}
+
+      {totalHalaman > 1 ? (
+        <nav className="toolbar enrollmentPager" aria-label="Navigasi halaman galat">
+          <button
+            className="btn btnGhost"
+            type="button"
+            disabled={halaman <= 1 || loading}
+            onClick={() => void load(halaman - 1)}
+          >
+            Sebelumnya
+          </button>
+          <span className="pill">
+            Halaman {halaman} dari {totalHalaman} · {total} galat
+          </span>
+          <button
+            className="btn btnGhost"
+            type="button"
+            disabled={halaman >= totalHalaman || loading}
+            onClick={() => void load(halaman + 1)}
+          >
+            Berikutnya
+          </button>
+        </nav>
+      ) : null}
     </>
   );
 }

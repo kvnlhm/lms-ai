@@ -105,6 +105,45 @@ export class LearnerAnnouncementDto {
   readAt!: Date | null;
 }
 
+class AnnouncementCourseRefDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() title!: string;
+}
+
+class AnnouncementCreatorDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() fullName!: string;
+}
+
+class AnnouncementCountDto {
+  @ApiProperty() targets!: number;
+  @ApiProperty() readState!: number;
+}
+
+/**
+ * Bentuk daftar pengumuman sisi Master.
+ *
+ * Sebelumnya endpoint-nya tidak berdekorator sama sekali, sehingga bentuknya
+ * tidak pernah masuk ke OpenAPI dan web menuliskan ulang interface-nya dengan
+ * tangan — perubahan di sini tidak akan pernah tertangkap saat typecheck.
+ */
+export class AdminAnnouncementDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() title!: string;
+  @ApiProperty() body!: string;
+  @ApiProperty({ enum: AnnouncementAudience }) audience!: AnnouncementAudience;
+  @ApiProperty({ enum: AnnouncementStatus }) status!: AnnouncementStatus;
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'date-time' })
+  publishedAt!: Date | null;
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'date-time' })
+  endsAt!: Date | null;
+  @ApiProperty({ format: 'date-time' }) createdAt!: Date;
+  @ApiPropertyOptional({ type: AnnouncementCourseRefDto, nullable: true })
+  course!: AnnouncementCourseRefDto | null;
+  @ApiProperty({ type: AnnouncementCreatorDto }) creator!: AnnouncementCreatorDto;
+  @ApiProperty({ type: AnnouncementCountDto }) _count!: AnnouncementCountDto;
+}
+
 export class AnnouncementUnreadCountDto {
   @ApiProperty() unread!: number;
 }

@@ -1,26 +1,18 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import type { Schemas } from '@lms/api-client';
 import { Modal } from '../../components/modal';
 import { useNotifier } from '../../components/notifier';
-import { ApiError, browserClient, ensureSuccess, unwrap } from '../../lib/browser-api';
+import { ApiError, browserClient, ensureSuccess, unwrapList } from '../../lib/browser-api';
 
-type Audience = 'ALL_USERS' | 'COURSE_LEARNERS' | 'SPECIFIC_USERS';
-type Status = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+/** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
+type Announcement = Schemas['AdminAnnouncementDto'];
+type Audience = Announcement['audience'];
+type Status = Announcement['status'];
 
-interface Announcement {
-  id: string;
-  title: string;
-  body: string;
-  audience: Audience;
-  status: Status;
-  publishedAt: string | null;
-  endsAt: string | null;
-  createdAt: string;
-  course: { id: string; title: string } | null;
-  creator: { id: string; fullName: string };
-  _count: { targets: number; readState: number };
-}
+/** Sengaja lebih kecil dari batas lama: sisanya kini dapat dijangkau. */
+const UKURAN_HALAMAN = 20;
 
 const AUDIENCE_LABEL: Record<Audience, string> = {
   ALL_USERS: 'Semua pengguna',
@@ -34,7 +26,7 @@ const STATUS_PILL: Record<Status, { className: string; label: string }> = {
   ARCHIVED: { className: 'pill pillWarn', label: 'Diarsipkan' },
 };
 
-function formatDate(value: string | null): string {
+function formatDate(value: string | null | undefined): string {
   if (!value) return '—';
   return new Date(value).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
 }
@@ -48,6 +40,9 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
   const notifier = useNotifier();
   const [composeOpen, setComposeOpen] = useState(false);
   const [items, setItems] = useState<Announcement[]>([]);
+  const [total, setTotal] = useState(0);
+  const [halaman, setHalaman] = useState(1);
+  const [totalHalaman, setTotalHalaman] = useState(1);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   // Hanya kegagalan memuat daftar yang tetap tampil di halaman: tanpa daftar,
@@ -62,16 +57,34 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
   const [publishedAt, setPublishedAt] = useState(() => toLocalInputValue(new Date()));
   const [endsAt, setEndsAt] = useState('');
 
-  const load = useCallback(async () => {
+  /**
+   * Sebelumnya lima puluh pengumuman pertama diperlakukan sebagai seluruhnya,
+   * sehingga yang lebih lama tidak dapat diterbitkan, diarsipkan, maupun
+   * dihapus lagi — padahal jumlah pada label mengatakan semuanya ada.
+   *
+   * Bila halaman yang diminta ternyata kosong karena barisnya baru saja
+   * dihapus, isinya diambil ulang dari halaman terakhir yang masih ada.
+   */
+  const load = useCallback(async (page: number) => {
     setLoading(true);
     try {
-      setItems(
-        unwrap(
-          await browserClient().GET('/api/v1/admin/announcements', {
-            params: { query: { page: 1, pageSize: 50 } },
-          }),
-        ) as unknown as Announcement[],
+      let hasil = unwrapList<Announcement>(
+        await browserClient().GET('/api/v1/admin/announcements', {
+          params: { query: { page, pageSize: UKURAN_HALAMAN } },
+        }),
       );
+      if (hasil.items.length === 0 && page > 1 && hasil.meta.totalPages >= 1) {
+        hasil = unwrapList<Announcement>(
+          await browserClient().GET('/api/v1/admin/announcements', {
+            params: { query: { page: hasil.meta.totalPages, pageSize: UKURAN_HALAMAN } },
+          }),
+        );
+      }
+      setItems(hasil.items);
+      setHalaman(hasil.meta.page);
+      setTotalHalaman(hasil.meta.totalPages);
+      setTotal(hasil.meta.total);
+      setError(null);
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Pengumuman gagal dimuat.');
     } finally {
@@ -80,7 +93,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
   }, []);
 
   useEffect(() => {
-    void load();
+    void load(1);
   }, [load]);
 
   async function run(action: string, task: () => Promise<unknown>, success: string): Promise<boolean> {
@@ -89,7 +102,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
     try {
       await task();
       notifier.success(success);
-      await load();
+      await load(halaman);
       return true;
     } catch (caught) {
       void notifier.error('Tindakan gagal dijalankan', {
@@ -125,7 +138,12 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
       },
       'Draft pengumuman tersimpan.',
     );
-    if (ok) setComposeOpen(false);
+    if (ok) {
+      setComposeOpen(false);
+      // Draft baru berada di halaman pertama karena daftarnya terbaru dulu;
+      // `run` sudah memuat ulang halaman yang sedang dibuka.
+      if (halaman !== 1) await load(1);
+    }
   }
 
   return (
@@ -259,7 +277,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
           <span className="eyebrow">Riwayat konten</span>
           <h2 className="sectionTitle">Daftar pengumuman</h2>
         </div>
-        <span className="pill">{items.length} pengumuman</span>
+        <span className="pill">{total} pengumuman</span>
       </div>
       {loading ? <p className="stageNote">Memuat…</p> : null}
       {!loading && items.length === 0 ? (
@@ -357,6 +375,30 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
             );
           })}
         </ul>
+      ) : null}
+
+      {totalHalaman > 1 ? (
+        <nav className="toolbar enrollmentPager" aria-label="Navigasi halaman pengumuman">
+          <button
+            className="btn btnGhost"
+            type="button"
+            disabled={halaman <= 1 || loading}
+            onClick={() => void load(halaman - 1)}
+          >
+            Sebelumnya
+          </button>
+          <span className="pill">
+            Halaman {halaman} dari {totalHalaman}
+          </span>
+          <button
+            className="btn btnGhost"
+            type="button"
+            disabled={halaman >= totalHalaman || loading}
+            onClick={() => void load(halaman + 1)}
+          >
+            Berikutnya
+          </button>
+        </nav>
       ) : null}
     </section>
   );
