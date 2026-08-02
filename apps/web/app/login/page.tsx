@@ -28,7 +28,7 @@ export default async function LoginPage({ searchParams }: Props) {
             <span className="brandMark" aria-hidden="true">
               AO
             </span>
-            <span>AIPrenuer</span>
+            <span>AIPreneur</span>
           </span>
           <ThemeToggle />
         </div>

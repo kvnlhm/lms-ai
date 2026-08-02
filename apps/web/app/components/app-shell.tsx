@@ -159,11 +159,11 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
             <LogoutButton />
           </div>
         </MobileNavigation>
-        <Link href="/" className="brand" aria-label="LMS AIPrenuer, ke beranda">
+        <Link href="/" className="brand" aria-label="Academy AIPreneur, ke beranda">
           <span className="brandMark" aria-hidden="true">
             AO
           </span>
-          <span>AIPrenuer</span>
+          <span>AIPreneur</span>
         </Link>
 
         <nav className="mainNav" aria-label="Navigasi utama">
