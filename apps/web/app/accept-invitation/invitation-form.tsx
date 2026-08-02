@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
+import { PasswordInput } from '../components/password-input';
 
 export function InvitationForm({ token }: { token: string }) {
   const router = useRouter();
@@ -34,11 +35,11 @@ export function InvitationForm({ token }: { token: string }) {
     <form onSubmit={submit}>
       <div className="field">
         <label htmlFor="password">Password baru</label>
-        <input id="password" name="password" type="password" minLength={12} required disabled={busy || !token} />
+        <PasswordInput id="password" name="password" minLength={12} required disabled={busy || !token} />
       </div>
       <div className="field">
         <label htmlFor="passwordConfirmation">Ulangi password</label>
-        <input id="passwordConfirmation" name="passwordConfirmation" type="password" minLength={12} required disabled={busy || !token} />
+        <PasswordInput id="passwordConfirmation" name="passwordConfirmation" minLength={12} required disabled={busy || !token} />
       </div>
       {error ? <p className="fieldError" role="alert">{error}</p> : null}
       <button className="btn" type="submit" disabled={busy || !token}>

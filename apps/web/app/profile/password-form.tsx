@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
+import { PasswordInput } from '../components/password-input';
 
 export function PasswordForm() {
   const [busy, setBusy] = useState(false);
@@ -56,15 +57,15 @@ export function PasswordForm() {
         <div className="profileGrid">
           <div className="field profileFull">
             <label htmlFor="currentPassword">Password lama</label>
-            <input id="currentPassword" name="currentPassword" type="password" minLength={12} maxLength={128} autoComplete="current-password" required disabled={busy} />
+            <PasswordInput id="currentPassword" name="currentPassword" minLength={12} maxLength={128} autoComplete="current-password" required disabled={busy} />
           </div>
           <div className="field">
             <label htmlFor="newPassword">Password baru</label>
-            <input id="newPassword" name="newPassword" type="password" minLength={12} maxLength={128} autoComplete="new-password" required disabled={busy} />
+            <PasswordInput id="newPassword" name="newPassword" minLength={12} maxLength={128} autoComplete="new-password" required disabled={busy} />
           </div>
           <div className="field">
             <label htmlFor="newPasswordConfirmation">Ulangi password baru</label>
-            <input id="newPasswordConfirmation" name="newPasswordConfirmation" type="password" minLength={12} maxLength={128} autoComplete="new-password" required disabled={busy} />
+            <PasswordInput id="newPasswordConfirmation" name="newPasswordConfirmation" minLength={12} maxLength={128} autoComplete="new-password" required disabled={busy} />
           </div>
         </div>
         {message ? <p className={`notice ${message.kind === 'error' ? 'noticeError' : 'noticeSuccess'}`} role={message.kind === 'error' ? 'alert' : 'status'}>{message.text}</p> : null}
