@@ -946,7 +946,17 @@ table.data tbody tr:hover { background: var(--raised); }
 .workspaceSwitch > span:nth-child(2) { display: grid; line-height: 1.15; min-width: 0; }
 .workspaceSwitch strong { font-size: 14px; }
 .workspaceSwitch small { color: #777d87; font-size: 11px; margin-top: 3px; }
-.sideNav { display: grid; gap: 4px; margin-top: 26px; }
+/* Sidebar dipatok setinggi layar, jadi daftar menunya yang harus menggulir —
+   bukan halamannya. Tanpa `min-height: 0`, flex item menolak menyusut di bawah
+   tinggi isinya, sehingga menu paling bawah terpotong dan tidak dapat dicapai
+   sama sekali. Pola yang sama sudah dipakai `.mobileDrawerBody`.
+   `align-content: start` menjaga baris grid tetap setinggi isinya ketika ruang
+   masih berlebih, alih-alih ikut merenggang. */
+.sideNav {
+  display: grid; gap: 4px; margin-top: 26px;
+  flex: 1; min-height: 0; overflow-y: auto;
+  align-content: start; scrollbar-width: thin;
+}
 .sideLabel {
   padding: 0 10px 7px; color: #777d87; font-size: 11px;
   font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
