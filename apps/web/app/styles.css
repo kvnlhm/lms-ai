@@ -2528,3 +2528,60 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .tierPriceRow { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
 .tierPriceWas { color: var(--muted); font-size: 14px; text-decoration-thickness: 1px; }
 .regTotalWas { color: var(--muted); font-size: 15px; text-decoration-thickness: 1px; }
+
+/* ── Status pembayaran ─────────────────────────────────────── */
+.payPage {
+  min-height: 100vh; min-height: 100dvh;
+  width: min(560px, calc(100% - 36px)); margin: 0 auto;
+  display: grid; align-content: center; justify-items: center; gap: 22px;
+  padding: 40px 0;
+}
+.payBrand { justify-self: center; }
+
+.payCard {
+  width: 100%; padding: 32px 28px;
+  display: grid; justify-items: center; text-align: center; gap: 16px;
+}
+
+.payIcon {
+  width: 62px; height: 62px; display: grid; place-items: center;
+  border-radius: var(--r-pill);
+}
+.payIconBaik { background: var(--good-soft); color: var(--good); }
+.payIconGagal { background: var(--danger-soft); color: var(--danger); }
+.payIconMenunggu { background: var(--accent-soft); color: var(--accent-text); }
+
+.payTitle { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.payLede {
+  margin: 0; max-width: 46ch; color: var(--text-2);
+  font-size: 14.5px; line-height: 1.65;
+}
+
+/* Rincian pesanan dibaca berpasangan, jadi label dan nilainya tetap sebaris —
+   kode order yang terpisah dari labelnya sulit dirujuk saat pembeli
+   menghubungi kami. */
+.payFacts {
+  width: 100%; margin: 4px 0 0; display: grid; gap: 1px;
+  border-radius: var(--r-md); overflow: hidden; background: var(--line-soft);
+}
+.payFacts > div {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 11px 14px; background: var(--surface); text-align: left;
+}
+.payFacts dt { color: var(--muted); font-size: 12.5px; }
+.payFacts dd { margin: 0; font-size: 13.5px; font-weight: 600; }
+
+.payRefresh {
+  width: 100%; display: grid; justify-items: center; gap: 8px;
+  padding: 14px; border-radius: var(--r-md); background: var(--raised-2);
+}
+.payRefresh span { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+
+.payActions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.payHelp { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+
+@media (max-width: 680px) {
+  .payCard { padding: 24px 18px; }
+  .payActions { width: 100%; }
+  .payActions > .btn { flex: 1; justify-content: center; }
+}

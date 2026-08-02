@@ -12477,7 +12477,8 @@
             "type": "string"
           },
           "accessEndsAt": {
-            "type": "object",
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },

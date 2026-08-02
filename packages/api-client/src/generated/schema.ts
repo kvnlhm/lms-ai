@@ -2776,7 +2776,8 @@ export interface components {
             status: string;
             emailDeliveryStatus: string;
             whatsAppDeliveryStatus: string;
-            accessEndsAt?: Record<string, never> | null;
+            /** Format: date-time */
+            accessEndsAt?: string | null;
         };
         WebhookAcceptedDto: {
             /** @example true */

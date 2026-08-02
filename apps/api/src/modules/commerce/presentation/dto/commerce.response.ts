@@ -35,7 +35,11 @@ export class RegistrationOrderStatusDto {
   @ApiProperty() status!: string;
   @ApiProperty() emailDeliveryStatus!: string;
   @ApiProperty() whatsAppDeliveryStatus!: string;
-  @ApiPropertyOptional({ nullable: true }) accessEndsAt!: Date | null;
+  // Tanpa `type` dan `format`, Swagger memancarkan skema objek kosong sehingga
+  // klien hasil generasi menerimanya sebagai Record<string, never> — bukan
+  // tanggal yang dapat diformat.
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  accessEndsAt!: Date | null;
 }
 
 export class WebhookAcceptedDto {
