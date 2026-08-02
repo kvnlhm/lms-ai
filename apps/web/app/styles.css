@@ -2346,19 +2346,28 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .masterShell table.data .inlineActions { flex-wrap: wrap; gap: 8px; }
 }
 
-/* ── Ukuran sentuh kontrol Master ──────────────────────────── */
-/* `.iconAction` berukuran tepat 30×30 dan `.btnTiny` sekitar 26px — jauh di
-   bawah ~44px yang dapat disentuh dengan andal. Di editor kursus keduanya
-   berdempetan: naik, turun, ubah, hapus berjajar untuk setiap pelajaran, dan
-   salah sentuh di sana berarti menghapus pelajaran yang salah.
-   Diikat ke `.masterShell` karena `.btnTiny` juga dipakai halaman pelajar —
-   riwayat, notifikasi, profil, dan forum — yang tidak boleh ikut berubah. */
+/* ── Ukuran sentuh kontrol ─────────────────────────────────── */
+/* Beberapa kontrol jauh di bawah ~44px yang dapat disentuh dengan andal:
+   `.iconAction` tepat 30×30, `.btnTiny` sekitar 26px, `.btnSmall` sekitar 32px,
+   `.iconBtn` 34×34. Di editor kursus keduanya bahkan berdempetan — naik, turun,
+   ubah, hapus berjajar untuk setiap pelajaran — dan salah sentuh di sana
+   berarti menghapus pelajaran yang salah.
+   Berlaku untuk kedua sisi. Sempat dibatasi pada `.masterShell` supaya halaman
+   pelajar tidak ikut berubah, lalu dilepas atas permintaan: pelajar menghadapi
+   tombol yang sama kecilnya, dan dua angka berbeda untuk satu kelas kontrol
+   justru menjadi sumber kebingungan berikutnya. */
 @media (max-width: 680px) {
-  .masterShell .btnTiny {
-    min-height: 40px; padding: 9px 14px; font-size: 13px;
-  }
-  .masterShell .iconAction { width: 40px; height: 40px; }
+  .btnTiny { min-height: 40px; padding: 9px 14px; font-size: 13px; }
+  .btnSmall { min-height: 40px; padding: 9px 16px; }
+  .iconAction { width: 40px; height: 40px; }
+  .iconBtn { width: 40px; height: 40px; }
+
+  /* Hanya avatar di topbar yang membesar: ia sebuah tautan ke profil.
+     `.avatar` yang sama juga dipakai sebagai hiasan di dalam baris daftar,
+     dan memperbesarnya di sana akan merenggangkan barisnya tanpa alasan. */
+  .topbarRight .avatar { width: 40px; height: 40px; font-size: 14px; }
+
   /* Jarak antartombol ikut dinaikkan: target besar yang berhimpitan tetap
      menghasilkan salah sentuh di tepinya. */
-  .masterShell .inlineActions { flex-wrap: wrap; gap: 8px; }
+  .inlineActions { flex-wrap: wrap; gap: 8px; }
 }
