@@ -43,7 +43,7 @@ describe('Otorisasi resource', () => {
       .expect(404);
   });
 
-  it('menolak akses materi pada kursus yang tidak diikuti', async () => {
+  it('membuatkan akses otomatis pada kursus terbit yang belum pernah dibuka', async () => {
     const session = await login(h.server, STUDENT.email, STUDENT.password);
 
     // Kursus baru tanpa enrollment untuk pengguna ini.
@@ -57,18 +57,39 @@ describe('Otorisasi resource', () => {
     });
 
     try {
-      const response = await request(h.server)
+      // Sejak konten terbit dibuka untuk seluruh pengguna terautentikasi,
+      // enrollment berhenti menjadi gerbang dan tinggal menjadi wadah progres:
+      // ia dibuatkan saat kursusnya pertama kali dibuka.
+      await request(h.server)
         .get(`${prefix}/learn/courses/${course.id}`)
         .set('Cookie', session.cookie)
-        .expect(404);
+        .expect(200);
 
-      expect(response.body.error.code).toBe('RESOURCE_NOT_FOUND');
+      const enrollment = await h.prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId: session.userId, courseId: course.id } },
+        select: { status: true },
+      });
+      expect(enrollment?.status).toBe('ACTIVE');
     } finally {
+      await h.prisma.courseProgress.deleteMany({ where: { enrollment: { courseId: course.id } } });
+      await h.prisma.enrollment.deleteMany({ where: { courseId: course.id } });
       await h.prisma.course.delete({ where: { id: course.id } });
     }
   });
 
-  it('menolak akses ketika masa berlaku enrollment sudah lewat', async () => {
+  it('menolak kursus terbit untuk permintaan tanpa sesi', async () => {
+    const course = await h.prisma.course.findFirstOrThrow({
+      where: { slug: 'video-editing-mastery' },
+      select: { id: true },
+    });
+
+    // Gerbangnya kini autentikasi, bukan enrollment. Justru karena itu batas
+    // ini yang harus dijaga: tanpa sesi, tidak ada satu pun materi yang terbuka.
+    const response = await request(h.server).get(`${prefix}/learn/courses/${course.id}`).expect(401);
+    expect(response.body.error.code).toBe('AUTHENTICATION_REQUIRED');
+  });
+
+  it('memulihkan akses ketika masa berlaku enrollment sudah lewat', async () => {
     const session = await login(h.server, STUDENT.email, STUDENT.password);
     const enrollment = await h.prisma.enrollment.findFirstOrThrow({
       where: { userId: session.userId, course: { slug: 'video-editing-mastery' } },
@@ -76,20 +97,27 @@ describe('Otorisasi resource', () => {
 
     await h.prisma.enrollment.update({
       where: { id: enrollment.id },
-      data: { accessEndsAt: new Date(Date.now() - 60_000) },
+      data: { status: 'EXPIRED', accessEndsAt: new Date(Date.now() - 60_000) },
     });
 
     try {
-      const response = await request(h.server)
+      await request(h.server)
         .get(`${prefix}/learn/courses/${enrollment.courseId}`)
         .set('Cookie', session.cookie)
-        .expect(403);
+        .expect(200);
 
-      expect(response.body.error.code).toBe('ENROLLMENT_INACTIVE');
+      // Masa berlaku dipulihkan, tetapi barisnya tetap yang lama sehingga
+      // progres belajar yang sudah tercatat tidak hilang.
+      const setelah = await h.prisma.enrollment.findUniqueOrThrow({
+        where: { id: enrollment.id },
+        select: { status: true, accessEndsAt: true },
+      });
+      expect(setelah.status).toBe('ACTIVE');
+      expect(setelah.accessEndsAt).toBeNull();
     } finally {
       await h.prisma.enrollment.update({
         where: { id: enrollment.id },
-        data: { accessEndsAt: null },
+        data: { status: enrollment.status, accessEndsAt: null },
       });
     }
   });

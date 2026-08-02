@@ -29,7 +29,7 @@ export class CourseListItemDto {
   @ApiPropertyOptional({
     type: CourseEnrollmentSummaryDto,
     nullable: true,
-    description: 'Null bila pengguna belum terdaftar pada kursus ini.',
+    description: 'Progres akses yang dibuat otomatis untuk pengguna terautentikasi.',
   })
   enrollment!: CourseEnrollmentSummaryDto | null;
 }

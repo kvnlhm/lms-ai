@@ -162,13 +162,11 @@ export class SearchService {
 
   private async lessons(searcher: Searcher, term: string, take: number): Promise<SearchGroup> {
     const isManager = this.can(searcher, 'courses.manage');
-    // Pelajar hanya menemukan materi dari kursus yang benar-benar diikutinya.
-    // Tanpa ini, judul materi berbayar dapat dipanen tanpa membayar.
     const moduleScope: Prisma.CourseModuleWhereInput = {
       isActive: true,
-      ...(isManager
-        ? {}
-        : { course: { enrollments: { some: { userId: searcher.id, status: 'ACTIVE' } } } }),
+      // Login adalah satu-satunya gerbang konten pelajar. Master tetap dapat
+      // menemukan materi draft ketika mengelola kursus.
+      ...(isManager ? {} : { course: { status: 'PUBLISHED' } }),
     };
 
     const where: Prisma.LessonWhereInput = {
@@ -215,7 +213,7 @@ export class SearchService {
             // Topik tersembunyi tidak boleh muncul lewat pencarian, sama seperti
             // ia tidak muncul di daftar forum.
             status: { not: ForumTopicStatus.HIDDEN },
-            course: { enrollments: { some: { userId: searcher.id, status: 'ACTIVE' } } },
+            course: { status: 'PUBLISHED' },
           }),
     };
 

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EnrollmentStatus, type Prisma, PublicationStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
+import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
 
 export interface CatalogQuery {
   page: number;
@@ -13,7 +14,10 @@ export interface CatalogQuery {
 
 @Injectable()
 export class CourseCatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly access: EnrollmentAccessService,
+  ) {}
 
   /**
    * Katalog publik hanya berisi kursus PUBLISHED. Kursus DRAFT dan ARCHIVED
@@ -24,6 +28,7 @@ export class CourseCatalogService {
     query: CatalogQuery,
     userId: string,
   ): Promise<{ items: unknown[]; total: number }> {
+    await this.access.ensureAllPublishedCourseAccess(userId);
     const where: Prisma.CourseWhereInput = {
       status: PublicationStatus.PUBLISHED,
       ...(query.search
@@ -82,6 +87,7 @@ export class CourseCatalogService {
   }
 
   async detail(courseId: string, userId: string) {
+    await this.access.ensurePublishedCourseAccess(userId, courseId);
     const course = await this.prisma.course.findFirst({
       where: { id: courseId, status: PublicationStatus.PUBLISHED },
       include: {

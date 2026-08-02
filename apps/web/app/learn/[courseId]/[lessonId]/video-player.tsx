@@ -11,6 +11,10 @@ interface PlaybackSession {
   kind: 'FILE' | 'EMBED';
   playbackUrl: string | null;
   embedUrl: string | null;
+  watermark: {
+    text: string;
+    mode: 'MOVING';
+  };
 }
 
 export function VideoPlayer({ lessonId }: { lessonId: string }) {
@@ -63,40 +67,39 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
       );
     }
     return (
-      <iframe
-        src={session.embedUrl}
-        title="Video pelajaran"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
-        referrerPolicy="strict-origin-when-cross-origin"
-        style={{
-          width: '100%',
-          aspectRatio: '16 / 9',
-          maxHeight: '70vh',
-          border: 0,
-          background: '#000',
-          borderRadius: 12,
-        }}
-      />
+      <div className="protectedVideoFrame" onContextMenu={(event) => event.preventDefault()}>
+        <iframe
+          src={session.embedUrl}
+          title="Video pelajaran"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+        <span className="videoViewerWatermark" aria-hidden="true">{session.watermark.text}</span>
+      </div>
     );
   }
 
   if (!session.playbackUrl) return <p className="stageNote">Menyiapkan video…</p>;
 
   return (
-    <video
-      controls
-      preload="metadata"
-      src={session.playbackUrl}
-      onError={() => {
-        setSession(null);
-        setError(
-          'Video tersedia di kursus, tetapi file tidak dapat diputar. Minta Master mengunggah ulang video MP4.',
-        );
-      }}
-      style={{ width: '100%', maxHeight: '70vh', background: '#000', borderRadius: 12 }}
-    >
-      Browser kamu tidak mendukung pemutar video HTML5.
-    </video>
+    <div className="protectedVideoFrame" onContextMenu={(event) => event.preventDefault()}>
+      <video
+        controls
+        controlsList="nodownload noremoteplayback nofullscreen"
+        disablePictureInPicture
+        disableRemotePlayback
+        preload="metadata"
+        src={session.playbackUrl}
+        onError={() => {
+          setSession(null);
+          setError(
+            'Video tersedia di kursus, tetapi file tidak dapat diputar. Minta Master mengunggah ulang video MP4.',
+          );
+        }}
+      >
+        Browser kamu tidak mendukung pemutar video HTML5.
+      </video>
+      <span className="videoViewerWatermark" aria-hidden="true">{session.watermark.text}</span>
+    </div>
   );
 }

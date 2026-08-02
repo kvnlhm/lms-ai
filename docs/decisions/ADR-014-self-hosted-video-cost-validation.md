@@ -33,8 +33,9 @@ Mode `SELF_HOSTED` memiliki aturan:
 - Upload hanya dapat dilakukan Master dengan `courses.manage`.
 - Upload menggunakan streaming I/O dan memiliki batas ukuran serta rate limit.
 - API menyimpan metadata dan object key, bukan public permanent URL.
-- Playback dibuat hanya setelah API memvalidasi account, enrollment, periode
-  akses, course, lesson, dan prerequisite.
+- Playback dibuat hanya setelah API memvalidasi account terautentikasi, status
+  publikasi course, lesson, dan prerequisite. Enrollment dibuat otomatis sebagai
+  wadah progres dan tidak menjadi pembatas playback.
 - File dilayani reverse proxy dari internal location setelah otorisasi API;
   volume bersifat read-only pada reverse proxy dan tidak dipublikasikan langsung.
 - Playback session dan access URL memiliki TTL pendek dan tidak ditulis ke log.
@@ -79,4 +80,3 @@ dan video internal tidak berubah.
 - Backup off-site menjadi release blocker.
 - Risiko bandwidth, durability, dan content redistribution lebih tinggi dan
   harus terlihat dalam monitoring serta runbook.
-

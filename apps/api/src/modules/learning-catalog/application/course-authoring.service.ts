@@ -8,6 +8,7 @@ import {
 } from './lesson-video-cleanup.port';
 import { checkPublishable } from './publication-rules';
 import { CourseThumbnailService } from './course-thumbnail.service';
+import { PaidMembershipAccessService } from '../../commerce/application/paid-membership-access.service';
 
 export interface CreateCourseInput {
   title: string;
@@ -116,6 +117,7 @@ export class CourseAuthoringService {
     private readonly prisma: PrismaService,
     @Inject(LESSON_VIDEO_CLEANUP) private readonly videos: LessonVideoCleanupPort,
     private readonly thumbnails: CourseThumbnailService,
+    private readonly paidMembershipAccess: PaidMembershipAccessService,
   ) {}
 
   // ── Kursus ──────────────────────────────────────────────────
@@ -244,12 +246,14 @@ export class CourseAuthoringService {
       throw AppError.validation({ course: verdict.reasons });
     }
 
-    return toCourse(
-      await this.prisma.course.update({
-        where: { id: courseId },
-        data: { status: PublicationStatus.PUBLISHED, publishedAt: new Date(), archivedAt: null },
-      }),
-    );
+    const now = new Date();
+    const published = await this.prisma.course.update({
+      where: { id: courseId },
+      data: { status: PublicationStatus.PUBLISHED, publishedAt: now, archivedAt: null },
+    });
+    // Commerce tetap menjadi pemilik keputusan akses membership berbayar.
+    await this.paidMembershipAccess.grantPublishedCourse(courseId, requiredLessonCount, now);
+    return toCourse(published);
   }
 
   async archive(courseId: string) {

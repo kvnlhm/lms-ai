@@ -612,7 +612,7 @@ Keputusan dan batasannya dicatat pada ADR-017.
 ### Acceptance Criteria
 
 - Materi harus terhubung ke satu modul.
-- Pelajar hanya dapat membuka materi dari kursus yang dimiliki.
+- Pengguna terautentikasi dapat membuka materi aktif dari seluruh kursus yang diterbitkan.
 - Sistem mencatat saat materi dibuka.
 - Sistem mencatat saat materi diselesaikan.
 - Materi yang dihapus tidak boleh merusak histori progres.
@@ -624,7 +624,7 @@ Keputusan dan batasannya dicatat pada ADR-017.
 
 ---
 
-## 7.7 Enrollment Management
+## 7.7 Automatic Learning Enrollment
 
 ### Status Enrollment
 
@@ -634,22 +634,22 @@ Keputusan dan batasannya dicatat pada ADR-017.
 - Access Expired.
 - Removed.
 
-### Fitur Master
+### Peran Enrollment
 
-- Mendaftarkan pelajar ke kursus.
-- Mengeluarkan pelajar dari kursus.
-- Mengaktifkan kembali enrollment.
+- Dibuat otomatis ketika pengguna terautentikasi membuka katalog, dashboard, atau kursus terbit.
+- Menjadi wadah progres dan histori pembelajaran, bukan pembatas akses konten.
 - Melihat tanggal enrollment.
 - Melihat status pembelajaran.
-- Mengatur masa akses.
+- Status dan masa akses lama tetap dapat dilaporkan, tetapi tidak menutup konten kursus terbit.
 
 ### Acceptance Criteria
 
-- Pelajar hanya dapat membuka kursus yang terdaftar.
+- Semua pengguna terautentikasi dapat membuka seluruh kursus yang diterbitkan.
+- Pengguna tanpa sesi login tetap ditolak.
+- Kursus draft dan archived tidak terbuka pada katalog pelajar.
 - Enrollment duplikat tidak diperbolehkan.
-- Menghapus akses tidak menghapus histori progres.
-- Master dapat mengaktifkan kembali akses.
-- Masa akses yang berakhir harus memblokir materi.
+- Pembuatan atau pengaktifan enrollment otomatis tidak menghapus histori progres.
+- Status removed/expired dan masa akses yang berakhir tidak memblokir materi terbit.
 
 ---
 
@@ -1255,7 +1255,7 @@ Saat onboarding atau pengaturan profil, sistem dapat menyimpan:
 
 1. Setiap pengguna hanya memiliki satu role pada MVP.
 2. Email harus unik.
-3. Pelajar hanya dapat membuka kursus yang terdaftar.
+3. Setiap pengguna terautentikasi dapat membuka seluruh kursus yang diterbitkan; enrollment hanya menyimpan progres.
 4. Kursus draft hanya dapat dilihat Master.
 5. Kursus archived tidak menerima enrollment baru.
 6. Materi wajib memengaruhi progres.

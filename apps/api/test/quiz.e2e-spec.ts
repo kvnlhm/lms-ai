@@ -229,9 +229,37 @@ describe('Kuis pada kursus', () => {
     expect(response.body.error.fields.lesson).toBeDefined();
   });
 
-  it('menyembunyikan kuis dari pengguna yang tidak terdaftar', async () => {
-    const { lessonId } = await siapkanKursusKuis('tertutup', KUIS_DUA_SOAL);
-    await h.prisma.enrollment.deleteMany({ where: { userId: student.userId, course: { modules: { some: { lessons: { some: { id: lessonId } } } } } } });
+  it('menolak kuis untuk permintaan tanpa sesi', async () => {
+    const { lessonId } = await siapkanKursusKuis('tanpa-sesi', KUIS_DUA_SOAL);
+
+    await request(h.server).get(`${prefix}/learn/lessons/${lessonId}/quiz`).expect(401);
+    await request(h.server)
+      .post(`${prefix}/learn/lessons/${lessonId}/quiz/attempts`)
+      .send({ answers: [{ questionId: lessonId, selectedOptionIds: [lessonId] }] })
+      .expect(401);
+  });
+
+  it('menyembunyikan kuis pada kursus yang belum terbit', async () => {
+    // Sejak kursus terbit terbuka untuk seluruh pengguna terautentikasi, batas
+    // yang tersisa adalah status terbitnya. Kursus ini sengaja dibiarkan draf.
+    const courseId = (
+      await asMaster('post', '/admin/courses')
+        .send({ title: 'Kuis draf', slug: `uji-kuis-draf-${Date.now()}`, level: 'BEGINNER' })
+        .expect(201)
+    ).body.data.id as string;
+    courseIds.push(courseId);
+
+    const moduleId = (
+      await asMaster('post', `/admin/courses/${courseId}/modules`)
+        .send({ title: 'Bagian' })
+        .expect(201)
+    ).body.data.id as string;
+    const lessonId = (
+      await asMaster('post', `/admin/modules/${moduleId}/lessons`)
+        .send({ title: 'Kuis draf', contentType: 'QUIZ' })
+        .expect(201)
+    ).body.data.id as string;
+    await asMaster('put', `/admin/lessons/${lessonId}/quiz`).send(KUIS_DUA_SOAL).expect(200);
 
     await asStudent('get', `/learn/lessons/${lessonId}/quiz`).expect(404);
     await asStudent('post', `/learn/lessons/${lessonId}/quiz/attempts`)

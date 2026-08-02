@@ -31,17 +31,13 @@ export default async function CourseDetailPage({ params }: Props) {
     throw error;
   }
 
-  // Status per pelajaran hanya tersedia bagi peserta terdaftar. Bagi yang
-  // belum terdaftar, silabus tetap ditampilkan tanpa status.
   let learn: LearnCourse | null = null;
-  if (course.access.enrolled) {
-    try {
-      learn = unwrap<LearnCourse>(
-        await client.GET('/api/v1/learn/courses/{courseId}', { params: { path: { courseId } } }),
-      );
-    } catch (error) {
-      if (!(error instanceof ApiError && (error.isForbidden || error.isNotFound))) throw error;
-    }
+  try {
+    learn = unwrap<LearnCourse>(
+      await client.GET('/api/v1/learn/courses/{courseId}', { params: { path: { courseId } } }),
+    );
+  } catch (error) {
+    if (!(error instanceof ApiError && (error.isForbidden || error.isNotFound))) throw error;
   }
 
   const statusByLesson = new Map(
@@ -62,29 +58,20 @@ export default async function CourseDetailPage({ params }: Props) {
             {course.shortDescription ? <p className="pageSub">{course.shortDescription}</p> : null}
           </div>
 
-          {course.access.enrolled ? (
-            <span className="inlineActions">
-              <Link className="btnSecondary" href={`/learn/${course.id}/forum`}>
-                Forum diskusi
+          <span className="inlineActions">
+            <Link className="btnSecondary" href={`/learn/${course.id}/forum`}>
+              Forum diskusi
+            </Link>
+            {startTarget ? (
+              <Link className="btn" href={`/learn/${course.id}/${startTarget}`}>
+                {progress && progress.requiredLessonsCompleted > 0 ? 'Lanjutkan' : 'Mulai belajar'}
+                <ArrowRight size={16} />
               </Link>
-              {startTarget ? (
-                <Link className="btn" href={`/learn/${course.id}/${startTarget}`}>
-                  {progress && progress.requiredLessonsCompleted > 0 ? 'Lanjutkan' : 'Mulai belajar'}
-                  <ArrowRight size={16} />
-                </Link>
-              ) : null}
-            </span>
-          ) : null}
+            ) : null}
+          </span>
         </div>
 
-        {!course.access.enrolled ? (
-          <p className="notice noticeInfo" role="status">
-            Kamu belum terdaftar pada kursus ini. Silabus di bawah dapat dilihat, tetapi isi
-            pelajaran hanya terbuka setelah Master memberi akses.
-          </p>
-        ) : null}
-
-        {course.access.enrolled ? <LiveSessions courseId={course.id} /> : null}
+        <LiveSessions courseId={course.id} />
 
         {progress ? (
           <>
@@ -127,7 +114,6 @@ export default async function CourseDetailPage({ params }: Props) {
                 {module.lessons.map((lesson) => {
                   const status = statusByLesson.get(lesson.id);
                   const done = status === 'COMPLETED';
-                  const openable = course.access.enrolled;
 
                   const body = (
                     <>
@@ -147,15 +133,9 @@ export default async function CourseDetailPage({ params }: Props) {
 
                   return (
                     <li key={lesson.id}>
-                      {openable ? (
-                        <Link className="lessonRow" href={`/learn/${course.id}/${lesson.id}`}>
-                          {body}
-                        </Link>
-                      ) : (
-                        <div className="lessonRow" aria-disabled="true" style={{ cursor: 'default' }}>
-                          {body}
-                        </div>
-                      )}
+                      <Link className="lessonRow" href={`/learn/${course.id}/${lesson.id}`}>
+                        {body}
+                      </Link>
                     </li>
                   );
                 })}

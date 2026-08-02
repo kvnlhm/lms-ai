@@ -624,7 +624,7 @@ Gunakan application port apabila hasil dibutuhkan dalam request yang sama.
 
 Contoh:
 
-- Progress meminta Enrollment memastikan akses aktif.
+- Progress meminta Enrollment menyiapkan wadah progres untuk pengguna terautentikasi.
 - Delivery meminta Catalog memastikan lesson published.
 - Reporting meminta Authorization memastikan export diperbolehkan.
 
@@ -749,8 +749,7 @@ audit.read
 Memvalidasi:
 
 - Kepemilikan.
-- Enrollment.
-- Course access period.
+- Sesi pengguna terautentikasi.
 - Publishing status.
 - Discussion ownership.
 - Master permission.
@@ -761,11 +760,12 @@ Database query harus dibatasi berdasarkan hak akses.
 
 Contoh:
 
-- Pelajar hanya mengambil course yang memiliki enrollment aktif.
+- Pengguna terautentikasi hanya mengambil course berstatus published pada permukaan pelajar.
+- Enrollment dibuat atau diaktifkan otomatis sebagai wadah progres, bukan sebagai authorization gate.
 - Pelajar hanya mengambil notification miliknya.
 - Master analytics hanya mengambil data scope akademi.
 
-Default adalah deny.
+Default adalah deny untuk pengguna tanpa sesi, resource yang tidak diterbitkan, dan tindakan administratif tanpa permission.
 
 ---
 
@@ -777,13 +777,13 @@ Lesson completion adalah critical transaction.
 sequenceDiagram
     participant Web
     participant API
-    participant Access as Enrollment Access
+    participant Access as Published Content Access
     participant DB as PostgreSQL
     participant Outbox
     participant Queue
 
     Web->>API: Complete lesson + idempotency key
-    API->>Access: Validate active access
+    API->>Access: Validate login and published course
     Access-->>API: Allowed
     API->>DB: Begin transaction
     API->>DB: Upsert lesson progress
@@ -1377,7 +1377,7 @@ VideoProviderPort
 
 Bunny Stream menangani penyimpanan, direct upload, transcoding, adaptive streaming, CDN, Token Authentication, Allowed Domains, MediaCage Basic DRM, serta processing webhook.
 
-NestJS tetap menangani permission upload, enrollment validation, lesson access, playback session, token generation, watermark payload, webhook verification, metadata, audit, dan security event.
+NestJS tetap menangani permission upload, validasi sesi dan status publikasi, lesson access, playback session, token generation, watermark payload, webhook verification, metadata, audit, dan security event.
 
 ### Upload Flow
 
@@ -1394,7 +1394,7 @@ Master Browser
 
 ```text
 Student meminta playback session
-→ NestJS memvalidasi account, enrollment, lesson, dan prerequisite
+→ NestJS memvalidasi account, status publikasi course, lesson, dan prerequisite
 → NestJS membuat token singkat
 → Player memutar DRM-protected stream
 ```

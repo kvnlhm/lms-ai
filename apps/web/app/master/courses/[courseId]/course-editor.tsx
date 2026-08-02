@@ -1064,6 +1064,21 @@ function AddLessonForm({
   onAdd: (body: LessonUpdateInput) => Promise<boolean>;
 }) {
   const [contentType, setContentType] = useState<(typeof CONTENT_TYPES)[number]['value']>('TEXT');
+  const [completionRule, setCompletionRule] =
+    useState<(typeof COMPLETION_RULES)[number]['value']>('OPENED');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  function changeContentType(nextType: (typeof CONTENT_TYPES)[number]['value']) {
+    setContentType(nextType);
+    // Kuis tidak diselesaikan oleh aturan ini melainkan oleh nilainya, jadi
+    // nilai yang tersimpan dibiarkan netral. Menyetelnya ke 'OPENED' akan
+    // terbaca "selesai saat dibuka" pada materi yang justru tidak begitu.
+    if (nextType === 'QUIZ') {
+      setCompletionRule('MANUAL');
+      return;
+    }
+    setCompletionRule(nextType === 'VIDEO' ? 'VIDEO_PERCENTAGE' : 'OPENED');
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1085,13 +1100,13 @@ function AddLessonForm({
       isRequired: form.get('isRequired') === 'on',
       isPreview: form.get('isPreview') === 'on',
       isActive: form.get('isActive') === 'on',
-      completionRule: String(
-        form.get('completionRule') ?? 'MANUAL',
-      ) as (typeof COMPLETION_RULES)[number]['value'],
+      completionRule,
     });
     if (ok) {
       formElement.reset();
       setContentType('TEXT');
+      setCompletionRule('OPENED');
+      setShowAdvanced(false);
     }
   }
 
@@ -1100,7 +1115,7 @@ function AddLessonForm({
       <div className="lessonEditHead">
         <div>
           <strong>Tambah materi</strong>
-          <p>Lengkapi judul dan isi materi sekaligus. Kamu masih bisa mengubahnya setelah disimpan.</p>
+          <p>Isi yang utama saja. Pengaturan lain sudah diberi nilai otomatis dan tetap bisa diubah.</p>
         </div>
       </div>
       <div className="lessonEditGrid">
@@ -1121,23 +1136,13 @@ function AddLessonForm({
           <select
             id={`new-lesson-type-${moduleId}`}
             value={contentType}
-            onChange={(event) => setContentType(event.target.value as typeof contentType)}
+            onChange={(event) => changeContentType(event.target.value as typeof contentType)}
             disabled={disabled}
           >
             {CONTENT_TYPES.map((type) => (
               <option key={type.value} value={type.value}>{type.label}</option>
             ))}
           </select>
-        </div>
-        <div className="field lessonEditFull">
-          <label htmlFor={`new-lesson-description-${moduleId}`}>Deskripsi singkat</label>
-          <textarea
-            id={`new-lesson-description-${moduleId}`}
-            name="description"
-            maxLength={2000}
-            placeholder="Ringkasan singkat yang tampil pada daftar pelajaran."
-            disabled={disabled}
-          />
         </div>
         {contentType === 'TEXT' ? (
           <div className="field lessonEditFull">
@@ -1171,8 +1176,8 @@ function AddLessonForm({
         ) : null}
         {contentType === 'VIDEO' ? (
           <div className="lessonCreateNotice lessonEditFull">
-            Setelah materi disimpan, unggah MP4, pilih video dari perpustakaan, atau tautkan YouTube
-            melalui tombol yang muncul pada materi tersebut.
+            Simpan materi ini terlebih dahulu. Tombol unggah MP4, perpustakaan video, dan YouTube
+            langsung muncul di baris materi setelah tersimpan.
           </div>
         ) : null}
         {contentType === 'QUIZ' ? (
@@ -1182,46 +1187,69 @@ function AddLessonForm({
             sendiri, jadi kursus belum dapat diterbitkan selama soalnya masih kosong.
           </div>
         ) : null}
-        <div className="field">
-          <label htmlFor={`new-lesson-duration-${moduleId}`}>Estimasi durasi (menit)</label>
-          <input
-            id={`new-lesson-duration-${moduleId}`}
-            name="estimatedMinutes"
-            type="number"
-            min={0}
-            max={10000}
-            defaultValue={0}
-            disabled={disabled}
-          />
-        </div>
-        <div className="field">
-          <label htmlFor={`new-lesson-completion-${moduleId}`}>Aturan selesai</label>
-          <select
-            id={`new-lesson-completion-${moduleId}`}
-            name="completionRule"
-            defaultValue="MANUAL"
-            disabled={disabled}
-          >
-            {COMPLETION_RULES.map((rule) => (
-              <option key={rule.value} value={rule.value}>{rule.label}</option>
-            ))}
-          </select>
-        </div>
       </div>
-      <div className="lessonOptions">
+      <div className="lessonQuickOptions">
         <label className="checkRow">
           <input name="isRequired" type="checkbox" defaultChecked disabled={disabled} />
-          Wajib
-        </label>
-        <label className="checkRow">
-          <input name="isPreview" type="checkbox" disabled={disabled} />
-          Bisa dipreview
-        </label>
-        <label className="checkRow">
-          <input name="isActive" type="checkbox" defaultChecked disabled={disabled} />
-          Aktif
+          Materi wajib diselesaikan
         </label>
       </div>
+      <details
+        className="lessonAdvanced"
+        open={showAdvanced}
+        onToggle={(event) => setShowAdvanced(event.currentTarget.open)}
+      >
+        <summary>Pengaturan tambahan</summary>
+        <p className="lessonAdvancedHint">Opsional — default saat ini sudah cocok untuk kebanyakan materi.</p>
+        <div className="lessonEditGrid">
+          <div className="field lessonEditFull">
+            <label htmlFor={`new-lesson-description-${moduleId}`}>Deskripsi singkat</label>
+            <textarea
+              id={`new-lesson-description-${moduleId}`}
+              name="description"
+              maxLength={2000}
+              placeholder="Ringkasan singkat yang tampil pada daftar pelajaran."
+              disabled={disabled}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor={`new-lesson-duration-${moduleId}`}>Estimasi durasi (menit)</label>
+            <input
+              id={`new-lesson-duration-${moduleId}`}
+              name="estimatedMinutes"
+              type="number"
+              min={0}
+              max={10000}
+              defaultValue={0}
+              disabled={disabled}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor={`new-lesson-completion-${moduleId}`}>Aturan selesai</label>
+            <select
+              id={`new-lesson-completion-${moduleId}`}
+              name="completionRule"
+              value={completionRule}
+              onChange={(event) => setCompletionRule(event.target.value as typeof completionRule)}
+              disabled={disabled}
+            >
+              {COMPLETION_RULES.map((rule) => (
+                <option key={rule.value} value={rule.value}>{rule.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="lessonOptions">
+          <label className="checkRow">
+            <input name="isPreview" type="checkbox" disabled={disabled} />
+            Bisa dipreview sebelum mendapat akses
+          </label>
+          <label className="checkRow">
+            <input name="isActive" type="checkbox" defaultChecked disabled={disabled} />
+            Langsung aktif
+          </label>
+        </div>
+      </details>
       <div className="lessonEditActions">
         <button className="btn" type="submit" disabled={disabled}>
           {disabled ? 'Menyimpan…' : 'Tambah materi'}

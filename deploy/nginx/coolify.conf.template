@@ -72,8 +72,10 @@ server {
     location /protected-videos/ {
         internal;
         alias /data/videos/;
-        add_header Cache-Control "private, no-store";
-        add_header Accept-Ranges bytes;
+        add_header Cache-Control "private, no-store" always;
+        add_header Content-Disposition "inline" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Accept-Ranges bytes always;
         types { video/mp4 mp4; }
     }
 

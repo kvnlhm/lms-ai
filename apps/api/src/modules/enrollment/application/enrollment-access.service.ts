@@ -22,29 +22,7 @@ export class EnrollmentAccessService {
   constructor(private readonly prisma: PrismaService) {}
 
   async assertActiveAccess(userId: string, courseId: string): Promise<CourseAccess> {
-    const enrollment = await this.prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-      include: { course: { select: { status: true } } },
-    });
-
-    // Tanpa enrollment, keberadaan kursus tidak boleh dapat disimpulkan.
-    if (!enrollment) throw AppError.notFound();
-    if (enrollment.course.status !== PublicationStatus.PUBLISHED) throw AppError.courseNotPublished();
-
-    if (
-      enrollment.status === EnrollmentStatus.REMOVED ||
-      enrollment.status === EnrollmentStatus.EXPIRED
-    ) {
-      throw AppError.enrollmentInactive();
-    }
-
-    const now = new Date();
-    if (enrollment.accessStartsAt && enrollment.accessStartsAt > now) {
-      throw AppError.enrollmentInactive();
-    }
-    if (enrollment.accessEndsAt && enrollment.accessEndsAt <= now) {
-      throw AppError.enrollmentInactive();
-    }
+    const enrollment = await this.ensurePublishedCourseAccess(userId, courseId);
 
     return {
       enrollmentId: enrollment.id,
@@ -52,6 +30,67 @@ export class EnrollmentAccessService {
       courseId: enrollment.courseId,
       status: enrollment.status,
     };
+  }
+
+  /**
+   * Enrollment hanya menjadi wadah progres. Semua pengguna terautentikasi
+   * otomatis memperoleh akses permanen ke setiap kursus yang sudah terbit.
+   */
+  async ensurePublishedCourseAccess(userId: string, courseId: string) {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, status: PublicationStatus.PUBLISHED },
+      select: {
+        id: true,
+        modules: {
+          where: { isActive: true },
+          select: { lessons: { where: { isActive: true, isRequired: true }, select: { id: true } } },
+        },
+      },
+    });
+    if (!course) throw AppError.notFound();
+    const requiredLessonsTotal = course.modules.reduce(
+      (total, module) => total + module.lessons.length,
+      0,
+    );
+
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.enrollment.findUnique({
+        where: { userId_courseId: { userId, courseId } },
+        select: { id: true, status: true },
+      });
+      const enrollment = existing
+        ? await tx.enrollment.update({
+            where: { id: existing.id },
+            data: {
+              ...(existing.status === EnrollmentStatus.COMPLETED
+                ? {}
+                : { status: EnrollmentStatus.ACTIVE }),
+              accessStartsAt: null,
+              accessEndsAt: null,
+              removedAt: null,
+            },
+          })
+        : await tx.enrollment.create({
+            data: { userId, courseId, status: EnrollmentStatus.ACTIVE },
+          });
+      await tx.courseProgress.upsert({
+        where: { enrollmentId: enrollment.id },
+        create: { enrollmentId: enrollment.id, requiredLessonsTotal },
+        update: { requiredLessonsTotal },
+      });
+      return enrollment;
+    });
+  }
+
+  async ensureAllPublishedCourseAccess(userId: string): Promise<void> {
+    const courses = await this.prisma.course.findMany({
+      where: { status: PublicationStatus.PUBLISHED },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    for (const course of courses) {
+      await this.ensurePublishedCourseAccess(userId, course.id);
+    }
   }
 
   /** Varian untuk lesson: memetakan lesson ke course lalu memvalidasi akses. */

@@ -937,6 +937,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/registration/tiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar paket registrasi yang aktif */
+        get: operations["CommerceController_publicTiers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Membuat order dan sesi Midtrans Snap */
+        post: operations["CommerceController_checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/orders/{orderCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Melihat status order registrasi tanpa data pribadi */
+        get: operations["CommerceController_orderStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/midtrans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Menerima notifikasi transaksi Midtrans yang ditandatangani */
+        post: operations["CommerceController_midtransWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/access-tiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CommerceController_adminTiers"];
+        put?: never;
+        post: operations["CommerceController_createTier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/access-tiers/{tierId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["CommerceController_updateTier"];
+        trace?: never;
+    };
     "/api/v1/learn/courses/{courseId}": {
         parameters: {
             query?: never;
@@ -1697,106 +1797,6 @@ export interface paths {
         patch: operations["LiveSessionController_update"];
         trace?: never;
     };
-    "/api/v1/registration/tiers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Daftar paket registrasi yang aktif */
-        get: operations["CommerceController_publicTiers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/checkout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Membuat order dan sesi Midtrans Snap */
-        post: operations["CommerceController_checkout"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/registration/orders/{orderCode}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Melihat status order registrasi tanpa data pribadi */
-        get: operations["CommerceController_orderStatus"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/webhooks/midtrans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Menerima notifikasi transaksi Midtrans yang ditandatangani */
-        post: operations["CommerceController_midtransWebhook"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/access-tiers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["CommerceController_adminTiers"];
-        put?: never;
-        post: operations["CommerceController_createTier"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/access-tiers/{tierId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["CommerceController_updateTier"];
-        trace?: never;
-    };
     "/api/v1/admin/audit-logs": {
         parameters: {
             query?: never;
@@ -2349,7 +2349,7 @@ export interface components {
             moduleCount: number;
             /** Format: date-time */
             publishedAt?: string | null;
-            /** @description Null bila pengguna belum terdaftar pada kursus ini. */
+            /** @description Progres akses yang dibuat otomatis untuk pengguna terautentikasi. */
             enrollment?: components["schemas"]["CourseEnrollmentSummaryDto"] | null;
         };
         CourseSyllabusLessonDto: {
@@ -2727,6 +2727,94 @@ export interface components {
             accessStartsAt?: string;
             /** Format: date-time */
             accessEndsAt?: string | null;
+        };
+        TierCourseDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            title: string;
+            thumbnailUrl?: Record<string, never> | null;
+        };
+        AccessTierDto: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+            name: string;
+            description?: string | null;
+            priceIdr: number;
+            durationMonths?: number | null;
+            isLifetime: boolean;
+            isActive: boolean;
+            position: number;
+            courses: components["schemas"]["TierCourseDto"][];
+        };
+        CheckoutResponseDto: {
+            orderCode: string;
+            snapToken: string;
+            redirectUrl: string;
+            clientKey: string;
+            isProduction: boolean;
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        CreateCheckoutDto: {
+            /** Format: uuid */
+            tierId: string;
+            fullName: string;
+            email: string;
+            /** @example 6281234567890 */
+            phone: string;
+            /** @example true */
+            termsAccepted: boolean;
+        };
+        RegistrationOrderStatusDto: {
+            orderCode: string;
+            status: string;
+            emailDeliveryStatus: string;
+            whatsAppDeliveryStatus: string;
+            accessEndsAt?: Record<string, never> | null;
+        };
+        WebhookAcceptedDto: {
+            /** @example true */
+            accepted: boolean;
+        };
+        CreateAccessTierDto: {
+            /** @example Pro 12 Bulan */
+            name: string;
+            /** @example pro-12-bulan */
+            slug: string;
+            description?: string;
+            /** @example 1499000 */
+            priceIdr: number;
+            /**
+             * @description Jumlah bulan. Null berarti akses lifetime.
+             * @example 12
+             */
+            durationMonths?: number | null;
+            /** @default true */
+            isActive?: boolean;
+            /** @default 0 */
+            position?: number;
+            courseIds: string[];
+        };
+        UpdateAccessTierDto: {
+            /** @example Pro 12 Bulan */
+            name?: string;
+            /** @example pro-12-bulan */
+            slug?: string;
+            description?: string;
+            /** @example 1499000 */
+            priceIdr?: number;
+            /**
+             * @description Jumlah bulan. Null berarti akses lifetime.
+             * @example 12
+             */
+            durationMonths?: number | null;
+            /** @default true */
+            isActive?: boolean;
+            /** @default 0 */
+            position?: number;
+            courseIds?: string[];
         };
         LearnCourseSummaryDto: {
             /** Format: uuid */
@@ -3419,94 +3507,6 @@ export interface components {
             joinUrl?: string;
             startsAt?: string;
             durationMinutes?: number;
-        };
-        TierCourseDto: {
-            /** Format: uuid */
-            id: string;
-            slug: string;
-            title: string;
-            thumbnailUrl?: Record<string, never> | null;
-        };
-        AccessTierDto: {
-            /** Format: uuid */
-            id: string;
-            slug: string;
-            name: string;
-            description?: string | null;
-            priceIdr: number;
-            durationMonths?: number | null;
-            isLifetime: boolean;
-            isActive: boolean;
-            position: number;
-            courses: components["schemas"]["TierCourseDto"][];
-        };
-        CheckoutResponseDto: {
-            orderCode: string;
-            snapToken: string;
-            redirectUrl: string;
-            clientKey: string;
-            isProduction: boolean;
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        CreateCheckoutDto: {
-            /** Format: uuid */
-            tierId: string;
-            fullName: string;
-            email: string;
-            /** @example 6281234567890 */
-            phone: string;
-            /** @example true */
-            termsAccepted: boolean;
-        };
-        RegistrationOrderStatusDto: {
-            orderCode: string;
-            status: string;
-            emailDeliveryStatus: string;
-            whatsAppDeliveryStatus: string;
-            accessEndsAt?: Record<string, never> | null;
-        };
-        WebhookAcceptedDto: {
-            /** @example true */
-            accepted: boolean;
-        };
-        CreateAccessTierDto: {
-            /** @example Pro 12 Bulan */
-            name: string;
-            /** @example pro-12-bulan */
-            slug: string;
-            description?: string;
-            /** @example 1499000 */
-            priceIdr: number;
-            /**
-             * @description Jumlah bulan. Null berarti akses lifetime.
-             * @example 12
-             */
-            durationMonths?: number | null;
-            /** @default true */
-            isActive?: boolean;
-            /** @default 0 */
-            position?: number;
-            courseIds: string[];
-        };
-        UpdateAccessTierDto: {
-            /** @example Pro 12 Bulan */
-            name?: string;
-            /** @example pro-12-bulan */
-            slug?: string;
-            description?: string;
-            /** @example 1499000 */
-            priceIdr?: number;
-            /**
-             * @description Jumlah bulan. Null berarti akses lifetime.
-             * @example 12
-             */
-            durationMonths?: number | null;
-            /** @default true */
-            isActive?: boolean;
-            /** @default 0 */
-            position?: number;
-            courseIds?: string[];
         };
         AuditLogActorDto: {
             /** Format: uuid */
@@ -6608,6 +6608,288 @@ export interface operations {
             };
         };
     };
+    CommerceController_publicTiers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AccessTierDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+        };
+    };
+    CommerceController_checkout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCheckoutDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CheckoutResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommerceController_orderStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RegistrationOrderStatusDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommerceController_midtransWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["WebhookAcceptedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommerceController_adminTiers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AccessTierDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+        };
+    };
+    CommerceController_createTier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccessTierDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AccessTierDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommerceController_updateTier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tierId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccessTierDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AccessTierDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     LearnController_course: {
         parameters: {
             query?: never;
@@ -9201,288 +9483,6 @@ export interface operations {
             };
         };
         responses: {
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    CommerceController_publicTiers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["AccessTierDto"][];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
-        };
-    };
-    CommerceController_checkout: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCheckoutDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["CheckoutResponseDto"];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    CommerceController_orderStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                orderCode: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["RegistrationOrderStatusDto"];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    CommerceController_midtransWebhook: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["WebhookAcceptedDto"];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    CommerceController_adminTiers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["AccessTierDto"][];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
-        };
-    };
-    CommerceController_createTier: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAccessTierDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["AccessTierDto"];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    CommerceController_updateTier: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tierId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateAccessTierDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["AccessTierDto"];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
             401: {
                 headers: {
                     [name: string]: unknown;

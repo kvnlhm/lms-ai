@@ -72,6 +72,23 @@ export function parseYoutubeVideoId(rawUrl: string): string | null {
   return candidate && YOUTUBE_ID_PATTERN.test(candidate) ? candidate : null;
 }
 
+/**
+ * Membuat identitas yang tetap berguna untuk menelusuri rekaman bocor tanpa
+ * menampilkan alamat email lengkap pelajar di layar.
+ */
+export function playbackWatermarkText(
+  fullName: string,
+  email: string,
+  playbackSessionId: string,
+): string {
+  const [local = '', domain = ''] = email.trim().toLowerCase().split('@');
+  const maskedLocal = local.length <= 2
+    ? `${local.slice(0, 1)}*`
+    : `${local.slice(0, 2)}${'*'.repeat(Math.min(4, local.length - 2))}`;
+  const maskedEmail = domain ? `${maskedLocal}@${domain}` : maskedLocal;
+  return `${fullName.trim()} · ${maskedEmail} · ${playbackSessionId.slice(0, 8).toUpperCase()}`;
+}
+
 @Injectable()
 export class VideoService implements LessonVideoCleanupPort {
   private readonly config: AppConfig['video'];
@@ -379,10 +396,17 @@ export class VideoService implements LessonVideoCleanupPort {
 
   async createPlaybackSession(lessonId: string, userId: string, deviceId?: string) {
     const access = await this.access.assertLessonAccess(userId, lessonId);
-    const lesson = await this.prisma.lesson.findUnique({
-      where: { id: lessonId },
-      select: { videoAsset: true },
-    });
+    const [lesson, user] = await Promise.all([
+      this.prisma.lesson.findUnique({
+        where: { id: lessonId },
+        select: { videoAsset: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { fullName: true, email: true },
+      }),
+    ]);
+    if (!user) throw AppError.notFound();
     const asset =
       lesson?.videoAsset && lesson.videoAsset.deletedAt === null &&
       lesson.videoAsset.status === VideoStatus.AVAILABLE
@@ -418,6 +442,10 @@ export class VideoService implements LessonVideoCleanupPort {
         : null,
       expiresAt: expiresAt.toISOString(),
       drm: { enabled: false, type: 'NONE' },
+      watermark: {
+        text: playbackWatermarkText(user.fullName, user.email, playback.id),
+        mode: 'MOVING' as const,
+      },
     };
   }
 

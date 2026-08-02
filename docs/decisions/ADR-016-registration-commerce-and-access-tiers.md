@@ -15,8 +15,14 @@ WhatsApp. Seluruh atribut paket harus dapat diubah oleh Master.
 - Pembayaran memakai Midtrans Snap dengan integrasi backend.
 - Harga tersimpan sebagai integer Rupiah. `duration_months = NULL` berarti
   lifetime.
-- Paket dapat berisi satu atau lebih kursus. Pembayaran yang sah memberikan
-  enrollment untuk seluruh kursus paket.
+- Paket mengatur harga, durasi akses, dan materi promosi. Daftar kursus paket
+  hanya menjadi kurasi/presentasi, bukan batas otorisasi.
+- Pendaftaran dan pembayaran tetap memprovisikan akun, tetapi bukan batas
+  otorisasi konten. Setiap akun yang berhasil login dapat mengakses seluruh
+  kursus berstatus `PUBLISHED`.
+- Enrollment dibuat otomatis sebagai wadah progres belajar, bukan sebagai
+  gerbang akses. Status pembayaran dan masa paket tidak menutup konten bagi
+  pengguna yang sudah terautentikasi.
 - Webhook hanya diproses setelah signature SHA-512 valid dan status diambil
   kembali dari Midtrans. Event webhook memiliki idempotency key unik.
 - Pembuatan/penggunaan akun, enrollment, progress awal, order `PAID`, dan outbox
@@ -31,9 +37,10 @@ WhatsApp. Seluruh atribut paket harus dapat diubah oleh Master.
 ## Consequences
 
 - Modul `commerce` menjadi pemilik paket, order, dan webhook pembayaran.
+- Durasi paket 6/12 bulan atau lifetime tetap tersimpan sebagai data commerce,
+  tetapi tidak digunakan untuk menolak akses konten.
 - Midtrans Server Key tidak pernah masuk browser; Client Key boleh diberikan
   bersama respons checkout untuk memuat Snap.
 - Refund dicatat, tetapi pencabutan akses otomatis setelah refund belum
   dilakukan pada versi awal dan memerlukan kebijakan operasional tersendiri.
 - Template WhatsApp harus disetujui Meta sebelum pengiriman produksi berhasil.
-
