@@ -1,4 +1,6 @@
+import { Prisma } from '@prisma/client';
 import request from 'supertest';
+import { QuizTakingService } from '../src/modules/quiz/application/quiz-taking.service';
 import { login, prefix, startHarness, type Harness } from './support/harness';
 
 const MASTER = { email: 'master@akademionline.id', password: 'Master#Lokal12345' };
@@ -202,6 +204,65 @@ describe('Kuis pada kursus', () => {
       .send(salah)
       .expect(409);
     expect(kedua.body.error.message).toContain('percobaan');
+  });
+
+  it('menolak percobaan ketika jatahnya habis setelah pemeriksaan awal lewat', async () => {
+    const { lessonId, questions } = await siapkanKursusKuis('sisipan', {
+      ...KUIS_DUA_SOAL,
+      maxAttempts: 1,
+    });
+
+    const kuis = await h.prisma.quiz.findUniqueOrThrow({
+      where: { lessonId },
+      select: { id: true },
+    });
+    const enrollment = await h.prisma.enrollment.findFirstOrThrow({
+      where: { userId: student.userId, course: { modules: { some: { lessons: { some: { id: lessonId } } } } } },
+      select: { id: true },
+    });
+
+    // Celah yang dijaga: pengiriman lain menyusul tepat setelah pemeriksaan
+    // batas di awal `submit` selesai, sehingga hitungan yang dipakainya sudah
+    // basi saat percobaan ini ditulis. Balapan itu tidak dapat dipicu andal
+    // lewat dua permintaan HTTP paralel — keduanya biasanya membaca hitungan
+    // yang sama lalu salah satunya tertahan unique constraint, yang bukan
+    // kasus ini. Karena itu penyusulnya disisipkan tepat di celahnya.
+    const service = h.app.get(QuizTakingService);
+    const asli = Reflect.get(service, 'simpanPercobaan') as (params: unknown) => Promise<unknown>;
+    const sisipan = jest
+      .spyOn(service as unknown as Record<'simpanPercobaan', typeof asli>, 'simpanPercobaan')
+      .mockImplementation(async (params: unknown) => {
+        await h.prisma.quizAttempt.create({
+          data: {
+            quizId: kuis.id,
+            enrollmentId: enrollment.id,
+            attemptNumber: 1,
+            scorePercent: new Prisma.Decimal(0),
+            earnedPoints: 0,
+            totalPoints: 4,
+            passed: false,
+          },
+        });
+        return asli.call(service, params);
+      });
+
+    try {
+      const balasan = await asStudent('post', `/learn/lessons/${lessonId}/quiz/attempts`)
+        .send({
+          answers: questions.map((soal) => ({
+            questionId: soal.id,
+            selectedOptionIds: [soal.options.find((opsi) => !opsi.isCorrect)!.id],
+          })),
+        })
+        .expect(409);
+      expect(balasan.body.error.message).toContain('percobaan');
+    } finally {
+      sisipan.mockRestore();
+    }
+
+    // Hanya percobaan sisipan yang tersimpan: yang melewati batas dibatalkan
+    // bersama transaksinya, tidak tertulis separuh.
+    expect(await h.prisma.quizAttempt.count({ where: { quizId: kuis.id } })).toBe(1);
   });
 
   it('menolak pilihan jawaban milik soal lain', async () => {

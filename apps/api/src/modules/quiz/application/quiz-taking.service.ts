@@ -113,6 +113,7 @@ export class QuizTakingService {
       access,
       command,
       quizId: quiz.id,
+      maxAttempts: quiz.maxAttempts,
       graded,
       passed,
       selectionByQuestion,
@@ -158,26 +159,37 @@ export class QuizTakingService {
   /**
    * Menyimpan percobaan sekaligus menandai pelajaran selesai bila lulus.
    *
-   * Nomor percobaan dihitung di dalam transaksi dan dijaga unique
-   * (quiz_id, enrollment_id, attempt_number). Dua pengiriman bersamaan karena
-   * itu tidak dapat sama-sama menjadi percobaan terakhir yang tersisa: yang
-   * kalah menabrak constraint dan ditolak, bukan lolos diam-diam.
+   * Batas percobaan dan status lulus diperiksa ulang di dalam transaksi, bukan
+   * hanya di pemanggil. Pemeriksaan di luar memakai hitungan yang sudah usang
+   * begitu pengiriman lain menyusul: dua permintaan yang datang saat jatah
+   * tersisa satu sama-sama melihat "boleh", lalu yang belakangan menambah
+   * percobaan melewati batas. Unique (quiz_id, enrollment_id, attempt_number)
+   * tidak menolongnya — nomornya memang berbeda, hanya saja melewati jatah.
    */
   private async simpanPercobaan(params: {
     access: CourseAccess & { lessonId: string };
     command: SubmitQuizCommand;
     quizId: string;
+    maxAttempts: number | null;
     graded: GradedAttempt;
     passed: boolean;
     selectionByQuestion: Map<string, string[]>;
   }): Promise<{ attemptNumber: number; progress: CompleteLessonResult | null }> {
-    const { access, command, quizId, graded, passed, selectionByQuestion } = params;
+    const { access, command, quizId, maxAttempts, graded, passed, selectionByQuestion } = params;
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        const terpakai = await tx.quizAttempt.count({
-          where: { quizId, enrollmentId: access.enrollmentId },
-        });
+        const [terpakai, sudahLulus] = await Promise.all([
+          tx.quizAttempt.count({ where: { quizId, enrollmentId: access.enrollmentId } }),
+          tx.quizAttempt.count({ where: { quizId, enrollmentId: access.enrollmentId, passed: true } }),
+        ]);
+
+        if (sudahLulus > 0) {
+          throw new AppError('VALIDATION_ERROR', 409, 'Kuis ini sudah kamu lulusi.');
+        }
+        if (maxAttempts !== null && terpakai >= maxAttempts) {
+          throw new AppError('VALIDATION_ERROR', 409, 'Jatah percobaan kuis ini sudah habis.');
+        }
 
         const created = await tx.quizAttempt.create({
           data: {
