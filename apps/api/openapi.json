@@ -2427,6 +2427,7 @@
         ]
       },
       "delete": {
+        "description": "Kursus yang sudah memiliki enrollment ditolak dengan 409 dan diarahkan ke arsip. Sertakan `force=true` untuk menghapusnya berikut seluruh riwayat belajarnya.",
         "operationId": "AdminCoursesController_remove",
         "parameters": [
           {
@@ -2435,6 +2436,15 @@
             "in": "path",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "force",
+            "required": false,
+            "in": "query",
+            "description": "Ikut menghapus enrollment beserta seluruh progres dan percobaan kuisnya.",
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -2483,7 +2493,7 @@
             }
           }
         },
-        "summary": "Menghapus kursus yang belum pernah memiliki enrollment",
+        "summary": "Menghapus kursus permanen",
         "tags": [
           "admin-catalog"
         ]

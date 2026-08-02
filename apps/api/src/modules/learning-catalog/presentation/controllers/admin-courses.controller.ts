@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseBoolPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -17,6 +18,7 @@ import {
   ApiConsumes,
   ApiNoContentResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import {
@@ -200,16 +202,37 @@ export class AdminCoursesController {
 
   @Delete('courses/:courseId')
   @HttpCode(204)
-  @ApiOperation({ summary: 'Menghapus kursus yang belum pernah memiliki enrollment' })
+  @ApiOperation({
+    summary: 'Menghapus kursus permanen',
+    description:
+      'Kursus yang sudah memiliki enrollment ditolak dengan 409 dan diarahkan ke arsip. ' +
+      'Sertakan `force=true` untuk menghapusnya berikut seluruh riwayat belajarnya.',
+  })
+  @ApiQuery({
+    name: 'force',
+    required: false,
+    type: Boolean,
+    description: 'Ikut menghapus enrollment beserta seluruh progres dan percobaan kuisnya.',
+  })
   @ApiNoContentResponse({ description: 'Kursus dihapus.' })
   @ApiErrors(401, 403, 404, 409)
   async remove(
     @Param('courseId', new ParseUUIDPipe()) courseId: string,
     @CurrentUser() user: AuthenticatedUser,
     @Req() request: Request,
+    @Query('force', new ParseBoolPipe({ optional: true })) force?: boolean,
   ) {
-    await this.authoring.remove(courseId);
-    await this.record(request, user, 'course.deleted', 'course', courseId);
+    const summary = await this.authoring.remove(courseId, force === true);
+    // Besaran akibatnya ikut dicatat. Tanpa itu, audit log hanya menyatakan
+    // sebuah kursus dihapus dan tidak dapat menjawab berapa riwayat belajar
+    // yang ikut lenyap bersamanya.
+    await this.record(request, user, 'course.deleted', 'course', courseId, undefined, {
+      forced: summary.forced,
+      enrollmentsDeleted: summary.enrollments,
+      quizAttemptsDeleted: summary.attempts,
+      lessonProgressDeleted: summary.lessonProgress,
+      accessTiersDetached: summary.tiers,
+    });
   }
 
   // ── Bagian ──────────────────────────────────────────────────

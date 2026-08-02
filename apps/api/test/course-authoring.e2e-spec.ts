@@ -174,6 +174,54 @@ describe('Penyusunan kursus oleh Master', () => {
     expect(await h.prisma.lesson.count({ where: { module: { courseId } } })).toBe(0);
   });
 
+  it('menghapus kursus beserta riwayatnya ketika force diminta', async () => {
+    const courseId = await createCourse(`uji-hapus-paksa-${Date.now()}`);
+    const moduleId = (
+      await asMaster('post', `/admin/courses/${courseId}/modules`)
+        .send({ title: 'Bagian' })
+        .expect(201)
+    ).body.data.id as string;
+    await asMaster('post', `/admin/modules/${moduleId}/lessons`)
+      .send({ title: 'Pelajaran', contentType: 'TEXT' })
+      .expect(201);
+
+    const student = await login(h.server, STUDENT.email, STUDENT.password);
+    await asMaster('post', `/admin/courses/${courseId}/enrollments`)
+      .send({ userIds: [student.userId] })
+      .expect(200);
+
+    // Tanpa force, penolakannya tetap berlaku: itu tetap jalur bawaannya.
+    await asMaster('delete', `/admin/courses/${courseId}`).expect(409);
+
+    await asMaster('delete', `/admin/courses/${courseId}?force=true`).expect(204);
+
+    await asMaster('get', `/admin/courses/${courseId}`).expect(404);
+    // Enrollment memakai RESTRICT, bukan cascade — bila tidak dibereskan
+    // sendiri, penghapusan kursusnya akan gagal di tingkat basis data.
+    expect(await h.prisma.enrollment.count({ where: { courseId } })).toBe(0);
+    expect(await h.prisma.courseModule.count({ where: { courseId } })).toBe(0);
+  });
+
+  it('mencatat besaran akibat penghapusan paksa ke audit log', async () => {
+    const courseId = await createCourse(`uji-audit-paksa-${Date.now()}`);
+    const student = await login(h.server, STUDENT.email, STUDENT.password);
+    await asMaster('post', `/admin/courses/${courseId}/enrollments`)
+      .send({ userIds: [student.userId] })
+      .expect(200);
+
+    await asMaster('delete', `/admin/courses/${courseId}?force=true`).expect(204);
+
+    // Audit log harus dapat menjawab berapa riwayat belajar yang ikut lenyap,
+    // bukan sekadar bahwa sebuah kursus dihapus.
+    const catatan = await h.prisma.auditLog.findFirstOrThrow({
+      where: { action: 'course.deleted', targetId: courseId },
+      orderBy: { createdAt: 'desc' },
+    });
+    const sesudah = catatan.afterData as Record<string, unknown>;
+    expect(sesudah.forced).toBe(true);
+    expect(sesudah.enrollmentsDeleted).toBe(1);
+  });
+
   it('menolak penerbitan kursus kosong dan menyebut seluruh alasannya', async () => {
     const courseId = await createCourse(`uji-kosong-${Date.now()}`);
 

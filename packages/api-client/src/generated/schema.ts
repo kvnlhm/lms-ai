@@ -547,7 +547,10 @@ export interface paths {
         get: operations["AdminCoursesController_detail"];
         put?: never;
         post?: never;
-        /** Menghapus kursus yang belum pernah memiliki enrollment */
+        /**
+         * Menghapus kursus permanen
+         * @description Kursus yang sudah memiliki enrollment ditolak dengan 409 dan diarahkan ke arsip. Sertakan `force=true` untuk menghapusnya berikut seluruh riwayat belajarnya.
+         */
         delete: operations["AdminCoursesController_remove"];
         options?: never;
         head?: never;
@@ -5133,7 +5136,10 @@ export interface operations {
     };
     AdminCoursesController_remove: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Ikut menghapus enrollment beserta seluruh progres dan percobaan kuisnya. */
+                force?: boolean;
+            };
             header?: never;
             path: {
                 courseId: string;

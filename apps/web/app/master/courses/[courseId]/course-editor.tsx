@@ -146,17 +146,45 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
     });
     if (!lanjut) return;
 
+    await jalankanHapus(false);
+  }
+
+  /**
+   * Mengirim permintaan hapus, dan menawarkan penghapusan paksa bila server
+   * menolak karena kursusnya sudah punya enrollment.
+   *
+   * Peringatannya datang dari server, bukan disalin ke sini — kalau aturannya
+   * berubah kelak, teks yang dibaca Master ikut berubah dengan sendirinya.
+   */
+  async function jalankanHapus(force: boolean) {
     setBusy('delete');
     try {
       ensureSuccess(
         await client().DELETE('/api/v1/admin/courses/{courseId}', {
-          params: { path: { courseId: course.id } },
+          params: { path: { courseId: course.id }, query: force ? { force: true } : {} },
         }),
       );
       router.replace('/master/courses');
       router.refresh();
+      return;
     } catch (caught) {
       setBusy(null);
+
+      const terpakai = caught instanceof ApiError && caught.status === 409;
+      if (terpakai && !force) {
+        const tetap = await notifier.confirm('Tetap hapus kursus ini?', {
+          text:
+            `${caught.message} Bila diteruskan, seluruh pendaftaran pelajar pada kursus ini ` +
+            'ikut terhapus permanen beserta progres belajar dan percobaan kuisnya. ' +
+            'Tidak ada cara mengembalikannya selain dari backup.',
+          confirmLabel: 'Hapus berikut riwayatnya',
+          cancelLabel: 'Batal',
+          danger: true,
+        });
+        if (tetap) await jalankanHapus(true);
+        return;
+      }
+
       void notifier.error('Kursus tidak dapat dihapus', {
         text:
           caught instanceof ApiError

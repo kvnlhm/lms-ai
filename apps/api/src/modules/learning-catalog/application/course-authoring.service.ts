@@ -111,6 +111,15 @@ function toLesson(row: {
   };
 }
 
+/** Besaran akibat sebuah penghapusan kursus, untuk dicatat di audit log. */
+export interface CourseRemovalSummary {
+  forced: boolean;
+  enrollments: number;
+  attempts: number;
+  lessonProgress: number;
+  tiers: number;
+}
+
 @Injectable()
 export class CourseAuthoringService {
   constructor(
@@ -267,14 +276,21 @@ export class CourseAuthoringService {
   }
 
   /**
-   * Penghapusan permanen hanya untuk kursus yang belum pernah dipakai.
-   * Selain itu gunakan arsip, supaya riwayat belajar tidak ikut hilang.
+   * Penghapusan permanen.
+   *
+   * Kursus yang sudah memiliki enrollment tetap ditolak dan diarahkan ke arsip
+   * — itu jalur bawaannya. `force` menembus penolakan itu, tetapi hanya bila
+   * pemanggil menyatakannya secara eksplisit: tidak ada cara menghapus riwayat
+   * belajar tanpa menyebut niat itu lebih dahulu.
+   *
+   * Mengembalikan jumlah baris yang ikut lenyap, supaya audit log mencatat
+   * besaran akibatnya — bukan sekadar fakta bahwa sebuah kursus dihapus.
    */
-  async remove(courseId: string) {
+  async remove(courseId: string, force = false): Promise<CourseRemovalSummary> {
     await this.findOrFail(courseId);
 
     const enrollments = await this.prisma.enrollment.count({ where: { courseId } });
-    if (enrollments > 0) {
+    if (enrollments > 0 && !force) {
       throw new AppError(
         'VALIDATION_ERROR',
         409,
@@ -286,12 +302,33 @@ export class CourseAuthoringService {
       where: { module: { courseId } },
       select: { id: true },
     });
+
+    // Dihitung sebelum penghapusan: sesudahnya barisnya sudah tidak ada.
+    const [attempts, lessonProgress, tiers] = await Promise.all([
+      this.prisma.quizAttempt.count({ where: { enrollment: { courseId } } }),
+      this.prisma.lessonProgress.count({ where: { enrollment: { courseId } } }),
+      this.prisma.accessTierCourse.count({ where: { courseId } }),
+    ]);
+
     await this.videos.removeForLessons(lessons.map(({ id }) => id));
-    const deleted = await this.prisma.course.delete({
-      where: { id: courseId },
-      select: { thumbnailUrl: true },
+
+    const deleted = await this.prisma.$transaction(async (tx) => {
+      // Tiga relasi ini memakai RESTRICT, bukan cascade, jadi harus dibereskan
+      // sendiri dan berurutan: sesi pemutaran menahan enrollment, enrollment
+      // dan paket akses menahan kursusnya.
+      if (enrollments > 0) {
+        await tx.videoPlaybackSession.deleteMany({ where: { enrollment: { courseId } } });
+        await tx.enrollment.deleteMany({ where: { courseId } });
+      }
+      if (tiers > 0) {
+        await tx.accessTierCourse.deleteMany({ where: { courseId } });
+      }
+      return tx.course.delete({ where: { id: courseId }, select: { thumbnailUrl: true } });
     });
+
     await this.thumbnails.removeByUrl(deleted.thumbnailUrl).catch(() => undefined);
+
+    return { forced: enrollments > 0, enrollments, attempts, lessonProgress, tiers };
   }
 
   async detail(courseId: string) {
