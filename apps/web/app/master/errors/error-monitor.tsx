@@ -174,9 +174,9 @@ export function ErrorMonitor() {
       {loading && items.length === 0 ? (
         <p className="muted">Memuat daftar galat…</p>
       ) : items.length === 0 ? (
-        <div className="card" style={{ padding: 28, textAlign: 'center' }}>
-          <p style={{ margin: 0, fontWeight: 600 }}>Tidak ada galat pada filter ini.</p>
-          <p className="muted" style={{ margin: '6px 0 0' }}>
+        <div className="card emptyCard">
+          <p className="emptyCardTitle">Tidak ada galat pada filter ini.</p>
+          <p className="muted emptyCardNote">
             Daftar kosong berarti belum ada kegagalan yang tercatat — bukan berarti pemantauannya
             mati.
           </p>

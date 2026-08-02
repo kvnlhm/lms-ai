@@ -2636,3 +2636,33 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 /* Tombol muat lebih banyak pada daftar yang menyambung. */
 .muatLagi { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 18px; }
 .muatLagi p { margin: 0; }
+
+/* Tombol tautan yang menumpuk judul di atas keterangannya. */
+.errorToggleStack { display: block; width: 100%; }
+
+/* Kartu untuk keadaan kosong; sebelumnya ditulis inline di dua tempat. */
+.emptyCard { padding: 28px; text-align: center; }
+.emptyCardTitle { margin: 0; font-weight: 600; }
+.emptyCardNote { margin: 6px 0 0; }
+.emptyCard .btnTiny { margin-top: 12px; }
+
+/* Penyaring aktif yang dipasang lewat klik pada baris. */
+.filterChips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.filterChip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 8px 5px 12px; border-radius: var(--r-pill);
+  background: var(--raised); border: 1px solid var(--line);
+  font-size: 12.5px; color: var(--text-2);
+}
+.filterChip button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--raised-2); color: var(--muted);
+  font-size: 14px; line-height: 1; cursor: pointer;
+}
+.filterChip button:hover { color: var(--text); }
+.filterChip button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.auditTime { white-space: nowrap; }
+.auditCount { margin-bottom: 12px; }
+.auditNoSnapshot { margin: 0; font-size: 12.5px; }

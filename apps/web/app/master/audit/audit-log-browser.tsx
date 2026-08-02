@@ -1,23 +1,34 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { Schemas } from '@lms/api-client';
+import { ApiError, browserClient, unwrap, unwrapList } from '../../lib/browser-api';
 
-interface AuditEntry {
-  id: string;
-  action: string;
-  targetType: string;
-  targetId: string | null;
-  actor: { id: string; fullName: string; email: string } | null;
-  beforeData: unknown;
-  afterData: unknown;
-  requestId: string | null;
-  ipAddress: string | null;
-  userAgent: string | null;
-  createdAt: string;
-}
+/** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
+type AuditEntry = Schemas['AuditLogEntryDto'];
 
 const PAGE_SIZE = 25;
+
+interface Penyaring {
+  /** Dicocokkan sebagai awalan oleh server, jadi `user.` menyaring segolongan. */
+  action: string;
+  actorUserId: string;
+  actorLabel: string;
+  targetType: string;
+  targetId: string;
+  from: string;
+  to: string;
+}
+
+const TANPA_PENYARING: Penyaring = {
+  action: '',
+  actorUserId: '',
+  actorLabel: '',
+  targetType: '',
+  targetId: '',
+  from: '',
+  to: '',
+};
 
 function formatDate(value: string): string {
   return new Date(value).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'medium' });
@@ -28,12 +39,32 @@ function toLocalInputValue(date: Date): string {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 
+/**
+ * Mengelompokkan tindakan menurut awalannya, mis. `user.` atau `course.`.
+ *
+ * Server mencocokkan `action` sebagai awalan, bukan sebagai nilai penuh —
+ * kemampuan yang selama ini tidak pernah dapat dijangkau dari halaman ini
+ * karena daftarnya hanya menawarkan nilai-nilai persis. Tiap kelompok kini
+ * mendapat satu pilihan "semua" yang memakai awalan itu.
+ */
+function kelompokkan(actions: string[]): Array<{ awalan: string; daftar: string[] }> {
+  const peta = new Map<string, string[]>();
+  for (const action of actions) {
+    const titik = action.indexOf('.');
+    const awalan = titik > 0 ? `${action.slice(0, titik)}.` : '';
+    const daftar = peta.get(awalan);
+    if (daftar) daftar.push(action);
+    else peta.set(awalan, [action]);
+  }
+  return [...peta.entries()]
+    .map(([awalan, daftar]) => ({ awalan, daftar }))
+    .sort((a, b) => a.awalan.localeCompare(b.awalan));
+}
+
 export function AuditLogBrowser() {
   const [items, setItems] = useState<AuditEntry[]>([]);
   const [actions, setActions] = useState<string[]>([]);
-  const [action, setAction] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  const [penyaring, setPenyaring] = useState<Penyaring>(TANPA_PENYARING);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -44,8 +75,10 @@ export function AuditLogBrowser() {
   useEffect(() => {
     void (async () => {
       try {
-        const response = await browserClient().GET('/api/v1/admin/audit-logs/actions', {});
-        setActions((unwrap(response) as unknown as { actions: string[] }).actions);
+        const data = unwrap<Schemas['AuditLogActionsDto']>(
+          await browserClient().GET('/api/v1/admin/audit-logs/actions', {}),
+        );
+        setActions(data.actions);
       } catch {
         // Penyaring kehilangan pilihannya, tetapi daftarnya tetap dapat dibaca.
       }
@@ -57,35 +90,46 @@ export function AuditLogBrowser() {
     setError(null);
     try {
       const query: Record<string, string | number> = { page, pageSize: PAGE_SIZE };
-      if (action) query.action = action;
-      if (from) query.from = new Date(from).toISOString();
-      if (to) query.to = new Date(to).toISOString();
+      if (penyaring.action) query.action = penyaring.action;
+      if (penyaring.actorUserId) query.actorUserId = penyaring.actorUserId;
+      if (penyaring.targetType) query.targetType = penyaring.targetType;
+      if (penyaring.targetId) query.targetId = penyaring.targetId;
+      if (penyaring.from) query.from = new Date(penyaring.from).toISOString();
+      if (penyaring.to) query.to = new Date(penyaring.to).toISOString();
 
-      const response = await browserClient().GET('/api/v1/admin/audit-logs', {
-        params: { query },
-      });
-      setItems(unwrap(response) as unknown as AuditEntry[]);
-      const meta = (response as { data?: { meta?: { totalPages?: number; total?: number } } }).data
-        ?.meta;
-      setTotalPages(meta?.totalPages ?? 1);
-      setTotal(meta?.total ?? 0);
+      const { items: batch, meta } = unwrapList<AuditEntry>(
+        await browserClient().GET('/api/v1/admin/audit-logs', { params: { query } }),
+      );
+      setItems(batch);
+      setTotalPages(meta.totalPages);
+      setTotal(meta.total);
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : 'Audit log tidak dapat dimuat sekarang.');
     } finally {
       setLoading(false);
     }
-  }, [action, from, to, page]);
+  }, [penyaring, page]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const applyFilter = (next: () => void) => {
-    // Menyaring selalu kembali ke halaman pertama; kalau tidak, hasil sedikit
-    // pada halaman 5 akan tampak kosong tanpa penjelasan.
+  /**
+   * Menyaring selalu kembali ke halaman pertama; kalau tidak, hasil sedikit
+   * pada halaman 5 akan tampak kosong tanpa penjelasan.
+   */
+  const saring = useCallback((patch: Partial<Penyaring>) => {
     setPage(1);
-    next();
-  };
+    setPenyaring((current) => ({ ...current, ...patch }));
+  }, []);
+
+  const kelompok = useMemo(() => kelompokkan(actions), [actions]);
+  const adaPenyaring =
+    penyaring.action !== '' ||
+    penyaring.actorUserId !== '' ||
+    penyaring.targetType !== '' ||
+    penyaring.from !== '' ||
+    penyaring.to !== '';
 
   return (
     <>
@@ -93,14 +137,19 @@ export function AuditLogBrowser() {
         <label className="field errorFilter">
           <span className="srOnly">Jenis tindakan</span>
           <select
-            value={action}
-            onChange={(event) => applyFilter(() => setAction(event.target.value))}
+            value={penyaring.action}
+            onChange={(event) => saring({ action: event.target.value })}
           >
             <option value="">Semua tindakan</option>
-            {actions.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
+            {kelompok.map(({ awalan, daftar }) => (
+              <optgroup key={awalan || 'lainnya'} label={awalan || 'Lainnya'}>
+                {awalan ? <option value={awalan}>Semua {awalan}…</option> : null}
+                {daftar.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>
@@ -108,32 +157,22 @@ export function AuditLogBrowser() {
           <span className="srOnly">Dari</span>
           <input
             type="datetime-local"
-            value={from}
-            max={to || toLocalInputValue(new Date())}
-            onChange={(event) => applyFilter(() => setFrom(event.target.value))}
+            value={penyaring.from}
+            max={penyaring.to || toLocalInputValue(new Date())}
+            onChange={(event) => saring({ from: event.target.value })}
           />
         </label>
         <label className="field errorFilter">
           <span className="srOnly">Sampai</span>
           <input
             type="datetime-local"
-            value={to}
-            min={from || undefined}
-            onChange={(event) => applyFilter(() => setTo(event.target.value))}
+            value={penyaring.to}
+            min={penyaring.from || undefined}
+            onChange={(event) => saring({ to: event.target.value })}
           />
         </label>
-        {action || from || to ? (
-          <button
-            type="button"
-            className="btnTiny"
-            onClick={() =>
-              applyFilter(() => {
-                setAction('');
-                setFrom('');
-                setTo('');
-              })
-            }
-          >
+        {adaPenyaring ? (
+          <button type="button" className="btnTiny" onClick={() => saring(TANPA_PENYARING)}>
             Reset penyaring
           </button>
         ) : null}
@@ -141,6 +180,36 @@ export function AuditLogBrowser() {
           {loading ? 'Memuat…' : 'Muat ulang'}
         </button>
       </div>
+
+      {penyaring.actorUserId || penyaring.targetType ? (
+        <div className="filterChips">
+          {penyaring.actorUserId ? (
+            <span className="filterChip">
+              Pelaku: {penyaring.actorLabel || penyaring.actorUserId}
+              <button
+                type="button"
+                aria-label="Hapus penyaring pelaku"
+                onClick={() => saring({ actorUserId: '', actorLabel: '' })}
+              >
+                ×
+              </button>
+            </span>
+          ) : null}
+          {penyaring.targetType ? (
+            <span className="filterChip">
+              Target: {penyaring.targetType}
+              {penyaring.targetId ? ` · ${penyaring.targetId.slice(0, 8)}…` : ''}
+              <button
+                type="button"
+                aria-label="Hapus penyaring target"
+                onClick={() => saring({ targetType: '', targetId: '' })}
+              >
+                ×
+              </button>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       {error ? (
         <p className="notice noticeError" role="alert">
@@ -151,13 +220,22 @@ export function AuditLogBrowser() {
       {loading && items.length === 0 ? (
         <p className="muted">Memuat audit log…</p>
       ) : items.length === 0 ? (
-        <div className="card" style={{ padding: 28, textAlign: 'center' }}>
-          <p style={{ margin: 0, fontWeight: 600 }}>Tidak ada catatan pada penyaring ini.</p>
+        <div className="card emptyCard">
+          <p className="emptyCardTitle">
+            {adaPenyaring
+              ? 'Tidak ada catatan pada penyaring ini.'
+              : 'Belum ada tindakan yang tercatat.'}
+          </p>
+          {adaPenyaring ? (
+            <button type="button" className="btnTiny" onClick={() => saring(TANPA_PENYARING)}>
+              Tampilkan semua
+            </button>
+          ) : null}
         </div>
       ) : (
         <>
-          <p className="muted" style={{ marginBottom: 12 }}>
-            {total.toLocaleString('id-ID')} catatan.
+          <p className="muted auditCount">
+            {total.toLocaleString('id-ID')} catatan{adaPenyaring ? ' cocok dengan penyaring ini' : ''}.
           </p>
           <div className="card tableWrap">
             <table className="data">
@@ -173,13 +251,26 @@ export function AuditLogBrowser() {
               <tbody>
                 {items.map((entry) => (
                   <tr key={entry.id}>
-                    <td style={{ whiteSpace: 'nowrap' }} data-label="Waktu">{formatDate(entry.createdAt)}</td>
+                    <td className="auditTime" data-label="Waktu">{formatDate(entry.createdAt)}</td>
                     <td data-label="Pelaku">
                       {entry.actor ? (
-                        <>
+                        // Diklik untuk melihat seluruh tindakan orang ini.
+                        // Penyaringnya sudah lama ada di server; yang belum ada
+                        // hanyalah cara memintanya dari sini.
+                        <button
+                          type="button"
+                          className="errorToggle errorToggleStack"
+                          title={`Tampilkan hanya tindakan ${entry.actor.fullName}`}
+                          onClick={() =>
+                            saring({
+                              actorUserId: entry.actor?.id ?? '',
+                              actorLabel: entry.actor?.fullName ?? '',
+                            })
+                          }
+                        >
                           <span className="cellTitle">{entry.actor.fullName}</span>
                           <span className="cellSub">{entry.actor.email}</span>
-                        </>
+                        </button>
                       ) : (
                         // Aktor memakai ON DELETE SET NULL: catatannya bertahan
                         // walau akun pelakunya sudah dihapus.
@@ -230,7 +321,7 @@ export function AuditLogBrowser() {
                             </>
                           ) : null}
                           {!entry.beforeData && !entry.afterData ? (
-                            <p className="muted" style={{ margin: 0, fontSize: 12.5 }}>
+                            <p className="muted auditNoSnapshot">
                               Tindakan ini tidak menyimpan cuplikan data.
                             </p>
                           ) : null}
@@ -238,8 +329,19 @@ export function AuditLogBrowser() {
                       ) : null}
                     </td>
                     <td data-label="Target">
-                      <span className="cellTitle">{entry.targetType}</span>
-                      {entry.targetId ? <span className="cellSub">{entry.targetId}</span> : null}
+                      {/* Diklik untuk menelusuri riwayat satu benda: siapa saja
+                          yang pernah menyentuhnya, dan dalam urutan apa. */}
+                      <button
+                        type="button"
+                        className="errorToggle errorToggleStack"
+                        title={`Tampilkan hanya riwayat ${entry.targetType} ini`}
+                        onClick={() =>
+                          saring({ targetType: entry.targetType, targetId: entry.targetId ?? '' })
+                        }
+                      >
+                        <span className="cellTitle">{entry.targetType}</span>
+                        {entry.targetId ? <span className="cellSub">{entry.targetId}</span> : null}
+                      </button>
                     </td>
                     <td data-label="Asal">{entry.ipAddress ?? '—'}</td>
                   </tr>
@@ -249,7 +351,7 @@ export function AuditLogBrowser() {
           </div>
 
           {totalPages > 1 ? (
-            <nav aria-label="Navigasi halaman" className="toolbar" style={{ justifyContent: 'center', marginTop: 18 }}>
+            <nav aria-label="Navigasi halaman audit" className="toolbar enrollmentPager">
               <button
                 type="button"
                 className="btn btnGhost"
@@ -258,7 +360,7 @@ export function AuditLogBrowser() {
               >
                 Sebelumnya
               </button>
-              <span className="muted" style={{ alignSelf: 'center' }}>
+              <span className="pill">
                 Halaman {page} dari {totalPages}
               </span>
               <button
