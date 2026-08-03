@@ -30,7 +30,6 @@ const DILUAR_JANGKAUAN_WEB = new Map([
   ['/api/v1/admin/errors/{errorId}/resolve', 'dipanggil lewat template literal'],
   ['/api/v1/admin/errors/{errorId}/reopen', 'dipanggil lewat template literal'],
   // Belum ada antarmukanya, dan itu memang diketahui.
-  ['/api/v1/auth/logout-all', 'belum ada antarmukanya'],
   ['/api/v1/me/announcements/unread-count', 'belum ada antarmukanya'],
 ]);
 

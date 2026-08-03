@@ -253,6 +253,25 @@ describe('Autentikasi dan session', () => {
     await request(h.server).get(avatarPath).expect(404);
   });
 
+  it('mengeluarkan seluruh perangkat sekaligus, termasuk yang meminta', async () => {
+    const ponsel = await login(h.server, STUDENT.email, STUDENT.password);
+    const laptop = await login(h.server, STUDENT.email, STUDENT.password);
+    await request(h.server).get(`${prefix}/auth/me`).set('Cookie', ponsel.cookie).expect(200);
+
+    const response = await request(h.server)
+      .post(`${prefix}/auth/logout-all`)
+      .set('Cookie', laptop.cookie)
+      .set('X-CSRF-Token', laptop.csrfToken)
+      .expect(200);
+    expect(response.body.data.revokedSessions).toBeGreaterThanOrEqual(2);
+
+    // Gunanya justru itu: perangkat yang hilang ikut keluar. Perangkat yang
+    // meminta pun tidak dikecualikan, sehingga antarmuka wajib mengantar
+    // penggunanya kembali ke halaman masuk.
+    await request(h.server).get(`${prefix}/auth/me`).set('Cookie', ponsel.cookie).expect(401);
+    await request(h.server).get(`${prefix}/auth/me`).set('Cookie', laptop.cookie).expect(401);
+  });
+
   it('mencabut session di sisi server saat keluar', async () => {
     const session = await login(h.server, STUDENT.email, STUDENT.password);
 

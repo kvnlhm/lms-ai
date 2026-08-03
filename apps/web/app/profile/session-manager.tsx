@@ -48,6 +48,36 @@ export function SessionManager({ sessions }: { sessions: DeviceSession[] }) {
     }
   }
 
+  /**
+   * Mencabut seluruh perangkat sekaligus.
+   *
+   * Ini termasuk perangkat yang sedang dipakai — endpointnya memang menghapus
+   * seluruh sesi dan membersihkan cookie. Jadi dialognya menyebutkan itu lebih
+   * dulu, dan sesudahnya kita antar ke halaman masuk alih-alih menyegarkan
+   * halaman yang sudah tidak punya sesi.
+   */
+  async function revokeAll() {
+    const lanjut = await notifier.confirm('Keluar dari semua perangkat?', {
+      text:
+        `Seluruh ${sessions.length} perangkat dikeluarkan, termasuk yang sedang kamu pakai. ` +
+        'Kamu perlu masuk kembali di setiap perangkat yang masih kamu gunakan.',
+      confirmLabel: 'Keluar dari semua',
+      danger: true,
+    });
+    if (!lanjut || busy) return;
+
+    setBusy('semua');
+    try {
+      ensureSuccess(await browserClient().POST('/api/v1/auth/logout-all', {}));
+      window.location.assign('/login');
+    } catch (caught) {
+      setBusy(null);
+      void notifier.error('Perangkat gagal dikeluarkan', {
+        text: caught instanceof ApiError ? caught.message : 'Tidak dapat menghubungi server.',
+      });
+    }
+  }
+
   return (
     <section className="card profileSection">
       <div className="profileSectionHead">
@@ -76,6 +106,22 @@ export function SessionManager({ sessions }: { sessions: DeviceSession[] }) {
         ))}
         {sessions.length === 0 ? <p className="empty">Tidak ada perangkat aktif.</p> : null}
       </div>
+      {/* Hanya bila ada lebih dari satu perangkat. Dengan satu sesi, tombol ini
+          persis sama dengan "Keluar di sini" di atas — dua tombol untuk satu
+          tindakan hanya membuat orang ragu memilih. */}
+      {sessions.length > 1 ? (
+        <div className="sessionBulk">
+          <p>Kehilangan perangkat, atau curiga akunmu dipakai orang lain?</p>
+          <button
+            className="btn btnGhost btnTiny sessionBulkAction"
+            type="button"
+            disabled={busy !== null}
+            onClick={() => void revokeAll()}
+          >
+            {busy === 'semua' ? 'Mengeluarkan…' : 'Keluar dari semua perangkat'}
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

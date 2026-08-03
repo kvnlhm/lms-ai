@@ -269,7 +269,7 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
   tegas beserta alasannya, sehingga menambahkannya adalah keputusan sadar.
 - Endpoint yang belum punya antarmuka juga didaftarkan di sana, agar
   "belum dikerjakan" tidak menyamar sebagai "sudah selesai". Saat ini:
-  `auth/logout-all` dan `me/announcements/unread-count`.
+  `me/announcements/unread-count`.
 - Pembukaan pelajaran dijaga tersendiri: endpointnya sudah ada dan teruji,
   tetapi sempat berbulan-bulan tanpa pemanggil sehingga histori, metrik
   dasbor, dan "Lanjutkan belajar" sama-sama kehilangan sumbernya.
@@ -285,6 +285,14 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
   meninggalkan entri audit `user.mfa_reset`.
 - Master ditolak mereset MFA miliknya sendiri dan diarahkan ke alur pemulihan
   akun.
+
+### Keluar dari semua perangkat
+
+- `auth/logout-all` mencabut seluruh sesi termasuk sesi yang meminta, sehingga
+  antarmuka wajib mengantar penggunanya ke halaman masuk, bukan menyegarkan
+  halaman yang sudah kehilangan sesinya.
+- Tombolnya hanya muncul bila ada lebih dari satu perangkat; dengan satu sesi ia
+  identik dengan "Keluar di sini".
 
 ## 8. Community Feed Test Cases
 

@@ -224,7 +224,11 @@ Revokes current session.
 
 ## POST `/auth/logout-all`
 
-Revokes all sessions owned by the current user.
+Revokes all sessions owned by the current user, **including the session making
+the request** — cookie sesi ikut dibersihkan. Justru itu gunanya: perangkat yang
+hilang harus ikut keluar. Karena itu client wajib mengantar penggunanya ke
+halaman masuk sesudahnya, bukan menyegarkan halaman yang sudah kehilangan
+sesinya. Mengembalikan `revokedSessions`, jumlah sesi yang dicabut.
 
 ## GET `/auth/me`
 
