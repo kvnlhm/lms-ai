@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { DeliveryStatus } from '@prisma/client';
 import type { AppConfig } from '../../../config/configuration';
 import { activationEmail } from '../../../shared/email/email-templates';
-import { EmailService } from '../../../shared/email/email.service';
+import { type EmailResult, EmailService } from '../../../shared/email/email.service';
 
 @Injectable()
 export class ActivationNotifierService {
@@ -24,6 +24,7 @@ export class ActivationNotifierService {
     tierName: string;
   }): Promise<{
     email: DeliveryStatus;
+    emailMessageId: string | null;
     whatsApp: DeliveryStatus;
     whatsAppMessageId: string | null;
     errors: string[];
@@ -33,7 +34,8 @@ export class ActivationNotifierService {
       this.sendWhatsApp(input),
     ]);
     return {
-      email: email.status === 'fulfilled' ? email.value : 'FAILED',
+      email: email.status === 'fulfilled' ? email.value.status : 'FAILED',
+      emailMessageId: email.status === 'fulfilled' ? email.value.messageId : null,
       whatsApp: whatsApp.status === 'fulfilled' ? whatsApp.value.status : 'FAILED',
       whatsAppMessageId: whatsApp.status === 'fulfilled' ? whatsApp.value.messageId : null,
       errors: [email, whatsApp]
@@ -49,7 +51,7 @@ export class ActivationNotifierService {
     email: string;
     activationUrl: string;
     tierName: string;
-  }): Promise<DeliveryStatus> {
+  }): Promise<EmailResult> {
     return this.email.send(
       activationEmail({
         to: input.email,

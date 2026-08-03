@@ -214,9 +214,16 @@ pengiriman menjadi `SKIPPED` tanpa menjatuhkan alur mana pun.
 ```text
 EMAIL_PROVIDER=DISABLED
 RESEND_API_KEY
+RESEND_WEBHOOK_SIGNING_SECRET
 EMAIL_FROM_NAME=Academy AIPreneur
 EMAIL_FROM_ADDRESS
 ```
+
+`RESEND_WEBHOOK_SIGNING_SECRET` (berawalan `whsec_`) dipakai endpoint
+`/webhooks/resend` untuk memverifikasi tanda tangan Svix. Tanpa nilainya
+seluruh webhook ditolak. Sama seperti WhatsApp, tanpa webhook ini pengiriman
+tetap berjalan — hanya hasil akhirnya yang tidak pernah diketahui: `SENT`
+berarti Resend menerima suratnya, bukan suratnya sampai.
 
 ## Registration Commerce
 
@@ -247,8 +254,8 @@ Tanpa keduanya pengiriman WhatsApp tetap berjalan — hanya hasil akhirnya yang
 tidak pernah diketahui: `SENT` berarti Meta menerima permintaannya, bukan
 pesannya sampai.
 
-`MIDTRANS_SERVER_KEY`, `RESEND_API_KEY`, `WHATSAPP_ACCESS_TOKEN`, dan
-`WHATSAPP_APP_SECRET` adalah secret backend. Mulai dengan `MIDTRANS_ENVIRONMENT=SANDBOX`. Provider email dan
+`MIDTRANS_SERVER_KEY`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SIGNING_SECRET`,
+`WHATSAPP_ACCESS_TOKEN`, dan `WHATSAPP_APP_SECRET` adalah secret backend. Mulai dengan `MIDTRANS_ENVIRONMENT=SANDBOX`. Provider email dan
 WhatsApp sengaja default `DISABLED` agar deployment tetap sehat sebelum akun
 provider siap.
 

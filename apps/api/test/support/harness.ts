@@ -12,6 +12,13 @@ export const prefix = `/${API_PREFIX}`;
 export const WHATSAPP_APP_SECRET = 'rahasia-aplikasi-meta-untuk-pengujian';
 /** Token yang dicocokkan saat Meta memasang URL webhook. */
 export const WHATSAPP_VERIFY_TOKEN = 'token-verifikasi-webhook-uji';
+/**
+ * Rahasia penanda tangan webhook Resend versi uji.
+ *
+ * Berbentuk `whsec_<base64>` seperti aslinya, karena yang menjadi kunci HMAC
+ * adalah hasil dekode base64-nya — bukan teksnya.
+ */
+export const RESEND_SIGNING_SECRET = 'whsec_cmFoYXNpYS13ZWJob29rLXJlc2VuZC11amk=';
 
 export interface Harness {
   app: INestApplication;
@@ -50,6 +57,7 @@ export async function startHarness(options: HarnessOptions = {}): Promise<Harnes
   // spec, jadi endpoint webhook WhatsApp berperilaku sama di mana pun ia diuji.
   process.env.WHATSAPP_APP_SECRET = WHATSAPP_APP_SECRET;
   process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = WHATSAPP_VERIFY_TOKEN;
+  process.env.RESEND_WEBHOOK_SIGNING_SECRET = RESEND_SIGNING_SECRET;
   if (options.rateLimit) {
     process.env.RATE_LIMIT_ENABLED = 'true';
     process.env.RATE_LIMIT_MAX = String(options.rateLimit.max);

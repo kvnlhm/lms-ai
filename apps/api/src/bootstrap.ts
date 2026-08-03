@@ -10,6 +10,9 @@ import { loadConfig } from './config/configuration';
 
 export const API_PREFIX = 'api/v1';
 
+/** Jalur yang tanda tangannya dihitung atas byte mentah badan permintaan. */
+const JALUR_BERTANDA_TANGAN = ['/webhooks/whatsapp', '/webhooks/resend'];
+
 /**
  * Konfigurasi aplikasi dipakai bersama oleh server, generator OpenAPI, dan
  * test end-to-end, supaya ketiganya tidak pernah berbeda perilaku.
@@ -36,11 +39,12 @@ export async function createApp(): Promise<INestApplication> {
   // sebagai stream dengan content-type non-JSON, jadi parser ini melewatinya
   // dan batas ukurannya diurus masing-masing modul.
   //
-  // Webhook WhatsApp ditandatangani Meta atas **byte mentah** badannya, jadi
-  // byte itu harus disimpan sebelum diurai — `JSON.stringify` dari objek hasil
-  // urai menghasilkan susunan yang berbeda dan tanda tangannya tidak pernah
-  // cocok. Disimpan hanya untuk jalur itu: menahan salinan mentah setiap
-  // permintaan JSON hanya menggandakan pemakaian memori tanpa guna.
+  // Webhook WhatsApp dan Resend sama-sama ditandatangani atas **byte mentah**
+  // badannya, jadi byte itu harus disimpan sebelum diurai — `JSON.stringify`
+  // dari objek hasil urai menghasilkan susunan yang berbeda dan tanda
+  // tangannya tidak pernah cocok. Disimpan hanya untuk kedua jalur itu:
+  // menahan salinan mentah setiap permintaan JSON hanya menggandakan pemakaian
+  // memori tanpa guna.
   app.useBodyParser('json', {
     limit: config.maxRequestBodyBytes,
     verify: (
@@ -48,7 +52,9 @@ export async function createApp(): Promise<INestApplication> {
       _response: ServerResponse,
       buffer: Buffer,
     ) => {
-      if (request.url?.includes('/webhooks/whatsapp')) request.rawBody = Buffer.from(buffer);
+      if (JALUR_BERTANDA_TANGAN.some((jalur) => request.url?.includes(jalur))) {
+        request.rawBody = Buffer.from(buffer);
+      }
     },
   });
   app.useBodyParser('urlencoded', { extended: false, limit: config.maxRequestBodyBytes });

@@ -30,6 +30,7 @@ import {
 } from '../../../identity/presentation/decorators';
 import {
   CommerceService,
+  type ResendEvent,
   type WhatsAppStatusPayload,
 } from '../../application/commerce.service';
 import { AuditService } from '../../../../shared/audit/audit.service';
@@ -58,6 +59,52 @@ export const MIDTRANS_NOTIFICATION_PIPE = new ValidationPipe({
   transform: true,
   errorHttpStatusCode: 422,
 });
+
+/** Toleransi selisih waktu tanda tangan Svix, sesuai anjuran mereka. */
+const TOLERANSI_STEMPEL_WAKTU_DETIK = 300;
+
+/**
+ * Membuktikan webhook benar-benar datang dari Resend.
+ *
+ * Resend menandatangani lewat Svix: yang di-HMAC bukan badan permintaan saja,
+ * melainkan `id.stempel_waktu.badan` — sehingga tanda tangan yang direkam
+ * penyerang tidak dapat dipakai ulang pada badan yang berbeda. Stempel
+ * waktunya ikut diperiksa supaya permintaan lama pun tidak dapat diputar ulang.
+ *
+ * Rahasianya berbentuk `whsec_<base64>`; yang menjadi kunci HMAC adalah hasil
+ * dekode base64-nya, bukan teksnya.
+ */
+function verifySvixSignature(
+  request: Request,
+  signingSecret: string | undefined,
+  sekarangDetik: number,
+): boolean {
+  if (!signingSecret) return false;
+  const id = request.header('svix-id');
+  const timestamp = request.header('svix-timestamp');
+  const signature = request.header('svix-signature');
+  const raw = request.rawBody;
+  if (!id || !timestamp || !signature || !raw) return false;
+
+  const stempel = Number.parseInt(timestamp, 10);
+  if (Number.isNaN(stempel)) return false;
+  if (Math.abs(sekarangDetik - stempel) > TOLERANSI_STEMPEL_WAKTU_DETIK) return false;
+
+  const kunci = Buffer.from(signingSecret.replace(/^whsec_/, ''), 'base64');
+  const expected = createHmac('sha256', kunci)
+    .update(`${id}.${timestamp}.${raw.toString('utf8')}`)
+    .digest();
+
+  // Header dapat memuat lebih dari satu tanda tangan, dipisah spasi, karena
+  // Svix merotasi rahasianya tanpa memutus pengiriman. Cukup satu yang cocok.
+  return signature.split(' ').some((bagian) => {
+    const [versi, nilai] = bagian.split(',');
+    if (versi !== 'v1' || !nilai) return false;
+    const received = Buffer.from(nilai, 'base64');
+    if (received.length !== expected.length) return false;
+    return timingSafeEqual(received, expected);
+  });
+}
 
 /**
  * Membuktikan webhook benar-benar datang dari Meta.
@@ -200,6 +247,28 @@ export class CommerceController {
       throw AppError.permissionDenied();
     }
     await this.commerce.handleWhatsAppStatus(payload as WhatsAppStatusPayload);
+    return { accepted: true };
+  }
+
+  /**
+   * Tanda terima pengantaran surat dari Resend.
+   *
+   * Sama seperti jalur WhatsApp, selalu membalas 200 selama tanda tangannya
+   * sah: peristiwa yang tidak dikenali bukan alasan memancing Resend mengulang
+   * kirim tanpa akhir.
+   */
+  @Public()
+  @Post('webhooks/resend')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Menerima status pengantaran email dari Resend' })
+  @ApiEnvelope(WebhookAcceptedDto)
+  @ApiErrors(403)
+  async resendWebhook(@Body() payload: Record<string, unknown>, @Req() request: Request) {
+    const sekarangDetik = Math.floor(Date.now() / 1000);
+    if (!verifySvixSignature(request, this.config.email.webhookSigningSecret, sekarangDetik)) {
+      throw AppError.permissionDenied();
+    }
+    await this.commerce.handleResendEvent(payload as ResendEvent);
     return { accepted: true };
   }
 

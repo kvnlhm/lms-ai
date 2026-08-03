@@ -44,6 +44,21 @@ export interface WhatsAppStatusPayload {
   }>;
 }
 
+/**
+ * Bentuk webhook Resend, sebatas yang benar-benar dibaca.
+ *
+ * Semua cabangnya opsional dengan alasan yang sama seperti webhook Meta:
+ * penyedia menambah field tanpa pemberitahuan, dan peristiwa yang tidak
+ * dikenali cukup dilewati.
+ */
+export interface ResendEvent {
+  type?: string;
+  data?: {
+    email_id?: string;
+    bounce?: { type?: string; subType?: string; message?: string };
+  };
+}
+
 const tierInclude = {
   courses: {
     orderBy: { position: 'asc' as const },
@@ -461,6 +476,7 @@ export class CommerceService {
       where: { id: orderId },
       data: {
         emailDeliveryStatus: result.email,
+        emailMessageId: result.emailMessageId,
         whatsAppDeliveryStatus: result.whatsApp,
         whatsAppMessageId: result.whatsAppMessageId,
         deliveryError: result.errors.join(' | ').slice(0, 1_000) || null,
@@ -510,6 +526,40 @@ export class CommerceService {
         },
       });
     }
+  }
+
+  /**
+   * Menerapkan tanda terima pengantaran dari webhook Resend.
+   *
+   * Aturannya sengaja sama dengan jalur WhatsApp: status hanya boleh maju, dan
+   * peristiwa untuk surat yang bukan milik aplikasi ini dilewati diam-diam —
+   * satu akun Resend melayani lebih dari satu jenis surat.
+   */
+  async handleResendEvent(event: ResendEvent): Promise<void> {
+    const messageId = event.data?.email_id;
+    if (!messageId) return;
+
+    const order = await this.prisma.registrationOrder.findUnique({
+      where: { emailMessageId: messageId },
+      select: { id: true, emailDeliveryStatus: true },
+    });
+    if (!order) return;
+
+    const next = mapResendDeliveryStatus(event.type);
+    if (!next) return;
+    if (order.emailDeliveryStatus === DeliveryStatus.DELIVERED) return;
+    if (next === DeliveryStatus.SENT && order.emailDeliveryStatus !== DeliveryStatus.PENDING) {
+      return;
+    }
+
+    await this.prisma.registrationOrder.update({
+      where: { id: order.id },
+      data: {
+        emailDeliveryStatus: next,
+        deliveryError:
+          next === DeliveryStatus.FAILED ? resendFailureReason(event).slice(0, 1_000) : null,
+      },
+    });
   }
 
   private async assertTier(
@@ -646,6 +696,46 @@ function whatsAppFailureReason(status: {
   if (!error) return 'WhatsApp gagal diantar tanpa keterangan dari Meta.';
   const keterangan = error.message ?? error.title ?? 'tanpa keterangan';
   return error.code ? `WhatsApp gagal diantar (${error.code}): ${keterangan}` : keterangan;
+}
+
+/**
+ * Menerjemahkan jenis peristiwa Resend ke keadaan pengiriman yang kita catat.
+ *
+ * `email.complained` sengaja tidak dipetakan. Ia berarti penerima menandai
+ * suratnya sebagai spam — yang justru membuktikan suratnya **sampai**, jadi
+ * menurunkannya ke `FAILED` akan berbohong ke arah sebaliknya. Ia juga bukan
+ * `DELIVERED` yang perlu dicatat ulang, sebab peristiwa `email.delivered`
+ * sudah lebih dulu tiba untuk surat yang sama.
+ *
+ * `email.delivery_delayed` juga dilewati: penundaan belum berarti gagal, dan
+ * peristiwa penutupnya akan menyusul.
+ */
+function mapResendDeliveryStatus(type: string | undefined): DeliveryStatus | null {
+  switch (type) {
+    case 'email.sent':
+      return DeliveryStatus.SENT;
+    case 'email.delivered':
+      return DeliveryStatus.DELIVERED;
+    case 'email.bounced':
+      return DeliveryStatus.FAILED;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Alasan pantulan dari Resend.
+ *
+ * Jenisnya menentukan tindakan: pantulan `Permanent` berarti alamatnya memang
+ * tidak ada dan pembeli harus dihubungi lewat jalur lain, sedangkan
+ * `Transient` biasanya cukup dikirim ulang.
+ */
+function resendFailureReason(event: ResendEvent): string {
+  const bounce = event.data?.bounce;
+  if (!bounce) return 'Email dipantulkan tanpa keterangan dari Resend.';
+  const jenis = [bounce.type, bounce.subType].filter(Boolean).join('/');
+  const pesan = bounce.message ?? 'tanpa keterangan';
+  return jenis ? `Email dipantulkan (${jenis}): ${pesan}` : `Email dipantulkan: ${pesan}`;
 }
 
 /**

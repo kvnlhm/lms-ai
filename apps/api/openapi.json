@@ -4981,6 +4981,50 @@
         ]
       }
     },
+    "/api/v1/webhooks/resend": {
+      "post": {
+        "operationId": "CommerceController_resendWebhook",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookAcceptedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menerima status pengantaran email dari Resend",
+        "tags": [
+          "registration"
+        ]
+      }
+    },
     "/api/v1/admin/access-tiers": {
       "get": {
         "operationId": "CommerceController_adminTiers",

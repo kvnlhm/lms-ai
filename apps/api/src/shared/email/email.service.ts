@@ -8,8 +8,14 @@ export interface OutgoingEmail {
   html: string;
 }
 
-/** `SENT` terkirim, `SKIPPED` provider sengaja dimatikan. Gagal berarti throw. */
+/** `SENT` diterima Resend, `SKIPPED` provider sengaja dimatikan. Gagal berarti throw. */
 export type EmailOutcome = 'SENT' | 'SKIPPED';
+
+export interface EmailResult {
+  status: EmailOutcome;
+  /** Id Resend, dipakai mencocokkan webhook status pengantaran. */
+  messageId: string | null;
+}
 
 /**
  * Satu-satunya jalan keluar email dari API.
@@ -32,8 +38,16 @@ export class EmailService {
     return this.config.provider !== 'DISABLED';
   }
 
-  async send(email: OutgoingEmail): Promise<EmailOutcome> {
-    if (this.config.provider === 'DISABLED') return 'SKIPPED';
+  /**
+   * Mengirim satu surat dan mengembalikan id Resend-nya.
+   *
+   * Statusnya `SENT`, bukan `DELIVERED`: balasan 2xx hanya berarti Resend
+   * menerima suratnya untuk diantar. Apakah ia benar-benar sampai baru
+   * diketahui dari webhook status, dan `id` inilah satu-satunya pegangan untuk
+   * mencocokkan webhook itu dengan ordernya.
+   */
+  async send(email: OutgoingEmail): Promise<EmailResult> {
+    if (this.config.provider === 'DISABLED') return { status: 'SKIPPED', messageId: null };
     if (!this.config.apiKey || !this.config.fromAddress) {
       throw new Error('Konfigurasi Resend belum lengkap.');
     }
@@ -52,8 +66,15 @@ export class EmailService {
       }),
     });
 
-    if (!response.ok) throw new Error(`Resend menolak permintaan (${response.status}).`);
-    return 'SENT';
+    if (!response.ok) {
+      // Alasan dari Resend ikut dibawa. Kode status saja tidak membedakan
+      // domain yang belum terverifikasi dari kunci API yang salah, padahal
+      // keduanya menuntut tindakan yang sama sekali berbeda.
+      throw new Error(
+        `Resend menolak permintaan (${response.status}): ${await resendErrorMessage(response)}`,
+      );
+    }
+    return { status: 'SENT', messageId: await resendMessageId(response) };
   }
 
   /**
@@ -70,6 +91,34 @@ export class EmailService {
         }`,
       );
     });
+  }
+}
+
+/**
+ * Id surat dari balasan Resend.
+ *
+ * Balasan yang tidak terbaca tidak boleh menggagalkan pengiriman yang sudah
+ * terlanjur diterima: akibatnya hanya kehilangan jejak status, bukan suratnya.
+ */
+async function resendMessageId(response: Response): Promise<string | null> {
+  try {
+    const payload = (await response.json()) as { id?: string };
+    return payload.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Kalimat galat dari Resend; `name` menyebut jenisnya, `message` rinciannya. */
+async function resendErrorMessage(response: Response): Promise<string> {
+  try {
+    const payload = (await response.json()) as { name?: string; message?: string };
+    const pesan = payload.message;
+    const jenis = payload.name;
+    if (jenis && pesan) return `${jenis} — ${pesan}`;
+    return pesan ?? jenis ?? 'tanpa keterangan';
+  } catch {
+    return 'balasan tidak dapat dibaca';
   }
 }
 

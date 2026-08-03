@@ -28,7 +28,7 @@ describe('EmailService', () => {
 
     await expect(
       createService({ provider: 'DISABLED' }).send({ to: 'a@b.test', subject: 's', html: '<p></p>' }),
-    ).resolves.toBe('SKIPPED');
+    ).resolves.toEqual({ status: 'SKIPPED', messageId: null });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -39,12 +39,20 @@ describe('EmailService', () => {
   });
 
   it('mengirim dengan alamat pengirim gabungan nama dan alamat', async () => {
-    const fetchMock = jest.fn().mockResolvedValue({ ok: true });
+    // Id dari balasan Resend adalah satu-satunya pegangan untuk mencocokkan
+    // webhook status pengantaran dengan ordernya; sebelumnya ia dibuang.
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: '4ef9a417-02e9-4d39-ad75-9611e0fcc33c' }),
+    });
     global.fetch = fetchMock as unknown as typeof fetch;
 
     await expect(
       createService({}).send({ to: 'a@b.test', subject: 'Halo', html: '<p>isi</p>' }),
-    ).resolves.toBe('SENT');
+    ).resolves.toEqual({
+      status: 'SENT',
+      messageId: '4ef9a417-02e9-4d39-ad75-9611e0fcc33c',
+    });
 
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
     expect(body.from).toBe('Academy AIPreneur <aktivasi@contoh.test>');
@@ -52,11 +60,17 @@ describe('EmailService', () => {
   });
 
   it('menganggap balasan non-OK dari provider sebagai kegagalan', async () => {
-    global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 422 }) as unknown as typeof fetch;
+    // Alasan dari Resend ikut dibawa: kode status saja tidak membedakan domain
+    // yang belum terverifikasi dari kunci API yang salah.
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      json: async () => ({ name: 'validation_error', message: 'The domain is not verified.' }),
+    }) as unknown as typeof fetch;
 
     await expect(
       createService({}).send({ to: 'a@b.test', subject: 's', html: '<p></p>' }),
-    ).rejects.toThrow('Resend menolak permintaan (422).');
+    ).rejects.toThrow('Resend menolak permintaan (422): validation_error — The domain is not verified.');
   });
 
   it('menelan kegagalan pada pengiriman latar belakang', async () => {

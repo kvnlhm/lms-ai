@@ -126,10 +126,10 @@ enum PaymentProvider {
 enum DeliveryStatus {
   PENDING
   SENT
-  /// Terkonfirmasi sampai di perangkat penerima. Hanya WhatsApp yang dapat
-  /// mencapai keadaan ini: `SENT` semata cuma berarti penyedia menerima
-  /// permintaannya, dan pesan yang diterima Meta masih bisa gagal diantar
-  /// tanpa satu pun jejak di sisi pengirim.
+  /// Terkonfirmasi diterima di sisi penerima, menurut webhook penyedianya.
+  /// `SENT` semata cuma berarti penyedia menerima permintaan kita, dan pesan
+  /// yang sudah diterima penyedia masih bisa gagal diantar tanpa satu pun
+  /// jejak di sisi pengirim.
   DELIVERED
   SKIPPED
   FAILED
@@ -614,6 +614,9 @@ model RegistrationOrder {
   provisionedUserId      String?            @map("provisioned_user_id") @db.Uuid
   emailDeliveryStatus    DeliveryStatus     @default(PENDING) @map("email_delivery_status")
   whatsAppDeliveryStatus DeliveryStatus     @default(PENDING) @map("whatsapp_delivery_status")
+  /// Id dari balasan Resend, pegangan untuk mencocokkan webhook status
+  /// pengantaran email dengan ordernya.
+  emailMessageId         String?            @unique @map("email_message_id")
   /// `wamid` dari balasan Meta, satu-satunya pegangan untuk mencocokkan
   /// webhook status pengantaran dengan ordernya.
   whatsAppMessageId      String?            @unique @map("whatsapp_message_id")

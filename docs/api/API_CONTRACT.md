@@ -11,6 +11,7 @@ Public:
 - `GET /api/v1/webhooks/whatsapp` — jabat tangan pemasangan URL oleh Meta;
   mengembalikan `hub.challenge` mentah, di luar amplop `{ data, meta }`
 - `POST /api/v1/webhooks/whatsapp` — tanda terima pengantaran pesan
+- `POST /api/v1/webhooks/resend` — tanda terima pengantaran email
 
 Master (`commerce.manage`):
 
@@ -24,12 +25,15 @@ provider sebelum provisioning.
 
 Webhook Midtrans diverifikasi dengan signature berbasis field lalu status
 kanonisnya diambil ulang ke provider; webhook WhatsApp diverifikasi dengan
-`X-Hub-Signature-256` atas badan mentah permintaannya. Keduanya ditolak `403`
-bila rahasianya belum dikonfigurasi.
+`X-Hub-Signature-256` atas badan mentah permintaannya; webhook Resend memakai
+tanda tangan Svix (`svix-id`, `svix-timestamp`, `svix-signature`) yang mencakup
+stempel waktu, sehingga permintaan lama tidak dapat diputar ulang. Ketiganya
+ditolak `403` bila rahasianya belum dikonfigurasi.
 
 `DeliveryStatus` membedakan `SENT` dari `DELIVERED`: yang pertama hanya berarti
-penyedia menerima permintaannya, yang kedua berarti Meta memastikan pesannya
-sampai. Hanya WhatsApp yang dapat mencapai `DELIVERED`.
+penyedia menerima permintaannya, yang kedua berarti penyedianya memastikan
+pesan itu sampai. Email dan WhatsApp sama-sama dapat mencapai `DELIVERED`,
+masing-masing lewat webhook penyedianya.
 
 ## LMS API v1
 

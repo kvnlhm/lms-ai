@@ -78,6 +78,13 @@ export interface AppConfig {
     apiKey?: string;
     fromName: string;
     fromAddress?: string;
+    /**
+     * Rahasia penanda tangan webhook Resend (berawalan `whsec_`), dipakai
+     * memverifikasi header Svix pada tanda terima pengantaran. Tanpa nilai ini
+     * webhooknya ditolak: endpoint publik yang menulis ke basis data tidak
+     * boleh mempercayai badan permintaan yang tidak dapat dibuktikan asalnya.
+     */
+    webhookSigningSecret?: string;
   };
   /** Pembatas laju yang berlaku untuk seluruh API (SECURITY_CONTROLS §5). */
   rateLimit: {
@@ -204,6 +211,7 @@ export function loadConfig(): AppConfig {
       apiKey: process.env.RESEND_API_KEY || undefined,
       fromName: process.env.EMAIL_FROM_NAME ?? 'Academy AIPreneur',
       fromAddress: process.env.EMAIL_FROM_ADDRESS || undefined,
+      webhookSigningSecret: process.env.RESEND_WEBHOOK_SIGNING_SECRET || undefined,
     },
     rateLimit: {
       enabled: bool('RATE_LIMIT_ENABLED', true),
