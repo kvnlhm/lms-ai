@@ -9,6 +9,7 @@ import { ApiError, serverClient, unwrap } from '../../../lib/api';
 import { requireUser } from '../../../lib/session';
 import { BookmarkButton } from './bookmark-button';
 import { CompleteButton } from './complete-button';
+import { LessonOpenTracker } from './lesson-open-tracker';
 import { QuizRunner } from './quiz-runner';
 import { VideoPlayer } from './video-player';
 
@@ -110,6 +111,7 @@ export default async function LessonPage({ params }: Props) {
 
   return (
     <AppShell user={user}>
+      <LessonOpenTracker lessonId={lessonId} />
       <div className="player">
         <div className="playerMain">
           <div className="playerStage">

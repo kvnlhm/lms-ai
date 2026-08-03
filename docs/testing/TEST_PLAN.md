@@ -258,6 +258,23 @@ Production release memerlukan:
 - Web bundle tidak mengandung Bunny secret.
 - Webhook secret dapat dirotasi.
 
+## 7a. Endpoint Coverage
+
+Satu pola berulang di repo ini: server sanggup menjawab, tetapi tidak ada
+antarmuka yang bertanya. Tes `endpoint-coverage` membandingkan seluruh path
+OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
+
+- Endpoint yang memang bukan urusan kode web (webhook, health check, berkas
+  yang ditarik langsung tag `<img>`/`<video>`, unduhan lewat `href`) didaftarkan
+  tegas beserta alasannya, sehingga menambahkannya adalah keputusan sadar.
+- Endpoint yang belum punya antarmuka juga didaftarkan di sana, agar
+  "belum dikerjakan" tidak menyamar sebagai "sudah selesai". Saat ini:
+  `admin/users/{userId}/reset-mfa`, `auth/logout-all`, dan
+  `me/announcements/unread-count`.
+- Pembukaan pelajaran dijaga tersendiri: endpointnya sudah ada dan teruji,
+  tetapi sempat berbulan-bulan tanpa pemanggil sehingga histori, metrik
+  dasbor, dan "Lanjutkan belajar" sama-sama kehilangan sumbernya.
+
 ## 8. Community Feed Test Cases
 
 - Tanpa sesi tidak dapat membaca channel atau feed.

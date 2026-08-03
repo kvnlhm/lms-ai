@@ -117,10 +117,13 @@ export default async function MasterDashboardPage() {
           <div className="sectionTitleRow">
             <div>
               <p className="eyebrow">Analytics pembelajaran</p>
-              <h2 id="analytics-title">Aktivitas 30 hari terakhir</h2>
+              {/* Panjang periodenya datang dari server, bukan ditulis mati di
+                  sini. Angka yang dipatok akan berbohong diam-diam pada hari
+                  seseorang mengubah rentang bawaannya. */}
+              <h2 id="analytics-title">Aktivitas {analytics.periodDays} hari terakhir</h2>
               <p className="pageSub">Diolah dari aktivitas belajar yang tercatat di seluruh kursus.</p>
             </div>
-            <span className="analyticsPeriod">30 hari</span>
+            <span className="analyticsPeriod">{analytics.periodDays} hari</span>
           </div>
 
           <div className="analyticsMetricGrid">

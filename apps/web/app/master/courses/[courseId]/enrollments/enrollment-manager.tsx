@@ -217,6 +217,7 @@ export function EnrollmentManager({
                   <th>Pelajar</th>
                   <th>Status</th>
                   <th>Progres</th>
+                  <th>Bergabung</th>
                   <th>Terakhir aktif</th>
                   <th />
                 </tr>
@@ -250,6 +251,16 @@ export function EnrollmentManager({
                         {enrollment.progress.requiredLessonsTotal} pelajaran wajib
                       </span>
                     </td>
+                    {/* Kapan seseorang bergabung dan kapan ia menyelesaikan
+                        kursus sudah lama ikut terkirim, tetapi tidak pernah
+                        ditampilkan — padahal itulah dua tanggal yang dicari
+                        saat menakar apakah seorang peserta tertinggal. */}
+                    <td data-label="Bergabung">
+                      <span>{formatTanggal(enrollment.enrolledAt)}</span>
+                      {enrollment.completedAt ? (
+                        <span className="cellSub">Selesai {formatTanggal(enrollment.completedAt)}</span>
+                      ) : null}
+                    </td>
                     <td data-label="Terakhir aktif">{formatRelative(enrollment.progress.lastActivityAt ?? null)}</td>
                     <td className="num cellActions">
                       {enrollment.status === 'REMOVED' || enrollment.status === 'EXPIRED' ? (
@@ -279,6 +290,10 @@ export function EnrollmentManager({
       )}
     </>
   );
+}
+
+function formatTanggal(value: string): string {
+  return new Date(value).toLocaleDateString('id-ID', { dateStyle: 'medium' });
 }
 
 function formatRelative(value: string | null): string {
