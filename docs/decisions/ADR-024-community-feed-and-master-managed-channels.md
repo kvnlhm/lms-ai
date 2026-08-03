@@ -44,6 +44,15 @@ modul lain.
 - Perubahan tulisan mengisi `edited_at` dan ditampilkan sebagai penanda
   "diedit"; percakapan yang dapat berubah diam-diam setelah dibaca orang lain
   lebih buruk daripada percakapan yang tidak dapat diubah sama sekali.
+- Feed dan percakapan channel memakai urutan berbeda. Feed menjawab "apa yang
+  sedang ramai" sehingga memakai tersemat lalu `last_activity_at`; percakapan
+  channel menjawab "apa yang terjadi, berurutan" sehingga memakai `created_at`
+  menurun dengan `id` sebagai pemutus seri. Memakai `last_activity_at` di
+  percakapan membuat pesan lama melompat ke posisi terbaru saat dibalas.
+- Pratinjau balasan pada daftar tulisan membawa enam yang **terakhir**, dan
+  seluruh balasan dapat diambil dari endpoint tersendiri. Sebelumnya pratinjau
+  membawa enam yang pertama tanpa jalan ke sisanya, sehingga percakapan yang
+  ramai justru paling banyak menyembunyikan isinya.
 - HTML tidak diterima; body ditampilkan sebagai teks oleh React.
 
 ## Consequences

@@ -2361,9 +2361,16 @@ memerlukan sesi aktif.
 
 - `GET /community/channels` — channel aktif untuk sidebar.
 - `GET /community/feed` — feed lintas channel, terurut pin dan aktivitas terbaru.
-- `GET /community/channels/{slug}/posts` — pesan sebuah channel. Client boleh
-  melakukan conditional refresh berkala ketika tab terlihat; response tetap
-  menjadi snapshot server dan tidak menjanjikan realtime delivery.
+- `GET /community/channels/{slug}/posts` — pesan sebuah channel, kronologis
+  (terbaru dulu) dan berhalaman. Urutannya sengaja berbeda dari feed: di sebuah
+  percakapan, `lastActivityAt` membuat pesan lama melompat ke posisi terbaru
+  begitu dibalas. Client boleh melakukan conditional refresh berkala ketika tab
+  terlihat; response tetap menjadi snapshot server dan tidak menjanjikan
+  realtime delivery. Halaman berikutnya berisi pesan yang lebih lama, dan
+  `meta.total` memberi tahu apakah masih ada.
+- `GET /community/posts/{postId}/comments` — seluruh balasan sebuah tulisan,
+  berhalaman menaik. Daftar tulisan hanya membawa enam balasan **terakhir**
+  sebagai pratinjau, sehingga sisanya harus diambil dari sini.
 - `POST /community/channels/{channelId}/posts` — membuat post; channel baca-saja
   menuntut `discussions.moderate`.
 - `POST /community/posts/{postId}/comments` — membalas post.

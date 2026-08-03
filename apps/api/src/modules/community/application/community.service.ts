@@ -6,6 +6,13 @@ import { AppError } from '../../../shared/errors/app-error';
 
 const authorSelect = { id: true, fullName: true, avatarUrl: true } as const;
 
+/** Balasan yang ikut terbawa bersama tulisannya; sisanya diambil terpisah. */
+const PRATINJAU_BALASAN = 6;
+
+const commentSelect = {
+  id: true, body: true, editedAt: true, createdAt: true, author: { select: authorSelect },
+} as const;
+
 @Injectable()
 export class CommunityService {
   constructor(
@@ -33,8 +40,11 @@ export class CommunityService {
       author: { select: authorSelect },
       reactions: { where: { userId }, select: { userId: true } },
       comments: {
-        where: { deletedAt: null }, orderBy: { createdAt: 'asc' as const }, take: 6,
-        select: { id: true, body: true, editedAt: true, createdAt: true, author: { select: authorSelect } },
+        // `take` negatif: enam balasan *terakhir*, tetap dalam urutan baca.
+        // Dulu enam yang pertama, sehingga pada tulisan yang ramai percakapan
+        // terbarunya justru yang tidak pernah terlihat.
+        where: { deletedAt: null }, orderBy: { createdAt: 'asc' as const }, take: -PRATINJAU_BALASAN,
+        select: commentSelect,
       },
     } satisfies Prisma.CommunityPostSelect;
   }
@@ -64,18 +74,58 @@ export class CommunityService {
     };
   }
 
+  /**
+   * Tulisan pada feed atau pada satu channel.
+   *
+   * Urutannya berbeda karena keduanya menjawab pertanyaan berbeda. Feed
+   * menjawab "apa yang sedang ramai", jadi tersemat dulu lalu aktivitas
+   * terakhir. Percakapan satu channel menjawab "apa yang terjadi, berurutan" —
+   * di sana `lastActivityAt` justru merusak: satu balasan pada pesan lama
+   * melompatkannya ke posisi terbaru, dan riwayat tersusun ulang di bawah mata
+   * pembacanya.
+   */
   async listPosts(userId: string, page: number, pageSize: number, canModerate: boolean, channelSlug?: string) {
     const where: Prisma.CommunityPostWhereInput = {
       deletedAt: null, channel: { archivedAt: null, ...(channelSlug ? { slug: channelSlug } : {}) },
     };
+    // `id` sebagai pemutus seri: tanpa itu dua pesan dengan waktu yang sama
+    // dapat bertukar tempat antar halaman, lalu satu di antaranya terlewat.
+    const orderBy: Prisma.CommunityPostOrderByWithRelationInput[] = channelSlug
+      ? [{ createdAt: 'desc' }, { id: 'desc' }]
+      : [{ isPinned: 'desc' }, { lastActivityAt: 'desc' }, { id: 'desc' }];
     const [total, rows] = await this.prisma.$transaction([
       this.prisma.communityPost.count({ where }),
       this.prisma.communityPost.findMany({
-        where, orderBy: [{ isPinned: 'desc' }, { lastActivityAt: 'desc' }],
+        where, orderBy,
         skip: (page - 1) * pageSize, take: pageSize, select: this.postSelect(userId),
       }),
     ]);
     return { total, posts: rows.map((row) => this.sajikanPost(row, userId, canModerate)) };
+  }
+
+  /**
+   * Seluruh balasan sebuah tulisan, berhalaman.
+   *
+   * Pratinjau pada daftar tulisan hanya membawa enam terakhir. Tanpa jalan ini,
+   * balasan ketujuh dan seterusnya tidak pernah dapat dibaca lagi sekalipun
+   * penghitungnya tetap menyebut jumlah penuhnya.
+   */
+  async listComments(userId: string, postId: string, page: number, pageSize: number, canModerate: boolean) {
+    const post = await this.prisma.communityPost.findFirst({
+      where: { id: postId, deletedAt: null, channel: { archivedAt: null } },
+      select: { id: true },
+    });
+    if (!post) throw AppError.notFound();
+
+    const where: Prisma.CommunityCommentWhereInput = { postId, deletedAt: null };
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.communityComment.count({ where }),
+      this.prisma.communityComment.findMany({
+        where, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        skip: (page - 1) * pageSize, take: pageSize, select: commentSelect,
+      }),
+    ]);
+    return { total, items: rows.map((row) => ({ ...row, ...this.hak(row.author.id, userId, canModerate) })) };
   }
 
   async createPost(userId: string, channelId: string, body: string, canModerate: boolean) {

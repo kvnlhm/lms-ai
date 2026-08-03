@@ -60,6 +60,13 @@ export class CommunityController {
     return this.community.deleteComment(user.id, commentId, moderator(user));
   }
 
+  @Get('posts/:postId/comments') @ApiOperation({ summary: 'Seluruh balasan sebuah tulisan' }) @ApiEnvelopeList(CommunityCommentDto) @ApiErrors(401, 404)
+  async comments(@Param('postId', new ParseUUIDPipe()) postId: string, @Query() query: CommunityPageQueryDto, @CurrentUser() user: AuthenticatedUser) {
+    const page = query.page ?? 1; const pageSize = query.pageSize ?? 20;
+    const result = await this.community.listComments(user.id, postId, page, pageSize, moderator(user));
+    return new Paginated(result.items, page, pageSize, result.total);
+  }
+
   @Post('posts/:postId/comments') @HttpCode(201) @ApiEnvelope(CommunityCommentDto) @ApiErrors(401, 404, 422)
   comment(@Param('postId', new ParseUUIDPipe()) postId: string, @Body() dto: CommunityPostBodyDto, @CurrentUser() user: AuthenticatedUser) {
     return this.community.addComment(user.id, postId, dto.body);

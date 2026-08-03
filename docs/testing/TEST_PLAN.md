@@ -269,3 +269,9 @@ Production release memerlukan:
 - Pelajar lain ditolak mengubah maupun menghapus tulisan orang, dan `canEdit`
   serta `canDelete` yang diterimanya bernilai false.
 - Menghapus balasan menghitung ulang `commentCount` pada tulisannya.
+- Pesan di luar halaman pertama tetap dapat diambil, dan urutan percakapan
+  tetap kronologis meskipun pesan lama mendapat balasan baru.
+- Pratinjau membawa enam balasan terakhir, dan balasan ketujuh ke belakang
+  tetap terjangkau lewat endpoint balasan.
+- Penyegaran berkala menggabungkan pesan baru dengan pesan lama yang sudah
+  ditarik pengguna, alih-alih membuangnya.

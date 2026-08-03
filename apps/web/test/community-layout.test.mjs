@@ -7,6 +7,7 @@ const shell = await readFile(new URL('../app/components/app-shell.tsx', import.m
 const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const channel = await readFile(new URL('../app/community/community-feed.tsx', import.meta.url), 'utf8');
 const channelManager = await readFile(new URL('../app/master/community/channel-manager.tsx', import.meta.url), 'utf8');
+const channelPage = await readFile(new URL('../app/community/[slug]/page.tsx', import.meta.url), 'utf8');
 
 test('shell Pelajar menyediakan sidebar channel desktop dan navigasi horizontal mobile', () => {
   assert.match(css, /\.learnerShellBody\{[^}]*grid-template-columns:220px minmax\(0,1fr\)/);
@@ -79,4 +80,19 @@ test('sunting dan hapus pesan bersandar pada kewenangan dari server, bukan tebak
   // Menghapus tulisan orang lain harus menyebut bahwa tindakannya tercatat.
   assert.match(channel, /tercatat di audit log/);
   assert.match(css, /\.editedMark\{/);
+});
+
+test('isi yang lebih lama punya jalan menuju ke sana, dan penyegaran tidak membuangnya', () => {
+  // Tanpa penggabungan, penyegaran lima detik akan menghapus pesan lama yang
+  // baru saja ditarik pengguna — tombolnya ada, tetapi hasilnya lenyap.
+  assert.match(channel, /function gabungKronologis/);
+  assert.match(channel, /function segarkanKronologis/);
+  assert.match(channel, /segarkanKronologis\(current, items, meta\.total\)/);
+  assert.match(channel, /Muat pesan lama/);
+  assert.match(channel, /Lihat \$\{sisa\} balasan sebelumnya/);
+  assert.match(channel, /\/api\/v1\/community\/posts\/\{postId\}\/comments'/);
+  // Totalnya harus datang dari server sejak render pertama, bukan ditebak.
+  assert.match(channelPage, /unwrapList<CommunityPost>/);
+  assert.match(channelPage, /initialTotal=\{posts\.meta\.total\}/);
+  assert.match(css, /\.chatMuatLama\{/);
 });

@@ -99,6 +99,106 @@ describe('Community channels', () => {
     expect(reaction.body.data).toMatchObject({ reacted: true, reactionCount: 1 });
   });
 
+  describe('menjangkau isi di luar jendela pertama', () => {
+    it('pesan lama tetap dapat diambil, dan urutannya kronologis bukan menurut aktivitas', async () => {
+      if (!h) throw new Error('Harness belum siap.');
+      const master = await login(h.server, MASTER.email, MASTER.password);
+      const channel = await request(h.server)
+        .post(`${prefix}/admin/community/channels`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .send({ name: `Arsip E2E ${Date.now()}` })
+        .expect(201);
+      const channelId = channel.body.data.id as string;
+      const slug = channel.body.data.slug as string;
+      channelIds.push(channelId);
+
+      const student = await login(h.server, STUDENT.email, STUDENT.password);
+      const dibuat: string[] = [];
+      for (let nomor = 1; nomor <= 5; nomor += 1) {
+        const post = await request(h.server)
+          .post(`${prefix}/community/channels/${channelId}/posts`)
+          .set('Cookie', student.cookie)
+          .set('X-CSRF-Token', student.csrfToken)
+          .send({ body: `Pesan ${nomor}.` })
+          .expect(201);
+        dibuat.push(post.body.data.id as string);
+      }
+
+      // Membalas pesan tertua menaikkan `lastActivityAt`-nya. Percakapan tidak
+      // boleh tersusun ulang karenanya — pembaca akan kehilangan alurnya.
+      await request(h.server)
+        .post(`${prefix}/community/posts/${dibuat[0]}/comments`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ body: 'Balasan pada pesan tertua.' })
+        .expect(201);
+
+      const halamanSatu = await request(h.server)
+        .get(`${prefix}/community/channels/${slug}/posts?page=1&pageSize=2`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(halamanSatu.body.meta.total).toBe(5);
+      expect(halamanSatu.body.data.map((item: { body: string }) => item.body)).toEqual(['Pesan 5.', 'Pesan 4.']);
+
+      const halamanTiga = await request(h.server)
+        .get(`${prefix}/community/channels/${slug}/posts?page=3&pageSize=2`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(halamanTiga.body.data.map((item: { body: string }) => item.body)).toEqual(['Pesan 1.']);
+    });
+
+    it('balasan ketujuh dan seterusnya tetap terjangkau, dan pratinjaunya membawa yang terbaru', async () => {
+      if (!h) throw new Error('Harness belum siap.');
+      const master = await login(h.server, MASTER.email, MASTER.password);
+      const channel = await request(h.server)
+        .post(`${prefix}/admin/community/channels`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .send({ name: `Balasan E2E ${Date.now()}` })
+        .expect(201);
+      channelIds.push(channel.body.data.id as string);
+
+      const student = await login(h.server, STUDENT.email, STUDENT.password);
+      const post = await request(h.server)
+        .post(`${prefix}/community/channels/${channel.body.data.id}/posts`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ body: 'Tulisan dengan banyak balasan.' })
+        .expect(201);
+      const postId = post.body.data.id as string;
+
+      for (let nomor = 1; nomor <= 8; nomor += 1) {
+        await request(h.server)
+          .post(`${prefix}/community/posts/${postId}/comments`)
+          .set('Cookie', student.cookie)
+          .set('X-CSRF-Token', student.csrfToken)
+          .send({ body: `Balasan ${nomor}.` })
+          .expect(201);
+      }
+
+      // Pratinjau membawa enam terakhir, bukan enam pertama: pada tulisan yang
+      // ramai, percakapan terbarulah yang paling perlu terlihat.
+      const feed = await request(h.server)
+        .get(`${prefix}/community/channels/${channel.body.data.slug}/posts`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      const pratinjau = feed.body.data.find((item: { id: string }) => item.id === postId);
+      expect(pratinjau.commentCount).toBe(8);
+      expect(pratinjau.comments.map((item: { body: string }) => item.body))
+        .toEqual(['Balasan 3.', 'Balasan 4.', 'Balasan 5.', 'Balasan 6.', 'Balasan 7.', 'Balasan 8.']);
+
+      // Dan dua yang tertimbun itu tetap dapat dibaca.
+      const semua = await request(h.server)
+        .get(`${prefix}/community/posts/${postId}/comments?page=1&pageSize=3`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(semua.body.meta.total).toBe(8);
+      expect(semua.body.data.map((item: { body: string }) => item.body))
+        .toEqual(['Balasan 1.', 'Balasan 2.', 'Balasan 3.']);
+    });
+  });
+
   describe('menyunting dan menghapus', () => {
     /** Channel bebas tulis beserta satu tulisan pelajar di dalamnya. */
     async function tulisanPelajar(h: Harness) {

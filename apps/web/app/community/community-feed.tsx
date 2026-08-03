@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useNotifier } from '../components/notifier';
-import { browserClient, unwrap } from '../lib/browser-api';
+import { browserClient, unwrap, unwrapList } from '../lib/browser-api';
+
+/** Satu tarikan pesan atau balasan; dipakai baik saat memuat lama maupun menyegarkan. */
+const UKURAN_HALAMAN = 30;
 
 export type CommunityChannel = { id: string; slug: string; name: string; description: string | null; isReadOnly: boolean; postCount: number };
 type Person = { id: string; fullName: string; avatarUrl: string | null };
@@ -26,13 +29,54 @@ type AksiPesan = {
   hapusPost: (post: CommunityPost) => void;
   suntingKomentar: (comment: CommunityComment) => void;
   hapusKomentar: (comment: CommunityComment) => void;
+  /** Bacaan, bukan tindakan; ikut dibawa agar kedua mode menghitungnya sama. */
+  balasan: (post: CommunityPost) => CommunityComment[];
+  sisaBalasan: (post: CommunityPost) => number;
+  muatKomentar: (post: CommunityPost) => void;
+  memuatKomentar: string | null;
 };
 
-export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate = false, currentUserId }: {
-  channels: CommunityChannel[]; initialPosts: CommunityPost[]; activeSlug?: string; canModerate?: boolean; currentUserId?: string;
+/**
+ * Menyatukan dua kumpulan pesan menjadi satu urutan kronologis, terbaru dulu.
+ *
+ * Dipakai baik saat memuat pesan lama maupun saat penyegaran berkala, supaya
+ * pesan yang sudah ditarik pengguna tidak terbuang setiap lima detik.
+ */
+function gabungKronologis(lama: CommunityPost[], baru: CommunityPost[]): CommunityPost[] {
+  const peta = new Map(lama.map((post) => [post.id, post]));
+  for (const post of baru) peta.set(post.id, post);
+  return [...peta.values()].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+}
+
+/**
+ * Menyegarkan jendela terbaru tanpa menghapus pesan lama yang sudah dimuat.
+ *
+ * Pesan yang seharusnya berada di dalam jendela itu tetapi tidak ikut terkirim
+ * berarti sudah dihapus orang lain, jadi ia dibuang. Yang lebih tua dari
+ * jendela tidak disimpulkan apa-apa: penyegaran ini tidak melihatnya.
+ */
+function segarkanKronologis(lama: CommunityPost[], baru: CommunityPost[], total: number): CommunityPost[] {
+  if (total === 0) return [];
+  const tertua = baru[baru.length - 1];
+  if (!tertua) return lama;
+  const batas = +new Date(tertua.createdAt);
+  const terkirim = new Set(baru.map((post) => post.id));
+  const bertahan = lama.filter((post) => +new Date(post.createdAt) < batas || terkirim.has(post.id));
+  return gabungKronologis(bertahan, baru);
+}
+
+export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug, canModerate = false, currentUserId }: {
+  channels: CommunityChannel[]; initialPosts: CommunityPost[]; initialTotal?: number; activeSlug?: string; canModerate?: boolean; currentUserId?: string;
 }) {
   const notifier = useNotifier();
   const [posts, setPosts] = useState(initialPosts);
+  // Jumlah seluruh tulisan menurut server; pembanding untuk tahu apakah masih
+  // ada yang lebih lama. Tanpa nilai awal, anggap yang tampil sudah semuanya.
+  const [total, setTotal] = useState(initialTotal ?? initialPosts.length);
+  const [halaman, setHalaman] = useState(1);
+  const [memuatLama, setMemuatLama] = useState(false);
+  const [komentarPenuh, setKomentarPenuh] = useState<Record<string, { items: CommunityComment[]; total: number; page: number }>>({});
+  const [memuatKomentar, setMemuatKomentar] = useState<string | null>(null);
   const [channelId, setChannelId] = useState(() => channels.find((item) => item.slug === activeSlug)?.id ?? channels.find((item) => !item.isReadOnly)?.id ?? channels[0]?.id ?? '');
   const [body, setBody] = useState('');
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
@@ -50,10 +94,13 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
       refreshing.current = true;
       try {
         const result = await browserClient().GET('/api/v1/community/channels/{slug}/posts', {
-          params: { path: { slug: activeSlug! }, query: { page: 1, pageSize: 50 } },
+          params: { path: { slug: activeSlug! }, query: { page: 1, pageSize: UKURAN_HALAMAN } },
         });
-        const latest = unwrap<CommunityPost[]>(result);
-        if (!disposed) setPosts(latest);
+        const { items, meta } = unwrapList<CommunityPost>(result);
+        if (!disposed) {
+          setTotal(meta.total);
+          setPosts((current) => segarkanKronologis(current, items, meta.total));
+        }
       } catch {
         // Kegagalan refresh sementara tidak menghapus pesan yang sudah tampil.
       } finally {
@@ -66,13 +113,71 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
     return () => { disposed = true; window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
   }, [activeSlug]);
 
+  /**
+   * Menarik satu halaman tulisan yang lebih lama.
+   *
+   * Percakapan channel hanya pernah menampilkan jendela terbarunya; lewat
+   * pesan ke-31 sisanya tidak dapat dijangkau sama sekali sebelum ini.
+   */
+  function muatLebihLama() {
+    if (memuatLama) return;
+    setMemuatLama(true);
+    void (async () => {
+      const berikut = halaman + 1;
+      try {
+        const query = { page: berikut, pageSize: UKURAN_HALAMAN };
+        const result = activeSlug
+          ? await browserClient().GET('/api/v1/community/channels/{slug}/posts', { params: { path: { slug: activeSlug }, query } })
+          : await browserClient().GET('/api/v1/community/feed', { params: { query } });
+        const { items, meta } = unwrapList<CommunityPost>(result);
+        setTotal(meta.total);
+        setHalaman(berikut);
+        setPosts((current) => (activeSlug
+          ? gabungKronologis(current, items)
+          // Feed memakai urutan tersemat-lalu-teraktif dari server; menyusun
+          // ulang di sini justru akan melawannya.
+          : [...current, ...items.filter((item) => !current.some((post) => post.id === item.id))]));
+      } catch (error) {
+        void notifier.error('Pesan lama gagal dimuat', { text: error instanceof Error ? error.message : undefined });
+      } finally {
+        setMemuatLama(false);
+      }
+    })();
+  }
+
+  /** Membuka seluruh balasan sebuah tulisan, atau menambah satu halaman lagi. */
+  function muatKomentar(post: CommunityPost) {
+    if (memuatKomentar) return;
+    setMemuatKomentar(post.id);
+    void (async () => {
+      const dimuat = komentarPenuh[post.id];
+      const berikut = (dimuat?.page ?? 0) + 1;
+      try {
+        const { items, meta } = unwrapList<CommunityComment>(
+          await browserClient().GET('/api/v1/community/posts/{postId}/comments', {
+            params: { path: { postId: post.id }, query: { page: berikut, pageSize: UKURAN_HALAMAN } },
+          }),
+        );
+        setKomentarPenuh((current) => ({
+          ...current,
+          [post.id]: { items: [...(dimuat?.items ?? []), ...items], total: meta.total, page: berikut },
+        }));
+      } catch (error) {
+        void notifier.error('Balasan gagal dimuat', { text: error instanceof Error ? error.message : undefined });
+      } finally {
+        setMemuatKomentar(null);
+      }
+    })();
+  }
+
   function publish() {
     if (!channelId || !body.trim()) return;
     startTransition(async () => {
       try {
         const result = await browserClient().POST('/api/v1/community/channels/{channelId}/posts', { params: { path: { channelId } }, body: { body: body.trim() } });
         const created = unwrap<CommunityPost>(result);
-        setPosts((current) => [created, ...current]); setBody(''); setMessage(activeSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
+        setPosts((current) => [created, ...current]); setTotal((current) => current + 1);
+        setBody(''); setMessage(activeSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
       } catch (error) { setMessage(error instanceof Error ? error.message : activeSlug ? 'Pesan gagal dikirim.' : 'Post gagal diterbitkan.'); }
     });
   }
@@ -94,6 +199,11 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
         const result = await browserClient().POST('/api/v1/community/posts/{postId}/comments', { params: { path: { postId } }, body: { body: draft } });
         const created = unwrap<CommunityComment>(result);
         setPosts((current) => current.map((post) => post.id === postId ? { ...post, comments: [...post.comments, created], commentCount: post.commentCount + 1 } : post));
+        // Bila daftar penuhnya sedang terbuka, balasan baru ikut masuk ke sana
+        // — kalau tidak, ia akan menghilang begitu pratinjaunya tertutup.
+        setKomentarPenuh((current) => (current[postId]
+          ? { ...current, [postId]: { ...current[postId], items: [...current[postId].items, created], total: current[postId].total + 1 } }
+          : current));
         setCommentDrafts((current) => ({ ...current, [postId]: '' }));
       } catch (error) { setMessage(error instanceof Error ? error.message : 'Balasan gagal dikirim.'); }
     });
@@ -141,6 +251,7 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
       try {
         unwrap(await browserClient().DELETE('/api/v1/community/posts/{postId}', { params: { path: { postId: post.id } } }));
         setPosts((current) => current.filter((item) => item.id !== post.id));
+        setTotal((current) => Math.max(0, current - 1));
       } catch (error) {
         void notifier.error('Tulisan gagal dihapus', { text: error instanceof Error ? error.message : undefined });
       }
@@ -160,10 +271,11 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
             params: { path: { commentId: comment.id } }, body: { body: baru },
           }),
         );
-        setPosts((current) => current.map((post) => ({
-          ...post,
-          comments: post.comments.map((item) => (item.id === comment.id ? { ...item, body: hasil.body, editedAt: hasil.editedAt } : item)),
-        })));
+        const disunting = (item: CommunityComment) => (item.id === comment.id ? { ...item, body: hasil.body, editedAt: hasil.editedAt } : item);
+        setPosts((current) => current.map((post) => ({ ...post, comments: post.comments.map(disunting) })));
+        setKomentarPenuh((current) => Object.fromEntries(
+          Object.entries(current).map(([id, daftar]) => [id, { ...daftar, items: daftar.items.map(disunting) }]),
+        ));
       } catch (error) {
         void notifier.error('Perubahan tidak tersimpan', { text: error instanceof Error ? error.message : undefined });
       }
@@ -185,18 +297,40 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
       if (!lanjut) return;
       try {
         unwrap(await browserClient().DELETE('/api/v1/community/comments/{commentId}', { params: { path: { commentId: comment.id } } }));
+        const tanpaYangDihapus = (daftar: CommunityComment[]) => daftar.filter((item) => item.id !== comment.id);
         setPosts((current) => current.map((post) => (
-          post.comments.some((item) => item.id === comment.id)
-            ? { ...post, comments: post.comments.filter((item) => item.id !== comment.id), commentCount: Math.max(0, post.commentCount - 1) }
+          post.comments.some((item) => item.id === comment.id) || komentarPenuh[post.id]?.items.some((item) => item.id === comment.id)
+            ? { ...post, comments: tanpaYangDihapus(post.comments), commentCount: Math.max(0, post.commentCount - 1) }
             : post
         )));
+        setKomentarPenuh((current) => Object.fromEntries(
+          Object.entries(current).map(([id, daftar]) => [id, daftar.items.some((item) => item.id === comment.id)
+            ? { ...daftar, items: tanpaYangDihapus(daftar.items), total: Math.max(0, daftar.total - 1) }
+            : daftar]),
+        ));
       } catch (error) {
         void notifier.error('Balasan gagal dihapus', { text: error instanceof Error ? error.message : undefined });
       }
     })();
   }
 
-  const aksi: AksiPesan = { react, suntingPost, hapusPost, suntingKomentar, hapusKomentar };
+  /** Balasan yang tampil: daftar penuh bila sudah dibuka, jika tidak pratinjaunya. */
+  function balasan(post: CommunityPost): CommunityComment[] {
+    return komentarPenuh[post.id]?.items ?? post.comments;
+  }
+
+  /** Balasan lebih lama yang masih tersembunyi di atas yang tampil. */
+  function sisaBalasan(post: CommunityPost): number {
+    const dimuat = komentarPenuh[post.id];
+    return dimuat
+      ? Math.max(0, dimuat.total - dimuat.items.length)
+      : Math.max(0, post.commentCount - post.comments.length);
+  }
+
+  const aksi: AksiPesan = {
+    react, suntingPost, hapusPost, suntingKomentar, hapusKomentar,
+    balasan, sisaBalasan, muatKomentar, memuatKomentar,
+  };
 
   if (activeSlug) {
     return <ChannelChat
@@ -210,6 +344,9 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
       message={message}
       publish={publish}
       aksi={aksi}
+      adaYangLebihLama={posts.length < total}
+      memuatLama={memuatLama}
+      muatLebihLama={muatLebihLama}
     />;
   }
 
@@ -230,18 +367,27 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
               <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.slug}`}>#{post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
               <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
               <div className="postActions"><button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button><span>◯ {post.commentCount} balasan</span><PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} /></div>
-              {post.comments.length > 0 ? <div className="commentList">{post.comments.map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}
+              <MuatBalasan post={post} aksi={aksi} />
+              {balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}
               <div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div>
             </article>
           ))}
           {posts.length === 0 ? <div className="card empty"><p>Belum ada post. Jadilah yang pertama memulai percakapan.</p></div> : null}
         </div>
+        {posts.length < total ? (
+          <div className="muatLagi">
+            <p className="communityMuted">Menampilkan {posts.length} dari {total} post.</p>
+            <button type="button" className="btnSecondary" disabled={memuatLama} onClick={muatLebihLama}>
+              {memuatLama ? 'Memuat…' : 'Muat lebih banyak'}
+            </button>
+          </div>
+        ) : null}
       </section>
     </>
   );
 }
 
-function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, pending, message, publish, aksi }: {
+function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, pending, message, publish, aksi, adaYangLebihLama, memuatLama, muatLebihLama }: {
   posts: CommunityPost[];
   selected?: CommunityChannel;
   currentUserId?: string;
@@ -252,6 +398,9 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
   message: string;
   publish: () => void;
   aksi: AksiPesan;
+  adaYangLebihLama: boolean;
+  memuatLama: boolean;
+  muatLebihLama: () => void;
 }) {
   const timeline = useMemo(() => [...posts].reverse(), [posts]);
 
@@ -264,6 +413,14 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
       </header>
 
       <div className="chatTimeline" aria-live="polite" aria-relevant="additions">
+        {/* Di puncak, karena di sanalah percakapan yang lebih tua berada. */}
+        {adaYangLebihLama ? (
+          <div className="chatMuatLama">
+            <button type="button" className="btnSecondary" disabled={memuatLama} onClick={muatLebihLama}>
+              {memuatLama ? 'Memuat…' : 'Muat pesan lama'}
+            </button>
+          </div>
+        ) : null}
         {timeline.length === 0 ? <div className="chatEmpty"><span>#</span><h2>Selamat datang di #{selected?.name}</h2><p>Belum ada pesan. Mulai percakapan pertama di channel ini.</p></div> : null}
         {timeline.map((post) => {
           const mine = post.author.id === currentUserId;
@@ -276,7 +433,8 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
                 <button type="button" className={post.reactedByMe ? 'chatReaction reacted' : 'chatReaction'} onClick={() => aksi.react(post.id)} aria-label={`Beri reaksi pada pesan ${post.author.fullName}`}>♡ {post.reactionCount || ''}</button>
                 <PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => aksi.suntingPost(post)} onDelete={() => aksi.hapusPost(post)} />
               </div>
-              {post.comments.map((comment) => <div className={comment.author.id === currentUserId ? 'chatReply mine' : 'chatReply'} key={comment.id}>
+              <MuatBalasan post={post} aksi={aksi} />
+              {aksi.balasan(post).map((comment) => <div className={comment.author.id === currentUserId ? 'chatReply mine' : 'chatReply'} key={comment.id}>
                 <strong>{comment.author.id === currentUserId ? 'Kamu' : comment.author.fullName}</strong><span>{comment.body}</span><Diedit at={comment.editedAt} />
                 <PesanAksi canEdit={comment.canEdit} canDelete={comment.canDelete} onEdit={() => aksi.suntingKomentar(comment)} onDelete={() => aksi.hapusKomentar(comment)} />
               </div>)}
@@ -315,6 +473,23 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
 function Diedit({ at }: { at: string | null }) {
   if (!at) return null;
   return <em className="editedMark" title={`Diubah ${formatDate(at)}`}>diedit</em>;
+}
+
+/**
+ * Jalan menuju balasan yang lebih lama.
+ *
+ * Pratinjau hanya membawa enam terakhir, sementara penghitungnya menyebut
+ * jumlah penuh. Tanpa tombol ini, selisih itu adalah percakapan yang hilang.
+ */
+function MuatBalasan({ post, aksi }: { post: CommunityPost; aksi: AksiPesan }) {
+  const sisa = aksi.sisaBalasan(post);
+  if (sisa <= 0) return null;
+  const sedang = aksi.memuatKomentar === post.id;
+  return (
+    <button type="button" className="muatBalasan" disabled={sedang} onClick={() => aksi.muatKomentar(post)}>
+      {sedang ? 'Memuat balasan…' : `Lihat ${sisa} balasan sebelumnya`}
+    </button>
+  );
 }
 
 /** Sunting dan hapus, hanya sejauh yang diizinkan server pada tulisan ini. */
