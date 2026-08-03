@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { Search } from './icons';
 import { ApiError, browserClient, unwrap, unwrapList } from '../lib/browser-api';
 
 /** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
@@ -127,13 +128,20 @@ export function VideoLibraryPicker({
 
         {error ? <p className="notice noticeError">{error}</p> : null}
 
-        <input
-          className="userSearch"
-          type="search"
-          placeholder="Cari judul, nama berkas, atau pelajaran yang memakainya…"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
+        {/* Kelasnya dulu dipasang langsung pada `input`, padahal `.userSearch`
+            adalah pembungkus: ikonnya tidak pernah muncul dan gaya inputnya
+            tidak pernah menyala. Strukturnya kini sama dengan halaman
+            Pengguna dan Perpustakaan video. */}
+        <label className="userSearch">
+          <span className="srOnly">Cari video</span>
+          <span aria-hidden="true"><Search size={17} /></span>
+          <input
+            type="search"
+            placeholder="Cari judul, nama berkas, atau pelajaran yang memakainya…"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
 
         {loading ? (
           <p className="muted">Memuat perpustakaan…</p>

@@ -276,31 +276,33 @@ export function VideoLibrary() {
       ) : null}
 
       {total > 0 || disaring ? (
-        <div className="libraryFilter">
-          <label className="userSearch">
-            <span className="srOnly">Cari video</span>
-            <span aria-hidden="true"><Search size={17} /></span>
-            <input
-              type="search"
-              value={cari}
-              onChange={(event) => setCari(event.target.value)}
-              placeholder="Cari judul, nama berkas, atau pelajaran yang memakainya"
-            />
-          </label>
-          <div className="inlineActions">
-            {TAB.map(([nilai, label]) => (
-              <button
-                key={label}
-                type="button"
-                className={saring === nilai ? 'btnTiny btnActive' : 'btnTiny'}
-                aria-pressed={saring === nilai}
-                onClick={() => setSaring(nilai)}
-              >
-                {label}
-              </button>
-            ))}
+        <section className="card filterCard" aria-label="Saring perpustakaan video">
+          <div className="filterBar">
+            <label className="userSearch">
+              <span className="srOnly">Cari video</span>
+              <span aria-hidden="true"><Search size={17} /></span>
+              <input
+                type="search"
+                value={cari}
+                onChange={(event) => setCari(event.target.value)}
+                placeholder="Cari judul, nama berkas, atau pelajaran yang memakainya"
+              />
+            </label>
+            <div className="inlineActions">
+              {TAB.map(([nilai, label]) => (
+                <button
+                  key={label}
+                  type="button"
+                  className={saring === nilai ? 'btnTiny btnActive' : 'btnTiny'}
+                  aria-pressed={saring === nilai}
+                  onClick={() => setSaring(nilai)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </section>
       ) : null}
 
       {loading ? (

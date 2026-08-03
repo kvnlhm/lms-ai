@@ -1317,7 +1317,6 @@ table.data tbody tr:hover { background: var(--raised); }
   align-items: center;
 }
 .userFilterBar label { min-width: 0; }
-.userFilterBar input,
 .userFilterBar select {
   width: 100%;
   min-height: 42px;
@@ -1329,9 +1328,15 @@ table.data tbody tr:hover { background: var(--raised); }
   font: inherit;
   font-size: 13px;
 }
-.userFilterBar input:focus,
 .userFilterBar select:focus { outline: none; border-color: var(--accent); }
-.userSearch { position: relative; display: block; }
+
+/* Kolom pencarian Master, membawa gayanya sendiri.
+   Ukuran dan bingkainya dulu menumpang pada `.userFilterBar input`, sehingga
+   hanya halaman Pengguna yang mendapatkannya. Halaman lain yang memakai
+   `.userSearch` di luar bilah itu — Perpustakaan video dan pemilih video —
+   mendapat input polos bawaan browser: sempit, tanpa bingkai, dan
+   placeholder-nya terpotong di tengah kata. */
+.userSearch { position: relative; display: block; min-width: 0; }
 .userSearch > span:not(.srOnly) {
   position: absolute;
   left: 13px;
@@ -1342,7 +1347,31 @@ table.data tbody tr:hover { background: var(--raised); }
   font-size: 18px;
   pointer-events: none;
 }
-.userSearch input { padding-left: 38px; }
+.userSearch input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px 9px 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.userSearch input:focus { outline: none; border-color: var(--accent); }
+
+/* Bilah penyaring bersama halaman Kursus dan Perpustakaan video, meniru
+   halaman Pengguna: kolom pencarian dan kendalinya berada dalam satu kartu.
+   Tanpa kartu itu tombol "Cari" tampak melayang sendirian di tepi halaman,
+   jauh dari kolom yang dilayaninya. */
+.filterCard { margin: 20px 0 22px; padding: 12px; }
+.filterBar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.filterBar > .userSearch { flex: 1 1 260px; }
+.filterBar > .inlineActions { flex: 0 0 auto; }
+@media (max-width: 680px) {
+  .filterBar > .userSearch { flex-basis: 100%; }
+  .filterBar > .btn { flex: 1; justify-content: center; }
+}
 .userListHead {
   display: flex;
   align-items: center;
@@ -2637,11 +2666,6 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .forumPager { justify-content: center; margin-top: 16px; }
 
 /* Penyaring perpustakaan video: kolom pencarian dan tombol status. */
-.libraryFilter { display: grid; gap: 12px; margin-bottom: 4px; }
-@media (min-width: 720px) {
-  .libraryFilter { grid-template-columns: minmax(260px, 1fr) auto; align-items: center; }
-}
-
 /* Kendali halaman pada daftar peserta kursus. */
 .enrollmentPager { justify-content: center; margin-top: 18px; }
 

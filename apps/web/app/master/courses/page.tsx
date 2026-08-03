@@ -64,24 +64,34 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
         {/* Formulir GET biasa: kata pencariannya tinggal di URL sehingga dapat
             ditandai dan bertahan saat halaman dimuat ulang. Status yang sedang
             aktif ikut dibawa agar penyaringannya tidak hilang saat mencari. */}
-        <form className="catalogSearch" action="/master/courses">
-          {status ? <input type="hidden" name="status" value={status} /> : null}
-          <label>
-            <span className="srOnly">Cari kursus</span>
-            <span className="catalogSearchIcon" aria-hidden="true">
-              <Search size={17} />
-            </span>
-            <input type="search" name="search" defaultValue={search ?? ''} placeholder="Cari judul kursus" />
-          </label>
-          <button className="btn" type="submit">
-            Cari
-          </button>
-          {search ? (
-            <Link className="btn btnGhost" href={status ? `/master/courses?status=${status}` : '/master/courses'}>
-              Hapus
-            </Link>
-          ) : null}
-        </form>
+        <section className="card filterCard" aria-label="Cari kursus">
+          <form className="filterBar" action="/master/courses">
+            {status ? <input type="hidden" name="status" value={status} /> : null}
+            <label className="userSearch">
+              <span className="srOnly">Cari kursus</span>
+              <span aria-hidden="true">
+                <Search size={17} />
+              </span>
+              <input
+                type="search"
+                name="search"
+                defaultValue={search ?? ''}
+                placeholder="Cari judul kursus"
+              />
+            </label>
+            <button className="btn" type="submit">
+              Cari
+            </button>
+            {search ? (
+              <Link
+                className="btn btnGhost"
+                href={status ? `/master/courses?status=${status}` : '/master/courses'}
+              >
+                Hapus
+              </Link>
+            ) : null}
+          </form>
+        </section>
 
         <div className="toolbar">
           {FILTERS.map((filter) => {
