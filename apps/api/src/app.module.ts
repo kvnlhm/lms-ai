@@ -34,6 +34,7 @@ import { RequestContextMiddleware } from './shared/http/request-context.middlewa
 import { ResponseInterceptor } from './shared/http/response.interceptor';
 import { IdempotencyModule } from './shared/idempotency/idempotency.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
+import { CommunityModule } from './modules/community/community.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { CommerceModule } from './modules/commerce/commerce.module';
     AnnouncementModule,
     LiveSessionModule,
     CommerceModule,
+    CommunityModule,
     AuditReadModule,
     ReportsModule,
     SearchModule,

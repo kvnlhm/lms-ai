@@ -179,9 +179,93 @@ model User {
   announcementReads      AnnouncementRead[]      @relation("AnnouncementReader")
   resolvedErrors         ErrorEvent[]            @relation("ErrorEventResolver")
   bookmarks              UserBookmark[]          @relation("UserBookmarkOwner")
+  communityChannelsMade  CommunityChannel[]      @relation("CommunityChannelCreator")
+  communityPosts         CommunityPost[]         @relation("CommunityPostAuthor")
+  communityComments      CommunityComment[]      @relation("CommunityCommentAuthor")
+  communityReactions     CommunityReaction[]     @relation("CommunityReactionUser")
 
   @@index([status])
   @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Community feed dan channel (ADR-024)
+// ─────────────────────────────────────────────────────────────
+
+/// Ruang percakapan global ala channel. Channel tidak diturunkan dari kursus:
+/// seluruh pengguna aktif dapat membacanya, sedangkan pembuatannya hanya lewat
+/// endpoint Master.
+model CommunityChannel {
+  id          String    @id @default(uuid()) @db.Uuid
+  slug        String    @unique
+  name        String
+  description String?
+  position    Int       @default(0)
+  isReadOnly  Boolean   @default(false) @map("is_read_only")
+  createdBy   String    @map("created_by") @db.Uuid
+  archivedAt  DateTime? @map("archived_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  creator User            @relation("CommunityChannelCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  posts   CommunityPost[]
+
+  @@index([archivedAt, position])
+  @@map("community_channels")
+}
+
+model CommunityPost {
+  id             String    @id @default(uuid()) @db.Uuid
+  channelId      String    @map("channel_id") @db.Uuid
+  authorId       String    @map("author_id") @db.Uuid
+  body           String
+  isPinned       Boolean   @default(false) @map("is_pinned")
+  commentCount   Int       @default(0) @map("comment_count")
+  reactionCount  Int       @default(0) @map("reaction_count")
+  lastActivityAt DateTime  @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  channel   CommunityChannel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author    User                @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  comments  CommunityComment[]
+  reactions CommunityReaction[]
+
+  @@index([channelId, deletedAt, isPinned, lastActivityAt])
+  @@index([authorId, createdAt])
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id        String    @id @default(uuid()) @db.Uuid
+  postId    String    @map("post_id") @db.Uuid
+  authorId  String    @map("author_id") @db.Uuid
+  body      String
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  post   CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User          @relation("CommunityCommentAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([postId, deletedAt, createdAt])
+  @@index([authorId])
+  @@map("community_comments")
+}
+
+/// MVP memakai satu reaksi suka per pengguna per post.
+model CommunityReaction {
+  postId    String   @map("post_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation("CommunityReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@index([userId])
+  @@map("community_reactions")
 }
 
 model NotificationPreference {

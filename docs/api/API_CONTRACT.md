@@ -2351,3 +2351,23 @@ kosong akan tetap dapat dipakai memastikan apakah sebuah alamat terdaftar.
 Aturan kelayakan pengumuman datang dari `AnnouncementService`, bukan disalin ke
 modul pencarian: dua definisi "boleh dilihat" akan membuat yang satu tertinggal
 saat yang lain berubah.
+
+---
+
+## 43. Community Feed API
+
+Memenuhi perluasan produk yang disetujui pada ADR-024. Seluruh endpoint learner
+memerlukan sesi aktif.
+
+- `GET /community/channels` — channel aktif untuk sidebar.
+- `GET /community/feed` — feed lintas channel, terurut pin dan aktivitas terbaru.
+- `GET /community/channels/{slug}/posts` — feed sebuah channel.
+- `POST /community/channels/{channelId}/posts` — membuat post; channel baca-saja
+  menuntut `discussions.moderate`.
+- `POST /community/posts/{postId}/comments` — membalas post.
+- `POST /community/posts/{postId}/reaction` — menyalakan/mematikan reaksi pengguna.
+- `GET|POST|PATCH|DELETE /admin/community/channels` — pengelolaan channel oleh
+  Master dengan `discussions.moderate`; DELETE mengarsipkan, bukan menghapus isi.
+
+Semua author ID berasal dari session. Client tidak boleh mengirim identitas,
+jumlah komentar, jumlah reaksi, status pin, atau permission.

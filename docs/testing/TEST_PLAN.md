@@ -239,3 +239,14 @@ Production release memerlukan:
 - Direct permanent MP4 URL tidak dikembalikan.
 - Web bundle tidak mengandung Bunny secret.
 - Webhook secret dapat dirotasi.
+
+## 8. Community Feed Test Cases
+
+- Tanpa sesi tidak dapat membaca channel atau feed.
+- Pelajar tidak dapat membuat, mengubah, atau mengarsipkan channel.
+- Master dengan `discussions.moderate` dapat mengelola channel.
+- Pelajar dapat post, komentar, dan bereaksi pada channel biasa.
+- Pelajar ditolak menulis channel baca-saja; Master diizinkan.
+- Author selalu berasal dari session dan counter komentar/reaksi konsisten.
+- Sidebar, feed, serta rail event/pengumuman berubah menjadi satu kolom pada
+  layar sempit tanpa overflow horizontal.

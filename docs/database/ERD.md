@@ -958,6 +958,22 @@ pnpm --filter @lms/api exec prisma migrate diff \
 Hasil yang benar adalah `-- This is an empty migration.` Apa pun selain itu
 berarti database dan `schema.prisma` sudah berbeda.
 
+## 15. Community Feed
+
+```text
+users 1 ── * community_channels (created_by)
+community_channels 1 ── * community_posts
+users 1 ── * community_posts (author_id)
+community_posts 1 ── * community_comments
+community_posts 1 ── * community_reactions
+users 1 ── * community_comments / community_reactions
+```
+
+Channel dan post memakai pengarsipan lunak. Komentar serta reaksi mengikuti
+post dengan `ON DELETE CASCADE`; author dan pembuat channel memakai `RESTRICT`
+agar riwayat komunitas tidak kehilangan pemilik secara diam-diam. Counter pada
+post diperbarui dalam transaksi yang sama dengan mutasinya.
+
 Dua jenis drift pernah ditemukan di sini, dan keduanya layak diwaspadai:
 
 - **Default yang ditulis tangan.** Tiga tabel commerce dan

@@ -45,6 +45,9 @@ Role bukan satu-satunya kontrol. Backend tetap memeriksa resource ownership, enr
 | View registration payment records | Yes | No | `commerce.manage` |
 | Start public checkout | Public | Public | Active tier, server-side price |
 | Process payment webhook | Provider only | No | Valid signature + provider status verification |
+| Read community feed/channels | Yes | Yes | Active authenticated session |
+| Post/comment/react in community channel | Yes | Yes | Active session; read-only channel needs `discussions.moderate` |
+| Create/update/archive community channel | Yes | No | `discussions.moderate` |
 
 ## Resource Rules
 
@@ -65,6 +68,14 @@ Student dapat mengakses jika memiliki course access. Owner dapat mengedit selama
 - Discussion belum locked.
 - Discussion belum hidden.
 - Edit masih diizinkan oleh business rule.
+
+### Community
+
+Channel komunitas tidak bergantung pada enrollment kursus. Semua akun aktif
+yang sudah login boleh membaca feed. Hanya server yang menentukan author dari
+session. Channel `isReadOnly` hanya dapat ditulis pemegang
+`discussions.moderate`, dan hanya permission yang sama dapat membuat, mengubah,
+atau mengarsipkan channel.
 
 ### Quiz
 

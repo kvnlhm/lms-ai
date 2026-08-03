@@ -2249,3 +2249,32 @@ Pengembangan LMS menggunakan satu orchestrator dan beberapa specialist subagent.
 13. Pekerjaan paralel hanya dilakukan apabila tidak menulis file yang sama.
 14. Setiap output agent harus mencantumkan risiko dan unresolved issue.
 15. Scope tambahan harus dikembalikan kepada Product Manager untuk prioritas.
+
+## 30. Approved Extension — Community Home
+
+Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
+
+### 30.1 Learner Home
+
+- Beranda Pelajar menampilkan feed komunitas sebagai konten utama.
+- Sidebar menampilkan channel yang dapat dibuka seperti ruang percakapan.
+- Rail pendamping menampilkan sesi mendatang dan pengumuman terbaru.
+- Pelajar aktif dapat membuat post, komentar, dan reaksi pada channel biasa.
+- Layout wajib responsif untuk desktop, split-desktop, tablet, dan mobile.
+
+### 30.2 Master Channel Management
+
+- Hanya Master dengan permission moderasi diskusi dapat membuat, mengubah,
+  mengurutkan, menjadikan read-only, dan mengarsipkan channel.
+- Channel read-only tetap terlihat semua akun aktif, tetapi hanya Master dapat
+  menulis.
+- Identitas penulis selalu berasal dari session server.
+
+### 30.3 Non-scope Awal
+
+- WebSocket/realtime presence.
+- Direct message privat.
+- Attachment file pada post.
+- Thread bertingkat lebih dari satu tingkat komentar.
+
+Detail desain dan konsekuensi arsitektur terdapat pada ADR-024.

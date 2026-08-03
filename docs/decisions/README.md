@@ -43,3 +43,4 @@
 | ADR-021 | Accepted | Read-only Student impersonation |
 | ADR-022 | Accepted | Pemulihan password mandiri lewat email |
 | ADR-023 | Accepted | Pemantauan galat dibangun sendiri |
+| ADR-024 | Accepted | Community feed dan channel yang dikelola Master |
