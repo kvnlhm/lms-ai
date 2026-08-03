@@ -2729,3 +2729,13 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .lessonRow { flex-wrap: wrap; }
   .lessonMeta { width: 100%; padding-left: 30px; }
 }
+
+/* ── Pemutar pelajaran ──────────────────────────────────────── */
+.playerBack { margin-bottom: 18px; display: inline-flex; }
+.drawerPct { margin-left: auto; }
+.drawerLessonList { margin: 0; padding: 0; list-style: none; }
+.drawerLessonBody { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.drawerLessonMeta { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.drawerLessonCurrent .drawerLessonMeta { color: var(--text-2); }
+/* Keterangan tujuan tautan berdiri di bawah tombolnya, di dalam panggung. */
+.stageHost { margin: 12px 0 0; font-size: 12.5px; }

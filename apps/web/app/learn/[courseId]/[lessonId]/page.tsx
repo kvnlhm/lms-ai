@@ -1,3 +1,5 @@
+import { cache } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Schemas } from '@lms/api-client';
@@ -14,9 +16,62 @@ export const dynamic = 'force-dynamic';
 
 type LearnCourse = Schemas['LearnCourseResponseDto'];
 type LearnLesson = Schemas['LearnLessonResponseDto'];
+type LearnLessonItem = Schemas['LearnLessonItemDto'];
+
+const CONTENT_LABEL: Record<string, string> = {
+  VIDEO: 'Video',
+  TEXT: 'Bacaan',
+  PDF: 'PDF',
+  EXTERNAL_LINK: 'Tautan',
+  QUIZ: 'Kuis',
+};
+
+/** Judul panggung: menyebut jenis materinya, bukan mengulang judul pelajaran. */
+const STAGE_LABEL: Record<string, string> = {
+  VIDEO: 'Video materi',
+  PDF: 'Dokumen PDF',
+  EXTERNAL_LINK: 'Materi di luar akademi',
+};
 
 interface Props {
   params: Promise<{ courseId: string; lessonId: string }>;
+}
+
+/** Menit menjadi bacaan yang wajar; 95 menit lebih mudah dibaca sebagai 1j 35m. */
+function formatDurasi(menit: number): string {
+  if (menit <= 0) return '—';
+  const jam = Math.floor(menit / 60);
+  const sisa = menit % 60;
+  if (jam === 0) return `${sisa} menit`;
+  return sisa === 0 ? `${jam} jam` : `${jam}j ${sisa}m`;
+}
+
+/** Nama host tujuan, atau null bila alamatnya tidak dapat dibaca. */
+function hostTujuan(url: string): string | null {
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pelajaran, dibaca sekali per permintaan.
+ *
+ * `cache` dari React membuat judul di tab dan isi halaman berbagi satu
+ * panggilan; tanpa itu, judul dinamis berarti memanggil API dua kali.
+ */
+const ambilPelajaran = cache(async (lessonId: string): Promise<LearnLesson> => {
+  const client = await serverClient();
+  return unwrap<LearnLesson>(
+    await client.GET('/api/v1/learn/lessons/{lessonId}', { params: { path: { lessonId } } }),
+  );
+});
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { lessonId } = await params;
+  const lesson = await ambilPelajaran(lessonId).catch(() => null);
+  return { title: lesson ? `${lesson.title} · Academy AIPreneur` : 'Belajar · Academy AIPreneur' };
 }
 
 export default async function LessonPage({ params }: Props) {
@@ -29,10 +84,7 @@ export default async function LessonPage({ params }: Props) {
   let course: LearnCourse;
   try {
     [lesson, course] = await Promise.all([
-      (async () =>
-        unwrap<LearnLesson>(
-          await client.GET('/api/v1/learn/lessons/{lessonId}', { params: { path: { lessonId } } }),
-        ))(),
+      ambilPelajaran(lessonId),
       (async () =>
         unwrap<LearnCourse>(
           await client.GET('/api/v1/learn/courses/{courseId}', { params: { path: { courseId } } }),
@@ -42,7 +94,7 @@ export default async function LessonPage({ params }: Props) {
     if (error instanceof ApiError) {
       if (error.isNotFound) notFound();
       // Prasyarat belum terpenuhi atau akses dicabut: kembalikan ke halaman
-      // kursus, yang menjelaskan keadaannya, alih-alih menampilkan halaman kosong.
+      // kursus, yang menjelaskan keadaannya, alih-alih halaman kosong.
       if (error.isForbidden) redirect(`/courses/${courseId}`);
     }
     throw error;
@@ -50,7 +102,10 @@ export default async function LessonPage({ params }: Props) {
 
   const ordered = course.modules.flatMap((module) => module.lessons.map((item) => item.id));
   const index = ordered.indexOf(lessonId);
-  const position = index >= 0 ? index + 1 : 1;
+  // Nomor urut hanya disebut bila pelajaran ini benar-benar ditemukan pada
+  // daftar kursus. Sebelumnya urutan yang tidak ketemu diam-diam menjadi
+  // "Pelajaran 1 dari N" — angka yang salah, disajikan sebagai fakta.
+  const position = index >= 0 ? index + 1 : null;
   const isCompleted = lesson.status === 'COMPLETED';
 
   return (
@@ -58,16 +113,14 @@ export default async function LessonPage({ params }: Props) {
       <div className="player">
         <div className="playerMain">
           <div className="playerStage">
-            <Link
-              href={`/courses/${courseId}`}
-              className="pill"
-              style={{ marginBottom: 18, display: 'inline-flex' }}
-            >
+            <Link href={`/courses/${courseId}`} className="pill playerBack">
               <ArrowLeft size={13} /> {course.course.title}
             </Link>
 
             <p className="lessonCounter">
-              Pelajaran {position} dari {ordered.length} · {lesson.moduleTitle}
+              {position === null
+                ? lesson.moduleTitle
+                : `Pelajaran ${position} dari ${ordered.length} · ${lesson.moduleTitle}`}
             </p>
 
             <div className="lessonHeading">
@@ -86,10 +139,16 @@ export default async function LessonPage({ params }: Props) {
               </nav>
             </div>
 
-            <LessonStage lesson={lesson} position={position} />
+            <LessonStage lesson={lesson} />
 
             {lesson.description ? <p className="lessonText">{lesson.description}</p> : null}
             {lesson.content.text ? <p className="lessonText">{lesson.content.text}</p> : null}
+
+            {/* Pelajaran bacaan tanpa satu pun teks dulu menghasilkan halaman
+                yang benar-benar kosong di bawah judulnya, tanpa penjelasan. */}
+            {lesson.contentType === 'TEXT' && !lesson.description && !lesson.content.text ? (
+              <p className="lessonText muted">Materi bacaan ini belum diisi.</p>
+            ) : null}
 
             {lesson.contentType === 'QUIZ' ? (
               <QuizRunner
@@ -120,35 +179,18 @@ export default async function LessonPage({ params }: Props) {
         <aside className="drawer" aria-label="Daftar pelajaran">
           <div className="drawerTop">
             <h2>Daftar pelajaran</h2>
-            <span className="pill" style={{ marginLeft: 'auto' }}>
-              {course.progress.percent}%
-            </span>
+            <span className="pill drawerPct">{course.progress.percent}%</span>
           </div>
           <div className="drawerList">
             {course.modules.map((module) => (
               <section key={module.id}>
                 <h3 className="drawerSection">{module.title}</h3>
-                <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                  {module.lessons.map((item) => {
-                    const done = item.status === 'COMPLETED';
-                    const current = item.id === lessonId;
-                    return (
-                      <li key={item.id}>
-                        <Link
-                          href={`/learn/${courseId}/${item.id}`}
-                          className={current ? 'drawerLesson drawerLessonCurrent' : 'drawerLesson'}
-                          aria-current={current ? 'page' : undefined}
-                        >
-                          <span
-                            className={done ? 'dot dotDone' : current ? 'dot dotCurrent' : 'dot'}
-                            aria-hidden="true"
-                          />
-                          <span className="lessonName">{item.title}</span>
-                          {done ? <span className="srOnly">Selesai</span> : null}
-                        </Link>
-                      </li>
-                    );
-                  })}
+                <ul className="drawerLessonList">
+                  {module.lessons.map((item) => (
+                    <li key={item.id}>
+                      <DrawerLesson courseId={courseId} lesson={item} current={item.id === lessonId} />
+                    </li>
+                  ))}
                 </ul>
               </section>
             ))}
@@ -156,6 +198,43 @@ export default async function LessonPage({ params }: Props) {
         </aside>
       </div>
     </AppShell>
+  );
+}
+
+function DrawerLesson({
+  courseId,
+  lesson,
+  current,
+}: {
+  courseId: string;
+  lesson: LearnLessonItem;
+  current: boolean;
+}) {
+  const done = lesson.status === 'COMPLETED';
+
+  return (
+    <Link
+      href={`/learn/${courseId}/${lesson.id}`}
+      className={current ? 'drawerLesson drawerLessonCurrent' : 'drawerLesson'}
+      aria-current={current ? 'page' : undefined}
+    >
+      <span
+        className={done ? 'dot dotDone' : current ? 'dot dotCurrent' : 'dot'}
+        aria-hidden="true"
+      />
+      <span className="drawerLessonBody">
+        <span className="lessonName">{lesson.title}</span>
+        {/* Jenis, durasi, dan penanda wajib sudah ikut terkirim sejak dulu.
+            Tanpanya, kuis dan video tampak sama persis di daftar ini, dan
+            pelajar tidak dapat menakar berapa lama sisa kursusnya. */}
+        <span className="drawerLessonMeta">
+          {CONTENT_LABEL[lesson.contentType] ?? lesson.contentType} ·{' '}
+          {formatDurasi(lesson.estimatedMinutes)}
+          {lesson.isRequired ? ' · Wajib' : ''}
+        </span>
+      </span>
+      {done ? <span className="srOnly">Selesai</span> : null}
+    </Link>
   );
 }
 
@@ -184,32 +263,34 @@ function NavArrow({
   );
 }
 
-function LessonStage({ lesson, position }: { lesson: LearnLesson; position: number }) {
+function LessonStage({ lesson }: { lesson: LearnLesson }) {
+  // Panggung dulu menuliskan ulang judul pelajaran, padahal judul yang sama
+  // sudah menjadi <h1> tepat di atasnya. Sekarang ia menyebut jenis materinya.
+  const label = STAGE_LABEL[lesson.contentType] ?? 'Materi';
+
   if (
     (lesson.contentType === 'EXTERNAL_LINK' || lesson.contentType === 'PDF') &&
     lesson.content.externalUrl
   ) {
+    const host = hostTujuan(lesson.content.externalUrl);
     return (
       <div className="stage">
         <div className="stageLabel">
-          <h2>
-            {position}. {lesson.title}
-          </h2>
+          <h2>{label}</h2>
         </div>
         <a className="btn" href={lesson.content.externalUrl} target="_blank" rel="noreferrer noopener">
           {lesson.contentType === 'PDF' ? 'Buka dokumen PDF' : 'Buka materi eksternal'}
         </a>
+        {/* Tautan ini membawa pelajar keluar dari akademi. Menyebut tujuannya
+            lebih dulu membuat kepergian itu menjadi pilihan, bukan kejutan. */}
+        {host ? <p className="stageNote stageHost">Membuka {host} di tab baru</p> : null}
       </div>
     );
   }
 
-  if (lesson.contentType === 'TEXT') {
-    return null;
-  }
-
-  // Kuis punya panggungnya sendiri di bawah deskripsi, jadi tidak ada kotak
-  // media yang perlu digambar di sini.
-  if (lesson.contentType === 'QUIZ') {
+  if (lesson.contentType === 'TEXT' || lesson.contentType === 'QUIZ') {
+    // Keduanya punya panggungnya sendiri di bawah judul, jadi tidak ada kotak
+    // media yang perlu digambar di sini.
     return null;
   }
 
@@ -217,7 +298,7 @@ function LessonStage({ lesson, position }: { lesson: LearnLesson; position: numb
     return (
       <div className="stage">
         <div className="stageLabel">
-          <h2>{position}. {lesson.title}</h2>
+          <h2>{label}</h2>
         </div>
         <VideoPlayer lessonId={lesson.id} />
       </div>
@@ -227,9 +308,7 @@ function LessonStage({ lesson, position }: { lesson: LearnLesson; position: numb
   return (
     <div className="stage">
       <div className="stageLabel">
-        <h2>
-          {position}. {lesson.title}
-        </h2>
+        <h2>{label}</h2>
       </div>
       <p className="stageNote">Materi file belum tersedia.</p>
     </div>
