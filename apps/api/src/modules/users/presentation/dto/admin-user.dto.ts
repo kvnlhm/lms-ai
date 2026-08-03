@@ -72,6 +72,13 @@ export class AdminUserListItemDto {
 
   @ApiProperty({ format: 'date-time' })
   createdAt!: Date;
+
+  @ApiProperty({
+    description:
+      'Benar bila pengguna punya TOTP yang sudah terverifikasi. Master memerlukannya ' +
+      'untuk tahu kepada siapa "Reset MFA" berarti sesuatu.',
+  })
+  mfaEnabled!: boolean;
 }
 
 export class CreateAdminUserDto {

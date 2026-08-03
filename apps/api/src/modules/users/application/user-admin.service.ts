@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, UserStatus } from '@prisma/client';
+import { MfaMethodType, Prisma, UserStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { UserCredentialService } from '../../identity/application/user-credential.service';
 import { AppError } from '../../../shared/errors/app-error';
@@ -50,6 +50,15 @@ export class UserAdminService {
           lastLoginAt: true,
           createdAt: true,
           roles: { select: { role: { select: { code: true } } }, take: 1 },
+          // Hanya metode yang sudah terverifikasi yang berarti MFA menyala —
+          // sama persis dengan syarat yang dipakai saat login, supaya daftar
+          // ini tidak menyebut "aktif" untuk pendaftaran yang tak pernah
+          // diselesaikan.
+          mfaMethods: {
+            where: { type: MfaMethodType.TOTP, verifiedAt: { not: null } },
+            select: { id: true },
+            take: 1,
+          },
         },
         orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
         skip: (input.page - 1) * input.pageSize,
@@ -60,9 +69,10 @@ export class UserAdminService {
 
     return {
       total,
-      items: items.map(({ roles, ...user }) => ({
+      items: items.map(({ roles, mfaMethods, ...user }) => ({
         ...user,
         role: (roles[0]?.role.code ?? 'STUDENT') as 'MASTER' | 'STUDENT',
+        mfaEnabled: mfaMethods.length > 0,
       })),
     };
   }

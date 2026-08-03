@@ -458,7 +458,19 @@ Includes:
 
 ## POST `/admin/users/{userId}/reset-mfa`
 
-Master action requiring elevated permission and audit.
+Requires `users.security.manage`. Menghapus seluruh metode MFA pengguna dan
+mencabut seluruh sesinya sekaligus: perangkat yang hilang mungkin ada di tangan
+orang lain, jadi sesi yang masih berjalan tidak boleh selamat dari pemulihan
+ini. Pada login berikutnya pengguna masuk dengan kata sandi saja lalu dapat
+mendaftarkan authenticator baru.
+
+Master ditolak `422` bila mencoba mereset MFA miliknya sendiri; untuk itu ada
+alur pemulihan akun. Tindakannya dicatat ke audit log sebagai `user.mfa_reset`.
+
+Daftar pengguna membawa `mfaEnabled` supaya Master tahu kepada siapa tindakan
+ini berarti sesuatu. Nilainya benar hanya untuk TOTP yang sudah terverifikasi —
+syarat yang sama persis dengan pemeriksaan saat login, sehingga pendaftaran
+yang tidak pernah diselesaikan tidak pernah disebut sebagai perlindungan.
 
 ## POST `/admin/users/{userId}/password-reset-link`
 

@@ -269,11 +269,22 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
   tegas beserta alasannya, sehingga menambahkannya adalah keputusan sadar.
 - Endpoint yang belum punya antarmuka juga didaftarkan di sana, agar
   "belum dikerjakan" tidak menyamar sebagai "sudah selesai". Saat ini:
-  `admin/users/{userId}/reset-mfa`, `auth/logout-all`, dan
-  `me/announcements/unread-count`.
+  `auth/logout-all` dan `me/announcements/unread-count`.
 - Pembukaan pelajaran dijaga tersendiri: endpointnya sudah ada dan teruji,
   tetapi sempat berbulan-bulan tanpa pemanggil sehingga histori, metrik
   dasbor, dan "Lanjutkan belajar" sama-sama kehilangan sumbernya.
+
+## 7b. Pemulihan MFA oleh Master
+
+- Daftar pengguna menyebut MFA aktif hanya untuk metode TOTP yang sudah
+  terverifikasi, memakai syarat yang sama persis dengan pemeriksaan saat login;
+  pendaftaran yang tidak pernah dikonfirmasi tidak dihitung.
+- Pelajar ditolak mereset MFA siapa pun; Master dengan `users.security.manage`
+  diizinkan.
+- Reset menghapus seluruh metode MFA, mencabut sesi yang sedang berjalan, dan
+  meninggalkan entri audit `user.mfa_reset`.
+- Master ditolak mereset MFA miliknya sendiri dan diarahkan ke alur pemulihan
+  akun.
 
 ## 8. Community Feed Test Cases
 

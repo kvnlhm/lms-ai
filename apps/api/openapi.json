@@ -12506,6 +12506,10 @@
           "createdAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "mfaEnabled": {
+            "type": "boolean",
+            "description": "Benar bila pengguna punya TOTP yang sudah terverifikasi. Master memerlukannya untuk tahu kepada siapa \"Reset MFA\" berarti sesuatu."
           }
         },
         "required": [
@@ -12514,7 +12518,8 @@
           "email",
           "status",
           "role",
-          "createdAt"
+          "createdAt",
+          "mfaEnabled"
         ]
       },
       "CreateAdminUserResponseDto": {
@@ -12559,6 +12564,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "mfaEnabled": {
+            "type": "boolean",
+            "description": "Benar bila pengguna punya TOTP yang sudah terverifikasi. Master memerlukannya untuk tahu kepada siapa \"Reset MFA\" berarti sesuatu."
+          },
           "invitationToken": {
             "type": "string",
             "description": "Token undangan mentah; hanya dikembalikan sekali."
@@ -12575,6 +12584,7 @@
           "status",
           "role",
           "createdAt",
+          "mfaEnabled",
           "invitationToken",
           "invitationExpiresAt"
         ]
@@ -12659,6 +12669,10 @@
           "createdAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "mfaEnabled": {
+            "type": "boolean",
+            "description": "Benar bila pengguna punya TOTP yang sudah terverifikasi. Master memerlukannya untuk tahu kepada siapa \"Reset MFA\" berarti sesuatu."
           }
         },
         "required": [
@@ -12667,7 +12681,8 @@
           "email",
           "status",
           "role",
-          "createdAt"
+          "createdAt",
+          "mfaEnabled"
         ]
       },
       "UpdateAdminUserDto": {

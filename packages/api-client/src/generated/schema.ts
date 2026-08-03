@@ -2569,6 +2569,8 @@ export interface components {
             lastLoginAt?: Record<string, never> | null;
             /** Format: date-time */
             createdAt: string;
+            /** @description Benar bila pengguna punya TOTP yang sudah terverifikasi. Master memerlukannya untuk tahu kepada siapa "Reset MFA" berarti sesuatu. */
+            mfaEnabled: boolean;
         };
         CreateAdminUserResponseDto: {
             /** Format: uuid */
@@ -2585,6 +2587,8 @@ export interface components {
             lastLoginAt?: Record<string, never> | null;
             /** Format: date-time */
             createdAt: string;
+            /** @description Benar bila pengguna punya TOTP yang sudah terverifikasi. Master memerlukannya untuk tahu kepada siapa "Reset MFA" berarti sesuatu. */
+            mfaEnabled: boolean;
             /** @description Token undangan mentah; hanya dikembalikan sekali. */
             invitationToken: string;
             /** Format: date-time */
@@ -2621,6 +2625,8 @@ export interface components {
             lastLoginAt?: Record<string, never> | null;
             /** Format: date-time */
             createdAt: string;
+            /** @description Benar bila pengguna punya TOTP yang sudah terverifikasi. Master memerlukannya untuk tahu kepada siapa "Reset MFA" berarti sesuatu. */
+            mfaEnabled: boolean;
         };
         UpdateAdminUserDto: {
             fullName?: string;

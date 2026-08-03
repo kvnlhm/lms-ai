@@ -93,6 +93,35 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
     });
   }
 
+  /**
+   * Memulihkan pengguna yang kehilangan aplikasi authenticator-nya.
+   *
+   * Endpointnya sudah lama ada, tetapi tanpa tombol ini seorang pelajar yang
+   * kehilangan ponselnya benar-benar buntu — tidak ada jalan masuk, dan tidak
+   * ada jalan meminta bantuan yang dapat dikerjakan Master.
+   */
+  async function resetMfa(user: User) {
+    const lanjut = await notifier.confirm(`Reset MFA untuk ${user.fullName}?`, {
+      text:
+        'Verifikasi dua langkahnya dihapus dan seluruh sesinya dicabut, jadi ia ' +
+        'akan keluar dari semua perangkat. Pada login berikutnya ia masuk dengan ' +
+        'kata sandi saja, lalu dapat mendaftarkan authenticator baru. Tindakan ini ' +
+        'tercatat di audit log.',
+      confirmLabel: 'Reset MFA',
+      danger: true,
+    });
+    if (!lanjut) return;
+
+    await run(`mfa-${user.id}`, async () => {
+      unwrap(
+        await browserClient().POST('/api/v1/admin/users/{userId}/reset-mfa', {
+          params: { path: { userId: user.id } },
+        }),
+      );
+      notifier.success(`MFA ${user.fullName} direset. Ia dapat mendaftar ulang setelah login.`);
+    });
+  }
+
   async function impersonate(user: User) {
     await run(`impersonate-${user.id}`, async () => {
       unwrap(
@@ -269,7 +298,12 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                     </span>
                   </td>
                   <td data-label="Role"><span className="roleBadge">{item.role === 'MASTER' ? 'Master' : 'Pelajar'}</span></td>
-                  <td data-label="Status"><StatusPill status={item.status} /></td>
+                  <td data-label="Status">
+                    <StatusPill status={item.status} />
+                    {/* Tanpa penanda ini, tombol "Reset MFA" yang hanya muncul
+                        di sebagian baris tampak seperti kejanggalan. */}
+                    {item.mfaEnabled ? <span className="pill mfaPill">MFA</span> : null}
+                  </td>
                   <td data-label="Login terakhir">{formatDate(item.lastLoginAt)}</td>
                   <td data-label="Bergabung">{formatDate(item.createdAt)}</td>
                   <td className="cellActions">
@@ -277,6 +311,14 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                       <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => issuePasswordReset(item)}>
                         Reset password
                       </button>
+                      {/* Hanya ditawarkan kepada yang benar-benar memakai MFA.
+                          Tombol yang selalu ada akan menjadi tombol yang tidak
+                          melakukan apa-apa bagi sebagian besar akun. */}
+                      {item.mfaEnabled ? (
+                        <button className="btnTiny userDangerAction" type="button" disabled={busy !== null} onClick={() => void resetMfa(item)}>
+                          Reset MFA
+                        </button>
+                      ) : null}
                       {item.role === 'STUDENT' && item.status === 'ACTIVE' ? (
                         <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => impersonate(item)}>
                           Lihat sebagai
