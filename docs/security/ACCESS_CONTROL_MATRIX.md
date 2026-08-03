@@ -50,6 +50,7 @@ Role bukan satu-satunya kontrol. Backend tetap memeriksa resource ownership, enr
 | Create/update/archive community channel | Yes | No | `discussions.moderate` |
 | Edit own community post/comment | Yes | Yes | Author only; `discussions.moderate` tidak memberi hak ini |
 | Delete community post/comment | Yes | Yes | Author, atau `discussions.moderate` atas tulisan siapa pun (tercatat di audit log) |
+| Pin/unpin community post | Yes | No | `discussions.moderate`, termasuk atas tulisan sendiri (tercatat di audit log) |
 
 ## Resource Rules
 
@@ -85,6 +86,11 @@ tidak boleh berarti kuasa menaruh kata-kata baru ke dalam mulut orang lain.
 Menghapus terbuka bagi penulisnya dan bagi moderator; penghapusan tulisan orang
 lain selalu meninggalkan entri audit lengkap dengan isi aslinya, supaya
 tindakannya dapat ditinjau kemudian.
+
+Menyematkan berdiri sendiri lagi: ia menuntut `discussions.moderate` bahkan
+atas tulisan sendiri. Menyematkan bukan hak atas tulisanmu, melainkan keputusan
+tentang apa yang dilihat semua orang lebih dulu. `canPin` yang ikut dikirim ke
+antarmuka hanya menentukan tombol apa yang digambar; penegakannya di endpoint.
 
 ### Quiz
 

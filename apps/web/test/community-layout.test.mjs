@@ -96,3 +96,15 @@ test('isi yang lebih lama punya jalan menuju ke sana, dan penyegaran tidak membu
   assert.match(channelPage, /initialTotal=\{posts\.meta\.total\}/);
   assert.match(css, /\.chatMuatLama\{/);
 });
+
+test('sematan punya tombolnya, dan tetap terlihat saat percakapan digulung', () => {
+  assert.match(channel, /PATCH\('\/api\/v1\/community\/posts\/\{postId\}\/pin'/);
+  assert.match(channel, /canPin: post\.canPin, isPinned: post\.isPinned/);
+  assert.match(channel, /Lepas sematan/);
+  // Diambil terpisah: sematan yang hanya ikut halaman percakapan akan tergulung
+  // hilang bersama pesannya, dan menyematkan jadi tidak ada gunanya.
+  assert.match(channel, /\/api\/v1\/community\/channels\/\{slug\}\/pinned/);
+  assert.match(css, /\.chatPinned\{[^}]*position:sticky/);
+  // Bilahnya melekat di dalam linimasa, jadi grid tiga baris channel tidak berubah.
+  assert.match(css, /\.channelChat\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/);
+});

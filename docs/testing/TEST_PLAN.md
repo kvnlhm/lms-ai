@@ -293,3 +293,7 @@ Production release memerlukan:
   tetap terjangkau lewat endpoint balasan.
 - Penyegaran berkala menggabungkan pesan baru dengan pesan lama yang sudah
   ditarik pengguna, alih-alih membuangnya.
+- Pelajar ditolak menyematkan, termasuk tulisannya sendiri, dan menerima
+  `canPin: false`; Master diizinkan dan tindakannya tercatat di audit log.
+- Tulisan tersemat naik ke atas pada feed, tetapi percakapan channel tetap
+  kronologis dan sematannya terbaca dari daftar tersendiri.

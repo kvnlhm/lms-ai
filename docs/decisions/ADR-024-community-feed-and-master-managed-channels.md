@@ -49,6 +49,12 @@ modul lain.
   channel menjawab "apa yang terjadi, berurutan" sehingga memakai `created_at`
   menurun dengan `id` sebagai pemutus seri. Memakai `last_activity_at` di
   percakapan membuat pesan lama melompat ke posisi terbaru saat dibalas.
+- Menyematkan adalah kewenangan moderasi, terpisah dari menyunting dan
+  menghapus, dan berlaku juga atas tulisan sendiri. Sematan sebuah channel
+  diambil lewat daftar tersendiri, bukan ikut halaman percakapan: yang layak
+  disematkan justru pesan yang sudah lama lewat dari layar, sehingga ikut
+  halaman berarti ikut tergulung hilang. Bilahnya melekat di puncak linimasa
+  yang tergulung, bukan menjadi baris grid tersendiri.
 - Pratinjau balasan pada daftar tulisan membawa enam yang **terakhir**, dan
   seluruh balasan dapat diambil dari endpoint tersendiri. Sebelumnya pratinjau
   membawa enam yang pertama tanpa jalan ke sisanya, sehingga percakapan yang

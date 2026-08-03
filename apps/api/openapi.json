@@ -9778,6 +9778,62 @@
         ]
       }
     },
+    "/api/v1/community/channels/{slug}/pinned": {
+      "get": {
+        "operationId": "CommunityController_pinned",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommunityPostDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Tulisan tersemat pada sebuah channel",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/v1/community/posts/{postId}": {
       "patch": {
         "operationId": "CommunityController_updatePost",
@@ -9915,6 +9971,99 @@
           }
         },
         "summary": "Menghapus tulisan sendiri, atau tulisan siapa pun bagi moderator",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/posts/{postId}/pin": {
+      "patch": {
+        "operationId": "CommunityController_setPinned",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCommunityPinnedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityPostDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menyematkan tulisan atau melepas sematannya",
         "tags": [
           "community"
         ]
@@ -17158,6 +17307,10 @@
             "type": "boolean",
             "description": "Penulisnya sendiri, atau pemegang izin moderasi."
           },
+          "canPin": {
+            "type": "boolean",
+            "description": "Hanya pemegang izin moderasi; menyematkan bukan hak penulis."
+          },
           "author": {
             "$ref": "#/components/schemas/CommunityPersonDto"
           },
@@ -17183,6 +17336,7 @@
           "lastActivityAt",
           "canEdit",
           "canDelete",
+          "canPin",
           "author",
           "channel",
           "comments"
@@ -17197,6 +17351,17 @@
         },
         "required": [
           "body"
+        ]
+      },
+      "SetCommunityPinnedDto": {
+        "type": "object",
+        "properties": {
+          "isPinned": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isPinned"
         ]
       },
       "CommunityReactionResultDto": {

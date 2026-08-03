@@ -199,6 +199,99 @@ describe('Community channels', () => {
     });
   });
 
+  describe('menyematkan', () => {
+    it('hanya Master yang dapat menyematkan, dan sematannya menaikkan tulisan pada feed', async () => {
+      if (!h) throw new Error('Harness belum siap.');
+      const master = await login(h.server, MASTER.email, MASTER.password);
+      const channel = await request(h.server)
+        .post(`${prefix}/admin/community/channels`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .send({ name: `Sematan E2E ${Date.now()}` })
+        .expect(201);
+      const channelId = channel.body.data.id as string;
+      const slug = channel.body.data.slug as string;
+      channelIds.push(channelId);
+
+      const student = await login(h.server, STUDENT.email, STUDENT.password);
+      const lama = await request(h.server)
+        .post(`${prefix}/community/channels/${channelId}/posts`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ body: 'Tulisan lama yang layak disematkan.' })
+        .expect(201);
+      const lamaId = lama.body.data.id as string;
+      expect(lama.body.data.isPinned).toBe(false);
+      // Penulisnya sendiri pun tidak berhak menyematkan tulisannya.
+      expect(lama.body.data.canPin).toBe(false);
+
+      await request(h.server)
+        .post(`${prefix}/community/channels/${channelId}/posts`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ body: 'Tulisan yang lebih baru.' })
+        .expect(201);
+
+      await request(h.server)
+        .patch(`${prefix}/community/posts/${lamaId}/pin`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ isPinned: true })
+        .expect(403);
+
+      const disematkan = await request(h.server)
+        .patch(`${prefix}/community/posts/${lamaId}/pin`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .send({ isPinned: true })
+        .expect(200);
+      expect(disematkan.body.data.isPinned).toBe(true);
+      expect(disematkan.body.data.canPin).toBe(true);
+
+      // Feed mengurutkan tersemat lebih dulu, sehingga tulisan yang lebih tua
+      // kini berada di atas yang lebih baru.
+      const feed = await request(h.server)
+        .get(`${prefix}/community/feed?page=1&pageSize=5`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(feed.body.data[0].id).toBe(lamaId);
+
+      // Percakapan channel tetap kronologis; sematannya hidup di daftar
+      // tersendiri supaya tidak ikut tergulung hilang.
+      const percakapan = await request(h.server)
+        .get(`${prefix}/community/channels/${slug}/posts`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(percakapan.body.data[0].body).toBe('Tulisan yang lebih baru.');
+
+      const tersemat = await request(h.server)
+        .get(`${prefix}/community/channels/${slug}/pinned`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(tersemat.body.data.map((item: { id: string }) => item.id)).toEqual([lamaId]);
+
+      // Menyematkan ucapan orang lain adalah keputusan editorial atas apa yang
+      // dilihat semua orang, jadi jejaknya dicatat.
+      const jejak = await h.prisma.auditLog.findFirst({
+        where: { action: 'community.post.pin', targetId: lamaId },
+        select: { id: true },
+      });
+      expect(jejak).not.toBeNull();
+
+      await request(h.server)
+        .patch(`${prefix}/community/posts/${lamaId}/pin`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .send({ isPinned: false })
+        .expect(200);
+      const sesudah = await request(h.server)
+        .get(`${prefix}/community/channels/${slug}/pinned`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(sesudah.body.data).toEqual([]);
+    });
+  });
+
   describe('menyunting dan menghapus', () => {
     /** Channel bebas tulis beserta satu tulisan pelajar di dalamnya. */
     async function tulisanPelajar(h: Harness) {

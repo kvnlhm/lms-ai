@@ -2283,6 +2283,9 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
   menulis.
 - Master dapat menghapus post dan balasan siapa pun, tetapi tidak dapat
   mengubah isinya. Setiap penghapusan tulisan orang lain tercatat di audit log.
+- Master dapat menyematkan post. Post tersemat naik ke atas pada feed, dan pada
+  halaman channel tampil sebagai bilah yang tetap terlihat saat percakapan
+  digulung. Pelajar tidak dapat menyematkan, termasuk tulisannya sendiri.
 - Identitas penulis selalu berasal dari session server.
 - Form pengelolaan Master menyediakan perubahan nama, slug, keterangan,
   urutan, serta pilihan siapa yang dapat mengirim pesan.

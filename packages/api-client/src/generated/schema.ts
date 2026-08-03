@@ -1954,6 +1954,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/community/channels/{slug}/pinned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tulisan tersemat pada sebuah channel */
+        get: operations["CommunityController_pinned"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/community/posts/{postId}": {
         parameters: {
             query?: never;
@@ -1970,6 +1987,23 @@ export interface paths {
         head?: never;
         /** Mengubah tulisan sendiri */
         patch: operations["CommunityController_updatePost"];
+        trace?: never;
+    };
+    "/api/v1/community/posts/{postId}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Menyematkan tulisan atau melepas sematannya */
+        patch: operations["CommunityController_setPinned"];
         trace?: never;
     };
     "/api/v1/community/comments/{commentId}": {
@@ -4006,12 +4040,17 @@ export interface components {
             canEdit: boolean;
             /** @description Penulisnya sendiri, atau pemegang izin moderasi. */
             canDelete: boolean;
+            /** @description Hanya pemegang izin moderasi; menyematkan bukan hak penulis. */
+            canPin: boolean;
             author: components["schemas"]["CommunityPersonDto"];
             channel: components["schemas"]["CommunityPostChannelDto"];
             comments: components["schemas"]["CommunityCommentDto"][];
         };
         CommunityPostBodyDto: {
             body: string;
+        };
+        SetCommunityPinnedDto: {
+            isPinned: boolean;
         };
         CommunityReactionResultDto: {
             reacted: boolean;
@@ -10509,6 +10548,38 @@ export interface operations {
             };
         };
     };
+    CommunityController_pinned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunityPostDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     CommunityController_deletePost: {
         parameters: {
             query?: never;
@@ -10558,6 +10629,66 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CommunityPostBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunityPostDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_setPinned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCommunityPinnedDto"];
             };
         };
         responses: {

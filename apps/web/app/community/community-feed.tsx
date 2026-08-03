@@ -17,7 +17,7 @@ export type CommunityComment = {
 export type CommunityPost = {
   id: string; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
   reactedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
-  canEdit: boolean; canDelete: boolean;
+  canEdit: boolean; canDelete: boolean; canPin: boolean;
   channel: Pick<CommunityChannel, 'id' | 'slug' | 'name' | 'isReadOnly'>;
   comments: CommunityComment[];
 };
@@ -29,6 +29,7 @@ type AksiPesan = {
   hapusPost: (post: CommunityPost) => void;
   suntingKomentar: (comment: CommunityComment) => void;
   hapusKomentar: (comment: CommunityComment) => void;
+  sematkan: (post: CommunityPost) => void;
   /** Bacaan, bukan tindakan; ikut dibawa agar kedua mode menghitungnya sama. */
   balasan: (post: CommunityPost) => CommunityComment[];
   sisaBalasan: (post: CommunityPost) => number;
@@ -75,6 +76,9 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
   const [total, setTotal] = useState(initialTotal ?? initialPosts.length);
   const [halaman, setHalaman] = useState(1);
   const [memuatLama, setMemuatLama] = useState(false);
+  // Tulisan tersemat diambil terpisah: yang berguna disematkan justru pesan
+  // yang sudah lama lewat dari layar, dan itu tidak ada di halaman percakapan.
+  const [tersemat, setTersemat] = useState<CommunityPost[]>([]);
   const [komentarPenuh, setKomentarPenuh] = useState<Record<string, { items: CommunityComment[]; total: number; page: number }>>({});
   const [memuatKomentar, setMemuatKomentar] = useState<string | null>(null);
   const [channelId, setChannelId] = useState(() => channels.find((item) => item.slug === activeSlug)?.id ?? channels.find((item) => !item.isReadOnly)?.id ?? channels[0]?.id ?? '');
@@ -85,6 +89,25 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
   const refreshing = useRef(false);
   const selected = useMemo(() => channels.find((item) => item.id === channelId), [channels, channelId]);
   const canPost = selected && (!selected.isReadOnly || canModerate);
+
+  useEffect(() => {
+    if (!activeSlug) return;
+    let dibuang = false;
+    void (async () => {
+      try {
+        const items = unwrap<CommunityPost[]>(
+          await browserClient().GET('/api/v1/community/channels/{slug}/pinned', {
+            params: { path: { slug: activeSlug } },
+          }),
+        );
+        if (!dibuang) setTersemat(items);
+      } catch {
+        // Bilah sematan bukan isi utama; kegagalannya tidak boleh menghalangi
+        // percakapan yang sudah tampil.
+      }
+    })();
+    return () => { dibuang = true; };
+  }, [activeSlug]);
 
   useEffect(() => {
     if (!activeSlug) return;
@@ -251,6 +274,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
       try {
         unwrap(await browserClient().DELETE('/api/v1/community/posts/{postId}', { params: { path: { postId: post.id } } }));
         setPosts((current) => current.filter((item) => item.id !== post.id));
+        setTersemat((current) => current.filter((item) => item.id !== post.id));
         setTotal((current) => Math.max(0, current - 1));
       } catch (error) {
         void notifier.error('Tulisan gagal dihapus', { text: error instanceof Error ? error.message : undefined });
@@ -314,6 +338,31 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
     })();
   }
 
+  /**
+   * Menyematkan tulisan, atau melepasnya.
+   *
+   * Melepas sematan tidak dikonfirmasi: ia tidak menghilangkan apa pun, dan
+   * dapat dikembalikan dengan satu tekan yang sama.
+   */
+  function sematkan(post: CommunityPost) {
+    void (async () => {
+      try {
+        const hasil = unwrap<CommunityPost>(
+          await browserClient().PATCH('/api/v1/community/posts/{postId}/pin', {
+            params: { path: { postId: post.id } }, body: { isPinned: !post.isPinned },
+          }),
+        );
+        gantiPost(post.id, (lama) => ({ ...lama, isPinned: hasil.isPinned }));
+        setTersemat((current) => (hasil.isPinned
+          ? [hasil, ...current.filter((item) => item.id !== post.id)]
+          : current.filter((item) => item.id !== post.id)));
+        notifier.success(hasil.isPinned ? 'Tulisan disematkan.' : 'Sematan dilepas.');
+      } catch (error) {
+        void notifier.error('Sematan tidak tersimpan', { text: error instanceof Error ? error.message : undefined });
+      }
+    })();
+  }
+
   /** Balasan yang tampil: daftar penuh bila sudah dibuka, jika tidak pratinjaunya. */
   function balasan(post: CommunityPost): CommunityComment[] {
     return komentarPenuh[post.id]?.items ?? post.comments;
@@ -328,7 +377,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
   }
 
   const aksi: AksiPesan = {
-    react, suntingPost, hapusPost, suntingKomentar, hapusKomentar,
+    react, suntingPost, hapusPost, suntingKomentar, hapusKomentar, sematkan,
     balasan, sisaBalasan, muatKomentar, memuatKomentar,
   };
 
@@ -344,6 +393,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
       message={message}
       publish={publish}
       aksi={aksi}
+      tersemat={tersemat}
       adaYangLebihLama={posts.length < total}
       memuatLama={memuatLama}
       muatLebihLama={muatLebihLama}
@@ -366,7 +416,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
             <article className="communityPost card" key={post.id}>
               <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.slug}`}>#{post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
               <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
-              <div className="postActions"><button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button><span>◯ {post.commentCount} balasan</span><PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} /></div>
+              <div className="postActions"><button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button><span>◯ {post.commentCount} balasan</span><PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
               <MuatBalasan post={post} aksi={aksi} />
               {balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}
               <div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div>
@@ -387,7 +437,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
   );
 }
 
-function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, pending, message, publish, aksi, adaYangLebihLama, memuatLama, muatLebihLama }: {
+function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, pending, message, publish, aksi, tersemat, adaYangLebihLama, memuatLama, muatLebihLama }: {
   posts: CommunityPost[];
   selected?: CommunityChannel;
   currentUserId?: string;
@@ -398,6 +448,7 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
   message: string;
   publish: () => void;
   aksi: AksiPesan;
+  tersemat: CommunityPost[];
   adaYangLebihLama: boolean;
   memuatLama: boolean;
   muatLebihLama: () => void;
@@ -412,7 +463,28 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
         <span className="liveBadge"><i /> Diperbarui otomatis</span>
       </header>
 
+
       <div className="chatTimeline" aria-live="polite" aria-relevant="additions">
+        {/* Melekat di puncak linimasa, bukan menjadi baris grid tersendiri:
+            sematan harus tetap terlihat sambil percakapan digulung. Kalau ia
+            ikut tergulung, menyematkan tidak ada gunanya — yang justru layak
+            disematkan adalah pesan yang sudah lama lewat dari layar. */}
+        {tersemat.length > 0 ? (
+          <aside className="chatPinned" aria-label="Pesan tersemat">
+            <span className="chatPinnedLabel">Disematkan</span>
+            <ul>
+              {tersemat.map((post) => (
+                <li key={post.id}>
+                  <strong>{post.author.id === currentUserId ? 'Kamu' : post.author.fullName}</strong>
+                  <span>{post.body}</span>
+                  {post.canPin ? (
+                    <button type="button" onClick={() => aksi.sematkan(post)}>Lepas</button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </aside>
+        ) : null}
         {/* Di puncak, karena di sanalah percakapan yang lebih tua berada. */}
         {adaYangLebihLama ? (
           <div className="chatMuatLama">
@@ -427,11 +499,11 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
           return <div className={mine ? 'chatMessage mine' : 'chatMessage'} key={post.id}>
             {!mine ? <Avatar person={post.author} /> : null}
             <div className="chatMessageContent">
-              <div className="chatMeta"><strong>{mine ? 'Kamu' : post.author.fullName}</strong><time dateTime={post.createdAt}>{formatDate(post.createdAt)}</time></div>
+              <div className="chatMeta"><strong>{mine ? 'Kamu' : post.author.fullName}</strong><time dateTime={post.createdAt}>{formatDate(post.createdAt)}</time>{post.isPinned ? <span className="chatPinnedMark">Disematkan</span> : null}</div>
               <div className="chatBubble"><p>{post.body}<Diedit at={post.editedAt} /></p></div>
               <div className="chatMessageActions">
                 <button type="button" className={post.reactedByMe ? 'chatReaction reacted' : 'chatReaction'} onClick={() => aksi.react(post.id)} aria-label={`Beri reaksi pada pesan ${post.author.fullName}`}>♡ {post.reactionCount || ''}</button>
-                <PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => aksi.suntingPost(post)} onDelete={() => aksi.hapusPost(post)} />
+                <PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => aksi.suntingPost(post)} onDelete={() => aksi.hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => aksi.sematkan(post) }} />
               </div>
               <MuatBalasan post={post} aksi={aksi} />
               {aksi.balasan(post).map((comment) => <div className={comment.author.id === currentUserId ? 'chatReply mine' : 'chatReply'} key={comment.id}>
@@ -492,13 +564,20 @@ function MuatBalasan({ post, aksi }: { post: CommunityPost; aksi: AksiPesan }) {
   );
 }
 
-/** Sunting dan hapus, hanya sejauh yang diizinkan server pada tulisan ini. */
-function PesanAksi({ canEdit, canDelete, onEdit, onDelete }: {
+/** Sunting, sematkan, dan hapus — hanya sejauh yang diizinkan server. */
+function PesanAksi({ canEdit, canDelete, onEdit, onDelete, pin }: {
   canEdit: boolean; canDelete: boolean; onEdit: () => void; onDelete: () => void;
+  /** Hanya ada pada tulisan, tidak pada balasan. */
+  pin?: { canPin: boolean; isPinned: boolean; onPin: () => void };
 }) {
-  if (!canEdit && !canDelete) return null;
+  if (!canEdit && !canDelete && !pin?.canPin) return null;
   return <span className="messageActions">
     {canEdit ? <button type="button" onClick={onEdit}>Sunting</button> : null}
+    {pin?.canPin ? (
+      <button type="button" aria-pressed={pin.isPinned} onClick={pin.onPin}>
+        {pin.isPinned ? 'Lepas sematan' : 'Sematkan'}
+      </button>
+    ) : null}
     {canDelete ? <button type="button" className="messageDanger" onClick={onDelete}>Hapus</button> : null}
   </span>;
 }

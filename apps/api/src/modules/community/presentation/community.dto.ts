@@ -80,9 +80,15 @@ export class CommunityPostDto {
   @ApiProperty() lastActivityAt!: Date;
   @ApiProperty({ description: 'Hanya penulisnya sendiri.' }) canEdit!: boolean;
   @ApiProperty({ description: 'Penulisnya sendiri, atau pemegang izin moderasi.' }) canDelete!: boolean;
+  @ApiProperty({ description: 'Hanya pemegang izin moderasi; menyematkan bukan hak penulis.' })
+  canPin!: boolean;
   @ApiProperty({ type: CommunityPersonDto }) author!: CommunityPersonDto;
   @ApiProperty({ type: CommunityPostChannelDto }) channel!: CommunityPostChannelDto;
   @ApiProperty({ type: [CommunityCommentDto] }) comments!: CommunityCommentDto[];
+}
+
+export class SetCommunityPinnedDto {
+  @ApiProperty() @IsBoolean() isPinned!: boolean;
 }
 
 export class CommunityReactionResultDto {

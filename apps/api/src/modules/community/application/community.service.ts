@@ -60,6 +60,11 @@ export class CommunityService {
     return { canEdit: authorId === userId, canDelete: authorId === userId || canModerate };
   }
 
+  /** Kewenangan yang hanya ada pada tulisan, bukan pada balasan. */
+  private hakTulisan(authorId: string, userId: string, canModerate: boolean) {
+    return { ...this.hak(authorId, userId, canModerate), canPin: canModerate };
+  }
+
   private sajikanPost<T extends { author: { id: string }; comments: { author: { id: string } }[]; reactions: unknown[] }>(
     row: T,
     userId: string,
@@ -70,7 +75,7 @@ export class CommunityService {
       ...post,
       reactedByMe: reactions.length > 0,
       comments: comments.map((comment) => ({ ...comment, ...this.hak(comment.author.id, userId, canModerate) })),
-      ...this.hak(row.author.id, userId, canModerate),
+      ...this.hakTulisan(row.author.id, userId, canModerate),
     };
   }
 
@@ -165,7 +170,7 @@ export class CommunityService {
    * dapat berubah diam-diam setelah dibaca orang lebih buruk daripada
    * percakapan yang tidak dapat diubah sama sekali.
    */
-  async updatePost(userId: string, postId: string, body: string) {
+  async updatePost(userId: string, postId: string, body: string, canModerate: boolean) {
     const post = await this.prisma.communityPost.findFirst({
       where: { id: postId, deletedAt: null, channel: { archivedAt: null } },
       select: { id: true, authorId: true },
@@ -178,8 +183,7 @@ export class CommunityService {
       data: { body: body.trim(), editedAt: new Date() },
       select: this.postSelect(userId),
     });
-    // Penulisnya sendiri; kewenangan moderasi tidak menambah apa pun di sini.
-    return this.sajikanPost(row, userId, false);
+    return this.sajikanPost(row, userId, canModerate);
   }
 
   /**
@@ -210,6 +214,64 @@ export class CommunityService {
         before: { authorId: post.authorId, channelId: post.channelId, body: post.body },
       });
     }
+  }
+
+  /**
+   * Menyematkan tulisan, atau melepas sematannya.
+   *
+   * Kolomnya sudah ada sejak awal dan ikut menentukan urutan feed, tetapi tidak
+   * pernah ada cara menyalakannya — jadi "Disematkan" adalah lencana yang tidak
+   * mungkin muncul. Kewenangannya moderasi, bukan kepemilikan: menyematkan
+   * berarti memutuskan apa yang dilihat semua orang lebih dulu, dan itu bukan
+   * hak penulis atas tulisannya sendiri.
+   */
+  async setPinned(userId: string, postId: string, isPinned: boolean) {
+    const post = await this.prisma.communityPost.findFirst({
+      where: { id: postId, deletedAt: null, channel: { archivedAt: null } },
+      select: { id: true, isPinned: true, channelId: true },
+    });
+    if (!post) throw AppError.notFound();
+
+    // Sudah pada keadaan yang diminta: jangan mengarang entri audit untuk
+    // tindakan yang tidak mengubah apa pun.
+    if (post.isPinned === isPinned) {
+      const row = await this.prisma.communityPost.findUniqueOrThrow({
+        where: { id: postId }, select: this.postSelect(userId),
+      });
+      return this.sajikanPost(row, userId, true);
+    }
+
+    const row = await this.prisma.communityPost.update({
+      where: { id: postId }, data: { isPinned }, select: this.postSelect(userId),
+    });
+    await this.audit.record({
+      actorUserId: userId,
+      action: isPinned ? 'community.post.pin' : 'community.post.unpin',
+      targetType: 'CommunityPost',
+      targetId: postId,
+      before: { isPinned: post.isPinned, channelId: post.channelId },
+      after: { isPinned },
+    });
+    return this.sajikanPost(row, userId, true);
+  }
+
+  /**
+   * Tulisan tersemat pada sebuah channel.
+   *
+   * Diambil terpisah karena sematan justru berguna pada pesan yang sudah lama
+   * lewat dari layar — kalau hanya diambil bersama halaman percakapan, ia ikut
+   * tergulung hilang dan sematannya tidak ada gunanya.
+   */
+  async listPinned(userId: string, channelSlug: string, canModerate: boolean) {
+    const rows = await this.prisma.communityPost.findMany({
+      where: { deletedAt: null, isPinned: true, channel: { archivedAt: null, slug: channelSlug } },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      // Sematan yang terlalu banyak berhenti menjadi penanda. Batasnya keras
+      // supaya bilah sematan tidak pernah menelan percakapannya.
+      take: 10,
+      select: this.postSelect(userId),
+    });
+    return rows.map((row) => this.sajikanPost(row, userId, canModerate));
   }
 
   async updateComment(userId: string, commentId: string, body: string) {

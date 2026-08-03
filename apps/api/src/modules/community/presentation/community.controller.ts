@@ -4,9 +4,9 @@ import { PERMISSIONS } from '@lms/contracts';
 import { ApiEnvelope, ApiEnvelopeArray, ApiEnvelopeList, ApiErrors } from '../../../shared/http/api-envelope';
 import { Paginated } from '../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../identity/domain/session';
-import { CurrentUser } from '../../identity/presentation/decorators';
+import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { CommunityService } from '../application/community.service';
-import { CommunityChannelDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto } from './community.dto';
+import { CommunityChannelDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityPinnedDto } from './community.dto';
 
 /** Pemegang izin moderasi diskusi; dipakai berulang di controller ini. */
 function moderator(user: AuthenticatedUser): boolean {
@@ -40,9 +40,24 @@ export class CommunityController {
     return this.community.createPost(user.id, channelId, dto.body, moderator(user));
   }
 
+  @Get('channels/:slug/pinned') @ApiOperation({ summary: 'Tulisan tersemat pada sebuah channel' }) @ApiEnvelopeArray(CommunityPostDto) @ApiErrors(401)
+  pinned(@Param('slug') slug: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.listPinned(user.id, slug, moderator(user));
+  }
+
   @Patch('posts/:postId') @ApiOperation({ summary: 'Mengubah tulisan sendiri' }) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)
   updatePost(@Param('postId', new ParseUUIDPipe()) postId: string, @Body() dto: CommunityPostBodyDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.community.updatePost(user.id, postId, dto.body);
+    return this.community.updatePost(user.id, postId, dto.body, moderator(user));
+  }
+
+  // Menyematkan adalah tindakan moderasi, jadi izinnya ditegakkan di sini —
+  // bukan disimpulkan dari `canPin` yang dikirim ke antarmuka.
+  @Patch('posts/:postId/pin')
+  @RequirePermissions(PERMISSIONS.DISCUSSIONS_MODERATE)
+  @ApiOperation({ summary: 'Menyematkan tulisan atau melepas sematannya' })
+  @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)
+  setPinned(@Param('postId', new ParseUUIDPipe()) postId: string, @Body() dto: SetCommunityPinnedDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.setPinned(user.id, postId, dto.isPinned);
   }
 
   @Delete('posts/:postId') @HttpCode(204) @ApiOperation({ summary: 'Menghapus tulisan sendiri, atau tulisan siapa pun bagi moderator' }) @ApiErrors(401, 403, 404)

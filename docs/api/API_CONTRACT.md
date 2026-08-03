@@ -2421,6 +2421,16 @@ memerlukan sesi aktif.
   terlihat; response tetap menjadi snapshot server dan tidak menjanjikan
   realtime delivery. Halaman berikutnya berisi pesan yang lebih lama, dan
   `meta.total` memberi tahu apakah masih ada.
+- `PATCH /community/posts/{postId}/pin` — menyematkan tulisan atau melepasnya,
+  dengan body `{ "isPinned": boolean }`. Menuntut `discussions.moderate`, juga
+  atas tulisan sendiri: menyematkan memutuskan apa yang dilihat semua orang
+  lebih dulu, dan itu bukan hak penulis atas tulisannya. Tercatat di audit log
+  (`community.post.pin`, `community.post.unpin`), dan permintaan yang tidak
+  mengubah keadaan tidak menghasilkan entri.
+- `GET /community/channels/{slug}/pinned` — tulisan tersemat sebuah channel,
+  paling banyak sepuluh. Terpisah dari halaman percakapan karena yang layak
+  disematkan justru pesan yang sudah lama lewat dari layar; ikut halaman berarti
+  ikut tergulung hilang.
 - `GET /community/posts/{postId}/comments` — seluruh balasan sebuah tulisan,
   berhalaman menaik. Daftar tulisan hanya membawa enam balasan **terakhir**
   sebagai pratinjau, sehingga sisanya harus diambil dari sini.
@@ -2444,5 +2454,7 @@ memerlukan sesi aktif.
 
 Semua author ID berasal dari session. Client tidak boleh mengirim identitas,
 jumlah komentar, jumlah reaksi, status pin, atau permission. Sebaliknya, setiap
-post dan komentar membawa `canEdit` dan `canDelete` yang dihitung server, agar
-antarmuka tidak perlu menebak kewenangan dari perbandingan ID sendiri.
+post dan komentar membawa `canEdit` dan `canDelete` yang dihitung server —
+ditambah `canPin` pada tulisan — agar antarmuka tidak perlu menebak kewenangan
+dari perbandingan ID sendiri. Nilai-nilai itu menentukan tombol apa yang
+digambar, bukan apa yang diizinkan: penegakannya tetap di endpoint.
