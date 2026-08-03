@@ -297,20 +297,28 @@ input, select, textarea { min-width: 0; }
 }
 .moduleBar h3 { flex: 1; margin: 0; font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
 .moduleCount { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.lessonList { border: 1px solid var(--line); border-top: 0; border-radius: 0 0 var(--r-md) var(--r-md); overflow: hidden; }
+.lessonList {
+  margin: 0; padding: 0; list-style: none;
+  border: 1px solid var(--line); border-top: 0;
+  border-radius: 0 0 var(--r-md) var(--r-md); overflow: hidden;
+}
 .lessonRow {
   display: flex; align-items: center; gap: 13px; width: 100%;
   padding: 13px 18px; text-align: left;
   background: var(--surface); border-top: 1px solid var(--line-soft);
   font-size: 14.5px;
 }
-.lessonRow:first-child { border-top: 0; }
+.lessonList li:first-child .lessonRow { border-top: 0; }
 .lessonRow:hover { background: var(--raised); }
 .lessonName { flex: 1; }
-.lessonMeta { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lessonMeta {
+  display: flex; align-items: center; gap: 9px; flex: none;
+  font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums;
+}
 .dot {
   width: 17px; height: 17px; flex: none; border-radius: var(--r-pill);
   border: 2px solid var(--muted); background: var(--surface);
+  display: grid; place-items: center;
 }
 .dotDone { background: var(--good); border-color: var(--good); }
 .dotCurrent { border-color: var(--accent); box-shadow: inset 0 0 0 3px var(--accent); }
@@ -2692,3 +2700,32 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .catalogSearch .catalogSelect { flex: 1 1 140px; }
 }
 .courseCategory { margin-top: 4px; }
+
+/* ── Detail kursus sisi pelajar ─────────────────────────────── */
+.courseDetailTitle { margin-top: 8px; }
+.courseFacts {
+  display: flex; flex-wrap: wrap; gap: 4px 10px; margin: 12px 0 0;
+  font-size: 13px; color: var(--muted);
+}
+.courseFacts span + span::before { content: '·'; margin-right: 10px; color: var(--line); }
+.courseAbout { margin-bottom: 26px; }
+.courseAboutTitle { margin: 0 0 10px; }
+/* Berasal dari textarea biasa: jeda barisnya dijaga, isinya tetap teks. */
+.courseAboutBody { margin: 0; white-space: pre-line; color: var(--text-2); }
+.courseProgressHeading { margin-top: 26px; }
+.courseContentSub { margin-top: -8px; margin-bottom: 16px; }
+.moduleDesc {
+  margin: 0; padding: 11px 18px; font-size: 13px; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--line); border-bottom: 0;
+}
+.lessonBadge {
+  margin-left: 8px; padding: 2px 7px; border-radius: var(--r-pill);
+  background: var(--raised-2); color: var(--muted);
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+}
+.lessonDone { color: var(--good); font-weight: 600; }
+
+@media (max-width: 680px) {
+  .lessonRow { flex-wrap: wrap; }
+  .lessonMeta { width: 100%; padding-left: 30px; }
+}
