@@ -37,6 +37,7 @@ import {
   ForumReportListItemDto,
   ForumReportResolvedDto,
   ModerationTopicListItemDto,
+  ModerationTopicThreadDto,
   ReplyHiddenDto,
   TopicBestReplyDto,
   TopicPinnedDto,
@@ -64,6 +65,14 @@ export class ForumAdminController {
       pageSize,
     });
     return new Paginated(topics, page, pageSize, total);
+  }
+
+  @Get('admin/forum/topics/:topicId')
+  @ApiOperation({ summary: 'Isi satu diskusi beserta balasan yang disembunyikan' })
+  @ApiEnvelope(ModerationTopicThreadDto)
+  @ApiErrors(401, 403, 404)
+  topicThread(@Param('topicId', new ParseUUIDPipe()) topicId: string) {
+    return this.moderation.topicThread(topicId);
   }
 
   @Patch('admin/forum/topics/:topicId/status')

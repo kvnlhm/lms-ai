@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
 import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, unwrap, unwrapList } from '../../lib/browser-api';
@@ -8,9 +9,11 @@ import { ApiError, browserClient, unwrap, unwrapList } from '../../lib/browser-a
 /**
  * Bentuknya datang dari OpenAPI.
  *
- * Deklarasi sebelumnya mengklaim `author.email` dan `reporter.email`, padahal
- * `authorSelect` di server hanya mengirim id, nama, dan foto. Cast buta membuat
- * TypeScript menerima klaim itu tanpa pernah memeriksanya.
+ * Sisi moderasi kini memakai `ModerationAuthorDto`, bukan `ForumAuthorDto`.
+ * Keduanya sempat disamakan padahal `authorSelect` di `ForumModerationService`
+ * mengirim surel dan tidak mengirim foto — kebalikan dari yang dilihat sesama
+ * pelajar. Akibatnya halaman ini merender `author.avatarUrl` yang tidak pernah
+ * ada, sementara surelnya tidak pernah terlihat.
  */
 type ModerationTopic = Schemas['ModerationTopicListItemDto'];
 type Report = Schemas['ForumReportListItemDto'];
@@ -238,16 +241,13 @@ export function ForumModeration() {
                 <div className="masterForumCardHead">
                   <div className="masterForumIdentity">
                     <span className="masterForumAvatar" aria-hidden="true">
-                      {topic.author.avatarUrl ? (
-                        <img src={topic.author.avatarUrl} alt="" />
-                      ) : (
-                        initials(topic.author.fullName)
-                      )}
+                      {initials(topic.author.fullName)}
                     </span>
                     <div>
                       <strong>{topic.title}</strong>
                       <small>
-                        {topic.author.fullName} · {formatDate(topic.lastActivityAt)}
+                        {topic.author.fullName} · {topic.author.email} ·{' '}
+                        {formatDate(topic.lastActivityAt)}
                       </small>
                     </div>
                   </div>
@@ -271,6 +271,12 @@ export function ForumModeration() {
                   </div>
                 ) : null}
                 <div className="inlineActions masterForumActions">
+                  {/* Daftar ini hanya menyebut judul. Membaca isinya — dan
+                      karenanya menjawab, menandai jawaban terbaik, atau
+                      menghapus balasan — menuntut halaman tersendiri. */}
+                  <Link className="btnTiny" href={`/master/forum/${topic.id}`}>
+                    Buka diskusi
+                  </Link>
                   {topic.status !== 'HIDDEN' ? (
                     <button
                       className="btnTiny"
@@ -448,6 +454,7 @@ export function ForumModeration() {
                   <div>
                     <strong>{ban.user.fullName}</strong>
                     <small className="muted">
+                      {ban.user.email} ·{' '}
                       {ban.course ? ban.course.title : 'Seluruh forum'} · dicabut{' '}
                       {ban.issuer.fullName} · {formatDate(ban.createdAt)}
                       {ban.expiresAt ? ` · sampai ${formatDate(ban.expiresAt)}` : ' · sampai dicabut'}

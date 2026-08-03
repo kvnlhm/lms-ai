@@ -73,6 +73,60 @@ export class ForumModerationService {
     return { total, topics };
   }
 
+  /**
+   * Satu diskusi utuh dari mata Master.
+   *
+   * `ForumService.topicDetail` tidak dapat dipakai di sini karena menuntut
+   * enrollment aktif dan menyaring apa pun yang disembunyikan — dua hal yang
+   * justru terbalik untuk moderasi. Akibatnya Master sebelumnya tidak punya
+   * satu pun jalan membaca isi diskusi: daftar moderasi hanya menyebut judul,
+   * sementara kewenangan menjawab, menandai jawaban terbaik, dan menghapus
+   * balasan menuntut ia melihat balasannya lebih dulu.
+   *
+   * Balasan yang disembunyikan ikut dikirim beserta alasannya, sebab tanpa itu
+   * menampilkannya kembali menjadi mustahil.
+   */
+  async topicThread(topicId: string) {
+    const topic = await this.prisma.forumTopic.findFirst({
+      where: { id: topicId, deletedAt: null },
+      select: {
+        id: true,
+        courseId: true,
+        title: true,
+        body: true,
+        status: true,
+        isPinned: true,
+        bestReplyId: true,
+        replyCount: true,
+        moderationReason: true,
+        moderatedAt: true,
+        lastActivityAt: true,
+        createdAt: true,
+        author: { select: authorSelect },
+        course: { select: { id: true, title: true } },
+        _count: { select: { reports: true, reactions: true } },
+      },
+    });
+    if (!topic) throw AppError.notFound();
+
+    const replies = await this.prisma.forumReply.findMany({
+      where: { topicId, deletedAt: null },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        body: true,
+        isHidden: true,
+        moderationReason: true,
+        createdAt: true,
+        updatedAt: true,
+        author: { select: authorSelect },
+        _count: { select: { reports: true, reactions: true } },
+      },
+    });
+
+    return { ...topic, replies };
+  }
+
   async setTopicStatus(
     topicId: string,
     status: ForumTopicStatus,
@@ -103,7 +157,11 @@ export class ForumModerationService {
 
   /** Menandai jawaban terbaik, atau membatalkannya dengan `replyId` null. */
   async setBestReply(topicId: string, replyId: string | null) {
-    await this.assertTopicExists(topicId);
+    const topic = await this.prisma.forumTopic.findFirst({
+      where: { id: topicId, deletedAt: null },
+      select: { status: true },
+    });
+    if (!topic) throw AppError.notFound();
     if (replyId) {
       const belongs = await this.prisma.forumReply.count({
         where: { id: replyId, topicId, deletedAt: null, isHidden: false },
@@ -116,8 +174,16 @@ export class ForumModerationService {
       where: { id: topicId },
       data: {
         bestReplyId: replyId,
-        // Menandai jawaban terbaik berarti pertanyaannya sudah terjawab.
-        status: replyId ? ForumTopicStatus.RESOLVED : undefined,
+        // Menandai jawaban terbaik berarti pertanyaannya sudah terjawab —
+        // dan membatalkannya berarti sebaliknya. Tanpa langkah kedua, topik
+        // yang penandanya dilepas tetap tercatat selesai tanpa satu pun
+        // jawaban yang ditunjuk. Kunci dan penyembunyian tidak ikut batal:
+        // keduanya keputusan moderasi tersendiri.
+        status: replyId
+          ? ForumTopicStatus.RESOLVED
+          : topic.status === ForumTopicStatus.RESOLVED
+            ? ForumTopicStatus.OPEN
+            : undefined,
       },
       select: { id: true, bestReplyId: true, status: true, courseId: true, title: true },
     });
@@ -142,10 +208,10 @@ export class ForumModerationService {
   async setReplyHidden(replyId: string, isHidden: boolean, moderatorId: string, reason?: string) {
     const reply = await this.prisma.forumReply.findFirst({
       where: { id: replyId, deletedAt: null },
-      select: { id: true },
+      select: { id: true, bestForTopic: { select: { id: true } } },
     });
     if (!reply) throw AppError.notFound();
-    return this.prisma.forumReply.update({
+    const hidden = await this.prisma.forumReply.update({
       where: { id: replyId },
       data: {
         isHidden,
@@ -155,6 +221,12 @@ export class ForumModerationService {
       },
       select: { id: true, isHidden: true, moderationReason: true },
     });
+    // Menyembunyikan jawaban terbaik meninggalkan penanda yang menunjuk ke
+    // sesuatu yang tidak lagi dikirim ke pelajar: lencana "jawaban terbaik"
+    // hilang dari halamannya, tetapi topiknya tetap berstatus selesai seolah
+    // pertanyaannya masih terjawab.
+    if (isHidden && reply.bestForTopic) await this.setBestReply(reply.bestForTopic.id, null);
+    return hidden;
   }
 
   async deleteTopic(topicId: string): Promise<void> {
@@ -168,7 +240,7 @@ export class ForumModerationService {
   async deleteReply(replyId: string): Promise<void> {
     const reply = await this.prisma.forumReply.findFirst({
       where: { id: replyId, deletedAt: null },
-      select: { id: true, topicId: true },
+      select: { id: true, topicId: true, bestForTopic: { select: { id: true } } },
     });
     if (!reply) throw AppError.notFound();
     await this.prisma.$transaction([
@@ -178,13 +250,17 @@ export class ForumModerationService {
         data: { replyCount: { decrement: 1 } },
       }),
     ]);
+    // Balasan yang dihapus hanya ditandai, sehingga kunci asingnya tidak ikut
+    // dikosongkan database. Tanpa langkah ini topiknya tetap menunjuk balasan
+    // yang tidak pernah dikirim lagi.
+    if (reply.bestForTopic) await this.setBestReply(reply.bestForTopic.id, null);
   }
 
   /** Master ikut menjawab. Tidak lewat jalur pelajar karena tanpa enrollment. */
   async reply(topicId: string, moderatorId: string, body: string) {
     const topic = await this.prisma.forumTopic.findFirst({
       where: { id: topicId, deletedAt: null },
-      select: { id: true },
+      select: { id: true, title: true, authorId: true, courseId: true },
     });
     if (!topic) throw AppError.notFound();
     const [reply] = await this.prisma.$transaction([
@@ -197,6 +273,18 @@ export class ForumModerationService {
         data: { replyCount: { increment: 1 }, lastActivityAt: new Date() },
       }),
     ]);
+
+    // Jalur pelajar memberitahu penulis topik; jalur ini tidak. Justru jawaban
+    // Master-lah yang paling ditunggu, dan tanpa pemberitahuan pelajar hanya
+    // menemukannya bila kebetulan membuka kembali diskusinya sendiri.
+    if (topic.authorId !== moderatorId) {
+      await this.notifications.notify([topic.authorId], {
+        type: 'FORUM_REPLY',
+        title: 'Master menjawab diskusimu',
+        body: topic.title,
+        linkUrl: `/learn/${topic.courseId}/forum/${topic.id}`,
+      });
+    }
     return reply;
   }
 

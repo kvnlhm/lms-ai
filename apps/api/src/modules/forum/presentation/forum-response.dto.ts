@@ -132,11 +132,71 @@ export class ForumCourseRefDto {
   @ApiProperty() title!: string;
 }
 
+/**
+ * Penulis dari mata Master.
+ *
+ * Sengaja berbeda dari `ForumAuthorDto`: `authorSelect` di
+ * `ForumModerationService` mengirim surel dan tidak mengirim foto, kebalikan
+ * dari yang dilihat sesama pelajar. Selama keduanya memakai satu kelas, sisi
+ * web merender `author.avatarUrl` yang tidak pernah ada — cabang yang mustahil
+ * menyala — sementara surelnya, satu-satunya cara membedakan dua pelajar
+ * bernama sama sebelum mencabut haknya, tidak pernah terlihat.
+ */
+export class ModerationAuthorDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() fullName!: string;
+  @ApiProperty({ format: 'email' }) email!: string;
+}
+
 // Harus berada di atas pemakainya: dekorator dievaluasi saat kelas
 // didefinisikan, jadi rujukan ke kelas yang belum dideklarasikan akan melempar
 // ReferenceError saat modul dimuat — bukan saat endpointnya dipanggil.
 export class ForumReportCountDto {
   @ApiProperty() reports!: number;
+}
+
+export class ModerationCountDto {
+  @ApiProperty() reports!: number;
+  @ApiProperty() reactions!: number;
+}
+
+export class ModerationReplyDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() body!: string;
+  @ApiProperty({ description: 'Benar bila balasan ini tidak terlihat pelajar.' })
+  isHidden!: boolean;
+  @ApiPropertyOptional({ type: String, nullable: true }) moderationReason!: string | null;
+  @ApiProperty({ format: 'date-time' }) createdAt!: Date;
+  @ApiProperty({ format: 'date-time' }) updatedAt!: Date;
+  @ApiProperty({ type: ModerationAuthorDto }) author!: ModerationAuthorDto;
+  @ApiProperty({ type: ModerationCountDto }) _count!: ModerationCountDto;
+}
+
+/**
+ * Isi utuh satu diskusi, termasuk balasan yang disembunyikan.
+ *
+ * Pelajar mendapat `ForumTopicDetailDto` yang menyaringnya; Master justru
+ * membutuhkannya untuk dapat menampilkannya kembali.
+ */
+export class ModerationTopicThreadDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'uuid' }) courseId!: string;
+  @ApiProperty() title!: string;
+  @ApiProperty() body!: string;
+  @ApiProperty({ enum: ForumTopicStatus }) status!: ForumTopicStatus;
+  @ApiProperty() isPinned!: boolean;
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'uuid' })
+  bestReplyId!: string | null;
+  @ApiProperty() replyCount!: number;
+  @ApiPropertyOptional({ type: String, nullable: true }) moderationReason!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'date-time' })
+  moderatedAt!: Date | null;
+  @ApiProperty({ format: 'date-time' }) lastActivityAt!: Date;
+  @ApiProperty({ format: 'date-time' }) createdAt!: Date;
+  @ApiProperty({ type: ModerationAuthorDto }) author!: ModerationAuthorDto;
+  @ApiProperty({ type: ForumCourseRefDto }) course!: ForumCourseRefDto;
+  @ApiProperty({ type: ModerationCountDto }) _count!: ModerationCountDto;
+  @ApiProperty({ type: [ModerationReplyDto] }) replies!: ModerationReplyDto[];
 }
 
 export class ModerationTopicListItemDto {
@@ -148,7 +208,7 @@ export class ModerationTopicListItemDto {
   @ApiProperty({ format: 'date-time' }) lastActivityAt!: Date;
   @ApiProperty({ format: 'date-time' }) createdAt!: Date;
   @ApiPropertyOptional({ type: String, nullable: true }) moderationReason!: string | null;
-  @ApiProperty({ type: ForumAuthorDto }) author!: ForumAuthorDto;
+  @ApiProperty({ type: ModerationAuthorDto }) author!: ModerationAuthorDto;
   @ApiProperty({ type: ForumCourseRefDto }) course!: ForumCourseRefDto;
   @ApiProperty({ type: ForumReportCountDto }) _count!: ForumReportCountDto;
 }
@@ -197,7 +257,7 @@ export class ForumReportListItemDto {
   @ApiProperty() reason!: string;
   @ApiProperty({ enum: ForumReportStatus }) status!: ForumReportStatus;
   @ApiProperty({ format: 'date-time' }) createdAt!: Date;
-  @ApiProperty({ type: ForumAuthorDto }) reporter!: ForumAuthorDto;
+  @ApiProperty({ type: ModerationAuthorDto }) reporter!: ModerationAuthorDto;
   @ApiPropertyOptional({ type: ForumTopicRefDto, nullable: true })
   topic!: ForumTopicRefDto | null;
   @ApiPropertyOptional({ type: ReportedReplyDto, nullable: true })
@@ -219,8 +279,8 @@ export class ForumBanDto {
   @ApiPropertyOptional({ type: String, nullable: true, format: 'date-time' })
   revokedAt!: Date | null;
   @ApiProperty({ format: 'date-time' }) createdAt!: Date;
-  @ApiProperty({ type: ForumAuthorDto }) user!: ForumAuthorDto;
-  @ApiProperty({ type: ForumAuthorDto }) issuer!: ForumAuthorDto;
+  @ApiProperty({ type: ModerationAuthorDto }) user!: ModerationAuthorDto;
+  @ApiProperty({ type: ModerationAuthorDto }) issuer!: ModerationAuthorDto;
   @ApiPropertyOptional({ type: ForumCourseRefDto, nullable: true })
   course!: ForumCourseRefDto | null;
 }

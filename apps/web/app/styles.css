@@ -1721,6 +1721,10 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .forumSectionHead .sectionTitle { margin: 4px 0 0; }
 .forumReplyCard { padding: 22px !important; gap: 18px !important; }
 .forumReplyCard.cardAccent { border-left: 3px solid var(--accent); }
+/* Hanya sisi Master yang melihat balasan tersembunyi; isinya diredupkan supaya
+   terbaca sebagai yang tidak sampai ke pelajar, bukan bagian percakapannya. */
+.forumReplyHidden { border-style: dashed; }
+.forumReplyHidden .forumBody { color: var(--muted); }
 .forumReplyComposer { margin-top: 10px; }
 .forumComposerTitle { margin: 4px 0 0; font-size: 19px; }
 .forumReplyField { margin: 0; }

@@ -1404,6 +1404,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/forum/topics/{topicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Isi satu diskusi beserta balasan yang disembunyikan */
+        get: operations["ForumAdminController_topicThread"];
+        put?: never;
+        post?: never;
+        /** Menghapus topik */
+        delete: operations["ForumAdminController_deleteTopic"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/forum/topics/{topicId}/status": {
         parameters: {
             query?: never;
@@ -1487,23 +1505,6 @@ export interface paths {
         head?: never;
         /** Menyembunyikan atau menampilkan balasan */
         patch: operations["ForumAdminController_setReplyHidden"];
-        trace?: never;
-    };
-    "/api/v1/admin/forum/topics/{topicId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Menghapus topik */
-        delete: operations["ForumAdminController_deleteTopic"];
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/forum/replies/{replyId}": {
@@ -3358,6 +3359,13 @@ export interface components {
             replyId?: string;
             reason: string;
         };
+        ModerationAuthorDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            /** Format: email */
+            email: string;
+        };
         ForumCourseRefDto: {
             /** Format: uuid */
             id: string;
@@ -3379,9 +3387,52 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             moderationReason?: string | null;
-            author: components["schemas"]["ForumAuthorDto"];
+            author: components["schemas"]["ModerationAuthorDto"];
             course: components["schemas"]["ForumCourseRefDto"];
             _count: components["schemas"]["ForumReportCountDto"];
+        };
+        ModerationCountDto: {
+            reports: number;
+            reactions: number;
+        };
+        ModerationReplyDto: {
+            /** Format: uuid */
+            id: string;
+            body: string;
+            /** @description Benar bila balasan ini tidak terlihat pelajar. */
+            isHidden: boolean;
+            moderationReason?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            author: components["schemas"]["ModerationAuthorDto"];
+            _count: components["schemas"]["ModerationCountDto"];
+        };
+        ModerationTopicThreadDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            courseId: string;
+            title: string;
+            body: string;
+            /** @enum {string} */
+            status: "OPEN" | "RESOLVED" | "LOCKED" | "HIDDEN";
+            isPinned: boolean;
+            /** Format: uuid */
+            bestReplyId?: string | null;
+            replyCount: number;
+            moderationReason?: string | null;
+            /** Format: date-time */
+            moderatedAt?: string | null;
+            /** Format: date-time */
+            lastActivityAt: string;
+            /** Format: date-time */
+            createdAt: string;
+            author: components["schemas"]["ModerationAuthorDto"];
+            course: components["schemas"]["ForumCourseRefDto"];
+            _count: components["schemas"]["ModerationCountDto"];
+            replies: components["schemas"]["ModerationReplyDto"][];
         };
         TopicStatusChangedDto: {
             /** Format: uuid */
@@ -3449,7 +3500,7 @@ export interface components {
             status: "PENDING" | "ACTIONED" | "DISMISSED";
             /** Format: date-time */
             createdAt: string;
-            reporter: components["schemas"]["ForumAuthorDto"];
+            reporter: components["schemas"]["ModerationAuthorDto"];
             topic?: components["schemas"]["ForumTopicRefDto"] | null;
             reply?: components["schemas"]["ReportedReplyDto"] | null;
         };
@@ -3475,8 +3526,8 @@ export interface components {
             revokedAt?: string | null;
             /** Format: date-time */
             createdAt: string;
-            user: components["schemas"]["ForumAuthorDto"];
-            issuer: components["schemas"]["ForumAuthorDto"];
+            user: components["schemas"]["ModerationAuthorDto"];
+            issuer: components["schemas"]["ModerationAuthorDto"];
             course?: components["schemas"]["ForumCourseRefDto"] | null;
         };
         ForumBanCreatedDto: {
@@ -8454,6 +8505,91 @@ export interface operations {
             };
         };
     };
+    ForumAdminController_topicThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModerationTopicThreadDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    ForumAdminController_deleteTopic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     ForumAdminController_setStatus: {
         parameters: {
             query?: never;
@@ -8745,43 +8881,6 @@ export interface operations {
                 };
             };
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    ForumAdminController_deleteTopic: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                topicId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };

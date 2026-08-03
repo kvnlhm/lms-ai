@@ -7229,6 +7229,128 @@
         ]
       }
     },
+    "/api/v1/admin/forum/topics/{topicId}": {
+      "get": {
+        "operationId": "ForumAdminController_topicThread",
+        "parameters": [
+          {
+            "name": "topicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ModerationTopicThreadDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Isi satu diskusi beserta balasan yang disembunyikan",
+        "tags": [
+          "forum-moderation"
+        ]
+      },
+      "delete": {
+        "operationId": "ForumAdminController_deleteTopic",
+        "parameters": [
+          {
+            "name": "topicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus topik",
+        "tags": [
+          "forum-moderation"
+        ]
+      }
+    },
     "/api/v1/admin/forum/topics/{topicId}/status": {
       "patch": {
         "operationId": "ForumAdminController_setStatus",
@@ -7689,57 +7811,6 @@
           }
         },
         "summary": "Menyembunyikan atau menampilkan balasan",
-        "tags": [
-          "forum-moderation"
-        ]
-      }
-    },
-    "/api/v1/admin/forum/topics/{topicId}": {
-      "delete": {
-        "operationId": "ForumAdminController_deleteTopic",
-        "parameters": [
-          {
-            "name": "topicId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Menghapus topik",
         "tags": [
           "forum-moderation"
         ]
@@ -14432,6 +14503,27 @@
           "reason"
         ]
       },
+      "ModerationAuthorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          }
+        },
+        "required": [
+          "id",
+          "fullName",
+          "email"
+        ]
+      },
       "ForumCourseRefDto": {
         "type": "object",
         "properties": {
@@ -14497,7 +14589,7 @@
             "nullable": true
           },
           "author": {
-            "$ref": "#/components/schemas/ForumAuthorDto"
+            "$ref": "#/components/schemas/ModerationAuthorDto"
           },
           "course": {
             "$ref": "#/components/schemas/ForumCourseRefDto"
@@ -14517,6 +14609,150 @@
           "author",
           "course",
           "_count"
+        ]
+      },
+      "ModerationCountDto": {
+        "type": "object",
+        "properties": {
+          "reports": {
+            "type": "number"
+          },
+          "reactions": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "reports",
+          "reactions"
+        ]
+      },
+      "ModerationReplyDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "body": {
+            "type": "string"
+          },
+          "isHidden": {
+            "type": "boolean",
+            "description": "Benar bila balasan ini tidak terlihat pelajar."
+          },
+          "moderationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/ModerationAuthorDto"
+          },
+          "_count": {
+            "$ref": "#/components/schemas/ModerationCountDto"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "isHidden",
+          "createdAt",
+          "updatedAt",
+          "author",
+          "_count"
+        ]
+      },
+      "ModerationTopicThreadDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "courseId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "LOCKED",
+              "HIDDEN"
+            ]
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "bestReplyId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "replyCount": {
+            "type": "number"
+          },
+          "moderationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "moderatedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/ModerationAuthorDto"
+          },
+          "course": {
+            "$ref": "#/components/schemas/ForumCourseRefDto"
+          },
+          "_count": {
+            "$ref": "#/components/schemas/ModerationCountDto"
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModerationReplyDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "courseId",
+          "title",
+          "body",
+          "status",
+          "isPinned",
+          "replyCount",
+          "lastActivityAt",
+          "createdAt",
+          "author",
+          "course",
+          "_count",
+          "replies"
         ]
       },
       "TopicStatusChangedDto": {
@@ -14740,7 +14976,7 @@
             "type": "string"
           },
           "reporter": {
-            "$ref": "#/components/schemas/ForumAuthorDto"
+            "$ref": "#/components/schemas/ModerationAuthorDto"
           },
           "topic": {
             "nullable": true,
@@ -14833,10 +15069,10 @@
             "type": "string"
           },
           "user": {
-            "$ref": "#/components/schemas/ForumAuthorDto"
+            "$ref": "#/components/schemas/ModerationAuthorDto"
           },
           "issuer": {
-            "$ref": "#/components/schemas/ForumAuthorDto"
+            "$ref": "#/components/schemas/ModerationAuthorDto"
           },
           "course": {
             "nullable": true,
