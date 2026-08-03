@@ -108,3 +108,16 @@ test('sematan punya tombolnya, dan tetap terlihat saat percakapan digulung', () 
   // Bilahnya melekat di dalam linimasa, jadi grid tiga baris channel tidak berubah.
   assert.match(css, /\.channelChat\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/);
 });
+
+test('arsip channel punya jalan pulang, dan tidak lagi terjadi tanpa ditanya', () => {
+  // Dulu satu tekan langsung menyembunyikan seluruh isi channel, tanpa
+  // konfirmasi dan tanpa cara mengembalikannya.
+  assert.match(channelManager, /notifier\.confirm\(`Arsipkan #\$\{channel\.name\}\?`/);
+  assert.match(channelManager, /POST\('\/api\/v1\/admin\/community\/channels\/\{id\}\/restore'/);
+  assert.match(channelManager, /Pulihkan/);
+  // Channel yang diarsipkan tetap ada di daftar, sebab kalau ia dibuang dari
+  // state, tombol pulihnya ikut hilang sampai halaman dimuat ulang.
+  assert.match(channelManager, /archivedAt: new Date\(\)\.toISOString\(\)/);
+  assert.match(channelManager, /const arsip = channels\.filter\(\(item\) => item\.archivedAt\)/);
+  assert.match(css, /\.channelArchive\{/);
+});

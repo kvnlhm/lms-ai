@@ -35,7 +35,10 @@ modul lain.
 - Slug dinormalisasi server dan unik di database.
 - Reaction memakai primary key gabungan agar toggle idempoten secara state.
 - Penghapusan konten memakai soft delete; pengarsipan channel mempertahankan
-  histori.
+  histori — dan sejak ada endpoint pemulihan, pengarsipan benar-benar dapat
+  dibatalkan alih-alih hanya menyimpan barisnya di database. Daftar admin
+  sengaja menyertakan channel terarsip, sebab antarmuka yang menyaringnya
+  keluar membuat histori itu tidak dapat dijangkau siapa pun.
 - Menyunting dan menghapus adalah dua kewenangan berbeda. Menyunting hanya
   milik penulisnya, bahkan terhadap pemegang `discussions.moderate`, karena
   moderasi berarti kuasa menghapus yang tidak pantas dan bukan kuasa menulis

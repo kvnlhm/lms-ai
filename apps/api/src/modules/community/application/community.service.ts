@@ -352,9 +352,55 @@ export class CommunityService {
     return { ...channel, postCount };
   }
 
-  async archiveChannel(id: string) {
-    const exists = await this.prisma.communityChannel.findUnique({ where: { id } });
-    if (!exists) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
+  /**
+   * Mengarsipkan channel: menyembunyikannya beserta seluruh isinya.
+   *
+   * Isinya tidak dihapus, hanya tersaring dari setiap pertanyaan. Karena satu
+   * tekan tombol dapat melenyapkan seluruh percakapan sebuah ruang dari mata
+   * semua orang, tindakannya dicatat — dan `restoreChannel` adalah jalan
+   * pulangnya.
+   */
+  async archiveChannel(userId: string, id: string) {
+    const channel = await this.prisma.communityChannel.findUnique({
+      where: { id }, select: { id: true, name: true, slug: true, archivedAt: true },
+    });
+    if (!channel) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
+    if (channel.archivedAt) return;
+
     await this.prisma.communityChannel.update({ where: { id }, data: { archivedAt: new Date() } });
+    await this.audit.record({
+      actorUserId: userId,
+      action: 'community.channel.archive',
+      targetType: 'CommunityChannel',
+      targetId: id,
+      before: { name: channel.name, slug: channel.slug },
+    });
+  }
+
+  /**
+   * Mengembalikan channel yang diarsipkan, beserta seluruh isinya.
+   *
+   * Slug-nya tidak pernah dilepas selama diarsipkan — kolomnya unik global —
+   * sehingga tidak ada channel lain yang sempat merebutnya dan pemulihan ini
+   * tidak dapat bertabrakan.
+   */
+  async restoreChannel(userId: string, id: string) {
+    const channel = await this.prisma.communityChannel.findUnique({ where: { id } });
+    if (!channel) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
+
+    const [dipulihkan, postCount] = await this.prisma.$transaction([
+      this.prisma.communityChannel.update({ where: { id }, data: { archivedAt: null } }),
+      this.prisma.communityPost.count({ where: { channelId: id, deletedAt: null } }),
+    ]);
+    if (channel.archivedAt) {
+      await this.audit.record({
+        actorUserId: userId,
+        action: 'community.channel.restore',
+        targetType: 'CommunityChannel',
+        targetId: id,
+        before: { archivedAt: channel.archivedAt },
+      });
+    }
+    return { ...dipulihkan, postCount };
   }
 }

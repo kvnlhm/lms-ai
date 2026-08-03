@@ -297,3 +297,8 @@ Production release memerlukan:
   `canPin: false`; Master diizinkan dan tindakannya tercatat di audit log.
 - Tulisan tersemat naik ke atas pada feed, tetapi percakapan channel tetap
   kronologis dan sematannya terbaca dari daftar tersendiri.
+- Channel yang diarsipkan hilang dari daftar channel, feed, dan percakapan bagi
+  Pelajar, tetapi tetap terlihat Master beserta jumlah post yang tersimpan.
+- Pelajar ditolak memulihkan channel; Master dapat memulihkannya dan seluruh
+  post di dalamnya kembali terbaca.
+- Mengarsipkan dan memulihkan masing-masing meninggalkan satu entri audit.

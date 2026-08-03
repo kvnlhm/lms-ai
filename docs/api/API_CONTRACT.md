@@ -2450,7 +2450,15 @@ memerlukan sesi aktif.
 - `GET|POST|PATCH|DELETE /admin/community/channels` — pengelolaan channel oleh
   Master dengan `discussions.moderate`; PATCH menerima perubahan nama, slug,
   deskripsi, posisi, dan `isReadOnly`, sedangkan DELETE mengarsipkan, bukan
-  menghapus isi.
+  menghapus isi. `GET` sengaja menyertakan channel terarsip beserta
+  `archivedAt` dan `postCount`-nya, karena di sanalah jalan pulangnya.
+- `POST /admin/community/channels/{id}/restore` — mengembalikan channel yang
+  diarsipkan beserta seluruh postnya. Slug tidak pernah dilepas selama
+  diarsipkan (kolomnya unik global), sehingga pemulihan tidak dapat
+  bertabrakan dengan channel lain. Mengarsipkan dan memulihkan sama-sama
+  tercatat di audit log (`community.channel.archive`,
+  `community.channel.restore`); permintaan yang tidak mengubah keadaan tidak
+  menghasilkan entri.
 
 Semua author ID berasal dari session. Client tidak boleh mengirim identitas,
 jumlah komentar, jumlah reaksi, status pin, atau permission. Sebaliknya, setiap

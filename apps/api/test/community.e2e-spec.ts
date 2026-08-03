@@ -199,6 +199,89 @@ describe('Community channels', () => {
     });
   });
 
+  describe('mengarsipkan dan memulihkan channel', () => {
+    it('arsip menyembunyikan isinya, dan memulihkan mengembalikan seluruhnya', async () => {
+      if (!h) throw new Error('Harness belum siap.');
+      const master = await login(h.server, MASTER.email, MASTER.password);
+      const channel = await request(h.server)
+        .post(`${prefix}/admin/community/channels`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .send({ name: `Arsip Pulih E2E ${Date.now()}` })
+        .expect(201);
+      const channelId = channel.body.data.id as string;
+      const slug = channel.body.data.slug as string;
+      channelIds.push(channelId);
+
+      const student = await login(h.server, STUDENT.email, STUDENT.password);
+      const post = await request(h.server)
+        .post(`${prefix}/community/channels/${channelId}/posts`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ body: 'Percakapan yang tidak boleh hilang selamanya.' })
+        .expect(201);
+      const postId = post.body.data.id as string;
+
+      await request(h.server)
+        .delete(`${prefix}/admin/community/channels/${channelId}`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .expect(204);
+
+      // Tersembunyi dari mana pun: daftar channel, feed, dan percakapannya.
+      const daftar = await request(h.server)
+        .get(`${prefix}/community/channels`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(daftar.body.data.map((item: { slug: string }) => item.slug)).not.toContain(slug);
+
+      const feed = await request(h.server)
+        .get(`${prefix}/community/feed?page=1&pageSize=50`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(feed.body.data.map((item: { id: string }) => item.id)).not.toContain(postId);
+
+      // Tetapi Master masih melihatnya, sebab di sanalah jalan pulangnya.
+      const adminDaftar = await request(h.server)
+        .get(`${prefix}/admin/community/channels`)
+        .set('Cookie', master.cookie)
+        .expect(200);
+      const terarsip = adminDaftar.body.data.find((item: { id: string }) => item.id === channelId);
+      expect(terarsip.archivedAt).not.toBeNull();
+      expect(terarsip.postCount).toBe(1);
+
+      await request(h.server)
+        .post(`${prefix}/admin/community/channels/${channelId}/restore`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .expect(403);
+
+      const dipulihkan = await request(h.server)
+        .post(`${prefix}/admin/community/channels/${channelId}/restore`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .expect(201);
+      expect(dipulihkan.body.data.archivedAt).toBeNull();
+      expect(dipulihkan.body.data.postCount).toBe(1);
+
+      // Isinya kembali utuh, bukan sekadar channelnya yang muncul lagi.
+      const sesudah = await request(h.server)
+        .get(`${prefix}/community/channels/${slug}/posts`)
+        .set('Cookie', student.cookie)
+        .expect(200);
+      expect(sesudah.body.data.map((item: { id: string }) => item.id)).toContain(postId);
+
+      const jejak = await h.prisma.auditLog.findMany({
+        where: { targetId: channelId, action: { startsWith: 'community.channel.' } },
+        select: { action: true },
+      });
+      expect(jejak.map((item) => item.action).sort()).toEqual([
+        'community.channel.archive',
+        'community.channel.restore',
+      ]);
+    });
+  });
+
   describe('menyematkan', () => {
     it('hanya Master yang dapat menyematkan, dan sematannya menaikkan tulisan pada feed', async () => {
       if (!h) throw new Error('Harness belum siap.');

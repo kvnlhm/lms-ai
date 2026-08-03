@@ -47,7 +47,7 @@ Role bukan satu-satunya kontrol. Backend tetap memeriksa resource ownership, enr
 | Process payment webhook | Provider only | No | Valid signature + provider status verification |
 | Read community feed/channels | Yes | Yes | Active authenticated session |
 | Post/comment/react in community channel | Yes | Yes | Active session; read-only channel needs `discussions.moderate` |
-| Create/update/archive community channel | Yes | No | `discussions.moderate` |
+| Create/update/archive/restore community channel | Yes | No | `discussions.moderate`; arsip dan pemulihan tercatat di audit log |
 | Edit own community post/comment | Yes | Yes | Author only; `discussions.moderate` tidak memberi hak ini |
 | Delete community post/comment | Yes | Yes | Author, atau `discussions.moderate` atas tulisan siapa pun (tercatat di audit log) |
 | Pin/unpin community post | Yes | No | `discussions.moderate`, termasuk atas tulisan sendiri (tercatat di audit log) |
@@ -78,7 +78,10 @@ Channel komunitas tidak bergantung pada enrollment kursus. Semua akun aktif
 yang sudah login boleh membaca feed. Hanya server yang menentukan author dari
 session. Channel `isReadOnly` hanya dapat ditulis pemegang
 `discussions.moderate`, dan hanya permission yang sama dapat membuat, mengubah,
-atau mengarsipkan channel.
+mengarsipkan, atau memulihkan channel. Mengarsipkan menyembunyikan channel
+beserta seluruh isinya dari semua orang tanpa menghapusnya; karena itu daftar
+admin tetap menampilkan channel terarsip, dan pemulihannya tersedia sebagai
+endpoint tersendiri. Kedua tindakan itu tercatat di audit log.
 
 Menyunting dan menghapus dipisahkan dengan sengaja. Menyunting hanya milik
 penulisnya — pemegang `discussions.moderate` pun ditolak, karena kuasa moderasi

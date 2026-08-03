@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useNotifier } from '../../components/notifier';
 import { browserClient, unwrap } from '../../lib/browser-api';
 import type { CommunityChannel } from '../../community/community-feed';
 
@@ -18,6 +19,7 @@ function draftOf(channel: ManagedChannel): ChannelDraft {
 }
 
 export function ChannelManager({ initialChannels }: { initialChannels: ManagedChannel[] }) {
+  const notifier = useNotifier();
   const [channels, setChannels] = useState(initialChannels);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -86,18 +88,59 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
     });
   }
 
-  function archive(id: string) {
+  /**
+   * Mengarsipkan channel.
+   *
+   * Dulu satu tekan langsung menyembunyikan seluruh percakapan sebuah ruang
+   * dari mata semua orang, tanpa bertanya dan tanpa jalan pulang. Sekarang ia
+   * bertanya lebih dulu, dan menyebut bahwa isinya dapat dikembalikan.
+   */
+  function archive(channel: ManagedChannel) {
+    void (async () => {
+      const lanjut = await notifier.confirm(`Arsipkan #${channel.name}?`, {
+        text: channel.postCount > 0
+          ? `${channel.postCount} post di dalamnya ikut hilang dari pandangan semua orang. Isinya tidak dihapus dan channel ini dapat dipulihkan dari daftar arsip.`
+          : 'Channel ini hilang dari pandangan semua orang, dan dapat dipulihkan dari daftar arsip.',
+        confirmLabel: 'Arsipkan',
+        danger: true,
+      });
+      if (!lanjut) return;
+      startTransition(async () => {
+        try {
+          await browserClient().DELETE('/api/v1/admin/community/channels/{id}', { params: { path: { id: channel.id } } });
+          // Ditandai terarsip, bukan dibuang dari daftar: kalau ia menghilang
+          // dari state, jalan pulangnya ikut menghilang sampai halaman dimuat ulang.
+          setChannels((current) => current.map((item) => (
+            item.id === channel.id ? { ...item, archivedAt: new Date().toISOString() } : item
+          )));
+          if (editingId === channel.id) cancelEdit();
+          setMessage(`#${channel.name} diarsipkan. Ada di daftar arsip di bawah.`);
+        } catch (error) {
+          setMessage(error instanceof Error ? error.message : 'Channel gagal diarsipkan.');
+        }
+      });
+    })();
+  }
+
+  function restore(channel: ManagedChannel) {
     startTransition(async () => {
       try {
-        await browserClient().DELETE('/api/v1/admin/community/channels/{id}', { params: { path: { id } } });
-        setChannels((current) => current.filter((item) => item.id !== id));
-        if (editingId === id) cancelEdit();
-        setMessage('Channel diarsipkan.');
+        const result = await browserClient().POST('/api/v1/admin/community/channels/{id}/restore', {
+          params: { path: { id: channel.id } },
+        });
+        const dipulihkan = unwrap<ManagedChannel>(result);
+        setChannels((current) => current.map((item) => (
+          item.id === channel.id ? { ...item, ...dipulihkan, archivedAt: null } : item
+        )));
+        setMessage(`#${channel.name} dipulihkan beserta seluruh isinya.`);
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : 'Channel gagal diarsipkan.');
+        setMessage(error instanceof Error ? error.message : 'Channel gagal dipulihkan.');
       }
     });
   }
+
+  const aktif = channels.filter((item) => !item.archivedAt);
+  const arsip = channels.filter((item) => item.archivedAt);
 
   return <div className="channelManager">
     <section className="card channelForm">
@@ -109,9 +152,9 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
     </section>
 
     <section className="channelAdminList">
-      <div className="channelListHeading"><div><span className="eyebrow">RUANG KOMUNITAS</span><h2>Channel aktif</h2></div><span>{channels.filter((item) => !item.archivedAt).length} channel</span></div>
+      <div className="channelListHeading"><div><span className="eyebrow">RUANG KOMUNITAS</span><h2>Channel aktif</h2></div><span>{aktif.length} channel</span></div>
       {message ? <p role="status" className="communityMessage">{message}</p> : null}
-      {channels.filter((item) => !item.archivedAt).map((item) => editingId === item.id && draft ?
+      {aktif.map((item) => editingId === item.id && draft ?
         <article className="card channelEditForm" key={item.id}>
           <div className="channelEditTitle"><span className="channelHash">#</span><div><strong>Edit channel</strong><small>Perubahan langsung berlaku setelah disimpan.</small></div></div>
           <div className="channelEditGrid">
@@ -126,8 +169,24 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
         <article className="card channelAdminItem" key={item.id}>
           <span className="channelHash">#</span>
           <div><strong>{item.name}</strong><small>{item.description ?? 'Tanpa keterangan'}</small><span className="channelAccessBadge">{item.isReadOnly ? 'Hanya Master dapat mengirim' : 'Master dan Pelajar dapat mengirim'} · {item.postCount} post</span></div>
-          <div className="channelAdminActions"><a className="btn secondary" href={`/community/${item.slug}`}>Buka</a><button className="btn secondary" type="button" disabled={pending} onClick={() => beginEdit(item)}>Edit</button><button className="dangerButton" type="button" disabled={pending} onClick={() => archive(item.id)}>Arsipkan</button></div>
+          <div className="channelAdminActions"><a className="btn secondary" href={`/community/${item.slug}`}>Buka</a><button className="btn secondary" type="button" disabled={pending} onClick={() => beginEdit(item)}>Edit</button><button className="dangerButton" type="button" disabled={pending} onClick={() => archive(item)}>Arsipkan</button></div>
         </article>)}
+
+      {/* Daftar arsip. Tanpa ini, channel yang diarsipkan lenyap dari seluruh
+          antarmuka — beserta satu-satunya jalan untuk mengembalikannya. */}
+      {arsip.length > 0 ? (
+        <div className="channelArchive">
+          <div className="channelListHeading"><div><span className="eyebrow">ARSIP</span><h2>Channel terarsip</h2></div><span>{arsip.length} channel</span></div>
+          <p className="communityMuted">Isinya tersembunyi dari semua orang, tetapi tidak dihapus. Memulihkan mengembalikannya beserta seluruh postnya.</p>
+          {arsip.map((item) => (
+            <article className="card channelAdminItem channelArchived" key={item.id}>
+              <span className="channelHash">#</span>
+              <div><strong>{item.name}</strong><small>{item.description ?? 'Tanpa keterangan'}</small><span className="channelAccessBadge">{item.postCount} post tersimpan</span></div>
+              <div className="channelAdminActions"><button className="btn secondary" type="button" disabled={pending} onClick={() => restore(item)}>Pulihkan</button></div>
+            </article>
+          ))}
+        </div>
+      ) : null}
     </section>
   </div>;
 }

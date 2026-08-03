@@ -2281,6 +2281,9 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
   mengurutkan, menjadikan read-only, dan mengarsipkan channel.
 - Channel read-only tetap terlihat semua akun aktif, tetapi hanya Master dapat
   menulis.
+- Mengarsipkan channel menyembunyikan channel beserta seluruh postnya, bukan
+  menghapusnya. Master melihat daftar arsip dan dapat memulihkannya kembali,
+  dan pengarsipan menuntut konfirmasi lebih dulu.
 - Master dapat menghapus post dan balasan siapa pun, tetapi tidak dapat
   mengubah isinya. Setiap penghapusan tulisan orang lain tercatat di audit log.
 - Master dapat menyematkan post. Post tersemat naik ke atas pada feed, dan pada
