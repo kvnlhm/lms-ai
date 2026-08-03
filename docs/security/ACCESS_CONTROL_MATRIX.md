@@ -48,6 +48,8 @@ Role bukan satu-satunya kontrol. Backend tetap memeriksa resource ownership, enr
 | Read community feed/channels | Yes | Yes | Active authenticated session |
 | Post/comment/react in community channel | Yes | Yes | Active session; read-only channel needs `discussions.moderate` |
 | Create/update/archive community channel | Yes | No | `discussions.moderate` |
+| Edit own community post/comment | Yes | Yes | Author only; `discussions.moderate` tidak memberi hak ini |
+| Delete community post/comment | Yes | Yes | Author, atau `discussions.moderate` atas tulisan siapa pun (tercatat di audit log) |
 
 ## Resource Rules
 
@@ -76,6 +78,13 @@ yang sudah login boleh membaca feed. Hanya server yang menentukan author dari
 session. Channel `isReadOnly` hanya dapat ditulis pemegang
 `discussions.moderate`, dan hanya permission yang sama dapat membuat, mengubah,
 atau mengarsipkan channel.
+
+Menyunting dan menghapus dipisahkan dengan sengaja. Menyunting hanya milik
+penulisnya — pemegang `discussions.moderate` pun ditolak, karena kuasa moderasi
+tidak boleh berarti kuasa menaruh kata-kata baru ke dalam mulut orang lain.
+Menghapus terbuka bagi penulisnya dan bagi moderator; penghapusan tulisan orang
+lain selalu meninggalkan entri audit lengkap dengan isi aslinya, supaya
+tindakannya dapat ditinjau kemudian.
 
 ### Quiz
 

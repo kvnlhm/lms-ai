@@ -2368,10 +2368,21 @@ memerlukan sesi aktif.
   menuntut `discussions.moderate`.
 - `POST /community/posts/{postId}/comments` — membalas post.
 - `POST /community/posts/{postId}/reaction` — menyalakan/mematikan reaksi pengguna.
+- `PATCH /community/posts/{postId}` dan `PATCH /community/comments/{commentId}` —
+  mengubah tulisan sendiri. Hanya penulisnya, termasuk terhadap pemegang
+  `discussions.moderate`: kewenangan moderasi adalah kuasa menghapus, bukan
+  kuasa menulis ulang ucapan orang lain. Setiap perubahan mengisi `editedAt`.
+- `DELETE /community/posts/{postId}` dan `DELETE /community/comments/{commentId}` —
+  penghapusan lunak oleh penulisnya, atau oleh pemegang `discussions.moderate`
+  atas tulisan siapa pun. Penghapusan tulisan orang lain dicatat ke audit log
+  (`community.post.delete`, `community.comment.delete`) beserta isi aslinya.
+  Menghapus balasan menghitung ulang `commentCount`, bukan menguranginya.
 - `GET|POST|PATCH|DELETE /admin/community/channels` — pengelolaan channel oleh
   Master dengan `discussions.moderate`; PATCH menerima perubahan nama, slug,
   deskripsi, posisi, dan `isReadOnly`, sedangkan DELETE mengarsipkan, bukan
   menghapus isi.
 
 Semua author ID berasal dari session. Client tidak boleh mengirim identitas,
-jumlah komentar, jumlah reaksi, status pin, atau permission.
+jumlah komentar, jumlah reaksi, status pin, atau permission. Sebaliknya, setiap
+post dan komentar membawa `canEdit` dan `canDelete` yang dihitung server, agar
+antarmuka tidak perlu menebak kewenangan dari perbandingan ID sendiri.

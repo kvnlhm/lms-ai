@@ -2265,6 +2265,8 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
   membuka Beranda, Kursus, Histori, dan halaman Pelajar lainnya.
 - Rail pendamping menampilkan sesi mendatang dan pengumuman terbaru.
 - Pelajar aktif dapat membuat post, komentar, dan reaksi pada channel biasa.
+- Pelajar dapat mengubah dan menghapus tulisannya sendiri. Tulisan yang pernah
+  diubah menampilkan penanda "diedit" kepada semua pembaca.
 - Layout wajib responsif untuk desktop, split-desktop, tablet, dan mobile.
 - Halaman channel memakai pola percakapan: pesan pengguna aktif berada di
   kanan dan pesan pengguna lain di kiri, composer berada di bagian bawah,
@@ -2279,6 +2281,8 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
   mengurutkan, menjadikan read-only, dan mengarsipkan channel.
 - Channel read-only tetap terlihat semua akun aktif, tetapi hanya Master dapat
   menulis.
+- Master dapat menghapus post dan balasan siapa pun, tetapi tidak dapat
+  mengubah isinya. Setiap penghapusan tulisan orang lain tercatat di audit log.
 - Identitas penulis selalu berasal dari session server.
 - Form pengelolaan Master menyediakan perubahan nama, slug, keterangan,
   urutan, serta pilihan siapa yang dapat mengirim pesan.

@@ -36,6 +36,14 @@ modul lain.
 - Reaction memakai primary key gabungan agar toggle idempoten secara state.
 - Penghapusan konten memakai soft delete; pengarsipan channel mempertahankan
   histori.
+- Menyunting dan menghapus adalah dua kewenangan berbeda. Menyunting hanya
+  milik penulisnya, bahkan terhadap pemegang `discussions.moderate`, karena
+  moderasi berarti kuasa menghapus yang tidak pantas dan bukan kuasa menulis
+  ulang ucapan orang lain. Menghapus tulisan orang lain selalu tercatat di
+  audit log beserta isi aslinya.
+- Perubahan tulisan mengisi `edited_at` dan ditampilkan sebagai penanda
+  "diedit"; percakapan yang dapat berubah diam-diam setelah dibaca orang lain
+  lebih buruk daripada percakapan yang tidak dapat diubah sama sekali.
 - HTML tidak diterima; body ditampilkan sebagai teks oleh React.
 
 ## Consequences

@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
+import { AuditService } from '../../../shared/audit/audit.service';
 import { AppError } from '../../../shared/errors/app-error';
 
 const authorSelect = { id: true, fullName: true, avatarUrl: true } as const;
 
 @Injectable()
 export class CommunityService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   listChannels(includeArchived = false) {
     return this.prisma.communityChannel.findMany({
@@ -24,18 +28,43 @@ export class CommunityService {
   private postSelect(userId: string) {
     return {
       id: true, body: true, isPinned: true, commentCount: true, reactionCount: true,
-      lastActivityAt: true, createdAt: true,
+      lastActivityAt: true, editedAt: true, createdAt: true,
       channel: { select: { id: true, slug: true, name: true, isReadOnly: true } },
       author: { select: authorSelect },
       reactions: { where: { userId }, select: { userId: true } },
       comments: {
         where: { deletedAt: null }, orderBy: { createdAt: 'asc' as const }, take: 6,
-        select: { id: true, body: true, createdAt: true, author: { select: authorSelect } },
+        select: { id: true, body: true, editedAt: true, createdAt: true, author: { select: authorSelect } },
       },
     } satisfies Prisma.CommunityPostSelect;
   }
 
-  async listPosts(userId: string, page: number, pageSize: number, channelSlug?: string) {
+  /**
+   * Kewenangan atas satu tulisan, dijawab server alih-alih ditebak antarmuka.
+   *
+   * Menyunting hanya milik penulisnya — termasuk terhadap Master. Kewenangan
+   * moderasi adalah kuasa untuk *menghapus* tulisan yang tidak pantas, bukan
+   * kuasa menaruh kata-kata baru ke dalam mulut orang lain.
+   */
+  private hak(authorId: string, userId: string, canModerate: boolean) {
+    return { canEdit: authorId === userId, canDelete: authorId === userId || canModerate };
+  }
+
+  private sajikanPost<T extends { author: { id: string }; comments: { author: { id: string } }[]; reactions: unknown[] }>(
+    row: T,
+    userId: string,
+    canModerate: boolean,
+  ) {
+    const { reactions, comments, ...post } = row;
+    return {
+      ...post,
+      reactedByMe: reactions.length > 0,
+      comments: comments.map((comment) => ({ ...comment, ...this.hak(comment.author.id, userId, canModerate) })),
+      ...this.hak(row.author.id, userId, canModerate),
+    };
+  }
+
+  async listPosts(userId: string, page: number, pageSize: number, canModerate: boolean, channelSlug?: string) {
     const where: Prisma.CommunityPostWhereInput = {
       deletedAt: null, channel: { archivedAt: null, ...(channelSlug ? { slug: channelSlug } : {}) },
     };
@@ -46,7 +75,7 @@ export class CommunityService {
         skip: (page - 1) * pageSize, take: pageSize, select: this.postSelect(userId),
       }),
     ]);
-    return { total, posts: rows.map(({ reactions, ...post }) => ({ ...post, reactedByMe: reactions.length > 0 })) };
+    return { total, posts: rows.map((row) => this.sajikanPost(row, userId, canModerate)) };
   }
 
   async createPost(userId: string, channelId: string, body: string, canModerate: boolean) {
@@ -56,21 +85,124 @@ export class CommunityService {
     const row = await this.prisma.communityPost.create({
       data: { channelId, authorId: userId, body: body.trim() }, select: this.postSelect(userId),
     });
-    const { reactions, ...post } = row;
-    return { ...post, reactedByMe: reactions.length > 0 };
+    return this.sajikanPost(row, userId, canModerate);
   }
 
   async addComment(userId: string, postId: string, body: string) {
     const post = await this.prisma.communityPost.findFirst({ where: { id: postId, deletedAt: null, channel: { archivedAt: null } } });
     if (!post) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Post tidak ditemukan.');
-    return this.prisma.$transaction(async (tx) => {
-      const comment = await tx.communityComment.create({
+    const comment = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.communityComment.create({
         data: { postId, authorId: userId, body: body.trim() },
-        select: { id: true, body: true, createdAt: true, author: { select: authorSelect } },
+        select: { id: true, body: true, editedAt: true, createdAt: true, author: { select: authorSelect } },
       });
       await tx.communityPost.update({ where: { id: postId }, data: { commentCount: { increment: 1 }, lastActivityAt: new Date() } });
-      return comment;
+      return created;
     });
+    // Penulisnya sendiri, jadi kedua kewenangan pasti menyala; disebut tegas
+    // supaya antarmuka tidak perlu menyimpulkannya sendiri.
+    return { ...comment, canEdit: true, canDelete: true };
+  }
+
+  // ─────────────────────────────────────────────
+  // Menyunting dan menghapus
+  // ─────────────────────────────────────────────
+
+  /**
+   * Mengubah tulisan sendiri.
+   *
+   * `editedAt` diisi supaya jejaknya terlihat pembaca lain. Percakapan yang
+   * dapat berubah diam-diam setelah dibaca orang lebih buruk daripada
+   * percakapan yang tidak dapat diubah sama sekali.
+   */
+  async updatePost(userId: string, postId: string, body: string) {
+    const post = await this.prisma.communityPost.findFirst({
+      where: { id: postId, deletedAt: null, channel: { archivedAt: null } },
+      select: { id: true, authorId: true },
+    });
+    if (!post) throw AppError.notFound();
+    if (post.authorId !== userId) throw AppError.permissionDenied();
+
+    const row = await this.prisma.communityPost.update({
+      where: { id: postId },
+      data: { body: body.trim(), editedAt: new Date() },
+      select: this.postSelect(userId),
+    });
+    // Penulisnya sendiri; kewenangan moderasi tidak menambah apa pun di sini.
+    return this.sajikanPost(row, userId, false);
+  }
+
+  /**
+   * Menghapus tulisan: penulisnya, atau Master atas tulisan siapa pun.
+   *
+   * Penghapusan oleh Master dicatat ke audit lengkap dengan isi aslinya —
+   * kuasa menghapus ucapan orang lain harus meninggalkan jejak yang dapat
+   * ditagih, dan tanpa salinan isinya catatan itu tidak dapat ditinjau.
+   */
+  async deletePost(userId: string, postId: string, canModerate: boolean): Promise<void> {
+    const post = await this.prisma.communityPost.findFirst({
+      where: { id: postId, deletedAt: null, channel: { archivedAt: null } },
+      select: { id: true, authorId: true, body: true, channelId: true },
+    });
+    if (!post) throw AppError.notFound();
+    if (post.authorId !== userId && !canModerate) throw AppError.permissionDenied();
+
+    // Soft delete: balasan orang lain di dalamnya tidak ikut lenyap dari
+    // riwayat, sama seperti penghapusan topik di forum.
+    await this.prisma.communityPost.update({ where: { id: postId }, data: { deletedAt: new Date() } });
+
+    if (post.authorId !== userId) {
+      await this.audit.record({
+        actorUserId: userId,
+        action: 'community.post.delete',
+        targetType: 'CommunityPost',
+        targetId: postId,
+        before: { authorId: post.authorId, channelId: post.channelId, body: post.body },
+      });
+    }
+  }
+
+  async updateComment(userId: string, commentId: string, body: string) {
+    const comment = await this.prisma.communityComment.findFirst({
+      where: { id: commentId, deletedAt: null, post: { deletedAt: null, channel: { archivedAt: null } } },
+      select: { id: true, authorId: true },
+    });
+    if (!comment) throw AppError.notFound();
+    if (comment.authorId !== userId) throw AppError.permissionDenied();
+
+    const row = await this.prisma.communityComment.update({
+      where: { id: commentId },
+      data: { body: body.trim(), editedAt: new Date() },
+      select: { id: true, body: true, editedAt: true, createdAt: true, author: { select: authorSelect } },
+    });
+    return { ...row, canEdit: true, canDelete: true };
+  }
+
+  async deleteComment(userId: string, commentId: string, canModerate: boolean): Promise<void> {
+    const comment = await this.prisma.communityComment.findFirst({
+      where: { id: commentId, deletedAt: null, post: { deletedAt: null, channel: { archivedAt: null } } },
+      select: { id: true, authorId: true, body: true, postId: true },
+    });
+    if (!comment) throw AppError.notFound();
+    if (comment.authorId !== userId && !canModerate) throw AppError.permissionDenied();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.communityComment.update({ where: { id: commentId }, data: { deletedAt: new Date() } });
+      // Dihitung ulang, bukan dikurangi satu: pengurangan buta dapat membawa
+      // penghitungnya ke angka negatif bila pernah melenceng sekali saja.
+      const commentCount = await tx.communityComment.count({ where: { postId: comment.postId, deletedAt: null } });
+      await tx.communityPost.update({ where: { id: comment.postId }, data: { commentCount } });
+    });
+
+    if (comment.authorId !== userId) {
+      await this.audit.record({
+        actorUserId: userId,
+        action: 'community.comment.delete',
+        targetType: 'CommunityComment',
+        targetId: commentId,
+        before: { authorId: comment.authorId, postId: comment.postId, body: comment.body },
+      });
+    }
   }
 
   async toggleReaction(userId: string, postId: string) {

@@ -64,3 +64,19 @@ test('Master dapat mengedit identitas, urutan, dan akses menulis channel', () =>
   assert.match(channelManager, /Master dan Pelajar/);
   assert.match(channelManager, /Hanya Master/);
 });
+
+test('sunting dan hapus pesan bersandar pada kewenangan dari server, bukan tebakan browser', () => {
+  // Kalau tombolnya digantungkan pada perbandingan ID di browser, Master tidak
+  // akan pernah melihat tombol hapus pada tulisan orang lain — dan siapa pun
+  // dapat memunculkan tombolnya kembali lewat devtools.
+  assert.match(channel, /canEdit=\{post\.canEdit\} canDelete=\{post\.canDelete\}/);
+  assert.match(channel, /canEdit=\{item\.canEdit\} canDelete=\{item\.canDelete\}/);
+  assert.match(channel, /canEdit=\{comment\.canEdit\} canDelete=\{comment\.canDelete\}/);
+  assert.match(channel, /PATCH\('\/api\/v1\/community\/posts\/\{postId\}'/);
+  assert.match(channel, /DELETE\('\/api\/v1\/community\/posts\/\{postId\}'/);
+  assert.match(channel, /PATCH\('\/api\/v1\/community\/comments\/\{commentId\}'/);
+  assert.match(channel, /DELETE\('\/api\/v1\/community\/comments\/\{commentId\}'/);
+  // Menghapus tulisan orang lain harus menyebut bahwa tindakannya tercatat.
+  assert.match(channel, /tercatat di audit log/);
+  assert.match(css, /\.editedMark\{/);
+});

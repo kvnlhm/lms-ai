@@ -1937,6 +1937,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/community/posts/{postId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Menghapus tulisan sendiri, atau tulisan siapa pun bagi moderator */
+        delete: operations["CommunityController_deletePost"];
+        options?: never;
+        head?: never;
+        /** Mengubah tulisan sendiri */
+        patch: operations["CommunityController_updatePost"];
+        trace?: never;
+    };
+    "/api/v1/community/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Menghapus balasan sendiri, atau balasan siapa pun bagi moderator */
+        delete: operations["CommunityController_deleteComment"];
+        options?: never;
+        head?: never;
+        /** Mengubah balasan sendiri */
+        patch: operations["CommunityController_updateComment"];
+        trace?: never;
+    };
     "/api/v1/community/posts/{postId}/comments": {
         parameters: {
             query?: never;
@@ -3874,8 +3910,17 @@ export interface components {
         CommunityCommentDto: {
             id: string;
             body: string;
+            /**
+             * Format: date-time
+             * @description Terisi bila tulisannya pernah diubah.
+             */
+            editedAt: string | null;
             /** Format: date-time */
             createdAt: string;
+            /** @description Hanya penulisnya sendiri. */
+            canEdit: boolean;
+            /** @description Penulisnya sendiri, atau pemegang izin moderasi. */
+            canDelete: boolean;
             author: components["schemas"]["CommunityPersonDto"];
         };
         CommunityPostDto: {
@@ -3885,10 +3930,19 @@ export interface components {
             commentCount: number;
             reactionCount: number;
             reactedByMe: boolean;
+            /**
+             * Format: date-time
+             * @description Terisi bila tulisannya pernah diubah.
+             */
+            editedAt: string | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             lastActivityAt: string;
+            /** @description Hanya penulisnya sendiri. */
+            canEdit: boolean;
+            /** @description Penulisnya sendiri, atau pemegang izin moderasi. */
+            canDelete: boolean;
             author: components["schemas"]["CommunityPersonDto"];
             channel: components["schemas"]["CommunityPostChannelDto"];
             comments: components["schemas"]["CommunityCommentDto"][];
@@ -10293,6 +10347,200 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["CommunityPostDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_deletePost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_updatePost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunityPostBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunityPostDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_deleteComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_updateComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                commentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunityPostBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunityCommentDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
                 };

@@ -223,6 +223,7 @@ model CommunityPost {
   commentCount   Int       @default(0) @map("comment_count")
   reactionCount  Int       @default(0) @map("reaction_count")
   lastActivityAt DateTime  @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  editedAt       DateTime? @map("edited_at") @db.Timestamptz(6)
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -242,6 +243,7 @@ model CommunityComment {
   postId    String    @map("post_id") @db.Uuid
   authorId  String    @map("author_id") @db.Uuid
   body      String
+  editedAt  DateTime? @map("edited_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)

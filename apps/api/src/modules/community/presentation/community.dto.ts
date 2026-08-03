@@ -59,7 +59,11 @@ export class CommunityPostChannelDto {
 export class CommunityCommentDto {
   @ApiProperty() id!: string;
   @ApiProperty() body!: string;
+  @ApiProperty({ type: Date, nullable: true, description: 'Terisi bila tulisannya pernah diubah.' })
+  editedAt!: Date | null;
   @ApiProperty() createdAt!: Date;
+  @ApiProperty({ description: 'Hanya penulisnya sendiri.' }) canEdit!: boolean;
+  @ApiProperty({ description: 'Penulisnya sendiri, atau pemegang izin moderasi.' }) canDelete!: boolean;
   @ApiProperty({ type: CommunityPersonDto }) author!: CommunityPersonDto;
 }
 
@@ -70,8 +74,12 @@ export class CommunityPostDto {
   @ApiProperty() commentCount!: number;
   @ApiProperty() reactionCount!: number;
   @ApiProperty() reactedByMe!: boolean;
+  @ApiProperty({ type: Date, nullable: true, description: 'Terisi bila tulisannya pernah diubah.' })
+  editedAt!: Date | null;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() lastActivityAt!: Date;
+  @ApiProperty({ description: 'Hanya penulisnya sendiri.' }) canEdit!: boolean;
+  @ApiProperty({ description: 'Penulisnya sendiri, atau pemegang izin moderasi.' }) canDelete!: boolean;
   @ApiProperty({ type: CommunityPersonDto }) author!: CommunityPersonDto;
   @ApiProperty({ type: CommunityPostChannelDto }) channel!: CommunityPostChannelDto;
   @ApiProperty({ type: [CommunityCommentDto] }) comments!: CommunityCommentDto[];

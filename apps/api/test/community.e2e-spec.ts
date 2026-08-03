@@ -3,6 +3,7 @@ import { login, prefix, startHarness, type Harness } from './support/harness';
 
 const MASTER = { email: 'master@akademionline.id', password: 'Master#Lokal12345' };
 const STUDENT = { email: 'pelajar@akademionline.id', password: 'Pelajar#Lokal12345' };
+const STUDENT_LAIN = { email: 'samuel@akademionline.id', password: 'Pelajar#Lokal12345' };
 
 describe('Community channels', () => {
   let h: Harness | undefined;
@@ -96,5 +97,138 @@ describe('Community channels', () => {
       .set('X-CSRF-Token', student.csrfToken)
       .expect(200);
     expect(reaction.body.data).toMatchObject({ reacted: true, reactionCount: 1 });
+  });
+
+  describe('menyunting dan menghapus', () => {
+    /** Channel bebas tulis beserta satu tulisan pelajar di dalamnya. */
+    async function tulisanPelajar(h: Harness) {
+      const master = await login(h.server, MASTER.email, MASTER.password);
+      const channel = await request(h.server)
+        .post(`${prefix}/admin/community/channels`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .send({ name: `Moderasi E2E ${Date.now()}` })
+        .expect(201);
+      const channelId = channel.body.data.id as string;
+      channelIds.push(channelId);
+
+      const student = await login(h.server, STUDENT.email, STUDENT.password);
+      const post = await request(h.server)
+        .post(`${prefix}/community/channels/${channelId}/posts`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ body: 'Tulisan asli pelajar.' })
+        .expect(201);
+      return { master, student, channelId, post: post.body.data };
+    }
+
+    it('penulis dapat mengubah tulisannya, dan perubahannya meninggalkan jejak', async () => {
+      if (!h) throw new Error('Harness belum siap.');
+      const { student, post } = await tulisanPelajar(h);
+      expect(post.editedAt).toBeNull();
+      expect(post).toMatchObject({ canEdit: true, canDelete: true });
+
+      const diubah = await request(h.server)
+        .patch(`${prefix}/community/posts/${post.id}`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ body: 'Tulisan yang sudah diperbaiki.' })
+        .expect(200);
+      expect(diubah.body.data.body).toBe('Tulisan yang sudah diperbaiki.');
+      expect(diubah.body.data.editedAt).not.toBeNull();
+    });
+
+    it('Master dapat menghapus tulisan pelajar, tetapi tidak dapat mengubah isinya', async () => {
+      if (!h) throw new Error('Harness belum siap.');
+      const { master, post } = await tulisanPelajar(h);
+
+      // Kuasa moderasi adalah menghapus yang tidak pantas, bukan menaruh
+      // kata-kata baru ke dalam mulut orang lain.
+      await request(h.server)
+        .patch(`${prefix}/community/posts/${post.id}`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .send({ body: 'Master menulis ulang ucapan pelajar.' })
+        .expect(403);
+
+      const terlihatMaster = await request(h.server)
+        .get(`${prefix}/community/feed`)
+        .set('Cookie', master.cookie)
+        .expect(200);
+      const dilihatMaster = terlihatMaster.body.data.find((item: { id: string }) => item.id === post.id);
+      expect(dilihatMaster).toMatchObject({ canEdit: false, canDelete: true });
+
+      await request(h.server)
+        .delete(`${prefix}/community/posts/${post.id}`)
+        .set('Cookie', master.cookie)
+        .set('X-CSRF-Token', master.csrfToken)
+        .expect(204);
+
+      const tinggal = await h.prisma.communityPost.findUnique({ where: { id: post.id }, select: { deletedAt: true } });
+      expect(tinggal?.deletedAt).not.toBeNull();
+
+      // Menghapus ucapan orang lain harus dapat ditagih kemudian.
+      const jejak = await h.prisma.auditLog.findFirst({
+        where: { action: 'community.post.delete', targetId: post.id },
+        select: { actorUserId: true, beforeData: true },
+      });
+      expect(jejak).not.toBeNull();
+      expect(JSON.stringify(jejak?.beforeData)).toContain('Tulisan asli pelajar.');
+    });
+
+    it('pelajar lain tidak dapat mengubah maupun menghapus tulisan orang', async () => {
+      if (!h) throw new Error('Harness belum siap.');
+      const { post } = await tulisanPelajar(h);
+      const orangLain = await login(h.server, STUDENT_LAIN.email, STUDENT_LAIN.password);
+
+      const terlihat = await request(h.server)
+        .get(`${prefix}/community/feed`)
+        .set('Cookie', orangLain.cookie)
+        .expect(200);
+      const dilihatOrangLain = terlihat.body.data.find((item: { id: string }) => item.id === post.id);
+      expect(dilihatOrangLain).toMatchObject({ canEdit: false, canDelete: false });
+
+      await request(h.server)
+        .patch(`${prefix}/community/posts/${post.id}`)
+        .set('Cookie', orangLain.cookie)
+        .set('X-CSRF-Token', orangLain.csrfToken)
+        .send({ body: 'Bukan tulisanku.' })
+        .expect(403);
+
+      await request(h.server)
+        .delete(`${prefix}/community/posts/${post.id}`)
+        .set('Cookie', orangLain.cookie)
+        .set('X-CSRF-Token', orangLain.csrfToken)
+        .expect(403);
+    });
+
+    it('menghapus balasan mengoreksi jumlah balasan pada tulisannya', async () => {
+      if (!h) throw new Error('Harness belum siap.');
+      const { student, post } = await tulisanPelajar(h);
+
+      const pertama = await request(h.server)
+        .post(`${prefix}/community/posts/${post.id}/comments`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ body: 'Balasan pertama.' })
+        .expect(201);
+      await request(h.server)
+        .post(`${prefix}/community/posts/${post.id}/comments`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .send({ body: 'Balasan kedua.' })
+        .expect(201);
+
+      await request(h.server)
+        .delete(`${prefix}/community/comments/${pertama.body.data.id}`)
+        .set('Cookie', student.cookie)
+        .set('X-CSRF-Token', student.csrfToken)
+        .expect(204);
+
+      const sesudah = await h.prisma.communityPost.findUnique({
+        where: { id: post.id }, select: { commentCount: true },
+      });
+      expect(sesudah?.commentCount).toBe(1);
+    });
   });
 });

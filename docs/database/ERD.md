@@ -974,6 +974,11 @@ post dengan `ON DELETE CASCADE`; author dan pembuat channel memakai `RESTRICT`
 agar riwayat komunitas tidak kehilangan pemilik secara diam-diam. Counter pada
 post diperbarui dalam transaksi yang sama dengan mutasinya.
 
+`community_posts.edited_at` dan `community_comments.edited_at` berdiri sendiri,
+tidak diturunkan dari `updated_at`. Pada post, `updated_at` ikut berubah setiap
+kali reaksi atau jumlah balasan dihitung ulang, sehingga tidak dapat menjawab
+"apakah tulisan ini pernah diubah" tanpa berbohong.
+
 Dua jenis drift pernah ditemukan di sini, dan keduanya layak diwaspadai:
 
 - **Default yang ditulis tangan.** Tiga tabel commerce dan

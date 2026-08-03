@@ -262,3 +262,10 @@ Production release memerlukan:
   channel; Pelajar tetap ditolak oleh endpoint admin.
 - Avatar memakai foto profil bila ada dan fallback inisial bila tidak ada;
   input pesan serta balasan terlihat jelas pada tema terang dan gelap.
+- Penulis dapat mengubah tulisannya sendiri, dan perubahan itu mengisi
+  `editedAt` sehingga jejaknya terlihat pembaca lain.
+- Master dapat menghapus tulisan pelajar tetapi ditolak mengubah isinya, dan
+  penghapusannya tercatat di audit log beserta isi aslinya.
+- Pelajar lain ditolak mengubah maupun menghapus tulisan orang, dan `canEdit`
+  serta `canDelete` yang diterimanya bernilai false.
+- Menghapus balasan menghitung ulang `commentCount` pada tulisannya.

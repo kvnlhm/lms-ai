@@ -2,21 +2,36 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useNotifier } from '../components/notifier';
 import { browserClient, unwrap } from '../lib/browser-api';
 
 export type CommunityChannel = { id: string; slug: string; name: string; description: string | null; isReadOnly: boolean; postCount: number };
 type Person = { id: string; fullName: string; avatarUrl: string | null };
-export type CommunityComment = { id: string; body: string; createdAt: string; author: Person };
+export type CommunityComment = {
+  id: string; body: string; editedAt: string | null; createdAt: string; author: Person;
+  canEdit: boolean; canDelete: boolean;
+};
 export type CommunityPost = {
   id: string; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
-  reactedByMe: boolean; createdAt: string; author: Person;
+  reactedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
+  canEdit: boolean; canDelete: boolean;
   channel: Pick<CommunityChannel, 'id' | 'slug' | 'name' | 'isReadOnly'>;
   comments: CommunityComment[];
+};
+
+/** Tindakan atas sebuah tulisan; dibawa utuh agar mode chat dan feed sama persis. */
+type AksiPesan = {
+  react: (postId: string) => void;
+  suntingPost: (post: CommunityPost) => void;
+  hapusPost: (post: CommunityPost) => void;
+  suntingKomentar: (comment: CommunityComment) => void;
+  hapusKomentar: (comment: CommunityComment) => void;
 };
 
 export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate = false, currentUserId }: {
   channels: CommunityChannel[]; initialPosts: CommunityPost[]; activeSlug?: string; canModerate?: boolean; currentUserId?: string;
 }) {
+  const notifier = useNotifier();
   const [posts, setPosts] = useState(initialPosts);
   const [channelId, setChannelId] = useState(() => channels.find((item) => item.slug === activeSlug)?.id ?? channels.find((item) => !item.isReadOnly)?.id ?? channels[0]?.id ?? '');
   const [body, setBody] = useState('');
@@ -84,6 +99,105 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
     });
   }
 
+  /** Menempatkan kembali satu post yang berubah, tanpa memuat ulang seluruh daftar. */
+  function gantiPost(postId: string, ubah: (post: CommunityPost) => CommunityPost) {
+    setPosts((current) => current.map((post) => (post.id === postId ? ubah(post) : post)));
+  }
+
+  function suntingPost(post: CommunityPost) {
+    void (async () => {
+      const baru = await notifier.prompt('Ubah tulisan', {
+        label: 'Tulisanmu', defaultValue: post.body, multiline: true, minLength: 1,
+        confirmLabel: 'Simpan perubahan',
+      });
+      // `null` berarti dibatalkan; teks yang sama persis tidak perlu dikirim.
+      if (baru === null || baru === post.body) return;
+      try {
+        const hasil = unwrap<CommunityPost>(
+          await browserClient().PATCH('/api/v1/community/posts/{postId}', {
+            params: { path: { postId: post.id } }, body: { body: baru },
+          }),
+        );
+        gantiPost(post.id, (lama) => ({ ...lama, body: hasil.body, editedAt: hasil.editedAt }));
+      } catch (error) {
+        void notifier.error('Perubahan tidak tersimpan', { text: error instanceof Error ? error.message : undefined });
+      }
+    })();
+  }
+
+  function hapusPost(post: CommunityPost) {
+    void (async () => {
+      const milikSendiri = post.author.id === currentUserId;
+      const lanjut = await notifier.confirm(
+        milikSendiri ? 'Hapus tulisanmu?' : `Hapus tulisan ${post.author.fullName}?`,
+        {
+          text: milikSendiri
+            ? 'Tulisan ini hilang dari channel dan tidak dapat dikembalikan.'
+            : 'Tulisan ini hilang dari channel, dan penghapusannya tercatat di audit log beserta isi aslinya.',
+          confirmLabel: 'Hapus', danger: true,
+        },
+      );
+      if (!lanjut) return;
+      try {
+        unwrap(await browserClient().DELETE('/api/v1/community/posts/{postId}', { params: { path: { postId: post.id } } }));
+        setPosts((current) => current.filter((item) => item.id !== post.id));
+      } catch (error) {
+        void notifier.error('Tulisan gagal dihapus', { text: error instanceof Error ? error.message : undefined });
+      }
+    })();
+  }
+
+  function suntingKomentar(comment: CommunityComment) {
+    void (async () => {
+      const baru = await notifier.prompt('Ubah balasan', {
+        label: 'Balasanmu', defaultValue: comment.body, multiline: true, minLength: 1,
+        confirmLabel: 'Simpan perubahan',
+      });
+      if (baru === null || baru === comment.body) return;
+      try {
+        const hasil = unwrap<CommunityComment>(
+          await browserClient().PATCH('/api/v1/community/comments/{commentId}', {
+            params: { path: { commentId: comment.id } }, body: { body: baru },
+          }),
+        );
+        setPosts((current) => current.map((post) => ({
+          ...post,
+          comments: post.comments.map((item) => (item.id === comment.id ? { ...item, body: hasil.body, editedAt: hasil.editedAt } : item)),
+        })));
+      } catch (error) {
+        void notifier.error('Perubahan tidak tersimpan', { text: error instanceof Error ? error.message : undefined });
+      }
+    })();
+  }
+
+  function hapusKomentar(comment: CommunityComment) {
+    void (async () => {
+      const milikSendiri = comment.author.id === currentUserId;
+      const lanjut = await notifier.confirm(
+        milikSendiri ? 'Hapus balasanmu?' : `Hapus balasan ${comment.author.fullName}?`,
+        {
+          text: milikSendiri
+            ? 'Balasan ini hilang dan tidak dapat dikembalikan.'
+            : 'Balasan ini hilang, dan penghapusannya tercatat di audit log beserta isi aslinya.',
+          confirmLabel: 'Hapus', danger: true,
+        },
+      );
+      if (!lanjut) return;
+      try {
+        unwrap(await browserClient().DELETE('/api/v1/community/comments/{commentId}', { params: { path: { commentId: comment.id } } }));
+        setPosts((current) => current.map((post) => (
+          post.comments.some((item) => item.id === comment.id)
+            ? { ...post, comments: post.comments.filter((item) => item.id !== comment.id), commentCount: Math.max(0, post.commentCount - 1) }
+            : post
+        )));
+      } catch (error) {
+        void notifier.error('Balasan gagal dihapus', { text: error instanceof Error ? error.message : undefined });
+      }
+    })();
+  }
+
+  const aksi: AksiPesan = { react, suntingPost, hapusPost, suntingKomentar, hapusKomentar };
+
   if (activeSlug) {
     return <ChannelChat
       posts={posts}
@@ -95,7 +209,7 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
       pending={pending}
       message={message}
       publish={publish}
-      react={react}
+      aksi={aksi}
     />;
   }
 
@@ -114,9 +228,9 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
           {posts.map((post) => (
             <article className="communityPost card" key={post.id}>
               <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.slug}`}>#{post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
-              <p className="postBody">{post.body}</p>
-              <div className="postActions"><button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button><span>◯ {post.commentCount} balasan</span></div>
-              {post.comments.length > 0 ? <div className="commentList">{post.comments.map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span></p></div>)}</div> : null}
+              <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
+              <div className="postActions"><button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button><span>◯ {post.commentCount} balasan</span><PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} /></div>
+              {post.comments.length > 0 ? <div className="commentList">{post.comments.map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}
               <div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div>
             </article>
           ))}
@@ -127,7 +241,7 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
   );
 }
 
-function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, pending, message, publish, react }: {
+function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, pending, message, publish, aksi }: {
   posts: CommunityPost[];
   selected?: CommunityChannel;
   currentUserId?: string;
@@ -137,7 +251,7 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
   pending: boolean;
   message: string;
   publish: () => void;
-  react: (postId: string) => void;
+  aksi: AksiPesan;
 }) {
   const timeline = useMemo(() => [...posts].reverse(), [posts]);
 
@@ -157,10 +271,14 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
             {!mine ? <Avatar person={post.author} /> : null}
             <div className="chatMessageContent">
               <div className="chatMeta"><strong>{mine ? 'Kamu' : post.author.fullName}</strong><time dateTime={post.createdAt}>{formatDate(post.createdAt)}</time></div>
-              <div className="chatBubble"><p>{post.body}</p></div>
-              <button type="button" className={post.reactedByMe ? 'chatReaction reacted' : 'chatReaction'} onClick={() => react(post.id)} aria-label={`Beri reaksi pada pesan ${post.author.fullName}`}>♡ {post.reactionCount || ''}</button>
+              <div className="chatBubble"><p>{post.body}<Diedit at={post.editedAt} /></p></div>
+              <div className="chatMessageActions">
+                <button type="button" className={post.reactedByMe ? 'chatReaction reacted' : 'chatReaction'} onClick={() => aksi.react(post.id)} aria-label={`Beri reaksi pada pesan ${post.author.fullName}`}>♡ {post.reactionCount || ''}</button>
+                <PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => aksi.suntingPost(post)} onDelete={() => aksi.hapusPost(post)} />
+              </div>
               {post.comments.map((comment) => <div className={comment.author.id === currentUserId ? 'chatReply mine' : 'chatReply'} key={comment.id}>
-                <strong>{comment.author.id === currentUserId ? 'Kamu' : comment.author.fullName}</strong><span>{comment.body}</span>
+                <strong>{comment.author.id === currentUserId ? 'Kamu' : comment.author.fullName}</strong><span>{comment.body}</span><Diedit at={comment.editedAt} />
+                <PesanAksi canEdit={comment.canEdit} canDelete={comment.canDelete} onEdit={() => aksi.suntingKomentar(comment)} onDelete={() => aksi.hapusKomentar(comment)} />
               </div>)}
             </div>
             {mine ? <Avatar person={post.author} /> : null}
@@ -186,6 +304,28 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
       </div>
     </section>
   </>;
+}
+
+/**
+ * Penanda bahwa sebuah tulisan pernah diubah.
+ *
+ * Tanpa ini, menyunting berarti mengganti apa yang sudah dibaca orang lain
+ * tanpa jejak — dan itu membuat percakapan tidak dapat dipercaya.
+ */
+function Diedit({ at }: { at: string | null }) {
+  if (!at) return null;
+  return <em className="editedMark" title={`Diubah ${formatDate(at)}`}>diedit</em>;
+}
+
+/** Sunting dan hapus, hanya sejauh yang diizinkan server pada tulisan ini. */
+function PesanAksi({ canEdit, canDelete, onEdit, onDelete }: {
+  canEdit: boolean; canDelete: boolean; onEdit: () => void; onDelete: () => void;
+}) {
+  if (!canEdit && !canDelete) return null;
+  return <span className="messageActions">
+    {canEdit ? <button type="button" onClick={onEdit}>Sunting</button> : null}
+    {canDelete ? <button type="button" className="messageDanger" onClick={onDelete}>Hapus</button> : null}
+  </span>;
 }
 
 function Avatar({ person }: { person: Person }) { return <span className="postAvatar">{person.avatarUrl ? <img src={person.avatarUrl} alt="" /> : person.fullName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}</span>; }

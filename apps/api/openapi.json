@@ -9682,6 +9682,290 @@
         ]
       }
     },
+    "/api/v1/community/posts/{postId}": {
+      "patch": {
+        "operationId": "CommunityController_updatePost",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityPostBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityPostDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengubah tulisan sendiri",
+        "tags": [
+          "community"
+        ]
+      },
+      "delete": {
+        "operationId": "CommunityController_deletePost",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus tulisan sendiri, atau tulisan siapa pun bagi moderator",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/comments/{commentId}": {
+      "patch": {
+        "operationId": "CommunityController_updateComment",
+        "parameters": [
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityPostBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityCommentDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengubah balasan sendiri",
+        "tags": [
+          "community"
+        ]
+      },
+      "delete": {
+        "operationId": "CommunityController_deleteComment",
+        "parameters": [
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus balasan sendiri, atau balasan siapa pun bagi moderator",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/v1/community/posts/{postId}/comments": {
       "post": {
         "operationId": "CommunityController_comment",
@@ -16473,9 +16757,23 @@
           "body": {
             "type": "string"
           },
+          "editedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Terisi bila tulisannya pernah diubah."
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "canEdit": {
+            "type": "boolean",
+            "description": "Hanya penulisnya sendiri."
+          },
+          "canDelete": {
+            "type": "boolean",
+            "description": "Penulisnya sendiri, atau pemegang izin moderasi."
           },
           "author": {
             "$ref": "#/components/schemas/CommunityPersonDto"
@@ -16484,7 +16782,10 @@
         "required": [
           "id",
           "body",
+          "editedAt",
           "createdAt",
+          "canEdit",
+          "canDelete",
           "author"
         ]
       },
@@ -16509,6 +16810,12 @@
           "reactedByMe": {
             "type": "boolean"
           },
+          "editedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Terisi bila tulisannya pernah diubah."
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -16516,6 +16823,14 @@
           "lastActivityAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "canEdit": {
+            "type": "boolean",
+            "description": "Hanya penulisnya sendiri."
+          },
+          "canDelete": {
+            "type": "boolean",
+            "description": "Penulisnya sendiri, atau pemegang izin moderasi."
           },
           "author": {
             "$ref": "#/components/schemas/CommunityPersonDto"
@@ -16537,8 +16852,11 @@
           "commentCount",
           "reactionCount",
           "reactedByMe",
+          "editedAt",
           "createdAt",
           "lastActivityAt",
+          "canEdit",
+          "canDelete",
           "author",
           "channel",
           "comments"
