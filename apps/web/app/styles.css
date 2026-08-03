@@ -961,7 +961,8 @@ table.data tbody tr:hover { background: var(--raised); }
 }
 @keyframes mobileDrawerIn { from { transform: translateX(-100%); } }
 .mobileDrawerHead {
-  min-height: 66px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 66px; display: flex; flex: 0 0 auto;
+  align-items: center; justify-content: space-between; gap: 12px;
   padding: 10px 14px; border-bottom: 1px solid var(--line);
 }
 .mobileDrawerHead > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -970,7 +971,10 @@ table.data tbody tr:hover { background: var(--raised); }
   width: 38px; height: 38px; display: grid; place-items: center; flex: none;
   border-radius: 9px; background: var(--raised); font-size: 26px; line-height: 1;
 }
-.mobileDrawerBody { min-height: 0; display: flex; flex: 1; flex-direction: column; overflow-y: auto; padding: 12px; }
+.mobileDrawerBody {
+  min-height: 0; display: flex; flex: 1 1 auto; flex-direction: column;
+  overflow-y: auto; overscroll-behavior: contain; padding: 12px;
+}
 .mobileDrawerNav { display: grid; gap: 4px; }
 .mobileDrawerNav .navLink {
   min-height: 44px; display: flex; align-items: center; gap: 11px;

@@ -15,6 +15,11 @@ test('shell Pelajar menyediakan sidebar channel desktop dan navigasi horizontal 
   assert.match(css, /\.communityLayout\{grid-template-columns:minmax\(0,1fr\) 310px/);
 });
 
+test('header drawer mobile tidak menyusut dan menutupi menu Beranda', () => {
+  assert.match(css, /\.mobileDrawerHead\s*\{[^}]*flex:\s*0 0 auto/);
+  assert.match(css, /\.mobileDrawerBody\s*\{[^}]*flex:\s*1 1 auto[^}]*overflow-y:\s*auto/);
+});
+
 test('navigasi komunitas tersedia bagi pelajar dan pengelolaan hanya muncul di workspace Master', () => {
   assert.match(shell, /href: '\/community'/);
   assert.match(shell, /href: '\/master\/community'/);
