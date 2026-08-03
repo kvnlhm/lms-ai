@@ -2271,6 +2271,9 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
 - Halaman channel memakai pola percakapan: pesan pengguna aktif berada di
   kanan dan pesan pengguna lain di kiri, composer berada di bagian bawah,
   Enter mengirim pesan, dan Shift+Enter membuat baris baru.
+- Pesan pada halaman channel dapat dibalas langsung dari ruang percakapan,
+  tidak hanya dari feed. Satu kolom balasan terbuka pada satu waktu; Enter
+  mengirim dan Escape menutup tanpa membuang yang sudah diketik.
 - Percakapan diperbarui otomatis secara near-real-time. Pada fase awal refresh
   berkala dapat digunakan dan antarmuka tidak boleh mengklaim presence atau
   delivery instan seperti layanan WebSocket.

@@ -121,3 +121,15 @@ test('arsip channel punya jalan pulang, dan tidak lagi terjadi tanpa ditanya', (
   assert.match(channelManager, /const arsip = channels\.filter\(\(item\) => item\.archivedAt\)/);
   assert.match(css, /\.channelArchive\{/);
 });
+
+test('ruang chat dapat membalas, bukan hanya menampilkan balasan', () => {
+  // Balasan sudah lama dirender di ruang chat, tetapi kolom tulisnya hanya ada
+  // di mode feed — jadi tak seorang pun dapat membuatnya dari sana.
+  assert.match(channel, /className="chatBalasToggle"/);
+  assert.match(channel, /className="chatReplyComposer"/);
+  assert.match(channel, /aksi\.kirimBalasan\(post\.id\)/);
+  assert.match(channel, /aria-expanded=\{balasKe === post\.id\}/);
+  // Enter mengirim, Escape menutup tanpa membuang yang sudah diketik.
+  assert.match(channel, /event\.key === 'Escape'\) setBalasKe\(null\)/);
+  assert.match(css, /\.chatReplyComposer\{/);
+});

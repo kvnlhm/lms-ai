@@ -302,3 +302,5 @@ Production release memerlukan:
 - Pelajar ditolak memulihkan channel; Master dapat memulihkannya dan seluruh
   post di dalamnya kembali terbaca.
 - Mengarsipkan dan memulihkan masing-masing meninggalkan satu entri audit.
+- Ruang chat menyediakan kolom balasan pada tiap pesan, bukan hanya
+  menampilkan balasan yang sudah ada; Enter mengirim dan Escape menutup.

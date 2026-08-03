@@ -30,6 +30,10 @@ type AksiPesan = {
   suntingKomentar: (comment: CommunityComment) => void;
   hapusKomentar: (comment: CommunityComment) => void;
   sematkan: (post: CommunityPost) => void;
+  /** Membalas sebuah tulisan; sebelumnya hanya ada di mode feed. */
+  draftBalasan: (postId: string) => string;
+  ubahDraftBalasan: (postId: string, nilai: string) => void;
+  kirimBalasan: (postId: string) => void;
   /** Bacaan, bukan tindakan; ikut dibawa agar kedua mode menghitungnya sama. */
   balasan: (post: CommunityPost) => CommunityComment[];
   sisaBalasan: (post: CommunityPost) => number;
@@ -378,6 +382,9 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
 
   const aksi: AksiPesan = {
     react, suntingPost, hapusPost, suntingKomentar, hapusKomentar, sematkan,
+    draftBalasan: (postId) => commentDrafts[postId] ?? '',
+    ubahDraftBalasan: (postId, nilai) => setCommentDrafts((current) => ({ ...current, [postId]: nilai })),
+    kirimBalasan: comment,
     balasan, sisaBalasan, muatKomentar, memuatKomentar,
   };
 
@@ -454,6 +461,9 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
   muatLebihLama: () => void;
 }) {
   const timeline = useMemo(() => [...posts].reverse(), [posts]);
+  // Satu kolom balasan terbuka pada satu waktu; membuka yang lain menutup yang
+  // sebelumnya, supaya linimasa tidak dipenuhi kolom isian setengah terisi.
+  const [balasKe, setBalasKe] = useState<string | null>(null);
 
   return <>
     <section className="communityFeed channelChat" aria-label={`Percakapan ${selected?.name ?? 'channel'}`}>
@@ -503,6 +513,16 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
               <div className="chatBubble"><p>{post.body}<Diedit at={post.editedAt} /></p></div>
               <div className="chatMessageActions">
                 <button type="button" className={post.reactedByMe ? 'chatReaction reacted' : 'chatReaction'} onClick={() => aksi.react(post.id)} aria-label={`Beri reaksi pada pesan ${post.author.fullName}`}>♡ {post.reactionCount || ''}</button>
+                {/* Membalas hanya ada di mode feed selama ini: balasan tampil
+                    di ruang chat, tetapi tidak ada satu pun cara menulisnya. */}
+                <button
+                  type="button"
+                  className="chatBalasToggle"
+                  aria-expanded={balasKe === post.id}
+                  onClick={() => setBalasKe((current) => (current === post.id ? null : post.id))}
+                >
+                  Balas
+                </button>
                 <PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => aksi.suntingPost(post)} onDelete={() => aksi.hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => aksi.sematkan(post) }} />
               </div>
               <MuatBalasan post={post} aksi={aksi} />
@@ -510,6 +530,30 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
                 <strong>{comment.author.id === currentUserId ? 'Kamu' : comment.author.fullName}</strong><span>{comment.body}</span><Diedit at={comment.editedAt} />
                 <PesanAksi canEdit={comment.canEdit} canDelete={comment.canDelete} onEdit={() => aksi.suntingKomentar(comment)} onDelete={() => aksi.hapusKomentar(comment)} />
               </div>)}
+              {balasKe === post.id ? (
+                <div className="chatReplyComposer">
+                  <input
+                    autoFocus
+                    aria-label={`Balas pesan ${mine ? 'kamu' : post.author.fullName}`}
+                    value={aksi.draftBalasan(post.id)}
+                    maxLength={5000}
+                    placeholder="Tulis balasan…"
+                    onChange={(event) => aksi.ubahDraftBalasan(post.id, event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') { event.preventDefault(); aksi.kirimBalasan(post.id); }
+                      // Escape menutup tanpa membuang yang sudah diketik.
+                      if (event.key === 'Escape') setBalasKe(null);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={pending || !aksi.draftBalasan(post.id).trim()}
+                    onClick={() => aksi.kirimBalasan(post.id)}
+                  >
+                    Kirim
+                  </button>
+                </div>
+              ) : null}
             </div>
             {mine ? <Avatar person={post.author} /> : null}
           </div>;
