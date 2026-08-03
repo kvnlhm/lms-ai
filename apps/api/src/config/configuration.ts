@@ -60,6 +60,24 @@ export interface AppConfig {
     storagePath: string;
     maxUploadBytes: number;
     playbackTtlSeconds: number;
+    /**
+     * Bunny Stream dipakai per aset, bukan global: `video_assets.provider`
+     * menentukan asal setiap video. Konfigurasi ini hanya perlu terisi bila
+     * ada aset yang memakainya, sehingga perpustakaan self-hosted yang sudah
+     * ada tetap berjalan tanpa satu pun nilai di bawah ini.
+     */
+    bunny: {
+      libraryId?: string;
+      /** Hostname pull zone, misalnya `vz-xxxxxxxx-xxx.b-cdn.net`. */
+      cdnHostname?: string;
+      apiKey?: string;
+      /**
+       * Kunci penanda tangan URL. Selama kosong, perlindungan bersandar pada
+       * pembatasan referrer di sisi Bunny — cukup untuk menahan hotlink biasa,
+       * tetapi referrer dapat dipalsukan.
+       */
+      tokenAuthKey?: string;
+    };
   };
   avatar: {
     storagePath: string;
@@ -197,6 +215,12 @@ export function loadConfig(): AppConfig {
       storagePath: process.env.VIDEO_STORAGE_PATH ?? '/data/videos',
       maxUploadBytes: int('VIDEO_MAX_UPLOAD_BYTES', 2_147_483_648),
       playbackTtlSeconds: int('VIDEO_PLAYBACK_TTL_SECONDS', 300),
+      bunny: {
+        libraryId: process.env.BUNNY_STREAM_LIBRARY_ID || undefined,
+        cdnHostname: process.env.BUNNY_STREAM_CDN_HOSTNAME || undefined,
+        apiKey: process.env.BUNNY_STREAM_API_KEY || undefined,
+        tokenAuthKey: process.env.BUNNY_STREAM_TOKEN_AUTH_KEY || undefined,
+      },
     },
     avatar: {
       storagePath: process.env.AVATAR_STORAGE_PATH ?? '/data/avatars',

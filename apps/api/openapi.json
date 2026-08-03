@@ -3666,6 +3666,80 @@
         ]
       }
     },
+    "/api/v1/admin/videos/bunny": {
+      "post": {
+        "operationId": "VideoController_createBunny",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBunnyVideoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CreateBunnyVideoResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mendaftarkan video Bunny Stream ke perpustakaan",
+        "tags": [
+          "video"
+        ]
+      }
+    },
     "/api/v1/admin/videos": {
       "get": {
         "operationId": "VideoController_library",
@@ -4085,6 +4159,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PlaybackSessionDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -13412,6 +13508,64 @@
           "url"
         ]
       },
+      "CreateBunnyVideoResultDto": {
+        "type": "object",
+        "properties": {
+          "videoAssetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "SELF_HOSTED",
+              "BUNNY_STREAM",
+              "YOUTUBE"
+            ]
+          },
+          "providerVideoId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CREATED",
+              "UPLOADING",
+              "PROCESSING",
+              "AVAILABLE",
+              "FAILED",
+              "DELETED"
+            ]
+          }
+        },
+        "required": [
+          "videoAssetId",
+          "provider",
+          "providerVideoId",
+          "title",
+          "status"
+        ]
+      },
+      "CreateBunnyVideoDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "GUID video dari dashboard Bunny, atau tautan yang memuatnya.",
+            "example": "b4dcc06c-ea97-4547-aa95-c17b7c998297"
+          },
+          "title": {
+            "type": "string",
+            "description": "Bila kosong, judul diambil dari Bunny."
+          }
+        },
+        "required": [
+          "source"
+        ]
+      },
       "VideoLibraryUsageDto": {
         "type": "object",
         "properties": {
@@ -13537,6 +13691,96 @@
         },
         "required": [
           "videoAssetId"
+        ]
+      },
+      "PlaybackDrmDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled",
+          "type"
+        ]
+      },
+      "PlaybackWatermarkDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "MOVING"
+            ]
+          }
+        },
+        "required": [
+          "text",
+          "mode"
+        ]
+      },
+      "PlaybackSessionDto": {
+        "type": "object",
+        "properties": {
+          "playbackSessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "SELF_HOSTED",
+              "BUNNY_STREAM",
+              "YOUTUBE"
+            ]
+          },
+          "providerVideoId": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "FILE",
+              "EMBED",
+              "HLS"
+            ],
+            "description": "FILE: berkas dialirkan server ini. EMBED: pemutar penyedia luar. HLS: playlist dari CDN penyedia, diputar pemutar kita sendiri."
+          },
+          "playbackUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "embedUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string"
+          },
+          "drm": {
+            "$ref": "#/components/schemas/PlaybackDrmDto"
+          },
+          "watermark": {
+            "$ref": "#/components/schemas/PlaybackWatermarkDto"
+          }
+        },
+        "required": [
+          "playbackSessionId",
+          "provider",
+          "providerVideoId",
+          "kind",
+          "playbackUrl",
+          "embedUrl",
+          "expiresAt",
+          "drm",
+          "watermark"
         ]
       },
       "CreatePlaybackSessionDto": {

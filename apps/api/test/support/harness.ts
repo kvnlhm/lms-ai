@@ -20,6 +20,9 @@ export const WHATSAPP_VERIFY_TOKEN = 'token-verifikasi-webhook-uji';
  */
 export const RESEND_SIGNING_SECRET = 'whsec_cmFoYXNpYS13ZWJob29rLXJlc2VuZC11amk=';
 
+export const BUNNY_CDN_HOSTNAME = 'vz-pengujian.b-cdn.net';
+export const BUNNY_TOKEN_AUTH_KEY = 'kunci-penanda-tangan-untuk-pengujian';
+
 export interface Harness {
   app: INestApplication;
   server: App;
@@ -58,6 +61,14 @@ export async function startHarness(options: HarnessOptions = {}): Promise<Harnes
   process.env.WHATSAPP_APP_SECRET = WHATSAPP_APP_SECRET;
   process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = WHATSAPP_VERIFY_TOKEN;
   process.env.RESEND_WEBHOOK_SIGNING_SECRET = RESEND_SIGNING_SECRET;
+  // Bunny: hostname CDN dan kunci penanda tangan diset supaya jalur pemutaran
+  // HLS dapat diuji tanpa menyentuh jaringan. API key sengaja dibiarkan kosong
+  // — mendaftarkan video menuntut panggilan keluar ke Bunny, dan test tidak
+  // boleh melakukannya; yang diuji adalah penolakannya saat belum dikonfigurasi.
+  process.env.BUNNY_STREAM_CDN_HOSTNAME = BUNNY_CDN_HOSTNAME;
+  process.env.BUNNY_STREAM_TOKEN_AUTH_KEY = BUNNY_TOKEN_AUTH_KEY;
+  process.env.BUNNY_STREAM_LIBRARY_ID = '';
+  process.env.BUNNY_STREAM_API_KEY = '';
   if (options.rateLimit) {
     process.env.RATE_LIMIT_ENABLED = 'true';
     process.env.RATE_LIMIT_MAX = String(options.rateLimit.max);

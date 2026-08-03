@@ -110,6 +110,59 @@ export class CreateYoutubeVideoDto {
   url!: string;
 }
 
+export class CreateBunnyVideoDto {
+  @ApiProperty({
+    description: 'GUID video dari dashboard Bunny, atau tautan yang memuatnya.',
+    example: 'b4dcc06c-ea97-4547-aa95-c17b7c998297',
+  })
+  @IsString() @MinLength(1) @MaxLength(500) source!: string;
+
+  @ApiPropertyOptional({ description: 'Bila kosong, judul diambil dari Bunny.' })
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(200) title?: string;
+}
+
+export class CreateBunnyVideoResultDto {
+  @ApiProperty({ format: 'uuid' }) videoAssetId!: string;
+  @ApiProperty({ enum: VideoProvider }) provider!: VideoProvider;
+  @ApiProperty() providerVideoId!: string;
+  @ApiProperty() title!: string;
+  @ApiProperty({ enum: VideoStatus }) status!: VideoStatus;
+}
+
 export class CreatePlaybackSessionDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(200) deviceId?: string;
+}
+
+export class PlaybackWatermarkDto {
+  @ApiProperty() text!: string;
+  @ApiProperty({ enum: ['MOVING'] }) mode!: 'MOVING';
+}
+
+export class PlaybackDrmDto {
+  @ApiProperty() enabled!: boolean;
+  @ApiProperty() type!: string;
+}
+
+/**
+ * Bentuk sesi pemutaran.
+ *
+ * Endpoint ini dulu tidak mendokumentasikan responsnya sama sekali, sehingga
+ * web menulis ulang bentuknya dengan tangan — dan `kind: 'HLS'` yang lahir
+ * bersama Bunny tidak pernah sampai ke kontrak.
+ */
+export class PlaybackSessionDto {
+  @ApiProperty({ format: 'uuid' }) playbackSessionId!: string;
+  @ApiProperty({ enum: VideoProvider }) provider!: VideoProvider;
+  @ApiProperty() providerVideoId!: string;
+  @ApiProperty({
+    enum: ['FILE', 'EMBED', 'HLS'],
+    description:
+      'FILE: berkas dialirkan server ini. EMBED: pemutar penyedia luar. HLS: playlist dari CDN penyedia, diputar pemutar kita sendiri.',
+  })
+  kind!: 'FILE' | 'EMBED' | 'HLS';
+  @ApiProperty({ type: String, nullable: true }) playbackUrl!: string | null;
+  @ApiProperty({ type: String, nullable: true }) embedUrl!: string | null;
+  @ApiProperty() expiresAt!: string;
+  @ApiProperty({ type: PlaybackDrmDto }) drm!: PlaybackDrmDto;
+  @ApiProperty({ type: PlaybackWatermarkDto }) watermark!: PlaybackWatermarkDto;
 }

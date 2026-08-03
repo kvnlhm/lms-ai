@@ -9,6 +9,7 @@ import {
   ambilPerpustakaan,
   ambilRingkasanPerpustakaan,
   formatBytes,
+  namaPenyedia,
   type LibraryAsset,
   type LibraryFilter,
   type LibrarySummary,
@@ -320,9 +321,7 @@ export function VideoLibrary() {
               <li key={item.videoAssetId} className="masterRecordCard">
                 <div className="masterListHead">
                   <h2 className="cellTitle">{item.title}</h2>
-                  <span className="pill">
-                    {item.provider === 'YOUTUBE' ? 'YouTube' : 'Self-hosted'}
-                  </span>
+                  <span className="pill">{namaPenyedia(item.provider)}</span>
                 </div>
 
                 <p className="cellSub">

@@ -765,6 +765,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/videos/bunny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mendaftarkan video Bunny Stream ke perpustakaan */
+        post: operations["VideoController_createBunny"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/videos": {
         parameters: {
             query?: never;
@@ -2860,6 +2877,25 @@ export interface components {
             /** @example https://www.youtube.com/watch?v=dQw4w9WgXcQ */
             url: string;
         };
+        CreateBunnyVideoResultDto: {
+            /** Format: uuid */
+            videoAssetId: string;
+            /** @enum {string} */
+            provider: "SELF_HOSTED" | "BUNNY_STREAM" | "YOUTUBE";
+            providerVideoId: string;
+            title: string;
+            /** @enum {string} */
+            status: "CREATED" | "UPLOADING" | "PROCESSING" | "AVAILABLE" | "FAILED" | "DELETED";
+        };
+        CreateBunnyVideoDto: {
+            /**
+             * @description GUID video dari dashboard Bunny, atau tautan yang memuatnya.
+             * @example b4dcc06c-ea97-4547-aa95-c17b7c998297
+             */
+            source: string;
+            /** @description Bila kosong, judul diambil dari Bunny. */
+            title?: string;
+        };
         VideoLibraryUsageDto: {
             /** Format: uuid */
             lessonId: string;
@@ -2895,6 +2931,32 @@ export interface components {
         AttachLessonVideoDto: {
             /** Format: uuid */
             videoAssetId: string;
+        };
+        PlaybackDrmDto: {
+            enabled: boolean;
+            type: string;
+        };
+        PlaybackWatermarkDto: {
+            text: string;
+            /** @enum {string} */
+            mode: "MOVING";
+        };
+        PlaybackSessionDto: {
+            /** Format: uuid */
+            playbackSessionId: string;
+            /** @enum {string} */
+            provider: "SELF_HOSTED" | "BUNNY_STREAM" | "YOUTUBE";
+            providerVideoId: string;
+            /**
+             * @description FILE: berkas dialirkan server ini. EMBED: pemutar penyedia luar. HLS: playlist dari CDN penyedia, diputar pemutar kita sendiri.
+             * @enum {string}
+             */
+            kind: "FILE" | "EMBED" | "HLS";
+            playbackUrl: string | null;
+            embedUrl: string | null;
+            expiresAt: string;
+            drm: components["schemas"]["PlaybackDrmDto"];
+            watermark: components["schemas"]["PlaybackWatermarkDto"];
         };
         CreatePlaybackSessionDto: {
             deviceId?: string;
@@ -6521,6 +6583,56 @@ export interface operations {
             };
         };
     };
+    VideoController_createBunny: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBunnyVideoDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CreateBunnyVideoResultDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     VideoController_library: {
         parameters: {
             query?: {
@@ -6794,6 +6906,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PlaybackSessionDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;

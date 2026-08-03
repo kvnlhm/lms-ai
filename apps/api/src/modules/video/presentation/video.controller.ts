@@ -23,10 +23,13 @@ import { CurrentUser, RequirePermissions } from '../../identity/presentation/dec
 import { VideoService } from '../application/video.service';
 import {
   AttachLessonVideoDto,
+  CreateBunnyVideoDto,
+  CreateBunnyVideoResultDto,
   CreatePlaybackSessionDto,
   CreateVideoUploadIntentDto,
   CreateYoutubeVideoDto,
   ListVideoLibraryQueryDto,
+  PlaybackSessionDto,
   VideoLibraryItemDto,
   VideoLibrarySummaryDto,
 } from './video.dto';
@@ -51,6 +54,16 @@ export class VideoController {
   @ApiErrors(401, 403, 404, 422)
   createYoutube(@Body() dto: CreateYoutubeVideoDto, @CurrentUser() user: AuthenticatedUser) {
     return this.videos.createYoutubeVideo(dto, user.id);
+  }
+
+  @Post('admin/videos/bunny')
+  @HttpCode(201)
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({ summary: 'Mendaftarkan video Bunny Stream ke perpustakaan' })
+  @ApiEnvelope(CreateBunnyVideoResultDto)
+  @ApiErrors(401, 403, 422)
+  createBunny(@Body() dto: CreateBunnyVideoDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.videos.createBunnyVideo(dto, user.id);
   }
 
   @Get('admin/videos')
@@ -131,6 +144,7 @@ export class VideoController {
   @Post('learn/lessons/:lessonId/playback-sessions')
   @HttpCode(201)
   @ApiOperation({ summary: 'Membuat playback session setelah validasi akses lesson' })
+  @ApiEnvelope(PlaybackSessionDto)
   @ApiErrors(401, 403, 404, 409)
   createPlayback(
     @Param('lessonId', new ParseUUIDPipe()) lessonId: string,

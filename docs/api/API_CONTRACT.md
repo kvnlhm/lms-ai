@@ -1622,6 +1622,46 @@ Bentuk tautan yang diterima: `watch?v=`, `youtu.be/`, `/embed/`, `/shorts/`, dan
 menjadi `AVAILABLE` seketika karena tidak ada berkas yang perlu diproses, dan
 video yang sedang aktif pada pelajaran tersebut ditandai `DELETED`.
 
+### POST `/admin/videos/bunny`
+
+Requires `courses.manage`. Mendaftarkan video yang sudah diunggah Master ke
+dashboard Bunny Stream. Berkasnya tidak pernah melewati server ini; yang
+didaftarkan adalah GUID-nya.
+
+```json
+{
+  "source": "b4dcc06c-ea97-4547-aa95-c17b7c998297",
+  "title": "Introduction Midjourney"
+}
+```
+
+`source` menerima GUID telanjang atau tautan yang memuatnya
+(`iframe.mediadelivery.net/play/…`, URL playlist CDN). Hanya GUID-nya yang
+dipakai — URL pemutaran selalu disusun server dari hostname CDN yang
+dikonfigurasi, sehingga host yang ikut tertempel tidak pernah sampai ke
+pemutar pelajar. `title` opsional; bila kosong, judul diambil dari Bunny.
+
+Response:
+
+```json
+{
+  "data": {
+    "videoAssetId": "uuid",
+    "provider": "BUNNY_STREAM",
+    "providerVideoId": "b4dcc06c-ea97-4547-aa95-c17b7c998297",
+    "title": "Introduction Midjourney",
+    "status": "AVAILABLE"
+  }
+}
+```
+
+Server memverifikasi GUID ke API Bunny lebih dulu, sehingga salah ketik ditolak
+`422` saat itu juga alih-alih menjadi pelajaran yang videonya gagal diputar
+kemudian. Video yang masih ditranskode masuk sebagai `PROCESSING` dan belum
+dapat diputar. Mendaftarkan video yang sama dua kali dijawab `422`, karena
+`providerVideoId` unik global. Bila `BUNNY_STREAM_LIBRARY_ID` atau
+`BUNNY_STREAM_API_KEY` belum diisi, endpoint menjawab `422`.
+
 ### POST `/webhooks/bunny-stream`
 
 Menerima status `CREATED`, `UPLOADING`, `PROCESSING`, `AVAILABLE`, `FAILED`, atau `DELETED`.
@@ -1676,6 +1716,19 @@ Response:
 - `EMBED` — video diputar penyedia luar di dalam iframe. `embedUrl` terisi
   (`youtube-nocookie.com/embed/...`), `playbackUrl` null. Endpoint konten tidak
   pernah melayani aset semacam ini.
+- `HLS` — playlist `.m3u8` diantar CDN penyedia, tetapi pemutarnya tetap milik
+  aplikasi ini, bukan halaman sematan penyedia. `playbackUrl` terisi dengan URL
+  CDN, `embedUrl` null, dan endpoint konten tidak melayaninya. Dengan begitu
+  watermark serta larangan unduh tidak berpindah tangan. Bila
+  `BUNNY_STREAM_TOKEN_AUTH_KEY` terisi, URL-nya ditandatangani dan kedaluwarsa
+  bersamaan dengan sesinya; selama kosong, perlindungan bersandar pada
+  pembatasan referrer di sisi Bunny — cukup untuk hotlink biasa, tetapi
+  referrer dapat dipalsukan.
+
+Aset `BUNNY_STREAM` pada server yang tidak mengonfigurasi `BUNNY_STREAM_CDN_HOSTNAME`
+dijawab `409 FILE_NOT_AVAILABLE`. Sebelumnya ia jatuh ke jalur `FILE` dan
+berujung 404, sehingga pelajar dinasihati meminta Master mengunggah ulang MP4 —
+nasihat yang keliru untuk video yang memang tidak pernah ada di penyimpanan kita.
 
 Playback URL bersifat singkat, scoped ke video, dibuat server-side, tidak disimpan permanen, dan tidak dicatat pada log.
 

@@ -69,6 +69,8 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   const [upload, setUpload] = useState<UploadState | null>(null);
   const [youtubeLessonId, setYoutubeLessonId] = useState<string | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [bunnyLessonId, setBunnyLessonId] = useState<string | null>(null);
+  const [bunnySource, setBunnySource] = useState('');
   const [pickerLesson, setPickerLesson] = useState<{ id: string; title: string } | null>(null);
   const [quizLessonId, setQuizLessonId] = useState<string | null>(null);
 
@@ -316,6 +318,56 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       router.refresh();
     } catch (caught) {
       void notifier.error('Tautan YouTube gagal disimpan', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+        reasons: caught instanceof ApiError ? Object.values(caught.fields ?? {}).flat() : [],
+      });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /**
+   * Mendaftarkan video yang sudah diunggah ke Bunny, lalu memasangnya.
+   *
+   * Berkasnya tidak lewat server ini sama sekali: Master mengunggahnya di
+   * dashboard Bunny, dan yang ditempel di sini adalah GUID-nya.
+   */
+  async function linkBunny(lessonId: string, title: string) {
+    if (busy) return;
+    const source = bunnySource.trim();
+    if (!source) {
+      void notifier.error('GUID belum diisi', {
+        text: 'Tempel GUID video dari dashboard Bunny terlebih dahulu.',
+      });
+      return;
+    }
+    setBusy(`bunny-${lessonId}`);
+    try {
+      const asset = unwrap<Schemas['CreateBunnyVideoResultDto']>(
+        await client().POST('/api/v1/admin/videos/bunny', { body: { source, title } }),
+      );
+      unwrap(
+        await client().PUT('/api/v1/admin/lessons/{lessonId}/video', {
+          params: { path: { lessonId } },
+          body: { videoAssetId: asset.videoAssetId },
+        }),
+      );
+      setBunnyLessonId(null);
+      setBunnySource('');
+      setUpload({
+        lessonId,
+        fileName: asset.title,
+        percent: 100,
+        status: 'SUCCESS',
+        // Video yang masih ditranskode boleh masuk perpustakaan, tetapi belum
+        // dapat diputar. Menyebutnya "siap" akan menjadi janji yang keliru.
+        message: asset.status === 'AVAILABLE'
+          ? 'Video Bunny tertaut dan siap diputar.'
+          : 'Video Bunny tertaut, tetapi masih diproses Bunny dan belum dapat diputar.',
+      });
+      router.refresh();
+    } catch (caught) {
+      void notifier.error('Video Bunny gagal didaftarkan', {
         text: caught instanceof ApiError ? caught.message : undefined,
         reasons: caught instanceof ApiError ? Object.values(caught.fields ?? {}).flat() : [],
       });
@@ -608,6 +660,22 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             Tautkan YouTube
                           </button>
                         ) : null}
+                        {lesson.contentType === 'VIDEO' ? (
+                          <button
+                            className="btnTiny"
+                            type="button"
+                            disabled={busy !== null}
+                            onClick={() => {
+                              setBunnySource('');
+                              setBunnyLessonId((current) =>
+                                current === lesson.id ? null : lesson.id,
+                              );
+                            }}
+                            aria-expanded={bunnyLessonId === lesson.id}
+                          >
+                            Tautkan Bunny
+                          </button>
+                        ) : null}
                         <span className="inlineActions lessonActions">
                           <button
                             className="iconAction"
@@ -691,6 +759,53 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                               onClick={() => {
                                 setYoutubeLessonId(null);
                                 setYoutubeUrl('');
+                              }}
+                            >
+                              Batal
+                            </button>
+                          </span>
+                        </div>
+                      ) : null}
+                      {bunnyLessonId === lesson.id ? (
+                        <div className="videoUploadProgress">
+                          <label className="field">
+                            <span>GUID video Bunny</span>
+                            <input
+                              type="text"
+                              placeholder="b4dcc06c-ea97-4547-aa95-c17b7c998297"
+                              value={bunnySource}
+                              disabled={busy !== null}
+                              onChange={(event) => setBunnySource(event.currentTarget.value)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault();
+                                  void linkBunny(lesson.id, lesson.title);
+                                }
+                              }}
+                            />
+                          </label>
+                          <small>
+                            Unggah videonya lebih dulu di dashboard Bunny, lalu tempel GUID-nya di
+                            sini — tautan yang memuat GUID juga diterima. Bunny mengantar videonya
+                            dari CDN, tetapi pemutarnya tetap milik akademi, sehingga watermark dan
+                            larangan unduh tetap berlaku.
+                          </small>
+                          <span className="inlineActions">
+                            <button
+                              className="btnSecondary btnSmall"
+                              type="button"
+                              disabled={busy !== null}
+                              onClick={() => void linkBunny(lesson.id, lesson.title)}
+                            >
+                              {busy === `bunny-${lesson.id}` ? 'Menyimpan…' : 'Simpan video Bunny'}
+                            </button>
+                            <button
+                              className="btnGhost btnSmall"
+                              type="button"
+                              disabled={busy !== null}
+                              onClick={() => {
+                                setBunnyLessonId(null);
+                                setBunnySource('');
                               }}
                             >
                               Batal

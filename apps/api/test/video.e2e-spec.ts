@@ -1,7 +1,15 @@
 import { access, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import request from 'supertest';
-import { firstLessonOf, login, prefix, startHarness, type Harness, type Session } from './support/harness';
+import {
+  BUNNY_CDN_HOSTNAME,
+  firstLessonOf,
+  login,
+  prefix,
+  startHarness,
+  type Harness,
+  type Session,
+} from './support/harness';
 
 const MASTER = { email: 'master@akademionline.id', password: 'Master#Lokal12345' };
 const STUDENT = { email: 'pelajar@akademionline.id', password: 'Pelajar#Lokal12345' };
@@ -300,6 +308,75 @@ describe('Perpustakaan video self-hosted', () => {
       .get(`${prefix}/playback-sessions/${playbackId}/content`)
       .set('Cookie', master.cookie)
       .expect(404);
+  });
+
+  it('mengantar video Bunny sebagai playlist HLS bertanda tangan, bukan sebagai berkas kita', async () => {
+    // Aset dibuat langsung lewat prisma: mendaftarkannya lewat endpoint akan
+    // memanggil API Bunny, dan test tidak boleh menyentuh jaringan.
+    const guid = 'b4dcc06c-ea97-4547-aa95-c17b7c998297';
+    const aset = await h.prisma.videoAsset.create({
+      data: {
+        createdBy: (await h.prisma.user.findUniqueOrThrow({ where: { email: MASTER.email }, select: { id: true } })).id,
+        provider: 'BUNNY_STREAM',
+        providerVideoId: guid,
+        title: 'Video lewat Bunny',
+        status: 'AVAILABLE',
+      },
+      select: { id: true },
+    });
+    videoAssetIds.push(aset.id);
+
+    const student = await login(h.server, STUDENT.email, STUDENT.password);
+    const terdaftar = await firstLessonOf(h.prisma, 'video-editing-mastery');
+    await pasang(terdaftar, aset.id);
+
+    const playback = await request(h.server)
+      .post(`${prefix}/learn/lessons/${terdaftar}/playback-sessions`)
+      .set('Cookie', student.cookie)
+      .set('X-CSRF-Token', student.csrfToken)
+      .send({})
+      .expect(201);
+
+    // Bukan EMBED: pemutarnya tetap milik kita, sehingga watermark dan
+    // larangan unduh tidak berpindah tangan ke halaman penyedia.
+    expect(playback.body.data.kind).toBe('HLS');
+    expect(playback.body.data.embedUrl).toBeNull();
+    expect(playback.body.data.watermark.text).toContain('@');
+
+    const url = new URL(playback.body.data.playbackUrl as string);
+    expect(url.host).toBe(BUNNY_CDN_HOSTNAME);
+    expect(url.pathname).toBe(`/${guid}/playlist.m3u8`);
+    // Tautan yang bocor harus mati sendiri: tanda tangan dan batas waktunya ada.
+    expect(url.searchParams.get('token')).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    const kedaluwarsa = Number(url.searchParams.get('expires'));
+    expect(kedaluwarsa).toBeGreaterThan(Math.floor(Date.now() / 1000));
+
+    // Tidak ada berkas kita yang boleh dialirkan untuk aset Bunny.
+    const playbackId = playback.body.data.playbackSessionId as string;
+    await request(h.server)
+      .get(`${prefix}/playback-sessions/${playbackId}/content`)
+      .set('Cookie', student.cookie)
+      .expect(404);
+  });
+
+  it('menolak mendaftarkan video Bunny selama kredensialnya belum dikonfigurasi', async () => {
+    // GUID yang tidak berbentuk ditolak lebih dulu, tanpa menyentuh jaringan.
+    const bentukSalah = await request(h.server)
+      .post(`${prefix}/admin/videos/bunny`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .send({ source: 'bukan guid sama sekali' })
+      .expect(422);
+    expect(JSON.stringify(bentukSalah.body)).toContain('GUID');
+
+    // Bentuknya benar, tetapi server ini memang belum punya API key Bunny.
+    const belumSiap = await request(h.server)
+      .post(`${prefix}/admin/videos/bunny`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .send({ source: 'https://iframe.mediadelivery.net/play/719347/1f2e3d4c-5b6a-4798-8765-0a1b2c3d4e5f' })
+      .expect(422);
+    expect(JSON.stringify(belumSiap.body)).toContain('belum dikonfigurasi');
   });
 
   it('mengganti video pelajaran tanpa membuang berkas lamanya', async () => {

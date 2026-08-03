@@ -214,6 +214,16 @@ Production release memerlukan:
 - MIME dan ukuran invalid ditolak.
 - API key tidak muncul di response atau log.
 
+### Registrasi video Bunny
+
+- GUID diambil dari GUID telanjang maupun dari tautan yang memuatnya; masukan
+  tanpa GUID sah ditolak `422` tanpa memanggil Bunny.
+- Selama `BUNNY_STREAM_LIBRARY_ID` atau `BUNNY_STREAM_API_KEY` kosong, endpoint
+  menjawab `422` dan menyebut bahwa Bunny belum dikonfigurasi.
+- Video yang sama tidak dapat didaftarkan dua kali.
+- Verifikasi GUID ke API Bunny tidak dijalankan otomatis dalam test, karena
+  menuntut panggilan keluar; hanya jalur penolakannya yang tercakup.
+
 ### Webhook
 
 - Webhook valid memperbarui status.
@@ -226,6 +236,14 @@ Production release memerlukan:
 
 - Pengguna terautentikasi memperoleh short-lived URL untuk video pada course terbit; enrollment progres dibuat otomatis bila belum ada.
 - Pengguna tanpa sesi, suspended account, locked lesson, course non-published, dan processing video ditolak.
+- Aset Bunny dijawab `kind: HLS` dengan URL playlist CDN bertanda tangan dan
+  `embedUrl` null; endpoint konten tidak melayaninya.
+- URL playlist Bunny ditandatangani sha256 + base64url, dan tanda tangannya
+  berubah ketika batas waktunya berubah. Nilai tetapnya dipatok pada unit test
+  karena tanda tangan yang salah bentuk hanya bergejala "video tidak dapat
+  diputar".
+- Aset Bunny pada server tanpa hostname CDN dijawab `409`, bukan diarahkan ke
+  jalur berkas yang pasti berujung 404.
 - Token expiry tersedia.
 - Playback token tidak muncul di log.
 - Watermark traceable.

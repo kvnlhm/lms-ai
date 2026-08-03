@@ -1,26 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Schemas } from '@lms/api-client';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 
 /**
- * Respons playback belum dideskripsikan sebagai DTO di OpenAPI, jadi bentuknya
- * ditegaskan di sini seperti pemanggil lain di aplikasi ini.
+ * Bentuknya kini datang dari kontrak, bukan disalin dengan tangan. Selama
+ * endpoint playback tidak mendokumentasikan responsnya, `kind: 'HLS'` yang
+ * lahir bersama Bunny tidak pernah sampai ke sini.
  */
-interface PlaybackSession {
-  kind: 'FILE' | 'EMBED';
-  playbackUrl: string | null;
-  embedUrl: string | null;
-  watermark: {
-    text: string;
-    mode: 'MOVING';
-  };
-}
+type PlaybackSession = Schemas['PlaybackSessionDto'];
 
 export function VideoPlayer({ lessonId }: { lessonId: string }) {
   const [session, setSession] = useState<PlaybackSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+
+  // Dibungkus useCallback: tanpa itu identitasnya berubah tiap render dan
+  // efek di dalam `HlsVideo` akan membongkar-pasang pemutarnya terus-menerus.
+  const gagalDiputar = useCallback(() => {
+    setSession(null);
+    setError(
+      'Video tersedia di kursus, tetapi file tidak dapat diputar. Minta Master mengunggah ulang video MP4.',
+    );
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -81,25 +84,86 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
 
   if (!session.playbackUrl) return <p className="stageNote">Menyiapkan video…</p>;
 
+
   return (
     <div className="protectedVideoFrame" onContextMenu={(event) => event.preventDefault()}>
-      <video
-        controls
-        controlsList="nodownload noremoteplayback nofullscreen"
-        disablePictureInPicture
-        disableRemotePlayback
-        preload="metadata"
-        src={session.playbackUrl}
-        onError={() => {
-          setSession(null);
-          setError(
-            'Video tersedia di kursus, tetapi file tidak dapat diputar. Minta Master mengunggah ulang video MP4.',
-          );
-        }}
-      >
-        Browser kamu tidak mendukung pemutar video HTML5.
-      </video>
+      {session.kind === 'HLS' ? (
+        <HlsVideo src={session.playbackUrl} onFailure={gagalDiputar} />
+      ) : (
+        <video
+          controls
+          controlsList="nodownload noremoteplayback nofullscreen"
+          disablePictureInPicture
+          disableRemotePlayback
+          preload="metadata"
+          src={session.playbackUrl}
+          onError={gagalDiputar}
+        >
+          Browser kamu tidak mendukung pemutar video HTML5.
+        </video>
+      )}
       <span className="videoViewerWatermark" aria-hidden="true">{session.watermark.text}</span>
     </div>
+  );
+}
+
+/**
+ * Pemutar HLS untuk video yang diantar CDN penyedia.
+ *
+ * Tetap memakai tag `<video>` milik kita, bukan iframe penyedia, supaya
+ * watermark dan larangan unduh tidak berpindah tangan — dan supaya kelak
+ * progres tontonan dapat dilacak dari `timeupdate` di sini.
+ *
+ * Safari dan iOS memutar HLS secara bawaan; di sana `hls.js` sengaja tidak
+ * dipakai karena pemutar bawaannya lebih hemat baterai dan mendukung
+ * pemutaran layar penuh milik sistem.
+ */
+function HlsVideo({ src, onFailure }: { src: string; onFailure: () => void }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = src;
+      return;
+    }
+
+    let hls: import('hls.js').default | null = null;
+    let dibatalkan = false;
+    void import('hls.js').then(({ default: Hls }) => {
+      if (dibatalkan || !videoRef.current) return;
+      if (!Hls.isSupported()) {
+        onFailure();
+        return;
+      }
+      hls = new Hls({ enableWorker: true });
+      hls.loadSource(src);
+      hls.attachMedia(videoRef.current);
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        // Hanya kegagalan fatal yang dilaporkan; hls.js memulihkan sendiri
+        // gangguan jaringan sesaat, dan itu justru gunanya memakai HLS.
+        if (data.fatal) onFailure();
+      });
+    });
+
+    return () => {
+      dibatalkan = true;
+      hls?.destroy();
+    };
+  }, [src, onFailure]);
+
+  return (
+    <video
+      ref={videoRef}
+      controls
+      controlsList="nodownload noremoteplayback nofullscreen"
+      disablePictureInPicture
+      disableRemotePlayback
+      preload="metadata"
+    >
+      Browser kamu tidak mendukung pemutar video HTML5.
+    </video>
   );
 }

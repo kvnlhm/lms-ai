@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PlaybackStatus, Prisma, VideoProvider, VideoStatus } from '@prisma/client';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { chmod, mkdir, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -13,6 +13,7 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
 import type { LessonVideoCleanupPort } from '../../learning-catalog/application/lesson-video-cleanup.port';
+import { BunnyStreamClient } from '../infrastructure/bunny-stream.client';
 
 interface UploadIntent {
   title: string;
@@ -35,6 +36,50 @@ const PENDING_STATUSES = new Set<VideoStatus>([
 
 const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 const YOUTUBE_HOSTS = new Set(['youtube.com', 'm.youtube.com', 'youtube-nocookie.com']);
+
+const BUNNY_GUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+/**
+ * GUID video Bunny dari apa pun yang ditempel Master.
+ *
+ * Orang menempel bermacam hal: GUID telanjang dari dashboard, tautan
+ * `iframe.mediadelivery.net/play/…`, atau URL playlist. Yang diambil hanya
+ * GUID-nya, dan itulah satu-satunya bagian yang kelak dipakai — URL pemutaran
+ * selalu kita susun sendiri dari hostname CDN milik kita, sehingga host apa pun
+ * yang ikut tertempel tidak pernah sampai ke pemutar pelajar.
+ */
+export function parseBunnyVideoId(input: string): string | null {
+  const cocok = BUNNY_GUID_PATTERN.exec(input.trim());
+  return cocok ? cocok[0].toLowerCase() : null;
+}
+
+/**
+ * URL playlist HLS Bunny untuk satu video.
+ *
+ * Bila `tokenAuthKey` terisi, URL-nya ditandatangani dan kedaluwarsa bersamaan
+ * dengan sesi pemutaran — jadi tautan yang bocor mati dengan sendirinya.
+ * Selama kunci itu kosong, perlindungannya bersandar pada pembatasan referrer
+ * di sisi Bunny, yang menahan hotlink biasa tetapi dapat dipalsukan.
+ */
+export function bunnyPlaylistUrl(
+  config: { cdnHostname?: string; tokenAuthKey?: string },
+  videoId: string,
+  expiresAt: Date,
+): string | null {
+  if (!config.cdnHostname) return null;
+  const path = `/${videoId}/playlist.m3u8`;
+  if (!config.tokenAuthKey) return `https://${config.cdnHostname}${path}`;
+
+  const expires = Math.floor(expiresAt.getTime() / 1000);
+  const token = createHash('sha256')
+    .update(`${config.tokenAuthKey}${path}${expires}`)
+    .digest('base64')
+    .replace(/\n/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+  return `https://${config.cdnHostname}${path}?token=${token}&expires=${expires}`;
+}
 
 /**
  * Mengambil ID video dari berbagai bentuk tautan YouTube yang biasa disalin
@@ -96,6 +141,7 @@ export class VideoService implements LessonVideoCleanupPort {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: EnrollmentAccessService,
+    private readonly bunny: BunnyStreamClient,
     config: ConfigService<{ app: AppConfig }, true>,
   ) {
     this.config = config.get('app', { infer: true }).video;
@@ -248,6 +294,63 @@ export class VideoService implements LessonVideoCleanupPort {
       youtubeVideoId,
       sourceUrl: asset.sourceUrl,
     };
+  }
+
+  /**
+   * Menambahkan video Bunny Stream ke perpustakaan.
+   *
+   * Berkasnya diunggah Master lewat dashboard Bunny; yang didaftarkan di sini
+   * adalah GUID-nya. Sebelum ini tidak ada satu pun jalan untuk itu, sehingga
+   * satu-satunya aset Bunny yang ada di produksi dibuat lewat SQL langsung.
+   *
+   * Seperti YouTube, tidak digandengkan ke `VIDEO_PROVIDER`: setelan itu
+   * menentukan ke mana berkas diunggah untuk seluruh deployment, sedangkan
+   * Bunny adalah asal per-aset yang tidak memakai penyimpanan kita.
+   */
+  async createBunnyVideo(input: { source: string; title?: string }, userId: string) {
+    const videoId = parseBunnyVideoId(input.source);
+    if (!videoId) {
+      throw AppError.validation({
+        source: ['GUID video Bunny tidak dikenali. Tempel GUID dari dashboard Bunny, atau tautan yang memuatnya.'],
+      });
+    }
+
+    const metadata = await this.bunny.fetchVideo(videoId);
+    if (metadata.failed) {
+      throw AppError.validation({
+        source: ['Video itu gagal diproses di Bunny. Unggah ulang di dashboard Bunny lebih dulu.'],
+      });
+    }
+
+    const judul = input.title?.trim() || metadata.title || `Video Bunny ${videoId.slice(0, 8)}`;
+    try {
+      const asset = await this.prisma.videoAsset.create({
+        data: {
+          createdBy: userId,
+          provider: VideoProvider.BUNNY_STREAM,
+          // GUID Bunny yang sesungguhnya, bukan pegangan internal seperti pada
+          // YouTube: URL playlist disusun langsung dari nilai ini.
+          providerVideoId: videoId,
+          title: judul,
+          sizeBytes: metadata.sizeBytes === null ? null : BigInt(metadata.sizeBytes),
+          // Video yang masih ditranskode tetap boleh masuk perpustakaan, tetapi
+          // belum boleh diputar; pemutaran menuntut status AVAILABLE.
+          status: metadata.ready ? VideoStatus.AVAILABLE : VideoStatus.PROCESSING,
+        },
+      });
+      return {
+        videoAssetId: asset.id,
+        provider: asset.provider,
+        providerVideoId: asset.providerVideoId,
+        title: asset.title,
+        status: asset.status,
+      };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw AppError.validation({ source: ['Video itu sudah ada di perpustakaan.'] });
+      }
+      throw error;
+    }
   }
 
   /**
@@ -500,12 +603,30 @@ export class VideoService implements LessonVideoCleanupPort {
     const embedded = asset.provider === VideoProvider.YOUTUBE;
     const youtubeVideoId = embedded && asset.sourceUrl ? parseYoutubeVideoId(asset.sourceUrl) : null;
 
+    // Bunny mengantar sendiri bytenya dari CDN, tetapi pemutarnya tetap milik
+    // kita: yang dikirim adalah playlist HLS, bukan halaman sematan. Dengan
+    // begitu watermark, larangan unduh, dan kelak pelacakan progres tetap ada
+    // di tangan aplikasi ini.
+    const bunny = asset.provider === VideoProvider.BUNNY_STREAM
+      ? bunnyPlaylistUrl(this.config.bunny, asset.providerVideoId, expiresAt)
+      : null;
+
+    // Aset Bunny tanpa konfigurasi Bunny tidak punya berkas di penyimpanan
+    // kita, jadi jalur berkas hanya akan berujung 404 — dan pelajar diberi
+    // tahu "minta Master mengunggah ulang MP4", nasihat yang keliru. Lebih
+    // jujur menyebutnya belum tersedia.
+    if (asset.provider === VideoProvider.BUNNY_STREAM && !bunny) {
+      throw new AppError('FILE_NOT_AVAILABLE', 409, 'Video belum tersedia.');
+    }
+
     return {
       playbackSessionId: playback.id,
       provider: asset.provider,
       providerVideoId: asset.providerVideoId,
-      kind: embedded ? ('EMBED' as const) : ('FILE' as const),
-      playbackUrl: embedded ? null : `/api/v1/playback-sessions/${playback.id}/content`,
+      kind: embedded ? ('EMBED' as const) : bunny ? ('HLS' as const) : ('FILE' as const),
+      playbackUrl: embedded
+        ? null
+        : (bunny ?? `/api/v1/playback-sessions/${playback.id}/content`),
       // `youtube-nocookie` supaya pelajar tidak dilacak sebelum menekan putar.
       embedUrl: youtubeVideoId
         ? `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0&modestbranding=1`
@@ -518,6 +639,7 @@ export class VideoService implements LessonVideoCleanupPort {
       },
     };
   }
+
 
   async authorisedObject(playbackSessionId: string, userId: string): Promise<string> {
     const playback = await this.prisma.videoPlaybackSession.findFirst({

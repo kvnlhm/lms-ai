@@ -12,6 +12,18 @@ export type LibraryFilter = 'USED' | 'ORPHAN' | 'PROBLEM' | 'AVAILABLE';
 
 export const UKURAN_HALAMAN_PERPUSTAKAAN = 20;
 
+/**
+ * Nama penyedia untuk dibaca manusia.
+ *
+ * Sebelumnya apa pun yang bukan YouTube disebut "Self-hosted", sehingga video
+ * Bunny — yang justru tidak disimpan di server kita — mengaku sebaliknya.
+ */
+export function namaPenyedia(provider: string): string {
+  if (provider === 'YOUTUBE') return 'YouTube';
+  if (provider === 'BUNNY_STREAM') return 'Bunny Stream';
+  return 'Self-hosted';
+}
+
 export function formatBytes(value: string | null | undefined): string {
   if (value === null || value === undefined) return '—';
   const bytes = Number(value);
@@ -168,7 +180,9 @@ export function VideoLibraryPicker({
                     </button>
                   </div>
                   <p className="cellSub">
-                    {item.provider === 'YOUTUBE' ? 'YouTube' : formatBytes(item.sizeBytes)}
+                    {item.provider === 'SELF_HOSTED'
+                      ? formatBytes(item.sizeBytes)
+                      : namaPenyedia(item.provider)}
                     {item.usedBy.length > 0
                       ? ` · sudah dipakai ${item.usedBy.length} pelajaran`
                       : ' · belum dipakai'}
