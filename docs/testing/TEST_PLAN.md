@@ -256,3 +256,9 @@ Production release memerlukan:
   dicegah selama mutation masih berjalan.
 - Sidebar, feed, serta rail event/pengumuman berubah menjadi satu kolom pada
   layar sempit tanpa overflow horizontal.
+- Beranda Pelajar tetap menampilkan ringkasan progres dan pintasan ke halaman
+  Community yang terpisah.
+- Master dapat mengubah nama, slug, keterangan, urutan, dan akses menulis
+  channel; Pelajar tetap ditolak oleh endpoint admin.
+- Avatar memakai foto profil bila ada dan fallback inisial bila tidak ada;
+  input pesan serta balasan terlihat jelas pada tema terang dan gelap.

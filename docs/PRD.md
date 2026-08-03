@@ -2254,10 +2254,14 @@ Pengembangan LMS menggunakan satu orchestrator dan beberapa specialist subagent.
 
 Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
 
-### 30.1 Learner Home
+### 30.1 Learner Home dan Community
 
-- Beranda Pelajar menampilkan feed komunitas sebagai konten utama.
-- Sidebar menampilkan channel yang dapat dibuka seperti ruang percakapan.
+- Beranda Pelajar tetap menjadi ringkasan belajar: insight progres, lanjutkan
+  belajar, kursus, aktivitas terakhir, dan pintasan menuju komunitas serta
+  pengumuman.
+- Halaman Komunitas terpisah menampilkan feed lintas channel sebagai konten
+  utama. Sidebar menampilkan channel yang dapat dibuka seperti ruang
+  percakapan.
 - Rail pendamping menampilkan sesi mendatang dan pengumuman terbaru.
 - Pelajar aktif dapat membuat post, komentar, dan reaksi pada channel biasa.
 - Layout wajib responsif untuk desktop, split-desktop, tablet, dan mobile.
@@ -2275,6 +2279,11 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
 - Channel read-only tetap terlihat semua akun aktif, tetapi hanya Master dapat
   menulis.
 - Identitas penulis selalu berasal dari session server.
+- Form pengelolaan Master menyediakan perubahan nama, slug, keterangan,
+  urutan, serta pilihan siapa yang dapat mengirim pesan.
+- Avatar percakapan memakai foto profil bila tersedia dan fallback inisial
+  nama bila foto belum diunggah. Composer dan balasan harus memiliki kontras,
+  label, dan fokus yang jelas.
 
 ### 30.3 Non-scope Awal
 

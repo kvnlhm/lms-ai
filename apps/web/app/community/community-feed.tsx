@@ -104,7 +104,7 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
   return (
     <>
       <aside className="communityChannels" aria-label="Channel komunitas">
-        <Link className={!activeSlug ? 'channelLink active' : 'channelLink'} href="/">▤ <span>Feed</span></Link>
+        <Link className={!activeSlug ? 'channelLink active' : 'channelLink'} href="/community">▤ <span><strong>Feed komunitas</strong><small>Post dan kabar terbaru</small></span></Link>
         <span className="channelGroup">Ruang komunitas</span>
         {channels.map((channel) => (
           <Link key={channel.id} className={channel.slug === activeSlug ? 'channelLink active' : 'channelLink'} href={`/community/${channel.slug}`}>
@@ -130,7 +130,7 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
               <p className="postBody">{post.body}</p>
               <div className="postActions"><button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button><span>◯ {post.commentCount} balasan</span></div>
               {post.comments.length > 0 ? <div className="commentList">{post.comments.map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span></p></div>)}</div> : null}
-              <div className="commentComposer"><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Tulis balasan..." maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div>
+              <div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div>
             </article>
           ))}
           {posts.length === 0 ? <div className="card empty"><p>Belum ada post. Jadilah yang pertama memulai percakapan.</p></div> : null}
@@ -158,7 +158,7 @@ function ChannelChat({ channels, posts, selected, activeSlug, currentUserId, bod
 
   return <>
     <aside className="communityChannels" aria-label="Channel komunitas">
-      <Link className="channelLink" href="/"><span>▤</span><span><strong>Feed</strong><small>Beranda komunitas</small></span></Link>
+      <Link className="channelLink" href="/community"><span>▤</span><span><strong>Feed komunitas</strong><small>Post dan kabar terbaru</small></span></Link>
       <span className="channelGroup">Ruang komunitas</span>
       {channels.map((channel) => <Link key={channel.id} className={channel.slug === activeSlug ? 'channelLink active' : 'channelLink'} href={`/community/${channel.slug}`}>
         <span>#</span><span><strong>{channel.name}</strong><small>{channel.description ?? `${channel.postCount} pesan`}</small></span>

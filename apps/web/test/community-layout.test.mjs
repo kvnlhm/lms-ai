@@ -6,6 +6,7 @@ const css = await readFile(new URL('../app/styles.css', import.meta.url), 'utf8'
 const shell = await readFile(new URL('../app/components/app-shell.tsx', import.meta.url), 'utf8');
 const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const channel = await readFile(new URL('../app/community/community-feed.tsx', import.meta.url), 'utf8');
+const channelManager = await readFile(new URL('../app/master/community/channel-manager.tsx', import.meta.url), 'utf8');
 
 test('beranda komunitas menyediakan tiga area desktop dan dua tahap responsif', () => {
   assert.match(css, /\.communityLayout\{[^}]*grid-template-columns:240px minmax\(0,1fr\) 310px/);
@@ -20,12 +21,12 @@ test('navigasi komunitas tersedia bagi pelajar dan pengelolaan hanya muncul di w
   assert.match(shell, /permission: 'discussions\.moderate'/);
 });
 
-test('beranda merangkai channel, feed, sesi langsung, dan pengumuman', () => {
-  assert.match(home, /CommunityFeed/);
-  assert.match(home, /CommunityRail/);
-  assert.match(home, /\/api\/v1\/community\/channels/);
-  assert.match(home, /\/api\/v1\/me\/announcements/);
-  assert.match(home, /\/api\/v1\/learn\/courses\/\{courseId\}\/live-sessions/);
+test('beranda pelajar terpisah dari komunitas dan menampilkan ringkasan belajar', () => {
+  assert.doesNotMatch(home, /CommunityFeed/);
+  assert.match(home, /learnerInsights/);
+  assert.match(home, /\/api\/v1\/me\/enrollments/);
+  assert.match(home, /\/api\/v1\/me\/continue-learning/);
+  assert.match(home, /href="\/community"/);
 });
 
 test('channel tampil sebagai chat responsif dengan identitas pengguna dari session', () => {
@@ -36,4 +37,15 @@ test('channel tampil sebagai chat responsif dengan identitas pengguna dari sessi
   assert.match(channel, /event\.key === 'Enter' && !event\.shiftKey/);
   assert.match(css, /\.chatMessage\.mine\{[^}]*align-self:flex-end/);
   assert.match(css, /\.channelChat\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/);
+});
+
+test('Master dapat mengedit identitas, urutan, dan akses menulis channel', () => {
+  assert.match(channelManager, /PATCH\('\/api\/v1\/admin\/community\/channels\/\{id\}'/);
+  assert.match(channelManager, /name: draft\.name\.trim\(\)/);
+  assert.match(channelManager, /slug: draft\.slug\.trim\(\)\.toLowerCase\(\)/);
+  assert.match(channelManager, /description: draft\.description\.trim\(\)/);
+  assert.match(channelManager, /position: draft\.position/);
+  assert.match(channelManager, /isReadOnly: draft\.isReadOnly/);
+  assert.match(channelManager, /Master dan Pelajar/);
+  assert.match(channelManager, /Hanya Master/);
 });

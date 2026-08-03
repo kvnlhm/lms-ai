@@ -2369,7 +2369,9 @@ memerlukan sesi aktif.
 - `POST /community/posts/{postId}/comments` — membalas post.
 - `POST /community/posts/{postId}/reaction` — menyalakan/mematikan reaksi pengguna.
 - `GET|POST|PATCH|DELETE /admin/community/channels` — pengelolaan channel oleh
-  Master dengan `discussions.moderate`; DELETE mengarsipkan, bukan menghapus isi.
+  Master dengan `discussions.moderate`; PATCH menerima perubahan nama, slug,
+  deskripsi, posisi, dan `isReadOnly`, sedangkan DELETE mengarsipkan, bukan
+  menghapus isi.
 
 Semua author ID berasal dari session. Client tidak boleh mengirim identitas,
 jumlah komentar, jumlah reaksi, status pin, atau permission.

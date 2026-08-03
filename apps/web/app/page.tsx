@@ -1,26 +1,34 @@
+import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from './components/app-shell';
-import { CommunityFeed, type CommunityChannel, type CommunityPost } from './community/community-feed';
-import { CommunityRail, type CommunityAnnouncement, type CommunityEvent } from './community/community-rail';
+import { ArrowRight } from './components/icons';
 import { serverClient, unwrap } from './lib/api';
-import { can, requireUser } from './lib/session';
+import { requireUser } from './lib/session';
 
 export const dynamic = 'force-dynamic';
 type Enrollment = Schemas['MyEnrollmentDto'];
+type ContinueLearning = Schemas['ContinueLearningDto'];
+type HistoryPage = Schemas['LearningHistoryPageDto'];
 
 export default async function HomePage() {
-  const user = await requireUser('/'); const client = await serverClient();
-  const [channels, posts, announcements, enrollments] = await Promise.all([
-    client.GET('/api/v1/community/channels', {}).then((value) => unwrap<CommunityChannel[]>(value)),
-    client.GET('/api/v1/community/feed', { params: { query: { page: 1, pageSize: 20 } } }).then((value) => unwrap<CommunityPost[]>(value)),
-    client.GET('/api/v1/me/announcements', { params: { query: { page: 1, pageSize: 4 } } }).then((value) => unwrap<CommunityAnnouncement[]>(value)),
+  const user = await requireUser('/');
+  const client = await serverClient();
+  const [enrollments, continueLearning, history] = await Promise.all([
     client.GET('/api/v1/me/enrollments', {}).then((value) => unwrap<Enrollment[]>(value)),
+    client.GET('/api/v1/me/continue-learning', {}).then((value) => unwrap<ContinueLearning | null>(value)),
+    client.GET('/api/v1/me/learning-history', { params: { query: { limit: 5 } } }).then((value) => unwrap<HistoryPage>(value)),
   ]);
-  const sessionGroups = await Promise.all(enrollments.slice(0, 12).map((item) =>
-    client.GET('/api/v1/learn/courses/{courseId}/live-sessions', { params: { path: { courseId: item.course.id } } })
-      .then((value) => unwrap<CommunityEvent[]>(value)).catch(() => [] as CommunityEvent[]),
-  ));
-  const events = sessionGroups.flat().filter((item) => item.status !== 'ENDED').sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
-
-  return <AppShell user={user}><main className="communityLayout"><CommunityFeed channels={channels} initialPosts={posts} canModerate={can(user, 'discussions.moderate')} /><CommunityRail events={events} announcements={announcements} /></main></AppShell>;
+  return <AppShell user={user}><main className="wrap learnerDashboard">
+    <section className="learnerWelcome"><div><span className="eyebrow">Ringkasan belajar</span><h1 className="pageTitle">Selamat datang, {user.fullName}.</h1><p className="pageSub">{enrollments.length} kursus tersedia untuk kamu.</p></div><div className="learnerShortcuts"><Link href="/community">Buka komunitas <ArrowRight size={15} /></Link><Link href="/announcements">Lihat pengumuman <ArrowRight size={15} /></Link></div></section>
+    <div className="learnerInsights"><div className="card"><span>Kursus tersedia</span><strong>{enrollments.length}</strong></div><div className="card"><span>Sedang dipelajari</span><strong>{enrollments.filter((item) => item.progress.percent > 0 && item.progress.percent < 100).length}</strong></div><div className="card"><span>Sudah selesai</span><strong>{enrollments.filter((item) => item.status === 'COMPLETED').length}</strong></div><Link className="card insightShortcut" href="/history"><span>Riwayat belajar</span><strong>→</strong></Link></div>
+    {continueLearning ? <><h2 className="sectionTitle">Lanjutkan belajar</h2><ContinueCard item={continueLearning} /></> : null}
+    <div className="sectionTitleRow"><h2 className="sectionTitle">Kursus kamu</h2><Link href="/courses">Lihat semua</Link></div>
+    {enrollments.length === 0 ? <div className="card empty"><p>Belum ada kursus yang diterbitkan.</p></div> : <div className="courseGrid">{enrollments.slice(0, 6).map((item) => <EnrollmentCard key={item.enrollmentId} enrollment={item} />)}</div>}
+    <div className="sectionTitleRow"><h2 className="sectionTitle">Aktivitas terbaru</h2><Link href="/history">Lihat semua</Link></div>
+    {history.items.length === 0 ? <div className="card empty"><p>Belum ada aktivitas belajar yang tercatat.</p></div> : <div className="card recentActivity">{history.items.map((item) => <Link key={item.id} href={item.lessonId && item.courseId ? `/learn/${item.courseId}/${item.lessonId}` : '/courses'}><span><strong>{item.lessonTitle}</strong><small>{item.courseTitle}{item.moduleTitle ? ` · ${item.moduleTitle}` : ''}</small></span><time>{formatRelative(item.occurredAt)}</time></Link>)}</div>}
+  </main></AppShell>;
 }
+
+function ContinueCard({ item }: { item: ContinueLearning }) { const target = item.lesson ? `/learn/${item.course.id}/${item.lesson.id}` : `/courses/${item.course.id}`; return <article className={`card progressCard${item.course.thumbnailUrl ? ' withThumbnail' : ''}`}>{item.course.thumbnailUrl ? <img className="continueThumbnail" src={item.course.thumbnailUrl} alt="" /> : null}<div className="continueContent"><div className="progressTop"><div><span className="eyebrow">{item.lesson?.moduleTitle ?? 'Kursus aktif'}</span><h3>{item.course.title}</h3><p>{item.lesson ? `Berikutnya: ${item.lesson.title}` : 'Buka kursus untuk mulai belajar.'}</p></div><span className="progressPct">{item.progressPercent}%</span></div><div className="progress"><span style={{ width: `${item.progressPercent}%` }} /></div><Link className="btn" href={target}>Lanjutkan <ArrowRight size={16} /></Link></div></article>; }
+function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) { const { course, progress } = enrollment; return <Link href={`/courses/${course.id}`} className="card courseCard"><span className={`cover${course.thumbnailUrl ? ' hasImage' : ''}`}>{course.thumbnailUrl ? <img src={course.thumbnailUrl} alt="" /> : <span className="coverText">{course.title}</span>}</span><div className="courseBody"><span className="courseName">{course.title}</span><span className="eyebrow courseCategory">{course.category ?? 'Tanpa kategori'}</span>{course.shortDescription ? <span className="courseDesc">{course.shortDescription}</span> : null}<div className="courseFoot"><div className="courseProgressLabel"><span>Progres belajar</span><strong>{progress.percent}%</strong></div><div className="progress"><span style={{ width: `${progress.percent}%` }} /></div><div className="courseStats"><span>{progress.requiredLessonsCompleted} dari {progress.requiredLessonsTotal} materi wajib</span><span>{enrollment.status === 'COMPLETED' ? 'Selesai' : progress.percent > 0 ? 'Sedang berjalan' : 'Belum dimulai'}</span></div></div></div></Link>; }
+function formatRelative(value: string) { const diff = Math.max(0, Math.round((Date.now() - new Date(value).getTime()) / 60_000)); if (diff < 1) return 'Baru saja'; if (diff < 60) return `${diff} menit lalu`; if (diff < 1440) return `${Math.floor(diff / 60)} jam lalu`; return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short' }).format(new Date(value)); }
