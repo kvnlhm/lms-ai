@@ -44,6 +44,9 @@ export class ForumReplyDto {
   @ApiProperty({ format: 'date-time' }) updatedAt!: Date;
   @ApiProperty({ type: ForumAuthorDto }) author!: ForumAuthorDto;
   @ApiProperty({ type: ForumReactionCountDto }) _count!: ForumReactionCountDto;
+
+  @ApiProperty({ description: 'Benar bila pengguna ini sedang menyukainya.' })
+  reactedByMe!: boolean;
 }
 
 export class ForumTopicDetailDto {
@@ -71,6 +74,18 @@ export class ForumTopicDetailDto {
 
   @ApiPropertyOptional({ type: String, nullable: true })
   participationBlockedReason!: string | null;
+
+  /**
+   * Reaksi adalah saklar: menekannya dua kali mengembalikan keadaan semula.
+   * Tanpa penanda ini antarmuka tidak dapat menunjukkan mana yang sedang
+   * disukai pengguna, sehingga setelah halaman dimuat ulang ia hanya melihat
+   * angka tanpa tahu apakah dirinya termasuk di dalamnya.
+   */
+  @ApiProperty({ description: 'Benar bila pengguna ini sedang menyukai topiknya.' })
+  reactedByMe!: boolean;
+
+  @ApiProperty({ description: 'Benar bila topik ini milik pengguna dan masih boleh diubah.' })
+  canManage!: boolean;
 }
 
 export class ForumTopicCreatedDto {

@@ -50,6 +50,110 @@ describe('Forum diskusi', () => {
     return id;
   }
 
+  it('menyebutkan reaksi milik pengguna sendiri, bukan hanya jumlahnya', async () => {
+    // Reaksi adalah saklar. Tanpa penanda ini antarmuka hanya punya angka,
+    // sehingga setelah halaman dimuat ulang pengguna tidak tahu apakah dirinya
+    // termasuk di antara yang menyukainya.
+    const session = await login(h.server, STUDENT.email, STUDENT.password);
+    const topicId = await createTopic(session.cookie, session.csrfToken, 'Topik untuk reaksi');
+
+    const balasan = await request(h.server)
+      .post(`${prefix}/learn/forum/topics/${topicId}/replies`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .send({ body: 'Balasan yang akan disukai pada pengujian ini.' })
+      .expect(201);
+    const replyId = balasan.body.data.id as string;
+
+    const awal = await request(h.server)
+      .get(`${prefix}/learn/forum/topics/${topicId}`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+    expect(awal.body.data.reactedByMe).toBe(false);
+    expect(awal.body.data.replies[0].reactedByMe).toBe(false);
+
+    for (const path of [
+      `/learn/forum/topics/${topicId}/reactions`,
+      `/learn/forum/replies/${replyId}/reactions`,
+    ]) {
+      await request(h.server)
+        .post(`${prefix}${path}`)
+        .set('Cookie', session.cookie)
+        .set('X-CSRF-Token', session.csrfToken)
+        .expect(200);
+    }
+
+    const sesudah = await request(h.server)
+      .get(`${prefix}/learn/forum/topics/${topicId}`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+    expect(sesudah.body.data.reactedByMe).toBe(true);
+    expect(sesudah.body.data.replies[0].reactedByMe).toBe(true);
+
+    // Pengguna lain menyukainya tidak membuat penanda milik kita ikut menyala.
+    const lain = await login(h.server, OTHER_STUDENT.email, OTHER_STUDENT.password);
+    const dariMataOrangLain = await request(h.server)
+      .get(`${prefix}/learn/forum/topics/${topicId}`)
+      .set('Cookie', lain.cookie)
+      .expect(200);
+    expect(dariMataOrangLain.body.data.reactedByMe).toBe(false);
+    expect(dariMataOrangLain.body.data.replies[0].reactedByMe).toBe(false);
+    expect(dariMataOrangLain.body.data._count.reactions).toBe(1);
+
+    // Menekannya lagi mematikan reaksinya, dan penandanya ikut padam.
+    await request(h.server)
+      .post(`${prefix}/learn/forum/topics/${topicId}/reactions`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .expect(200);
+    const setelahDimatikan = await request(h.server)
+      .get(`${prefix}/learn/forum/topics/${topicId}`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+    expect(setelahDimatikan.body.data.reactedByMe).toBe(false);
+  });
+
+  it('hanya penulis topik yang boleh mengelolanya, dan tidak lagi setelah dikunci', async () => {
+    const session = await login(h.server, STUDENT.email, STUDENT.password);
+    const topicId = await createTopic(session.cookie, session.csrfToken, 'Topik untuk dikelola');
+
+    const milikSendiri = await request(h.server)
+      .get(`${prefix}/learn/forum/topics/${topicId}`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+    expect(milikSendiri.body.data.canManage).toBe(true);
+
+    const lain = await login(h.server, OTHER_STUDENT.email, OTHER_STUDENT.password);
+    const milikOrangLain = await request(h.server)
+      .get(`${prefix}/learn/forum/topics/${topicId}`)
+      .set('Cookie', lain.cookie)
+      .expect(200);
+    expect(milikOrangLain.body.data.canManage).toBe(false);
+
+    // `canManage` harus sepakat dengan yang benar-benar ditegakkan server:
+    // topik terkunci ditolak `updateTopic` maupun `deleteTopic`.
+    const master = await login(h.server, MASTER.email, MASTER.password);
+    await request(h.server)
+      .patch(`${prefix}/admin/forum/topics/${topicId}/status`)
+      .set('Cookie', master.cookie)
+      .set('X-CSRF-Token', master.csrfToken)
+      .send({ status: 'LOCKED' })
+      .expect(200);
+
+    const setelahDikunci = await request(h.server)
+      .get(`${prefix}/learn/forum/topics/${topicId}`)
+      .set('Cookie', session.cookie)
+      .expect(200);
+    expect(setelahDikunci.body.data.canManage).toBe(false);
+
+    await request(h.server)
+      .patch(`${prefix}/learn/forum/topics/${topicId}`)
+      .set('Cookie', session.cookie)
+      .set('X-CSRF-Token', session.csrfToken)
+      .send({ title: 'Judul baru yang seharusnya ditolak' })
+      .expect(409);
+  });
+
   it('pelajar peserta kursus dapat membuat dan membaca topik', async () => {
     const session = await login(h.server, STUDENT.email, STUDENT.password);
     const topicId = await createTopic(session.cookie, session.csrfToken, 'Cara memulai editing');

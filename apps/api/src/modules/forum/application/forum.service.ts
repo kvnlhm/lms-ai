@@ -162,10 +162,32 @@ export class ForumService {
       },
     });
 
+    // Reaksi milik pengguna ini diambil sekaligus untuk topik dan seluruh
+    // balasannya. Tanpa penandanya, saklar suka tidak punya keadaan yang
+    // terlihat: setelah halaman dimuat ulang, pengguna hanya melihat angka
+    // dan tidak tahu apakah dirinya sudah termasuk di dalamnya.
+    const reaksiSaya = await this.prisma.forumReaction.findMany({
+      where: {
+        userId,
+        OR: [{ topicId }, { replyId: { in: replies.map((reply) => reply.id) } }],
+      },
+      select: { topicId: true, replyId: true },
+    });
+    const balasanDisukai = new Set(
+      reaksiSaya.map((reaksi) => reaksi.replyId).filter((id): id is string => id !== null),
+    );
+
     const ban = await this.activeBan(userId, topic.courseId);
     return {
       ...topic,
-      replies,
+      replies: replies.map((reply) => ({
+        ...reply,
+        reactedByMe: balasanDisukai.has(reply.id),
+      })),
+      reactedByMe: reaksiSaya.some((reaksi) => reaksi.topicId === topicId),
+      // Topik terkunci tidak dapat diubah maupun dihapus penulisnya, sama
+      // seperti yang ditegakkan `updateTopic` dan `deleteTopic`.
+      canManage: topic.author.id === userId && topic.status !== ForumTopicStatus.LOCKED,
       // Supaya antarmuka dapat menyembunyikan kotak balasan alih-alih membiarkan
       // pelajar mengetik panjang lebar lalu ditolak server.
       canParticipate: !ban && topic.status !== ForumTopicStatus.LOCKED,

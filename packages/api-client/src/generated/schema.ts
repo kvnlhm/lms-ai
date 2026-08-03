@@ -3274,6 +3274,8 @@ export interface components {
             updatedAt: string;
             author: components["schemas"]["ForumAuthorDto"];
             _count: components["schemas"]["ForumReactionCountDto"];
+            /** @description Benar bila pengguna ini sedang menyukainya. */
+            reactedByMe: boolean;
         };
         ForumTopicDetailDto: {
             /** Format: uuid */
@@ -3302,6 +3304,10 @@ export interface components {
             /** @description Salah bila diskusi terkunci atau hak berpartisipasi sedang dicabut */
             canParticipate: boolean;
             participationBlockedReason?: string | null;
+            /** @description Benar bila pengguna ini sedang menyukai topiknya. */
+            reactedByMe: boolean;
+            /** @description Benar bila topik ini milik pengguna dan masih boleh diubah. */
+            canManage: boolean;
         };
         ForumTopicUpdatedDto: {
             /** Format: uuid */

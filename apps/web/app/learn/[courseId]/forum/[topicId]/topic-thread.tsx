@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Schemas } from '@lms/api-client';
 import { useNotifier } from '../../../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../../../lib/browser-api';
@@ -21,11 +22,14 @@ function formatDate(value: string): string {
 
 export function TopicThread({
   topicId,
+  courseId,
   currentUserId,
 }: {
   topicId: string;
+  courseId: string;
   currentUserId: string;
 }) {
+  const router = useRouter();
   const notifier = useNotifier();
   const [topic, setTopic] = useState<TopicDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +38,9 @@ export function TopicThread({
   const [draft, setDraft] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
+  const [editingTopic, setEditingTopic] = useState(false);
+  const [topicTitleDraft, setTopicTitleDraft] = useState('');
+  const [topicBodyDraft, setTopicBodyDraft] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -129,11 +136,67 @@ export function TopicThread({
             <small>{formatDate(topic.createdAt)}</small>
           </span>
         </div>
-        <p className="forumBody">{topic.body}</p>
+        {editingTopic ? (
+          <form
+            className="stack"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void run(
+                'edit-topic',
+                async () => {
+                  await browserClient().PATCH('/api/v1/learn/forum/topics/{topicId}', {
+                    params: { path: { topicId } },
+                    body: { title: topicTitleDraft.trim(), body: topicBodyDraft.trim() },
+                  });
+                  setEditingTopic(false);
+                },
+                'Diskusi diperbarui.',
+              );
+            }}
+          >
+            <label className="field">
+              <span>Judul</span>
+              <input
+                value={topicTitleDraft}
+                onChange={(event) => setTopicTitleDraft(event.currentTarget.value)}
+                minLength={5}
+                maxLength={200}
+                required
+                disabled={busy !== null}
+              />
+            </label>
+            <label className="field">
+              <span>Isi</span>
+              <textarea
+                value={topicBodyDraft}
+                onChange={(event) => setTopicBodyDraft(event.currentTarget.value)}
+                rows={5}
+                maxLength={5000}
+                required
+                disabled={busy !== null}
+              />
+            </label>
+            <span className="inlineActions">
+              <button className="btnSecondary btnSmall" type="submit" disabled={busy !== null}>
+                Simpan
+              </button>
+              <button
+                className="btnGhost btnSmall"
+                type="button"
+                disabled={busy !== null}
+                onClick={() => setEditingTopic(false)}
+              >
+                Batal
+              </button>
+            </span>
+          </form>
+        ) : (
+          <p className="forumBody">{topic.body}</p>
+        )}
         <div className="inlineActions forumActions">
-          <button
-            className="btnTiny"
-            type="button"
+          <SukaButton
+            aktif={topic.reactedByMe}
+            jumlah={topic._count.reactions}
             disabled={busy !== null || !topic.canParticipate}
             onClick={() =>
               void run('react-topic', () =>
@@ -142,17 +205,63 @@ export function TopicThread({
                 }),
               )
             }
-          >
-            Suka ({topic._count.reactions})
-          </button>
-          <button
-            className="btnGhost btnSmall"
-            type="button"
-            disabled={busy !== null}
-            onClick={() => void reportContent({ topicId })}
-          >
-            Laporkan
-          </button>
+          />
+          {/* API sudah lama menerima sunting dan hapus topik sendiri; halaman
+              ini tidak pernah menawarkannya, jadi salah ketik pada judul
+              diskusi sendiri tidak dapat diperbaiki selamanya. */}
+          {topic.canManage && !editingTopic ? (
+            <>
+              <button
+                className="btnTiny"
+                type="button"
+                disabled={busy !== null}
+                onClick={() => {
+                  setTopicTitleDraft(topic.title);
+                  setTopicBodyDraft(topic.body);
+                  setEditingTopic(true);
+                }}
+              >
+                Sunting
+              </button>
+              <button
+                className="btnGhost btnSmall"
+                type="button"
+                disabled={busy !== null}
+                onClick={async () => {
+                  const lanjut = await notifier.confirm('Hapus diskusi ini?', {
+                    text: 'Balasan orang lain tetap tersimpan di riwayat, tetapi diskusinya tidak lagi dapat dibuka.',
+                    confirmLabel: 'Hapus diskusi',
+                    danger: true,
+                  });
+                  if (!lanjut) return;
+                  void run(
+                    'delete-topic',
+                    async () => {
+                      ensureSuccess(
+                        await browserClient().DELETE('/api/v1/learn/forum/topics/{topicId}', {
+                          params: { path: { topicId } },
+                        }),
+                      );
+                      router.push(`/learn/${courseId}/forum`);
+                    },
+                    'Diskusi dihapus.',
+                  );
+                }}
+              >
+                Hapus
+              </button>
+            </>
+          ) : null}
+          {topic.author.id !== currentUserId ? (
+            <button
+              className="btnGhost btnSmall"
+              type="button"
+              disabled={busy !== null}
+              onClick={() => void reportContent({ topicId })}
+            >
+              Laporkan
+            </button>
+          ) : null}
         </div>
       </article>
 
@@ -237,9 +346,9 @@ export function TopicThread({
             )}
 
             <div className="inlineActions forumActions">
-              <button
-                className="btnTiny"
-                type="button"
+              <SukaButton
+                aktif={reply.reactedByMe}
+                jumlah={reply._count.reactions}
                 disabled={busy !== null || !topic.canParticipate}
                 onClick={() =>
                   void run(`react-${reply.id}`, () =>
@@ -248,9 +357,7 @@ export function TopicThread({
                     }),
                   )
                 }
-              >
-                Suka ({reply._count.reactions})
-              </button>
+              />
               {reply.author.id === currentUserId && editingId !== reply.id ? (
                 <>
                   <button
@@ -268,7 +375,16 @@ export function TopicThread({
                     className="btnGhost btnSmall"
                     type="button"
                     disabled={busy !== null}
-                    onClick={() =>
+                    // Satu-satunya penghapusan di aplikasi ini yang dulu
+                    // berjalan tanpa konfirmasi, padahal sama tidak dapat
+                    // dibatalkannya dengan yang lain.
+                    onClick={async () => {
+                      const lanjut = await notifier.confirm('Hapus balasan ini?', {
+                        text: 'Balasan yang dihapus tidak dapat dikembalikan.',
+                        confirmLabel: 'Hapus balasan',
+                        danger: true,
+                      });
+                      if (!lanjut) return;
                       void run(
                         `delete-${reply.id}`,
                         () =>
@@ -278,8 +394,8 @@ export function TopicThread({
                             })
                             .then(ensureSuccess),
                         'Balasan dihapus.',
-                      )
-                    }
+                      );
+                    }}
                   >
                     Hapus
                   </button>
@@ -346,6 +462,37 @@ export function TopicThread({
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Saklar suka yang menunjukkan keadaannya sendiri.
+ *
+ * Endpointnya menyalakan dan mematikan reaksi, tetapi tombolnya dulu hanya
+ * menampilkan angka. Setelah halaman dimuat ulang, pengguna tidak punya cara
+ * mengetahui apakah dirinya termasuk di antara yang menyukainya.
+ */
+function SukaButton({
+  aktif,
+  jumlah,
+  disabled,
+  onClick,
+}: {
+  aktif: boolean;
+  jumlah: number;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className={aktif ? 'btnTiny btnActive' : 'btnTiny'}
+      type="button"
+      aria-pressed={aktif}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {aktif ? 'Disukai' : 'Suka'} ({jumlah})
+    </button>
   );
 }
 

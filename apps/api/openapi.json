@@ -14164,6 +14164,10 @@
           },
           "_count": {
             "$ref": "#/components/schemas/ForumReactionCountDto"
+          },
+          "reactedByMe": {
+            "type": "boolean",
+            "description": "Benar bila pengguna ini sedang menyukainya."
           }
         },
         "required": [
@@ -14172,7 +14176,8 @@
           "createdAt",
           "updatedAt",
           "author",
-          "_count"
+          "_count",
+          "reactedByMe"
         ]
       },
       "ForumTopicDetailDto": {
@@ -14249,6 +14254,14 @@
           "participationBlockedReason": {
             "type": "string",
             "nullable": true
+          },
+          "reactedByMe": {
+            "type": "boolean",
+            "description": "Benar bila pengguna ini sedang menyukai topiknya."
+          },
+          "canManage": {
+            "type": "boolean",
+            "description": "Benar bila topik ini milik pengguna dan masih boleh diubah."
           }
         },
         "required": [
@@ -14264,7 +14277,9 @@
           "author",
           "_count",
           "replies",
-          "canParticipate"
+          "canParticipate",
+          "reactedByMe",
+          "canManage"
         ]
       },
       "ForumTopicUpdatedDto": {

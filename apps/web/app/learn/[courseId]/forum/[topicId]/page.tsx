@@ -22,7 +22,7 @@ export default async function TopicPage({ params }: Props) {
         <Link className="btnGhost btnSmall forumBack" href={`/learn/${courseId}/forum`}>
           <ArrowLeft size={16} /> Kembali ke forum
         </Link>
-        <TopicThread topicId={topicId} currentUserId={user.id} />
+        <TopicThread topicId={topicId} courseId={courseId} currentUserId={user.id} />
       </main>
     </AppShell>
   );
