@@ -2361,7 +2361,9 @@ memerlukan sesi aktif.
 
 - `GET /community/channels` — channel aktif untuk sidebar.
 - `GET /community/feed` — feed lintas channel, terurut pin dan aktivitas terbaru.
-- `GET /community/channels/{slug}/posts` — feed sebuah channel.
+- `GET /community/channels/{slug}/posts` — pesan sebuah channel. Client boleh
+  melakukan conditional refresh berkala ketika tab terlihat; response tetap
+  menjadi snapshot server dan tidak menjanjikan realtime delivery.
 - `POST /community/channels/{channelId}/posts` — membuat post; channel baca-saja
   menuntut `discussions.moderate`.
 - `POST /community/posts/{postId}/comments` — membalas post.

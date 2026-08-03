@@ -248,5 +248,11 @@ Production release memerlukan:
 - Pelajar dapat post, komentar, dan bereaksi pada channel biasa.
 - Pelajar ditolak menulis channel baca-saja; Master diizinkan.
 - Author selalu berasal dari session dan counter komentar/reaksi konsisten.
+- Channel membedakan pesan pengguna aktif di kanan dan pengguna lain di kiri
+  berdasarkan user ID dari session, bukan nilai yang dikirim browser.
+- Channel melakukan refresh berkala hanya saat tab terlihat, mempertahankan
+  snapshot lama bila refresh sementara gagal, dan mencegah request overlap.
+- Enter mengirim pesan, Shift+Enter membuat baris baru, dan pengiriman ganda
+  dicegah selama mutation masih berjalan.
 - Sidebar, feed, serta rail event/pengumuman berubah menjadi satu kolom pada
   layar sempit tanpa overflow horizontal.

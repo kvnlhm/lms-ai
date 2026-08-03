@@ -13,5 +13,5 @@ export default async function CommunityChannelPage({ params }: { params: Promise
     client.GET('/api/v1/community/channels/{slug}/posts', { params: { path: { slug }, query: { page: 1, pageSize: 30 } } }).then((value) => unwrap<CommunityPost[]>(value)),
   ]);
   if (!channels.some((item) => item.slug === slug)) notFound();
-  return <AppShell user={user}><main className="communityLayout"><CommunityFeed channels={channels} initialPosts={posts} activeSlug={slug} canModerate={can(user, 'discussions.moderate')} /><CommunityRail events={[]} announcements={[]} /></main></AppShell>;
+  return <AppShell user={user}><main className="communityLayout communityChatLayout"><CommunityFeed channels={channels} initialPosts={posts} activeSlug={slug} currentUserId={user.id} canModerate={can(user, 'discussions.moderate')} /><CommunityRail events={[]} announcements={[]} /></main></AppShell>;
 }

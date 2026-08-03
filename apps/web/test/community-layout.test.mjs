@@ -5,6 +5,7 @@ import test from 'node:test';
 const css = await readFile(new URL('../app/styles.css', import.meta.url), 'utf8');
 const shell = await readFile(new URL('../app/components/app-shell.tsx', import.meta.url), 'utf8');
 const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
+const channel = await readFile(new URL('../app/community/community-feed.tsx', import.meta.url), 'utf8');
 
 test('beranda komunitas menyediakan tiga area desktop dan dua tahap responsif', () => {
   assert.match(css, /\.communityLayout\{[^}]*grid-template-columns:240px minmax\(0,1fr\) 310px/);
@@ -25,4 +26,14 @@ test('beranda merangkai channel, feed, sesi langsung, dan pengumuman', () => {
   assert.match(home, /\/api\/v1\/community\/channels/);
   assert.match(home, /\/api\/v1\/me\/announcements/);
   assert.match(home, /\/api\/v1\/learn\/courses\/\{courseId\}\/live-sessions/);
+});
+
+test('channel tampil sebagai chat responsif dengan identitas pengguna dari session', () => {
+  assert.match(channel, /currentUserId=\{user\.id\}|currentUserId/);
+  assert.match(channel, /post\.author\.id === currentUserId/);
+  assert.match(channel, /setInterval\(refresh, 5_000\)/);
+  assert.match(channel, /document\.visibilityState === 'hidden'/);
+  assert.match(channel, /event\.key === 'Enter' && !event\.shiftKey/);
+  assert.match(css, /\.chatMessage\.mine\{[^}]*align-self:flex-end/);
+  assert.match(css, /\.channelChat\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/);
 });

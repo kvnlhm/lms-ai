@@ -2261,6 +2261,12 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
 - Rail pendamping menampilkan sesi mendatang dan pengumuman terbaru.
 - Pelajar aktif dapat membuat post, komentar, dan reaksi pada channel biasa.
 - Layout wajib responsif untuk desktop, split-desktop, tablet, dan mobile.
+- Halaman channel memakai pola percakapan: pesan pengguna aktif berada di
+  kanan dan pesan pengguna lain di kiri, composer berada di bagian bawah,
+  Enter mengirim pesan, dan Shift+Enter membuat baris baru.
+- Percakapan diperbarui otomatis secara near-real-time. Pada fase awal refresh
+  berkala dapat digunakan dan antarmuka tidak boleh mengklaim presence atau
+  delivery instan seperti layanan WebSocket.
 
 ### 30.2 Master Channel Management
 
@@ -2272,7 +2278,7 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
 
 ### 30.3 Non-scope Awal
 
-- WebSocket/realtime presence.
+- WebSocket, realtime presence, typing indicator, dan delivery/read receipt.
 - Direct message privat.
 - Attachment file pada post.
 - Thread bertingkat lebih dari satu tingkat komentar.

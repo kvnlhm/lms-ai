@@ -38,5 +38,8 @@ asalnya. Community tidak mengakses persistence private modul lain.
 
 - Feed tidak lagi bergantung pada enrollment atau keberadaan kursus.
 - Sesi langsung dan pengumuman tidak diduplikasi ke tabel feed.
-- MVP memakai refresh/pagination, belum WebSocket. Realtime dan attachment
-  memerlukan keputusan lanjutan tentang kapasitas, moderasi, dan storage.
+- MVP memakai refresh berkala lima detik saat tab terlihat dan pagination,
+  belum WebSocket. UI menyebutnya "diperbarui otomatis", bukan "online" atau
+  "realtime", karena belum ada jaminan delivery instan maupun presence.
+  Realtime penuh dan attachment memerlukan keputusan lanjutan tentang
+  kapasitas, moderasi, fan-out, reconnect, dan storage.
