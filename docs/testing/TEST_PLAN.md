@@ -268,8 +268,8 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
   yang ditarik langsung tag `<img>`/`<video>`, unduhan lewat `href`) didaftarkan
   tegas beserta alasannya, sehingga menambahkannya adalah keputusan sadar.
 - Endpoint yang belum punya antarmuka juga didaftarkan di sana, agar
-  "belum dikerjakan" tidak menyamar sebagai "sudah selesai". Saat ini:
-  `me/announcements/unread-count`.
+  "belum dikerjakan" tidak menyamar sebagai "sudah selesai". Saat ini daftar
+  itu kosong: setiap endpoint sudah punya pemanggil atau alasan struktural.
 - Pembukaan pelajaran dijaga tersendiri: endpointnya sudah ada dan teruji,
   tetapi sempat berbulan-bulan tanpa pemanggil sehingga histori, metrik
   dasbor, dan "Lanjutkan belajar" sama-sama kehilangan sumbernya.

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { serverClient, unwrap } from '../lib/api';
 import type { CurrentUser } from '../lib/session';
 import { can, initials } from '../lib/session';
 import { BrandMark } from './brand-mark';
@@ -49,8 +50,38 @@ const MASTER_NAV = [
   { href: '/master/audit', label: 'Audit log', icon: Users, permission: 'audit.read' },
 ] as const;
 
+/**
+ * Jumlah pengumuman yang belum dibaca.
+ *
+ * Diambil di server, sekali per render halaman: navigasi desktop dan laci
+ * mobile digambar bersamaan, jadi mengambilnya dari peramban berarti dua
+ * permintaan untuk satu angka. Kegagalannya berarti nol — lencana yang hilang
+ * jauh lebih baik daripada bilah navigasi yang gagal digambar.
+ */
+async function hitungPengumumanBelumDibaca(): Promise<number> {
+  try {
+    const client = await serverClient();
+    const hasil = unwrap<{ unread: number }>(
+      await client.GET('/api/v1/me/announcements/unread-count', {}),
+    );
+    return hasil.unread;
+  } catch {
+    return 0;
+  }
+}
+
+/** Angka kecil di samping label navigasi; tidak digambar saat tidak ada. */
+function LencanaBelumDibaca({ jumlah }: { jumlah: number }) {
+  if (jumlah <= 0) return null;
+  return (
+    <span className="navBadge" aria-label={`${jumlah} pengumuman belum dibaca`}>
+      {jumlah > 9 ? '9+' : jumlah}
+    </span>
+  );
+}
+
 /** Kerangka halaman untuk area yang membutuhkan autentikasi. */
-export function AppShell({ user, children }: { user: CurrentUser; children: ReactNode }) {
+export async function AppShell({ user, children }: { user: CurrentUser; children: ReactNode }) {
   if (user.role === 'MASTER') {
     // Bilah bawah hanya memuat tiga tujuan teratas yang boleh diakses; label di
     // bawah ikon menjadi tidak terbaca bila diisi lebih banyak. Sisanya masuk
@@ -188,6 +219,10 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
     );
   }
 
+  // Diambil hanya di jalur Pelajar: navigasi Master tidak memuat "Pengumuman"
+  // milik pelajar, jadi menghitungnya di sana hanya permintaan yang terbuang.
+  const pengumumanBelumDibaca = await hitungPengumumanBelumDibaca();
+
   return (
     <>
       {user.isImpersonating ? <ImpersonationBanner /> : null}
@@ -200,6 +235,9 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
             ].map((item) => (
               <NavLink key={`drawer-${item.href}`} href={item.href}>
                 {item.label}
+                {item.href === '/announcements' ? (
+                  <LencanaBelumDibaca jumlah={pengumumanBelumDibaca} />
+                ) : null}
               </NavLink>
             ))}
             <Link className="navLink" href="/profile">
@@ -224,6 +262,9 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           ].map((item) => (
             <NavLink key={item.href} href={item.href}>
               {item.label}
+              {item.href === '/announcements' ? (
+                <LencanaBelumDibaca jumlah={pengumumanBelumDibaca} />
+              ) : null}
             </NavLink>
           ))}
         </nav>
