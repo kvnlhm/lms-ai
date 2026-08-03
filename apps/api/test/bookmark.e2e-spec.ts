@@ -73,6 +73,31 @@ describe('Bookmark materi', () => {
     expect(row.note).toBe('catatan kedua');
   });
 
+  it('tidak menghapus catatan ketika ditandai ulang tanpa menyebut catatan', async () => {
+    // Tombol tanda di halaman materi tidak pernah mengirim catatan. Dulu
+    // penekanan keduanya menimpa catatan dengan null, sehingga catatan yang
+    // sudah ditulis lenyap diam-diam dan tidak dapat dikembalikan.
+    await tandai('jangan sampai hilang').expect(200);
+    await tandai().expect(200);
+
+    const row = await h.prisma.userBookmark.findFirstOrThrow({
+      where: { userId: student.userId, lessonId },
+    });
+    expect(row.note).toBe('jangan sampai hilang');
+  });
+
+  it('menghapus catatan ketika catatan kosong dikirim dengan sengaja', async () => {
+    // Membedakan "tidak menyebut catatan" dari "menyebut catatan kosong":
+    // yang kedua adalah cara pengguna menghapus catatannya.
+    await tandai('catatan yang akan dihapus').expect(200);
+    await tandai('').expect(200);
+
+    const row = await h.prisma.userBookmark.findFirstOrThrow({
+      where: { userId: student.userId, lessonId },
+    });
+    expect(row.note).toBeNull();
+  });
+
   it('melepas tanda', async () => {
     await tandai().expect(200);
 

@@ -2739,3 +2739,12 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .drawerLessonCurrent .drawerLessonMeta { color: var(--text-2); }
 /* Keterangan tujuan tautan berdiri di bawah tombolnya, di dalam panggung. */
 .stageHost { margin: 12px 0 0; font-size: 12.5px; }
+
+/* Kartu bookmark kini memuat tindakan, bukan hanya tanggal di sisi kanan. */
+.bookmarkMain { flex: 1; min-width: 0; }
+.bookmarkActions { margin-top: 12px; }
+.bookmarkNote {
+  padding: 9px 11px; border-radius: var(--r-md);
+  background: var(--raised); border-left: 3px solid var(--line);
+  white-space: pre-line;
+}

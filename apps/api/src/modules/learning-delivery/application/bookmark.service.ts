@@ -27,7 +27,7 @@ export class BookmarkService {
   ) {}
 
   /**
-   * Menandai materi. Idempoten: menandai dua kali hanya memperbarui catatan.
+   * Menandai materi. Idempoten: menandai dua kali tidak menghasilkan galat.
    *
    * Akses diperiksa ulang di sini, bukan hanya saat membuka materi — tanpa itu
    * seseorang dapat menandai materi kursus yang tidak diikutinya, lalu
@@ -39,7 +39,12 @@ export class BookmarkService {
     await this.prisma.userBookmark.upsert({
       where: { userId_lessonId: { userId, lessonId } },
       create: { userId, lessonId, note: note ?? null },
-      update: { note: note ?? null },
+      // Tanpa catatan yang disebut, catatan lama dibiarkan. Sebelumnya ia
+      // ditimpa null, sehingga menekan tombol tanda dua kali dari halaman
+      // materi — yang tidak pernah mengirim catatan apa pun — menghapus
+      // catatan yang sudah ditulis, diam-diam dan tanpa bisa dikembalikan.
+      // Catatan kosong tetap berarti "hapus catatan ini".
+      update: note === undefined ? {} : { note: note === '' ? null : note },
     });
     return { bookmarked: true };
   }
