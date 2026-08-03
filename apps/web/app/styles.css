@@ -2844,7 +2844,10 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 @media(max-width:760px){
   .learnerShellBody{display:block}
-  .learnerChannelSidebar{position:sticky;top:58px;z-index:20;width:100%;height:auto;overflow-x:auto;overflow-y:hidden;padding:8px 12px;border-right:0;border-bottom:1px solid var(--border);flex-direction:row}
+  /* Harus berada di bawah stacking context `.topbar` (z-index:20).
+     Drawer mobile dirender di dalam topbar; nilai yang sama sebelumnya membuat
+     bar channel, sebagai sibling yang muncul belakangan, menimpa isi drawer. */
+  .learnerChannelSidebar{position:sticky;top:58px;z-index:10;width:100%;height:auto;overflow-x:auto;overflow-y:hidden;padding:8px 12px;border-right:0;border-bottom:1px solid var(--border);flex-direction:row}
   .learnerChannelSidebar .channelGroup{display:none}
   .learnerChannelSidebar .channelLink{flex:0 0 auto;border:1px solid var(--border);padding:8px 11px}
   .learnerChannelSidebar .channelLink small{display:none}

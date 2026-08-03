@@ -18,6 +18,7 @@ test('shell Pelajar menyediakan sidebar channel desktop dan navigasi horizontal 
 test('header drawer mobile tidak menyusut dan menutupi menu Beranda', () => {
   assert.match(css, /\.mobileDrawerHead\s*\{[^}]*flex:\s*0 0 auto/);
   assert.match(css, /\.mobileDrawerBody\s*\{[^}]*flex:\s*1 1 auto[^}]*overflow-y:\s*auto/);
+  assert.match(css, /@media\(max-width:760px\)[\s\S]*\.learnerChannelSidebar\{[^}]*z-index:10/);
 });
 
 test('navigasi komunitas tersedia bagi pelajar dan pengelolaan hanya muncul di workspace Master', () => {
