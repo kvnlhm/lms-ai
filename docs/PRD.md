@@ -2256,12 +2256,13 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
 
 ### 30.1 Learner Home dan Community
 
-- Beranda Pelajar tetap menjadi ringkasan belajar: insight progres, lanjutkan
-  belajar, kursus, aktivitas terakhir, dan pintasan menuju komunitas serta
-  pengumuman.
+- Beranda Pelajar menggabungkan ringkasan belajar (insight progres, lanjutkan
+  belajar, kursus, dan aktivitas terakhir) dengan feed komunitas, event
+  mendatang, serta pengumuman terbaru tanpa menghilangkan salah satunya.
 - Halaman Komunitas terpisah menampilkan feed lintas channel sebagai konten
-  utama. Sidebar menampilkan channel yang dapat dibuka seperti ruang
-  percakapan.
+  utama dan halaman channel menampilkan percakapan. Sidebar channel merupakan
+  bagian persisten dari shell Pelajar sehingga tetap tersedia saat Pelajar
+  membuka Beranda, Kursus, Histori, dan halaman Pelajar lainnya.
 - Rail pendamping menampilkan sesi mendatang dan pengumuman terbaru.
 - Pelajar aktif dapat membuat post, komentar, dan reaksi pada channel biasa.
 - Layout wajib responsif untuk desktop, split-desktop, tablet, dan mobile.

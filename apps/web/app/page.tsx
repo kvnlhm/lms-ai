@@ -2,8 +2,10 @@ import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from './components/app-shell';
 import { ArrowRight } from './components/icons';
+import { CommunityFeed, type CommunityChannel, type CommunityPost } from './community/community-feed';
+import { CommunityRail, type CommunityAnnouncement, type CommunityEvent } from './community/community-rail';
 import { serverClient, unwrap } from './lib/api';
-import { requireUser } from './lib/session';
+import { can, requireUser } from './lib/session';
 
 export const dynamic = 'force-dynamic';
 type Enrollment = Schemas['MyEnrollmentDto'];
@@ -13,11 +15,16 @@ type HistoryPage = Schemas['LearningHistoryPageDto'];
 export default async function HomePage() {
   const user = await requireUser('/');
   const client = await serverClient();
-  const [enrollments, continueLearning, history] = await Promise.all([
+  const [enrollments, continueLearning, history, channels, posts, announcements] = await Promise.all([
     client.GET('/api/v1/me/enrollments', {}).then((value) => unwrap<Enrollment[]>(value)),
     client.GET('/api/v1/me/continue-learning', {}).then((value) => unwrap<ContinueLearning | null>(value)),
     client.GET('/api/v1/me/learning-history', { params: { query: { limit: 5 } } }).then((value) => unwrap<HistoryPage>(value)),
+    client.GET('/api/v1/community/channels', {}).then((value) => unwrap<CommunityChannel[]>(value)),
+    client.GET('/api/v1/community/feed', { params: { query: { page: 1, pageSize: 8 } } }).then((value) => unwrap<CommunityPost[]>(value)),
+    client.GET('/api/v1/me/announcements', { params: { query: { page: 1, pageSize: 4 } } }).then((value) => unwrap<CommunityAnnouncement[]>(value)),
   ]);
+  const eventGroups = await Promise.all(enrollments.slice(0, 12).map((item) => client.GET('/api/v1/learn/courses/{courseId}/live-sessions', { params: { path: { courseId: item.course.id } } }).then((value) => unwrap<CommunityEvent[]>(value)).catch(() => [] as CommunityEvent[])));
+  const events = eventGroups.flat().filter((item) => item.status !== 'ENDED').sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
   return <AppShell user={user}><main className="wrap learnerDashboard">
     <section className="learnerWelcome"><div><span className="eyebrow">Ringkasan belajar</span><h1 className="pageTitle">Selamat datang, {user.fullName}.</h1><p className="pageSub">{enrollments.length} kursus tersedia untuk kamu.</p></div><div className="learnerShortcuts"><Link href="/community">Buka komunitas <ArrowRight size={15} /></Link><Link href="/announcements">Lihat pengumuman <ArrowRight size={15} /></Link></div></section>
     <div className="learnerInsights"><div className="card"><span>Kursus tersedia</span><strong>{enrollments.length}</strong></div><div className="card"><span>Sedang dipelajari</span><strong>{enrollments.filter((item) => item.progress.percent > 0 && item.progress.percent < 100).length}</strong></div><div className="card"><span>Sudah selesai</span><strong>{enrollments.filter((item) => item.status === 'COMPLETED').length}</strong></div><Link className="card insightShortcut" href="/history"><span>Riwayat belajar</span><strong>→</strong></Link></div>
@@ -26,6 +33,10 @@ export default async function HomePage() {
     {enrollments.length === 0 ? <div className="card empty"><p>Belum ada kursus yang diterbitkan.</p></div> : <div className="courseGrid">{enrollments.slice(0, 6).map((item) => <EnrollmentCard key={item.enrollmentId} enrollment={item} />)}</div>}
     <div className="sectionTitleRow"><h2 className="sectionTitle">Aktivitas terbaru</h2><Link href="/history">Lihat semua</Link></div>
     {history.items.length === 0 ? <div className="card empty"><p>Belum ada aktivitas belajar yang tercatat.</p></div> : <div className="card recentActivity">{history.items.map((item) => <Link key={item.id} href={item.lessonId && item.courseId ? `/learn/${item.courseId}/${item.lessonId}` : '/courses'}><span><strong>{item.lessonTitle}</strong><small>{item.courseTitle}{item.moduleTitle ? ` · ${item.moduleTitle}` : ''}</small></span><time>{formatRelative(item.occurredAt)}</time></Link>)}</div>}
+    <section className="homeCommunitySection" aria-labelledby="home-community-heading">
+      <div className="sectionTitleRow"><h2 id="home-community-heading" className="sectionTitle">Feed komunitas</h2><Link href="/community">Lihat semua</Link></div>
+      <div className="homeCommunityGrid"><CommunityFeed channels={channels} initialPosts={posts} currentUserId={user.id} canModerate={can(user, 'discussions.moderate')} /><CommunityRail events={events} announcements={announcements} /></div>
+    </section>
   </main></AppShell>;
 }
 

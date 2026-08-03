@@ -86,10 +86,8 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
 
   if (activeSlug) {
     return <ChannelChat
-      channels={channels}
       posts={posts}
       selected={selected}
-      activeSlug={activeSlug}
       currentUserId={currentUserId}
       body={body}
       setBody={setBody}
@@ -103,22 +101,11 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
 
   return (
     <>
-      <aside className="communityChannels" aria-label="Channel komunitas">
-        <Link className={!activeSlug ? 'channelLink active' : 'channelLink'} href="/community">▤ <span><strong>Feed komunitas</strong><small>Post dan kabar terbaru</small></span></Link>
-        <span className="channelGroup">Ruang komunitas</span>
-        {channels.map((channel) => (
-          <Link key={channel.id} className={channel.slug === activeSlug ? 'channelLink active' : 'channelLink'} href={`/community/${channel.slug}`}>
-            <span>#</span><span><strong>{channel.name}</strong><small>{channel.description ?? `${channel.postCount} post`}</small></span>
-          </Link>
-        ))}
-        {channels.length === 0 ? <p className="communityMuted">Master belum membuat channel.</p> : null}
-      </aside>
-
       <section className="communityFeed">
         <div className="communityHeading"><div><span className="eyebrow">Komunitas</span><h1>{activeSlug ? selected?.name ?? 'Channel' : 'Feed terbaru'}</h1></div></div>
         {channels.length > 0 ? (
           <div className="postComposer card">
-            <div className="composerTop"><select value={channelId} onChange={(event) => setChannelId(event.target.value)} aria-label="Pilih channel">{channels.map((channel) => <option key={channel.id} value={channel.id}># {channel.name}</option>)}</select></div>
+            <div className="composerChannelPicker" role="group" aria-label="Pilih channel tujuan">{channels.map((channel) => <button key={channel.id} className={channel.id === channelId ? 'active' : ''} type="button" onClick={() => setChannelId(channel.id)}># {channel.name}</button>)}</div>
             {canPost ? <><textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={`Bagikan sesuatu ke #${selected?.name ?? 'channel'}...`} maxLength={5000} /><div className="composerFoot"><span>{body.length}/5000</span><button className="btn" type="button" disabled={pending || !body.trim()} onClick={publish}>Terbitkan</button></div></> : <p className="communityMuted">Channel ini hanya dapat ditulis oleh Master.</p>}
           </div>
         ) : null}
@@ -140,11 +127,9 @@ export function CommunityFeed({ channels, initialPosts, activeSlug, canModerate 
   );
 }
 
-function ChannelChat({ channels, posts, selected, activeSlug, currentUserId, body, setBody, canPost, pending, message, publish, react }: {
-  channels: CommunityChannel[];
+function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, pending, message, publish, react }: {
   posts: CommunityPost[];
   selected?: CommunityChannel;
-  activeSlug: string;
   currentUserId?: string;
   body: string;
   setBody: (value: string) => void;
@@ -157,14 +142,6 @@ function ChannelChat({ channels, posts, selected, activeSlug, currentUserId, bod
   const timeline = useMemo(() => [...posts].reverse(), [posts]);
 
   return <>
-    <aside className="communityChannels" aria-label="Channel komunitas">
-      <Link className="channelLink" href="/community"><span>▤</span><span><strong>Feed komunitas</strong><small>Post dan kabar terbaru</small></span></Link>
-      <span className="channelGroup">Ruang komunitas</span>
-      {channels.map((channel) => <Link key={channel.id} className={channel.slug === activeSlug ? 'channelLink active' : 'channelLink'} href={`/community/${channel.slug}`}>
-        <span>#</span><span><strong>{channel.name}</strong><small>{channel.description ?? `${channel.postCount} pesan`}</small></span>
-      </Link>)}
-    </aside>
-
     <section className="communityFeed channelChat" aria-label={`Percakapan ${selected?.name ?? 'channel'}`}>
       <header className="chatHeader">
         <span className="chatHash" aria-hidden="true">#</span>

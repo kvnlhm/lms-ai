@@ -2811,7 +2811,39 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .channelChat{box-shadow:0 18px 46px rgba(0,0,0,.16)}.chatHeader{padding:17px 20px}.chatHash{background:color-mix(in srgb,var(--primary) 18%,var(--surface-2));color:var(--primary)}.chatHeader h1{font-size:19px}.chatTimeline{gap:20px;background:color-mix(in srgb,var(--surface) 96%,#000)}.chatMessage>.postAvatar{width:40px;height:40px;border:2px solid color-mix(in srgb,var(--primary) 35%,var(--border));box-shadow:0 4px 14px rgba(0,0,0,.18);font-size:11px}.chatBubble{min-width:54px;padding:11px 14px}.chatComposerWrap{padding:13px 16px 16px;background:color-mix(in srgb,var(--surface) 94%,var(--surface-2))}.chatComposer{min-height:62px;padding:10px 10px 8px 15px;border-width:1.5px;background:color-mix(in srgb,var(--surface-2) 90%,var(--text) 2%)}.chatComposer textarea{min-height:27px;font-size:14px}.chatSend{width:42px;height:42px;border-radius:12px;box-shadow:0 6px 18px color-mix(in srgb,var(--primary) 28%,transparent)}
 
 /* Pengelolaan channel. */
-.channelListHeading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:3px}.channelListHeading>span,.channelAccessBadge{color:var(--muted);font-size:11px}.channelAdminItem{grid-template-columns:38px minmax(0,1fr) auto;padding:16px}.channelAdminItem>div:nth-child(2){gap:4px}.channelAccessBadge{margin-top:4px}.channelAdminActions{display:flex!important;align-items:center;justify-content:flex-end;gap:8px}.channelEditForm{display:grid;gap:17px;padding:18px}.channelEditTitle{display:flex;align-items:center;gap:11px}.channelEditTitle>div{display:grid}.channelEditTitle small{color:var(--muted)}.channelEditGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.channelEditGrid .field{display:grid;gap:6px}.channelEditDescription{grid-column:1/-1}.channelEditDescription textarea{min-height:76px;resize:vertical}
+.channelListHeading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:3px}.channelListHeading>span,.channelAccessBadge{color:var(--muted);font-size:11px}.channelAdminItem{grid-template-columns:38px minmax(0,1fr) auto;padding:16px}.channelAdminItem>div:nth-child(2){gap:4px}.channelAccessBadge{margin-top:4px}.channelAdminActions{display:flex!important;align-items:center;justify-content:flex-end;gap:8px}.channelEditForm{display:grid;gap:17px;padding:18px}.channelEditTitle{display:flex;align-items:center;gap:11px}.channelEditTitle>div{display:grid}.channelEditTitle small{color:var(--muted)}.channelEditGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.channelEditGrid .field{display:grid;gap:6px}.channelEditDescription{grid-column:1/-1}.channelEditDescription textarea{min-height:76px;resize:vertical}
 
 @media(max-width:900px){.learnerInsights{grid-template-columns:repeat(2,minmax(0,1fr))}.learnerWelcome{align-items:flex-start;flex-direction:column}.channelEditGrid{grid-template-columns:1fr}.channelEditDescription{grid-column:auto}}
 @media(max-width:760px){.learnerDashboard{padding-top:24px}.learnerShortcuts{width:100%}.learnerShortcuts a{flex:1;justify-content:space-between}.learnerInsights{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.learnerInsights .card{padding:14px}.learnerInsights strong{font-size:21px}.recentActivity>a{align-items:flex-start}.channelAdminItem{grid-template-columns:38px minmax(0,1fr)}.channelAdminItem>.channelAdminActions{grid-column:1/-1;justify-content:flex-start;flex-wrap:wrap}.channelEditForm>.channelAdminActions{justify-content:stretch}.channelEditForm>.channelAdminActions .btn{flex:1}.chatMessage>.postAvatar{width:32px;height:32px}.chatComposer{min-height:52px}.chatSend{width:38px;height:38px}}
+
+/* Channel Pelajar menjadi bagian kerangka global, sehingga tetap terlihat saat
+   berpindah antara Beranda, Kursus, Histori, Pengumuman, dan Komunitas. */
+.learnerShellBody{display:grid;grid-template-columns:220px minmax(0,1fr);max-width:1920px;margin:0 auto;min-height:calc(100dvh - 62px)}
+.learnerShellContent{min-width:0}
+.learnerChannelSidebar{position:sticky;top:62px;align-self:start;height:calc(100dvh - 62px);overflow-y:auto;padding:25px 14px;border-right:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;gap:5px}
+.communityLayout{grid-template-columns:minmax(0,1fr) 310px;max-width:1280px}
+.homeCommunitySection{margin-top:34px}
+.homeCommunityGrid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:24px;align-items:start}
+.composerChannelPicker{display:flex;gap:8px;overflow-x:auto;padding:1px 1px 12px;margin-bottom:8px;scrollbar-width:thin}
+.composerChannelPicker button{flex:0 0 auto;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);padding:7px 11px;font:inherit;font-size:12px;cursor:pointer}
+.composerChannelPicker button:hover,.composerChannelPicker button.active{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 18%,var(--surface-2));color:var(--text)}
+.continueContent>.progress{margin-bottom:18px}
+.continueContent>.btn{margin-top:2px;align-self:flex-start}
+.sectionTitleRow>a,.railTitle>a{color:var(--text)}
+.sectionTitleRow>a:hover,.railTitle>a:hover{color:var(--text);text-decoration:underline}
+
+@media(max-width:1180px){
+  .learnerShellBody{grid-template-columns:190px minmax(0,1fr)}
+  .communityLayout,.homeCommunityGrid{grid-template-columns:minmax(0,1fr)}
+  .communityRail{grid-column:auto;position:static;grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:760px){
+  .learnerShellBody{display:block}
+  .learnerChannelSidebar{position:sticky;top:58px;z-index:20;width:100%;height:auto;overflow-x:auto;overflow-y:hidden;padding:8px 12px;border-right:0;border-bottom:1px solid var(--border);flex-direction:row}
+  .learnerChannelSidebar .channelGroup{display:none}
+  .learnerChannelSidebar .channelLink{flex:0 0 auto;border:1px solid var(--border);padding:8px 11px}
+  .learnerChannelSidebar .channelLink small{display:none}
+  .homeCommunityGrid{display:grid;grid-template-columns:1fr;gap:16px}
+  .homeCommunityGrid .communityRail{grid-template-columns:1fr}
+}

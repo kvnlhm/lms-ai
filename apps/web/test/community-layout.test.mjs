@@ -8,11 +8,11 @@ const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8')
 const channel = await readFile(new URL('../app/community/community-feed.tsx', import.meta.url), 'utf8');
 const channelManager = await readFile(new URL('../app/master/community/channel-manager.tsx', import.meta.url), 'utf8');
 
-test('beranda komunitas menyediakan tiga area desktop dan dua tahap responsif', () => {
-  assert.match(css, /\.communityLayout\{[^}]*grid-template-columns:240px minmax\(0,1fr\) 310px/);
-  assert.match(css, /@media\(max-width:1180px\)\{\.communityLayout\{grid-template-columns:210px minmax\(0,1fr\)/);
-  assert.match(css, /@media\(max-width:760px\)\{\.communityLayout\{display:flex;flex-direction:column/);
-  assert.match(css, /\.communityChannels\{position:static;width:100%;display:flex;flex-direction:row;overflow-x:auto/);
+test('shell Pelajar menyediakan sidebar channel desktop dan navigasi horizontal mobile', () => {
+  assert.match(css, /\.learnerShellBody\{[^}]*grid-template-columns:220px minmax\(0,1fr\)/);
+  assert.match(css, /\.learnerChannelSidebar\{[^}]*position:sticky/);
+  assert.match(css, /@media\(max-width:760px\)[\s\S]*\.learnerChannelSidebar\{position:sticky[^}]*flex-direction:row/);
+  assert.match(css, /\.communityLayout\{grid-template-columns:minmax\(0,1fr\) 310px/);
 });
 
 test('navigasi komunitas tersedia bagi pelajar dan pengelolaan hanya muncul di workspace Master', () => {
@@ -21,12 +21,21 @@ test('navigasi komunitas tersedia bagi pelajar dan pengelolaan hanya muncul di w
   assert.match(shell, /permission: 'discussions\.moderate'/);
 });
 
-test('beranda pelajar terpisah dari komunitas dan menampilkan ringkasan belajar', () => {
-  assert.doesNotMatch(home, /CommunityFeed/);
+test('beranda pelajar menggabungkan ringkasan belajar, feed, event, dan pengumuman', () => {
+  assert.match(home, /CommunityFeed/);
+  assert.match(home, /CommunityRail/);
   assert.match(home, /learnerInsights/);
   assert.match(home, /\/api\/v1\/me\/enrollments/);
   assert.match(home, /\/api\/v1\/me\/continue-learning/);
   assert.match(home, /href="\/community"/);
+});
+
+test('channel tersedia persisten di shell Pelajar dan composer tidak memakai select native', () => {
+  assert.match(shell, /LearnerChannelSidebar/);
+  assert.match(channel, /composerChannelPicker/);
+  assert.doesNotMatch(channel, /<select value=\{channelId\}/);
+  assert.match(css, /\.continueContent>\.progress\{margin-bottom:18px\}/);
+  assert.match(css, /\.sectionTitleRow>a,\.railTitle>a\{color:var\(--text\)\}/);
 });
 
 test('channel tampil sebagai chat responsif dengan identitas pengguna dari session', () => {

@@ -19,11 +19,13 @@ menulis di channel read-only. Pembuatan, perubahan, dan pengarsipan channel
 menggunakan permission `discussions.moderate` dan tidak pernah dipercaya dari
 UI.
 
-Halaman Community menggabungkan data melalui composition pada Next.js: post
-berasal dari Community, sedangkan pengumuman dan sesi langsung tetap berasal
-dari domain asalnya. Beranda tetap memakai endpoint enrollment dan learning
-progress sebagai dashboard belajar serta hanya menautkan ke Community.
-Community tidak mengakses persistence private modul lain.
+Halaman Community dan Beranda menggabungkan data melalui composition pada
+Next.js: post berasal dari Community, sedangkan pengumuman dan sesi langsung
+tetap berasal dari domain asalnya. Beranda tetap memakai endpoint enrollment
+dan learning progress sebagai dashboard belajar, lalu menampilkan cuplikan
+feed, event, dan pengumuman. Navigasi channel ditempatkan pada shell Pelajar
+agar persisten lintas halaman. Community tidak mengakses persistence private
+modul lain.
 
 ## Security Controls
 

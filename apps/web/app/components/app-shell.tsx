@@ -11,6 +11,7 @@ import { ThemeToggle } from './theme-toggle';
 import { ImpersonationBanner } from './impersonation-banner';
 import { GlobalSearch } from './global-search';
 import { MobileNavigation } from './mobile-navigation';
+import { LearnerChannelSidebar } from './learner-channel-sidebar';
 
 const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
@@ -243,7 +244,10 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           </Link>
         </div>
       </header>
-      {children}
+      <div className="learnerShellBody">
+        <LearnerChannelSidebar />
+        <div className="learnerShellContent">{children}</div>
+      </div>
     </>
   );
 }
