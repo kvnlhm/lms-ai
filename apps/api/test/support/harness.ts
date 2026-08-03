@@ -8,6 +8,11 @@ import { API_PREFIX, createApp } from '../../src/bootstrap';
 
 export const prefix = `/${API_PREFIX}`;
 
+/** Rahasia aplikasi Meta versi uji, dipakai menandatangani webhook WhatsApp. */
+export const WHATSAPP_APP_SECRET = 'rahasia-aplikasi-meta-untuk-pengujian';
+/** Token yang dicocokkan saat Meta memasang URL webhook. */
+export const WHATSAPP_VERIFY_TOKEN = 'token-verifikasi-webhook-uji';
+
 export interface Harness {
   app: INestApplication;
   server: App;
@@ -41,6 +46,10 @@ export async function startHarness(options: HarnessOptions = {}): Promise<Harnes
   // test membalas 429. Hasilnya bergantung pada urutan penjadwalan jest:
   // hijau di satu mesin, merah di mesin lain, tanpa satu pun perubahan kode.
   process.env.ANNOUNCEMENT_SCHEDULER_ENABLED = 'false';
+  // Ditulis tanpa syarat karena alasan yang sama: nilainya tetap di seluruh
+  // spec, jadi endpoint webhook WhatsApp berperilaku sama di mana pun ia diuji.
+  process.env.WHATSAPP_APP_SECRET = WHATSAPP_APP_SECRET;
+  process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = WHATSAPP_VERIFY_TOKEN;
   if (options.rateLimit) {
     process.env.RATE_LIMIT_ENABLED = 'true';
     process.env.RATE_LIMIT_MAX = String(options.rateLimit.max);

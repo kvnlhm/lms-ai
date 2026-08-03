@@ -121,6 +121,15 @@ export interface AppConfig {
       accessToken?: string;
       activationTemplateName: string;
       templateLanguage: string;
+      /**
+       * Rahasia aplikasi Meta, dipakai memverifikasi `X-Hub-Signature-256`
+       * pada webhook status pengantaran. Tanpa nilai ini webhooknya ditolak:
+       * endpoint publik yang menulis ke basis data tidak boleh mempercayai
+       * badan permintaan yang tidak dapat dibuktikan asalnya.
+       */
+      appSecret?: string;
+      /** Token yang dicocokkan Meta saat memasang URL webhook. */
+      webhookVerifyToken?: string;
     };
   };
 }
@@ -226,6 +235,8 @@ export function loadConfig(): AppConfig {
         activationTemplateName:
           process.env.WHATSAPP_ACTIVATION_TEMPLATE_NAME ?? 'academy_account_activation',
         templateLanguage: process.env.WHATSAPP_TEMPLATE_LANGUAGE ?? 'id',
+        appSecret: process.env.WHATSAPP_APP_SECRET || undefined,
+        webhookVerifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || undefined,
       },
     },
   };

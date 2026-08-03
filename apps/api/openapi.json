@@ -4917,6 +4917,70 @@
         ]
       }
     },
+    "/api/v1/webhooks/whatsapp": {
+      "get": {
+        "operationId": "CommerceController_verifyWhatsAppWebhook",
+        "parameters": [],
+        "responses": {
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Verifikasi kepemilikan URL webhook oleh Meta",
+        "tags": [
+          "registration"
+        ]
+      },
+      "post": {
+        "operationId": "CommerceController_whatsAppWebhook",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookAcceptedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menerima status pengantaran pesan WhatsApp dari Meta",
+        "tags": [
+          "registration"
+        ]
+      }
+    },
     "/api/v1/admin/access-tiers": {
       "get": {
         "operationId": "CommerceController_adminTiers",

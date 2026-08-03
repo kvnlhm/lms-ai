@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { loadConfig } from './config/configuration';
@@ -34,7 +35,22 @@ export async function createApp(): Promise<INestApplication> {
   // Unggahan video dan foto profil tidak terpengaruh: keduanya membaca body
   // sebagai stream dengan content-type non-JSON, jadi parser ini melewatinya
   // dan batas ukurannya diurus masing-masing modul.
-  app.useBodyParser('json', { limit: config.maxRequestBodyBytes });
+  //
+  // Webhook WhatsApp ditandatangani Meta atas **byte mentah** badannya, jadi
+  // byte itu harus disimpan sebelum diurai — `JSON.stringify` dari objek hasil
+  // urai menghasilkan susunan yang berbeda dan tanda tangannya tidak pernah
+  // cocok. Disimpan hanya untuk jalur itu: menahan salinan mentah setiap
+  // permintaan JSON hanya menggandakan pemakaian memori tanpa guna.
+  app.useBodyParser('json', {
+    limit: config.maxRequestBodyBytes,
+    verify: (
+      request: IncomingMessage & { rawBody?: Buffer },
+      _response: ServerResponse,
+      buffer: Buffer,
+    ) => {
+      if (request.url?.includes('/webhooks/whatsapp')) request.rawBody = Buffer.from(buffer);
+    },
+  });
   app.useBodyParser('urlencoded', { extended: false, limit: config.maxRequestBodyBytes });
 
   // Cookie session hanya berguna bila browser mengirimnya; origin web

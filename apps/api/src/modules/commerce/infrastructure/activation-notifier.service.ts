@@ -25,6 +25,7 @@ export class ActivationNotifierService {
   }): Promise<{
     email: DeliveryStatus;
     whatsApp: DeliveryStatus;
+    whatsAppMessageId: string | null;
     errors: string[];
   }> {
     const [email, whatsApp] = await Promise.allSettled([
@@ -33,7 +34,8 @@ export class ActivationNotifierService {
     ]);
     return {
       email: email.status === 'fulfilled' ? email.value : 'FAILED',
-      whatsApp: whatsApp.status === 'fulfilled' ? whatsApp.value : 'FAILED',
+      whatsApp: whatsApp.status === 'fulfilled' ? whatsApp.value.status : 'FAILED',
+      whatsAppMessageId: whatsApp.status === 'fulfilled' ? whatsApp.value.messageId : null,
       errors: [email, whatsApp]
         .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
         .map((result) =>
@@ -58,12 +60,20 @@ export class ActivationNotifierService {
     );
   }
 
+  /**
+   * Mengirim template aktivasi dan mengembalikan `wamid` dari balasan Meta.
+   *
+   * Statusnya sengaja tetap `SENT`, bukan `DELIVERED`: balasan 2xx hanya
+   * berarti Meta menerima permintaannya untuk diproses. Pengantaran yang
+   * sesungguhnya baru diketahui dari webhook status, dan `wamid` inilah
+   * satu-satunya pegangan untuk mencocokkan webhook itu dengan ordernya.
+   */
   private async sendWhatsApp(input: {
     phone: string;
     activationUrl: string;
-  }): Promise<DeliveryStatus> {
+  }): Promise<{ status: DeliveryStatus; messageId: string | null }> {
     const config = this.config.commerce.whatsApp;
-    if (config.provider === 'DISABLED') return 'SKIPPED';
+    if (config.provider === 'DISABLED') return { status: 'SKIPPED', messageId: null };
     if (!config.phoneNumberId || !config.accessToken) {
       throw new Error('Konfigurasi WhatsApp Cloud API belum lengkap.');
     }
@@ -102,7 +112,23 @@ export class ActivationNotifierService {
         `WhatsApp menolak permintaan (${response.status}): ${await metaErrorMessage(response)}`,
       );
     }
-    return 'SENT';
+    return { status: 'SENT', messageId: await metaMessageId(response) };
+  }
+}
+
+/**
+ * `wamid` pesan pertama pada balasan Graph API.
+ *
+ * Balasan yang tidak dapat dibaca tidak boleh menggagalkan pengiriman yang
+ * sudah terlanjur diterima Meta — akibatnya hanya kehilangan jejak status,
+ * bukan kehilangan pesannya.
+ */
+async function metaMessageId(response: Response): Promise<string | null> {
+  try {
+    const payload = (await response.json()) as { messages?: Array<{ id?: string }> };
+    return payload.messages?.[0]?.id ?? null;
+  } catch {
+    return null;
   }
 }
 

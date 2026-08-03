@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  DeliveryStatus,
   EnrollmentStatus,
   PaymentOrderStatus,
   Prisma,
@@ -21,6 +22,27 @@ import type {
   MidtransNotificationDto,
   UpdateAccessTierDto,
 } from '../presentation/dto/commerce.dto';
+
+/**
+ * Bentuk webhook status pesan WhatsApp, sebatas yang benar-benar dibaca.
+ *
+ * Meta menambah field tanpa pemberitahuan dan mengirim `messages` (pesan masuk)
+ * lewat saluran yang sama, jadi seluruh cabangnya opsional: yang tidak dikenali
+ * cukup dilewati, bukan menggagalkan seluruh webhook.
+ */
+export interface WhatsAppStatusPayload {
+  entry?: Array<{
+    changes?: Array<{
+      value?: {
+        statuses?: Array<{
+          id?: string;
+          status?: string;
+          errors?: Array<{ code?: number; title?: string; message?: string }>;
+        }>;
+      };
+    }>;
+  }>;
+}
 
 const tierInclude = {
   courses: {
@@ -440,9 +462,54 @@ export class CommerceService {
       data: {
         emailDeliveryStatus: result.email,
         whatsAppDeliveryStatus: result.whatsApp,
+        whatsAppMessageId: result.whatsAppMessageId,
         deliveryError: result.errors.join(' | ').slice(0, 1_000) || null,
       },
     });
+  }
+
+  /**
+   * Menerapkan tanda terima pengantaran dari webhook WhatsApp.
+   *
+   * Meta mengirim status berkali-kali untuk satu pesan (`sent`, `delivered`,
+   * `read`) dan tidak menjamin urutannya, jadi status hanya boleh maju.
+   * Tanpa aturan itu `read` yang tiba lebih dulu akan dimundurkan kembali
+   * oleh `sent` yang menyusul, dan kolomnya berakhir menyesatkan.
+   *
+   * Order yang tidak dikenali diabaikan diam-diam: webhook ini menerima status
+   * seluruh pesan nomor bisnis itu, termasuk yang dikirim di luar aplikasi ini.
+   */
+  async handleWhatsAppStatus(payload: WhatsAppStatusPayload): Promise<void> {
+    const statuses = (payload.entry ?? [])
+      .flatMap((entry) => entry.changes ?? [])
+      .flatMap((change) => change.value?.statuses ?? []);
+
+    for (const status of statuses) {
+      if (!status.id) continue;
+      const order = await this.prisma.registrationOrder.findUnique({
+        where: { whatsAppMessageId: status.id },
+        select: { id: true, whatsAppDeliveryStatus: true },
+      });
+      if (!order) continue;
+
+      const next = mapWhatsAppDeliveryStatus(status.status);
+      if (!next) continue;
+      // Pesan yang sudah terbukti sampai tidak dapat gagal belakangan, dan
+      // `sent` yang menyusul tidak boleh menghapus bukti pengantaran.
+      if (order.whatsAppDeliveryStatus === DeliveryStatus.DELIVERED) continue;
+      if (next === DeliveryStatus.SENT && order.whatsAppDeliveryStatus !== DeliveryStatus.PENDING) {
+        continue;
+      }
+
+      await this.prisma.registrationOrder.update({
+        where: { id: order.id },
+        data: {
+          whatsAppDeliveryStatus: next,
+          deliveryError:
+            next === DeliveryStatus.FAILED ? whatsAppFailureReason(status).slice(0, 1_000) : null,
+        },
+      });
+    }
   }
 
   private async assertTier(
@@ -541,6 +608,44 @@ export function mapPaymentStatus(status: MidtransStatus): PaymentOrderStatus {
   }
   if (status.transaction_status === 'failure') return PaymentOrderStatus.FAILED;
   return PaymentOrderStatus.PENDING;
+}
+
+/**
+ * Menerjemahkan status pesan Meta ke keadaan pengiriman yang kita catat.
+ *
+ * `read` diperlakukan sama dengan `delivered`: keduanya sama-sama membuktikan
+ * pesannya sampai, dan menyimpan apakah seseorang sudah membacanya bukan urusan
+ * catatan pengiriman order. Status lain — termasuk yang belum ada saat ini —
+ * dikembalikan `null` supaya kolomnya tidak berubah.
+ */
+function mapWhatsAppDeliveryStatus(status: string | undefined): DeliveryStatus | null {
+  switch (status) {
+    case 'sent':
+      return DeliveryStatus.SENT;
+    case 'delivered':
+    case 'read':
+      return DeliveryStatus.DELIVERED;
+    case 'failed':
+      return DeliveryStatus.FAILED;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Alasan kegagalan dari Meta, digabung menjadi satu kalimat yang dapat dibaca.
+ *
+ * Kode galatnya ikut disimpan karena itulah yang menentukan tindakan: `131049`
+ * berarti Meta menahan pesannya, `131026` berarti nomornya tidak dapat
+ * menerima, dan keduanya menuntut jawaban yang sama sekali berbeda.
+ */
+function whatsAppFailureReason(status: {
+  errors?: Array<{ code?: number; title?: string; message?: string }>;
+}): string {
+  const error = status.errors?.[0];
+  if (!error) return 'WhatsApp gagal diantar tanpa keterangan dari Meta.';
+  const keterangan = error.message ?? error.title ?? 'tanpa keterangan';
+  return error.code ? `WhatsApp gagal diantar (${error.code}): ${keterangan}` : keterangan;
 }
 
 /**

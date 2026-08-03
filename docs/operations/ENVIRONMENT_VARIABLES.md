@@ -232,10 +232,23 @@ WHATSAPP_PHONE_NUMBER_ID
 WHATSAPP_ACCESS_TOKEN
 WHATSAPP_ACTIVATION_TEMPLATE_NAME=academy_account_activation
 WHATSAPP_TEMPLATE_LANGUAGE=id
+WHATSAPP_APP_SECRET
+WHATSAPP_WEBHOOK_VERIFY_TOKEN
 ```
 
-`MIDTRANS_SERVER_KEY`, `RESEND_API_KEY`, dan `WHATSAPP_ACCESS_TOKEN` adalah
-secret backend. Mulai dengan `MIDTRANS_ENVIRONMENT=SANDBOX`. Provider email dan
+`WHATSAPP_APP_SECRET` dan `WHATSAPP_WEBHOOK_VERIFY_TOKEN` dipakai endpoint
+`/webhooks/whatsapp`, yang menerima tanda terima pengantaran dari Meta. Yang
+pertama memverifikasi `X-Hub-Signature-256`; tanpa nilainya seluruh webhook
+ditolak, sebab endpoint publik yang menulis ke basis data tidak boleh
+mempercayai badan permintaan yang tidak dapat dibuktikan asalnya. Yang kedua
+ditentukan sendiri dan dicocokkan Meta sekali saat URL webhooknya dipasang.
+
+Tanpa keduanya pengiriman WhatsApp tetap berjalan — hanya hasil akhirnya yang
+tidak pernah diketahui: `SENT` berarti Meta menerima permintaannya, bukan
+pesannya sampai.
+
+`MIDTRANS_SERVER_KEY`, `RESEND_API_KEY`, `WHATSAPP_ACCESS_TOKEN`, dan
+`WHATSAPP_APP_SECRET` adalah secret backend. Mulai dengan `MIDTRANS_ENVIRONMENT=SANDBOX`. Provider email dan
 WhatsApp sengaja default `DISABLED` agar deployment tetap sehat sebelum akun
 provider siap.
 

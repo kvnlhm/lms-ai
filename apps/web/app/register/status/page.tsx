@@ -207,8 +207,17 @@ function nadaKelas(nada: Nada): string {
   return 'Menunggu';
 }
 
+/**
+ * `SENT` dan `DELIVERED` sengaja dibedakan kata-katanya.
+ *
+ * `SENT` hanya berarti penyedia menerima permintaannya; pesan yang diterima
+ * Meta masih bisa gagal diantar sesudahnya. Menyebut keduanya "Terkirim"
+ * membuat pembeli yang tidak pernah menerima apa pun membaca halaman ini
+ * sebagai kabar baik.
+ */
 function labelPengiriman(status: string): string {
   if (status === 'SENT') return 'Terkirim';
+  if (status === 'DELIVERED') return 'Sudah sampai';
   if (status === 'SKIPPED') return 'Belum diaktifkan';
   if (status === 'FAILED') return 'Gagal dikirim';
   return 'Sedang diproses';

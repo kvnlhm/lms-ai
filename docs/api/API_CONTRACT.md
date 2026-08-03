@@ -8,6 +8,9 @@ Public:
 - `POST /api/v1/registration/checkout`
 - `GET /api/v1/registration/orders/{orderCode}`
 - `POST /api/v1/webhooks/midtrans`
+- `GET /api/v1/webhooks/whatsapp` — jabat tangan pemasangan URL oleh Meta;
+  mengembalikan `hub.challenge` mentah, di luar amplop `{ data, meta }`
+- `POST /api/v1/webhooks/whatsapp` — tanda terima pengantaran pesan
 
 Master (`commerce.manage`):
 
@@ -18,6 +21,15 @@ Master (`commerce.manage`):
 Harga dan kursus selalu diambil ulang dari database; client tidak dapat
 menentukan nominal. Webhook wajib lolos signature dan status verification
 provider sebelum provisioning.
+
+Webhook Midtrans diverifikasi dengan signature berbasis field lalu status
+kanonisnya diambil ulang ke provider; webhook WhatsApp diverifikasi dengan
+`X-Hub-Signature-256` atas badan mentah permintaannya. Keduanya ditolak `403`
+bila rahasianya belum dikonfigurasi.
+
+`DeliveryStatus` membedakan `SENT` dari `DELIVERED`: yang pertama hanya berarti
+penyedia menerima permintaannya, yang kedua berarti Meta memastikan pesannya
+sampai. Hanya WhatsApp yang dapat mencapai `DELIVERED`.
 
 ## LMS API v1
 
