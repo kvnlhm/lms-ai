@@ -60,6 +60,9 @@ export async function startHarness(options: HarnessOptions = {}): Promise<Harnes
   // hidup, ia akan berjalan di latar sementara spec unggahan sedang menulis
   // berkas sementaranya sendiri.
   process.env.UPLOAD_SWEEPER_ENABLED = 'false';
+  // Pemeriksaan ini menghubungi CDN Bunny sungguhan; test tidak boleh
+  // bergantung pada jaringan keluar.
+  process.env.BUNNY_STREAM_STARTUP_CHECK_ENABLED = 'false';
   // Ditulis tanpa syarat karena alasan yang sama: nilainya tetap di seluruh
   // spec, jadi endpoint webhook WhatsApp berperilaku sama di mana pun ia diuji.
   process.env.WHATSAPP_APP_SECRET = WHATSAPP_APP_SECRET;

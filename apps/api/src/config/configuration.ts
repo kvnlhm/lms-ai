@@ -77,6 +77,18 @@ export interface AppConfig {
        * tetapi referrer dapat dipalsukan.
        */
       tokenAuthKey?: string;
+      /**
+       * Memeriksa sekali saat proses hidup apakah URL yang kita susun benar-benar
+       * diterima CDN.
+       *
+       * Ada dua setelan yang harus sepakat dan tidak dapat saling melihat:
+       * `tokenAuthKey` di sini, dan "CDN token authentication" di dashboard
+       * Bunny. Bila hanya salah satu menyala, setiap pemutaran gagal — dan
+       * gagalnya diam-diam, karena yang dilihat pelajar cuma video yang tidak
+       * mau jalan. Pemeriksaan ini yang membuat ketidaksepakatan itu muncul di
+       * log begitu proses hidup, bukan berminggu-minggu kemudian lewat keluhan.
+       */
+      startupCheckEnabled: boolean;
     };
   };
   avatar: {
@@ -267,6 +279,7 @@ export function loadConfig(): AppConfig {
         cdnHostname: process.env.BUNNY_STREAM_CDN_HOSTNAME || undefined,
         apiKey: process.env.BUNNY_STREAM_API_KEY || undefined,
         tokenAuthKey: process.env.BUNNY_STREAM_TOKEN_AUTH_KEY || undefined,
+        startupCheckEnabled: bool('BUNNY_STREAM_STARTUP_CHECK_ENABLED', true),
       },
     },
     avatar: {

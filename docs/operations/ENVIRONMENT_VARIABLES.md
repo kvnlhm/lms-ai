@@ -310,6 +310,7 @@ BUNNY_STREAM_LIBRARY_ID
 BUNNY_STREAM_API_KEY
 BUNNY_STREAM_CDN_HOSTNAME
 BUNNY_STREAM_TOKEN_AUTH_KEY
+BUNNY_STREAM_STARTUP_CHECK_ENABLED=true
 BUNNY_STREAM_WEBHOOK_SECRET
 BUNNY_STREAM_TOKEN_TTL_SECONDS=300
 BUNNY_STREAM_ALLOWED_DOMAINS
@@ -322,3 +323,24 @@ VIDEO_PLAYBACK_HEARTBEAT_SECONDS=45
 ```
 
 Semua Bunny secret hanya tersedia di backend atau secret manager. Tidak ada secret yang memakai prefix `NEXT_PUBLIC_`.
+
+`BUNNY_STREAM_TOKEN_AUTH_KEY` harus sepakat dengan setelan **CDN token
+authentication** di library Bunny — bukan *Embed view token authentication*,
+yang hanya berlaku untuk pemutar iframe milik Bunny dan tidak kita pakai.
+Keduanya wajib menyala bersama atau padam bersama:
+
+| Kunci di sini | CDN token auth di Bunny | Akibat |
+| --- | --- | --- |
+| terisi | aktif | benar |
+| kosong | mati | benar, perlindungan hanya referrer |
+| terisi | mati | setiap pemutaran **404** |
+| kosong | aktif | setiap pemutaran **403** |
+
+Dua baris terakhir tidak meninggalkan jejak di sisi server: yang terlihat hanya
+video yang tidak mau jalan. Karena itu `BUNNY_STREAM_STARTUP_CHECK_ENABLED`
+membuat proses API meminta satu playlist sungguhan saat hidup dan menuliskan
+hasilnya ke log, lengkap dengan variabel mana yang harus diperbaiki.
+Permintaannya membawa header `Referer` berisi `WEB_URL`, sehingga pembatasan
+referrer di library tidak salah terbaca sebagai kesalahan token. Pemeriksaan ini
+tidak pernah menggagalkan proses, dan dimatikan pada test agar tidak bergantung
+pada jaringan keluar.
