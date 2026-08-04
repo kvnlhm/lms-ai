@@ -5,8 +5,6 @@ import { AppError } from '../../../shared/errors/app-error';
 
 export interface GrantAccessInput {
   userIds: string[];
-  accessStartsAt?: Date;
-  accessEndsAt?: Date;
 }
 
 export interface GrantResult {
@@ -65,8 +63,6 @@ export class EnrollmentAdminService {
       id: row.id,
       status: row.status,
       enrolledAt: row.enrolledAt,
-      accessStartsAt: row.accessStartsAt,
-      accessEndsAt: row.accessEndsAt,
       completedAt: row.completedAt,
       user: row.user,
       progress: {
@@ -138,8 +134,6 @@ export class EnrollmentAdminService {
           data: {
             status: EnrollmentStatus.ACTIVE,
             removedAt: null,
-            accessStartsAt: input.accessStartsAt ?? new Date(),
-            accessEndsAt: input.accessEndsAt ?? null,
           },
         });
         results.push({ userId, outcome: 'REACTIVATED', enrollmentId: reactivated.id });
@@ -151,8 +145,6 @@ export class EnrollmentAdminService {
           userId,
           courseId,
           enrolledBy: actorId,
-          accessStartsAt: input.accessStartsAt ?? new Date(),
-          accessEndsAt: input.accessEndsAt ?? null,
         },
       });
 
@@ -167,48 +159,6 @@ export class EnrollmentAdminService {
     }
 
     return results;
-  }
-
-  async updateAccessWindow(
-    enrollmentId: string,
-    window: { accessStartsAt?: Date; accessEndsAt?: Date | null },
-  ) {
-    await this.findOrFail(enrollmentId);
-    return this.prisma.enrollment.update({
-      where: { id: enrollmentId },
-      data: {
-        accessStartsAt: window.accessStartsAt,
-        accessEndsAt: window.accessEndsAt,
-      },
-    });
-  }
-
-  /** Mencabut akses tanpa menghapus riwayat belajar. */
-  async revoke(enrollmentId: string) {
-    await this.findOrFail(enrollmentId);
-    return this.prisma.enrollment.update({
-      where: { id: enrollmentId },
-      data: { status: EnrollmentStatus.REMOVED, removedAt: new Date() },
-    });
-  }
-
-  async reactivate(enrollmentId: string) {
-    const enrollment = await this.findOrFail(enrollmentId);
-
-    // Kursus yang sudah tuntas tetap berstatus COMPLETED; mengembalikannya ke
-    // ACTIVE akan menghapus fakta bahwa pelajar pernah menyelesaikannya.
-    const status = enrollment.completedAt ? EnrollmentStatus.COMPLETED : EnrollmentStatus.ACTIVE;
-
-    return this.prisma.enrollment.update({
-      where: { id: enrollmentId },
-      data: { status, removedAt: null },
-    });
-  }
-
-  private async findOrFail(enrollmentId: string) {
-    const enrollment = await this.prisma.enrollment.findUnique({ where: { id: enrollmentId } });
-    if (!enrollment) throw AppError.notFound();
-    return enrollment;
   }
 
   private async countRequiredLessons(courseId: string): Promise<number> {

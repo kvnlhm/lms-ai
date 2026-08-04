@@ -26,7 +26,6 @@ export class MyEnrollmentDto {
   @ApiProperty({ format: 'uuid' }) enrollmentId!: string;
   @ApiProperty({ enum: ENROLLMENT_STATUSES }) status!: string;
   @ApiProperty({ format: 'date-time' }) enrolledAt!: string;
-  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true }) accessEndsAt!: string | null;
   @ApiProperty({ type: EnrolledCourseDto }) course!: EnrolledCourseDto;
   @ApiProperty({ type: EnrollmentProgressDto }) progress!: EnrollmentProgressDto;
 }

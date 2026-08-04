@@ -49,17 +49,12 @@ const DILUAR_JANGKAUAN_WEB = new Map([
  * tidak akan pernah dipanggil kode web, sedangkan yang di sini adalah celah
  * yang diakui. Menaruhnya di satu daftar akan membuat celah tampak seperti
  * keputusan desain, dan setahun lagi tidak ada yang bisa membedakannya.
+ *
+ * Kosong bukan berarti tidak berguna: satu-satunya penghuninya, PATCH masa
+ * berlaku akses, dihapus dari API setelah diputuskan bahwa akses kursus terbit
+ * bersifat permanen. Daftar ini menunggu celah berikutnya.
  */
-const BELUM_DIPUTUSKAN = new Map([
-  [
-    '/api/v1/admin/enrollments/{enrollmentId}',
-    'Menyetel masa berlaku akses. Tidak disambungkan karena masa akses belum ' +
-      'ditegakkan di mana pun: EnrollmentAccessService.ensurePublishedCourseAccess ' +
-      'justru menulis accessStartsAt/accessEndsAt menjadi null setiap kali pelajar ' +
-      'membuka kursus terbit. Menyambungkannya akan membuat Master menyetel tanggal ' +
-      'yang tidak berpengaruh dan menghilang sendiri.',
-  ],
-]);
+const BELUM_DIPUTUSKAN = new Map([]);
 
 async function sumberWeb() {
   const isi = [];

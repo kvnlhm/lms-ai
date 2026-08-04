@@ -99,24 +99,6 @@ export function EnrollmentManager({
     });
   }
 
-  const revoke = (enrollmentId: string) =>
-    run(`revoke-${enrollmentId}`, async () =>
-      unwrap(
-        await browserClient().POST('/api/v1/admin/enrollments/{enrollmentId}/remove', {
-          params: { path: { enrollmentId } },
-        }),
-      ),
-    );
-
-  const reactivate = (enrollmentId: string) =>
-    run(`reactivate-${enrollmentId}`, async () =>
-      unwrap(
-        await browserClient().POST('/api/v1/admin/enrollments/{enrollmentId}/reactivate', {
-          params: { path: { enrollmentId } },
-        }),
-      ),
-    );
-
   return (
     <>
       <section className="card panel" style={{ marginBottom: 20 }}>
@@ -219,7 +201,6 @@ export function EnrollmentManager({
                   <th>Progres</th>
                   <th>Bergabung</th>
                   <th>Terakhir aktif</th>
-                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -262,25 +243,6 @@ export function EnrollmentManager({
                       ) : null}
                     </td>
                     <td data-label="Terakhir aktif">{formatRelative(enrollment.progress.lastActivityAt ?? null)}</td>
-                    <td className="num cellActions">
-                      {enrollment.status === 'REMOVED' || enrollment.status === 'EXPIRED' ? (
-                        <button
-                          className="btnTiny"
-                          onClick={() => reactivate(enrollment.id)}
-                          disabled={busy !== null}
-                        >
-                          Aktifkan
-                        </button>
-                      ) : (
-                        <button
-                          className="btnTiny btnDanger"
-                          onClick={() => revoke(enrollment.id)}
-                          disabled={busy !== null}
-                        >
-                          Cabut akses
-                        </button>
-                      )}
-                    </td>
                   </tr>
                 ))}
               </tbody>

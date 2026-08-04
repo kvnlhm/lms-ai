@@ -93,7 +93,13 @@ export default async function CourseEnrollmentsPage({ params, searchParams }: Pr
           <div className="panelHead">
             <div>
               <h2>Peserta ({total})</h2>
-              <p className="pageSub">Atur akses dan status peserta kursus ini.</p>
+              {/* Akses kursus terbit bersifat permanen dan tidak dapat dicabut
+                  per pelajar. Dikatakan terus terang di sini supaya tidak ada
+                  yang mencari tombol yang memang tidak ada. */}
+              <p className="pageSub">
+                Progres tiap pelajar pada kursus ini. Akses kursus yang sudah terbit berlaku
+                selamanya bagi seluruh pelajar.
+              </p>
             </div>
           </div>
           <EnrollmentManager courseId={courseId} enrollments={enrollments} />

@@ -457,29 +457,21 @@ export class CommerceService {
         for (const course of publishedCourses) {
           const existing = await tx.enrollment.findUnique({
             where: { userId_courseId: { userId: user.id, courseId: course.id } },
-            select: { id: true, accessEndsAt: true },
+            select: { id: true },
           });
-          const effectiveEnd =
-            existing?.accessEndsAt === null
-              ? null
-              : laterDate(existing?.accessEndsAt, accessEndsAt);
+          // Masa berlaku dicatat pada pesanan, bukan pada enrollment: akses
+          // kursus bersifat permanen, sedangkan pesanan tetap menyimpan apa
+          // yang sebenarnya dibeli.
           const enrollment = existing
             ? await tx.enrollment.update({
                 where: { id: existing.id },
-                data: {
-                  status: EnrollmentStatus.ACTIVE,
-                  accessStartsAt: now,
-                  accessEndsAt: effectiveEnd,
-                  removedAt: null,
-                },
+                data: { status: EnrollmentStatus.ACTIVE, removedAt: null },
               })
             : await tx.enrollment.create({
                 data: {
                   userId: user.id,
                   courseId: course.id,
                   status: EnrollmentStatus.ACTIVE,
-                  accessStartsAt: now,
-                  accessEndsAt,
                 },
               });
           const requiredLessons = await tx.lesson.count({
@@ -713,12 +705,6 @@ function addMonths(date: Date, months: number): Date {
   const result = new Date(date);
   result.setUTCMonth(result.getUTCMonth() + months);
   return result;
-}
-
-function laterDate(current: Date | null | undefined, candidate: Date | null): Date | null {
-  if (!candidate) return null;
-  if (!current) return candidate;
-  return current > candidate ? current : candidate;
 }
 
 export function amountMatches(raw: string, expected: number): boolean {

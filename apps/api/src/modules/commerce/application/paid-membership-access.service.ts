@@ -12,25 +12,27 @@ export class PaidMembershipAccessService {
     requiredLessonsTotal: number,
     grantedAt = new Date(),
   ): Promise<void> {
+    // Masa berlaku disaring di sini, pada pesanan — bukan disalin ke enrollment.
+    // Keanggotaan yang sudah habis tidak ikut menerima kursus yang baru terbit,
+    // sedangkan kursus yang terlanjur dimiliki tetap dapat dibuka selamanya.
     const paidOrders = await this.prisma.registrationOrder.findMany({
       where: {
         status: PaymentOrderStatus.PAID,
         provisionedUserId: { not: null },
         OR: [{ accessEndsAt: null }, { accessEndsAt: { gt: grantedAt } }],
       },
-      select: { provisionedUserId: true, accessEndsAt: true },
+      select: { provisionedUserId: true },
     });
-    const memberships = mergeMembershipWindows(paidOrders);
+    const anggota = new Set(
+      paidOrders.map((order) => order.provisionedUserId).filter((id): id is string => id !== null),
+    );
 
     await this.prisma.$transaction(async (tx) => {
-      for (const [userId, accessEndsAt] of memberships) {
+      for (const userId of anggota) {
         const existing = await tx.enrollment.findUnique({
           where: { userId_courseId: { userId, courseId } },
-          select: { id: true, status: true, accessEndsAt: true },
+          select: { id: true, status: true },
         });
-        const effectiveEnd = existing?.accessEndsAt === null || accessEndsAt === null
-          ? null
-          : laterDate(existing?.accessEndsAt, accessEndsAt);
         const enrollment = existing
           ? await tx.enrollment.update({
               where: { id: existing.id },
@@ -38,18 +40,11 @@ export class PaidMembershipAccessService {
                 ...(existing.status === EnrollmentStatus.COMPLETED
                   ? {}
                   : { status: EnrollmentStatus.ACTIVE }),
-                accessEndsAt: effectiveEnd,
                 removedAt: null,
               },
             })
           : await tx.enrollment.create({
-              data: {
-                userId,
-                courseId,
-                status: EnrollmentStatus.ACTIVE,
-                accessStartsAt: grantedAt,
-                accessEndsAt,
-              },
+              data: { userId, courseId, status: EnrollmentStatus.ACTIVE },
             });
         await tx.courseProgress.upsert({
           where: { enrollmentId: enrollment.id },
@@ -59,28 +54,4 @@ export class PaidMembershipAccessService {
       }
     });
   }
-}
-
-export function mergeMembershipWindows(
-  orders: Array<{ provisionedUserId: string | null; accessEndsAt: Date | null }>,
-): Map<string, Date | null> {
-  const memberships = new Map<string, Date | null>();
-  for (const order of orders) {
-    if (!order.provisionedUserId) continue;
-    const current = memberships.get(order.provisionedUserId);
-    if (memberships.has(order.provisionedUserId) && current === null) continue;
-    memberships.set(
-      order.provisionedUserId,
-      current === undefined || order.accessEndsAt === null
-        ? order.accessEndsAt
-        : laterDate(current, order.accessEndsAt),
-    );
-  }
-  return memberships;
-}
-
-function laterDate(current: Date | null | undefined, candidate: Date | null): Date | null {
-  if (!candidate) return null;
-  if (!current) return candidate;
-  return current > candidate ? current : candidate;
 }

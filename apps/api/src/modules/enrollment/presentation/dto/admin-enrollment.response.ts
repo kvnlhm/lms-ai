@@ -29,10 +29,6 @@ export class AdminEnrollmentDto {
   @ApiProperty({ enum: ENROLLMENT_STATUSES }) status!: string;
   @ApiProperty({ format: 'date-time' }) enrolledAt!: string;
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
-  accessStartsAt!: string | null;
-  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
-  accessEndsAt!: string | null;
-  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   completedAt!: string | null;
   @ApiProperty({ type: EnrolledLearnerDto }) user!: EnrolledLearnerDto;
   @ApiProperty({ type: EnrollmentProgressSummaryDto }) progress!: EnrollmentProgressSummaryDto;
@@ -51,18 +47,4 @@ export class GrantResultDto {
 
 export class GrantAccessResponseDto {
   @ApiProperty({ type: GrantResultDto, isArray: true }) results!: GrantResultDto[];
-}
-
-/** Bentuk enrollment yang dikembalikan tindakan tulis. */
-export class EnrollmentMutationDto {
-  @ApiProperty({ format: 'uuid' }) id!: string;
-  @ApiProperty({ format: 'uuid' }) userId!: string;
-  @ApiProperty({ format: 'uuid' }) courseId!: string;
-  @ApiProperty({ enum: ENROLLMENT_STATUSES }) status!: string;
-  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
-  accessStartsAt!: string | null;
-  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
-  accessEndsAt!: string | null;
-  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
-  completedAt!: string | null;
 }

@@ -7,7 +7,6 @@ export interface MyEnrollmentItem {
   enrollmentId: string;
   status: EnrollmentStatus;
   enrolledAt: Date;
-  accessEndsAt: Date | null;
   course: {
     id: string;
     slug: string;
@@ -53,7 +52,6 @@ export class MyEnrollmentsService {
       enrollmentId: enrollment.id,
       status: enrollment.status,
       enrolledAt: enrollment.enrolledAt,
-      accessEndsAt: enrollment.accessEndsAt,
       course: {
         id: enrollment.course.id,
         slug: enrollment.course.slug,

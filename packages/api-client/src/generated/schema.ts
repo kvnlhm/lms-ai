@@ -958,57 +958,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/enrollments/{enrollmentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Mengubah masa berlaku akses */
-        patch: operations["AdminEnrollmentsController_updateWindow"];
-        trace?: never;
-    };
-    "/api/v1/admin/enrollments/{enrollmentId}/remove": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mencabut akses tanpa menghapus riwayat belajar */
-        post: operations["AdminEnrollmentsController_revoke"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/enrollments/{enrollmentId}/reactivate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mengembalikan akses yang sebelumnya dicabut */
-        post: operations["AdminEnrollmentsController_reactivate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/registration/tiers": {
         parameters: {
             query?: never;
@@ -3189,8 +3138,6 @@ export interface components {
             status: "ACTIVE" | "COMPLETED" | "REMOVED" | "EXPIRED";
             /** Format: date-time */
             enrolledAt: string;
-            /** Format: date-time */
-            accessEndsAt?: string | null;
             course: components["schemas"]["EnrolledCourseDto"];
             progress: components["schemas"]["EnrollmentProgressDto"];
         };
@@ -3218,10 +3165,6 @@ export interface components {
             /** Format: date-time */
             enrolledAt: string;
             /** Format: date-time */
-            accessStartsAt?: string | null;
-            /** Format: date-time */
-            accessEndsAt?: string | null;
-            /** Format: date-time */
             completedAt?: string | null;
             user: components["schemas"]["EnrolledLearnerDto"];
             progress: components["schemas"]["EnrollmentProgressSummaryDto"];
@@ -3242,32 +3185,6 @@ export interface components {
         };
         GrantAccessDto: {
             userIds: string[];
-            /** Format: date-time */
-            accessStartsAt?: string;
-            /** Format: date-time */
-            accessEndsAt?: string;
-        };
-        EnrollmentMutationDto: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            userId: string;
-            /** Format: uuid */
-            courseId: string;
-            /** @enum {string} */
-            status: "ACTIVE" | "COMPLETED" | "REMOVED" | "EXPIRED";
-            /** Format: date-time */
-            accessStartsAt?: string | null;
-            /** Format: date-time */
-            accessEndsAt?: string | null;
-            /** Format: date-time */
-            completedAt?: string | null;
-        };
-        UpdateAccessWindowDto: {
-            /** Format: date-time */
-            accessStartsAt?: string;
-            /** Format: date-time */
-            accessEndsAt?: string | null;
         };
         TierCourseDto: {
             /** Format: uuid */
@@ -7601,162 +7518,6 @@ export interface operations {
                 };
             };
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    AdminEnrollmentsController_updateWindow: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                enrollmentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateAccessWindowDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["EnrollmentMutationDto"];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    AdminEnrollmentsController_revoke: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                enrollmentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["EnrollmentMutationDto"];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-        };
-    };
-    AdminEnrollmentsController_reactivate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                enrollmentId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["EnrollmentMutationDto"];
-                        meta: components["schemas"]["ResponseMetaDto"];
-                    };
-                };
-            };
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiErrorDto"];
-                };
-            };
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -10,16 +10,11 @@ export class LearningHistoryService {
   constructor(private readonly prisma: PrismaService) {}
 
   async continueLearning(userId: string) {
-    const now = new Date();
     const enrollments = await this.prisma.enrollment.findMany({
       where: {
         userId,
         status: EnrollmentStatus.ACTIVE,
         course: { status: PublicationStatus.PUBLISHED },
-        AND: [
-          { OR: [{ accessStartsAt: null }, { accessStartsAt: { lte: now } }] },
-          { OR: [{ accessEndsAt: null }, { accessEndsAt: { gt: now } }] },
-        ],
       },
       include: {
         course: {

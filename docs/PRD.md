@@ -640,7 +640,8 @@ Keputusan dan batasannya dicatat pada ADR-017.
 - Menjadi wadah progres dan histori pembelajaran, bukan pembatas akses konten.
 - Melihat tanggal enrollment.
 - Melihat status pembelajaran.
-- Status dan masa akses lama tetap dapat dilaporkan, tetapi tidak menutup konten kursus terbit.
+- Enrollment tidak punya masa berlaku, dan aksesnya tidak dapat dicabut per pelajar.
+- Masa berlaku yang dibeli dicatat pada pesanan, bukan pada enrollment.
 
 ### Acceptance Criteria
 
@@ -649,7 +650,7 @@ Keputusan dan batasannya dicatat pada ADR-017.
 - Kursus draft dan archived tidak terbuka pada katalog pelajar.
 - Enrollment duplikat tidak diperbolehkan.
 - Pembuatan atau pengaktifan enrollment otomatis tidak menghapus histori progres.
-- Status removed/expired dan masa akses yang berakhir tidak memblokir materi terbit.
+- Baris lama berstatus removed/expired atau bermasa berlaku lampau tidak memblokir materi terbit.
 
 ---
 

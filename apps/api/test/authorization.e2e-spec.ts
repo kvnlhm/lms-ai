@@ -89,15 +89,20 @@ describe('Otorisasi resource', () => {
     expect(response.body.error.code).toBe('AUTHENTICATION_REQUIRED');
   });
 
-  it('memulihkan akses ketika masa berlaku enrollment sudah lewat', async () => {
+  it('masa berlaku lama pada baris enrollment tidak lagi menutup akses', async () => {
+    // Akses kursus terbit bersifat permanen. Kolom masa berlaku masih ada di
+    // basis data untuk baris lama, jadi test ini memasang nilai yang sudah
+    // lewat lalu membuktikan dua hal sekaligus: aksesnya tetap terbuka, dan
+    // nilainya memang tidak dibaca — bukan sekadar kebetulan dihapus.
     const session = await login(h.server, STUDENT.email, STUDENT.password);
     const enrollment = await h.prisma.enrollment.findFirstOrThrow({
       where: { userId: session.userId, course: { slug: 'video-editing-mastery' } },
     });
+    const kedaluwarsa = new Date(Date.now() - 60_000);
 
     await h.prisma.enrollment.update({
       where: { id: enrollment.id },
-      data: { status: 'EXPIRED', accessEndsAt: new Date(Date.now() - 60_000) },
+      data: { status: 'EXPIRED', accessEndsAt: kedaluwarsa },
     });
 
     try {
@@ -106,14 +111,16 @@ describe('Otorisasi resource', () => {
         .set('Cookie', session.cookie)
         .expect(200);
 
-      // Masa berlaku dipulihkan, tetapi barisnya tetap yang lama sehingga
-      // progres belajar yang sudah tercatat tidak hilang.
       const setelah = await h.prisma.enrollment.findUniqueOrThrow({
         where: { id: enrollment.id },
         select: { status: true, accessEndsAt: true },
       });
+      // Statusnya dipulihkan pada baris yang sama, sehingga progres yang sudah
+      // tercatat tidak hilang.
       expect(setelah.status).toBe('ACTIVE');
-      expect(setelah.accessEndsAt).toBeNull();
+      // Nilainya dibiarkan apa adanya. Kalau kelak ada yang menegakkan kembali
+      // masa berlaku, test ini akan gagal dan memaksa keputusannya dibicarakan.
+      expect(setelah.accessEndsAt?.getTime()).toBe(kedaluwarsa.getTime());
     } finally {
       await h.prisma.enrollment.update({
         where: { id: enrollment.id },

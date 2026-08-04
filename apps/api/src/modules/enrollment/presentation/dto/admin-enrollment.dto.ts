@@ -4,7 +4,6 @@ import {
   ArrayMaxSize,
   ArrayNotEmpty,
   IsArray,
-  IsDateString,
   IsIn,
   IsInt,
   IsOptional,
@@ -54,26 +53,4 @@ export class GrantAccessDto {
   @ArrayMaxSize(200)
   @IsUUID('4', { each: true })
   userIds!: string[];
-
-  @ApiPropertyOptional({ format: 'date-time' })
-  @IsOptional()
-  @IsDateString()
-  accessStartsAt?: string;
-
-  @ApiPropertyOptional({ format: 'date-time' })
-  @IsOptional()
-  @IsDateString()
-  accessEndsAt?: string;
-}
-
-export class UpdateAccessWindowDto {
-  @ApiPropertyOptional({ format: 'date-time' })
-  @IsOptional()
-  @IsDateString()
-  accessStartsAt?: string;
-
-  @ApiPropertyOptional({ format: 'date-time', nullable: true })
-  @IsOptional()
-  @IsDateString()
-  accessEndsAt?: string;
 }

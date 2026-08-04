@@ -65,8 +65,6 @@ export class EnrollmentAccessService {
               ...(existing.status === EnrollmentStatus.COMPLETED
                 ? {}
                 : { status: EnrollmentStatus.ACTIVE }),
-              accessStartsAt: null,
-              accessEndsAt: null,
               removedAt: null,
             },
           })

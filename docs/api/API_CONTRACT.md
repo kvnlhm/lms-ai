@@ -916,28 +916,17 @@ riskLevel
   "userIds": [
     "uuid-1",
     "uuid-2"
-  ],
-  "accessStartsAt": "2026-08-01T00:00:00Z",
-  "accessEndsAt": null
+  ]
 }
 ```
 
 Response may contain per-user success and conflict.
 
-## GET `/admin/enrollments/{enrollmentId}`
-
-## PATCH `/admin/enrollments/{enrollmentId}`
-
-```json
-{
-  "accessStartsAt": "2026-08-01T00:00:00Z",
-  "accessEndsAt": "2027-08-01T00:00:00Z"
-}
-```
-
-## POST `/admin/enrollments/{enrollmentId}/remove`
-
-## POST `/admin/enrollments/{enrollmentId}/reactivate`
+Enrollment tidak memiliki masa berlaku. Akses ke kursus yang sudah terbit
+bersifat permanen bagi seluruh pengguna terautentikasi (PRD bagian 643 dan
+652), sehingga tidak ada endpoint untuk menyetel masa berlaku, mencabut, atau
+mengaktifkan kembali akses per pelajar. Masa berlaku yang dibeli dicatat pada
+`registrationOrder`, bukan pada enrollment — lihat bagian Commerce.
 
 ## GET `/me/enrollments`
 

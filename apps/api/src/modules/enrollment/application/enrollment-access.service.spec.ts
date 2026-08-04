@@ -50,7 +50,7 @@ describe('EnrollmentAccessService universal authenticated access', () => {
     });
   });
 
-  it('reactivates removed enrollment and clears old access limits', async () => {
+  it('menghidupkan kembali enrollment yang pernah dicabut', async () => {
     const reactivated = {
       id: 'enrollment-1',
       userId: 'user-1',
@@ -81,8 +81,6 @@ describe('EnrollmentAccessService universal authenticated access', () => {
       where: { id: 'enrollment-1' },
       data: {
         status: EnrollmentStatus.ACTIVE,
-        accessStartsAt: null,
-        accessEndsAt: null,
         removedAt: null,
       },
     });
