@@ -73,9 +73,52 @@ const tokenHilang = new Set(
     .filter((nama) => !tokenTerdefinisi.has(nama)),
 );
 
-if (missing.size === 0 && tokenHilang.size === 0) {
-  console.log('Seluruh kelas dan token CSS yang dipakai sudah didefinisikan.');
+/*
+ * Cacat ketiga: warna merek ditulis sebagai angka, bukan lewat tokennya.
+ *
+ * Ini yang membuat pergantian merek tidak pernah selesai. Ketika aksen berpindah
+ * ke biru listrik, sidebar Master tetap abu-abu, tombol Master tetap hitam,
+ * batang analitik berpindah warna di tengah gradien, dan lambang di sidebar
+ * memakai tulisan putih yang kontrasnya jatuh ke 1,91:1 — semuanya karena
+ * warnanya ditulis langsung dan tidak ikut berubah.
+ *
+ * Aturannya sengaja sempit: hanya heks yang *persis sama* dengan nilai sebuah
+ * token yang ditandai. Menandai setiap warna akan menghasilkan keluhan palsu
+ * pada gradien dekoratif dan overlay pemutar, dan penjaga yang berisik akan
+ * dimatikan orang. Putih dan hitam murni dikecualikan karena terlalu umum
+ * untuk disebut penyimpangan merek.
+ */
+const UMUM = new Set(['#fff', '#ffffff', '#000', '#000000']);
+const blokToken = [...css.matchAll(/(?::root|@media \(prefers-color-scheme)[^{]*\{[\s\S]*?\n\}/g)]
+  .map((m) => m[0])
+  .join('\n');
+const nilaiToken = new Map();
+for (const m of blokToken.matchAll(/(--[\w-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\b/g)) {
+  const warna = m[2].toLowerCase();
+  if (!nilaiToken.has(warna)) nilaiToken.set(warna, m[1]);
+}
+
+const warnaLangsung = [];
+for (const [nomor, baris] of css.split('\n').entries()) {
+  if (blokToken.includes(baris) || baris.trimStart().startsWith('*')) continue;
+  for (const m of baris.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) {
+    const warna = m[0].toLowerCase();
+    if (UMUM.has(warna) || !nilaiToken.has(warna)) continue;
+    warnaLangsung.push({ nomor: nomor + 1, warna, token: nilaiToken.get(warna) });
+  }
+}
+
+if (missing.size === 0 && tokenHilang.size === 0 && warnaLangsung.length === 0) {
+  console.log('Seluruh kelas, token, dan warna merek CSS sudah pada tempatnya.');
   process.exit(0);
+}
+
+if (warnaLangsung.length > 0) {
+  console.error(`${warnaLangsung.length} warna ditulis langsung padahal sudah punya token:\n`);
+  for (const { nomor, warna, token } of warnaLangsung) {
+    console.error(`  styles.css:${nomor}  ${warna}  →  var(${token})`);
+  }
+  console.error('\nWarna yang ditulis langsung tidak ikut berubah saat merek atau tema berganti.');
 }
 
 if (missing.size > 0) {
