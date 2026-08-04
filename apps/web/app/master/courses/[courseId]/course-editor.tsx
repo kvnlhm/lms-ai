@@ -353,24 +353,30 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
       const asset = unwrap<Schemas['CreateBunnyVideoResultDto']>(
         await client().POST('/api/v1/admin/videos/bunny', { body: { source, title } }),
       );
-      unwrap(
-        await client().PUT('/api/v1/admin/lessons/{lessonId}/video', {
-          params: { path: { lessonId } },
-          body: { videoAssetId: asset.videoAssetId },
-        }),
-      );
+      // Video yang masih ditranskode boleh masuk perpustakaan, tetapi belum
+      // boleh dipasang: server menolak memasang aset yang belum AVAILABLE.
+      // Sebelumnya pemasangan tetap dicoba, sehingga penolakan itu jatuh ke
+      // penanganan galat dan berbunyi "gagal didaftarkan" — padahal videonya
+      // sudah terdaftar dengan selamat.
+      const siap = asset.status === 'AVAILABLE';
+      if (siap) {
+        unwrap(
+          await client().PUT('/api/v1/admin/lessons/{lessonId}/video', {
+            params: { path: { lessonId } },
+            body: { videoAssetId: asset.videoAssetId },
+          }),
+        );
+      }
       setBunnyLessonId(null);
       setBunnySource('');
       setUpload({
         lessonId,
         fileName: asset.title,
         percent: 100,
-        status: 'SUCCESS',
-        // Video yang masih ditranskode boleh masuk perpustakaan, tetapi belum
-        // dapat diputar. Menyebutnya "siap" akan menjadi janji yang keliru.
-        message: asset.status === 'AVAILABLE'
+        status: siap ? 'SUCCESS' : 'PROCESSING',
+        message: siap
           ? 'Video Bunny tertaut dan siap diputar.'
-          : 'Video Bunny tertaut, tetapi masih diproses Bunny dan belum dapat diputar.',
+          : 'Video sudah masuk perpustakaan, tetapi Bunny masih memprosesnya. Pasang ke pelajaran ini setelah prosesnya selesai.',
       });
       router.refresh();
     } catch (caught) {
@@ -1044,6 +1050,24 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
           onSelectBunny={(video) => {
             const target = pickerLesson;
             setPickerLesson(null);
+            // Video Bunny yang sudah pernah didaftarkan sudah punya aset di
+            // perpustakaan. Mendaftarkannya lagi ditolak server — satu GUID
+            // hanya boleh dimiliki satu aset — jadi yang benar adalah memasang
+            // aset yang sudah ada, bukan membuat yang kedua.
+            if (video.videoAssetId) {
+              const asetId = video.videoAssetId;
+              void run(`pilih-video-${target.id}`, async () => {
+                await attachToLesson(target.id, asetId);
+                setUpload({
+                  lessonId: target.id,
+                  fileName: video.title,
+                  percent: 100,
+                  status: 'SUCCESS',
+                  message: 'Video Bunny dari perpustakaan dipasang dan siap diputar.',
+                });
+              });
+              return;
+            }
             void linkBunny(target.id, target.title, video.guid);
           }}
           onSelect={(videoAssetId) => {

@@ -113,6 +113,71 @@ describe('BunnyStreamClient.uploadTicket', () => {
   });
 });
 
+describe('VideoService.listLibrary — penyelarasan aset Bunny tertunda', () => {
+  function siapkan(metadata: { ready: boolean; failed: boolean; sizeBytes: number | null }) {
+    const update = jest.fn().mockResolvedValue({});
+    const prisma = {
+      videoAsset: {
+        findMany: jest
+          .fn()
+          .mockResolvedValueOnce([{ id: 'aset-1', providerVideoId: GUID_BARU }])
+          .mockResolvedValue([]),
+        update,
+        count: jest.fn().mockResolvedValue(0),
+      },
+      // listLibrary mengambil [total, assets] dalam satu transaksi.
+      $transaction: jest.fn().mockResolvedValue([0, []]),
+    } as unknown as PrismaService;
+
+    const bunny = {
+      configured: () => true,
+      fetchVideo: jest.fn().mockResolvedValue({ title: 'x', ...metadata }),
+    } as unknown as BunnyStreamClient;
+
+    const app = {
+      video: { storagePath: '/data/video', playbackTtlSeconds: 3600, bunny: {} },
+    } as unknown as AppConfig;
+    const service = new VideoService(
+      prisma,
+      {} as EnrollmentAccessService,
+      bunny,
+      { get: () => app } as unknown as ConfigService<{ app: AppConfig }, true>,
+    );
+    return { service, update, bunny };
+  }
+
+  it('menaikkan aset menjadi AVAILABLE setelah Bunny selesai', async () => {
+    // Bunny tidak mengabari kita saat transkodenya selesai. Tanpa penyelarasan
+    // ini, aset yang didaftarkan beberapa detik setelah diunggah akan tercatat
+    // PROCESSING selamanya dan tidak pernah dapat dipasang ke pelajaran.
+    const { service, update } = siapkan({ ready: true, failed: false, sizeBytes: 999 });
+    await service.listLibrary({}, 1, 20);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: VideoStatus.AVAILABLE }) }),
+    );
+  });
+
+  it('menurunkan aset menjadi FAILED ketika Bunny gagal memprosesnya', async () => {
+    const { service, update } = siapkan({ ready: false, failed: true, sizeBytes: null });
+    await service.listLibrary({}, 1, 20);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: VideoStatus.FAILED }) }),
+    );
+  });
+
+  it('membiarkan yang masih benar-benar diproses apa adanya', async () => {
+    const { service, update } = siapkan({ ready: false, failed: false, sizeBytes: null });
+    await service.listLibrary({}, 1, 20);
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('tetap menampilkan perpustakaan ketika Bunny tidak dapat dihubungi', async () => {
+    const { service, bunny } = siapkan({ ready: true, failed: false, sizeBytes: 1 });
+    (bunny.fetchVideo as jest.Mock).mockRejectedValue(new Error('jaringan mati'));
+    await expect(service.listLibrary({}, 1, 20)).resolves.toBeDefined();
+  });
+});
+
 describe('VideoService.replaceAssetSource', () => {
   beforeEach(() => rm.mockReset());
 

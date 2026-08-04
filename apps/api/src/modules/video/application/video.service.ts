@@ -581,11 +581,60 @@ export class VideoService implements LessonVideoCleanupPort, StaleUploadReconcil
    * tanpa batas seiring video bertambah. Pencarian dan penyaringan kini
    * dikerjakan basis data, dan hasilnya berhalaman.
    */
+  /**
+   * Menyelaraskan aset Bunny yang masih tercatat PROCESSING dengan keadaan
+   * sebenarnya di Bunny.
+   *
+   * Bunny tidak mengabari kita ketika transkodenya selesai, dan tidak ada
+   * pekerja yang menanyakannya. Tanpa penyelarasan ini, video yang didaftarkan
+   * beberapa detik setelah diunggah akan tercatat PROCESSING selamanya —
+   * termasuk lama setelah Bunny selesai — sehingga tidak pernah dapat dipasang
+   * ke pelajaran mana pun.
+   *
+   * Dijalankan saat perpustakaan dibuka karena di situlah orang menunggunya,
+   * dan hanya untuk aset yang memang masih menggantung. Kegagalan menghubungi
+   * Bunny tidak boleh menjatuhkan halamannya: yang tampil sekadar tetap
+   * PROCESSING, persis seperti sebelumnya.
+   */
+  private async segarkanAsetBunnyTertunda(): Promise<void> {
+    const tertunda = await this.prisma.videoAsset.findMany({
+      where: {
+        provider: VideoProvider.BUNNY_STREAM,
+        status: VideoStatus.PROCESSING,
+        deletedAt: null,
+      },
+      select: { id: true, providerVideoId: true },
+      // Batas atas supaya satu kunjungan tidak berubah menjadi puluhan
+      // permintaan ke Bunny; sisanya menyusul pada kunjungan berikutnya.
+      take: 20,
+    });
+
+    for (const aset of tertunda) {
+      try {
+        const metadata = await this.bunny.fetchVideo(aset.providerVideoId);
+        if (!metadata.ready && !metadata.failed) continue;
+        await this.prisma.videoAsset.update({
+          where: { id: aset.id },
+          data: {
+            status: metadata.ready ? VideoStatus.AVAILABLE : VideoStatus.FAILED,
+            sizeBytes: metadata.sizeBytes === null ? undefined : BigInt(metadata.sizeBytes),
+            processingError: metadata.failed ? 'Bunny gagal memproses video ini.' : null,
+          },
+        });
+      } catch {
+        // Video yang lenyap dari Bunny atau jaringan yang sedang bermasalah
+        // sama-sama bukan alasan untuk menolak menampilkan perpustakaan.
+      }
+    }
+  }
+
   async listLibrary(
     params: { search?: string; filter?: 'USED' | 'ORPHAN' | 'PROBLEM' | 'AVAILABLE' },
     page: number,
     pageSize: number,
   ) {
+    if (this.bunny.configured()) await this.segarkanAsetBunnyTertunda();
+
     const where: Prisma.VideoAssetWhereInput = { deletedAt: null };
 
     if (params.filter === 'USED') where.lessons = { some: {} };
