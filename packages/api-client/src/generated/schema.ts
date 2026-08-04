@@ -1094,6 +1094,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/registration-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daftar pesanan pendaftaran beserta status pembayarannya */
+        get: operations["CommerceController_orders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/registration-orders/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ringkasan seluruh pesanan, bukan satu halaman */
+        get: operations["CommerceController_orderSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/access-tiers": {
         parameters: {
             query?: never;
@@ -3240,6 +3274,43 @@ export interface components {
         WebhookAcceptedDto: {
             /** @example true */
             accepted: boolean;
+        };
+        AdminRegistrationOrderDto: {
+            /** Format: uuid */
+            id: string;
+            /** @description Kode yang dipakai Midtrans dan halaman status. */
+            orderCode: string;
+            fullName: string;
+            /** Format: email */
+            email: string;
+            phone: string;
+            /** @description Rupiah, tanpa desimal. */
+            grossAmount: number;
+            /** @enum {string} */
+            status: "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "CANCELLED" | "REFUNDED";
+            paymentType?: string | null;
+            /** Format: date-time */
+            paidAt?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            tierName: string;
+            /** @description Status pengantaran email undangan. */
+            emailDeliveryStatus: string;
+            /** @description Status pengantaran WhatsApp. */
+            whatsAppDeliveryStatus: string;
+            /** @description Akun yang dibuatkan setelah pembayaran lunas; kosong bila belum. */
+            provisionedUserId?: string | null;
+        };
+        RegistrationOrderSummaryDto: {
+            total: number;
+            paid: number;
+            pending: number;
+            /** @description Gagal, kedaluwarsa, dan dibatalkan digabung. */
+            failed: number;
+            /** @description Jumlah rupiah dari pesanan yang lunas. */
+            paidAmount: number;
         };
         CreateAccessTierDto: {
             /** @example Pro 12 Bulan */
@@ -7760,6 +7831,88 @@ export interface operations {
                         data: components["schemas"]["WebhookAcceptedDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommerceController_orders: {
+        parameters: {
+            query?: {
+                /** @description Kode pesanan, nama, email, atau nomor telepon. */
+                search?: string;
+                status?: "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "CANCELLED" | "REFUNDED";
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminRegistrationOrderDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommerceController_orderSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["RegistrationOrderSummaryDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
             403: {

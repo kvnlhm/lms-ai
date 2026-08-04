@@ -22,8 +22,10 @@ import { AppError } from '../../../../shared/errors/app-error';
 import {
   ApiEnvelope,
   ApiEnvelopeArray,
+  ApiEnvelopeList,
   ApiErrors,
 } from '../../../../shared/http/api-envelope';
+import { Paginated } from '../../../../shared/http/response.interceptor';
 import {
   Public,
   RequirePermissions,
@@ -40,13 +42,16 @@ import { CheckoutRateLimiter } from '../../application/checkout-rate-limiter';
 import {
   CreateAccessTierDto,
   CreateCheckoutDto,
+  ListRegistrationOrderQueryDto,
   MidtransNotificationDto,
   UpdateAccessTierDto,
 } from '../dto/commerce.dto';
 import {
   AccessTierDto,
+  AdminRegistrationOrderDto,
   CheckoutResponseDto,
   RegistrationOrderStatusDto,
+  RegistrationOrderSummaryDto,
   WebhookAcceptedDto,
 } from '../dto/commerce.response';
 
@@ -270,6 +275,32 @@ export class CommerceController {
     }
     await this.commerce.handleResendEvent(payload as ResendEvent);
     return { accepted: true };
+  }
+
+  @Get('admin/registration-orders')
+  @RequirePermissions(PERMISSIONS.COMMERCE_MANAGE)
+  @ApiOperation({ summary: 'Daftar pesanan pendaftaran beserta status pembayarannya' })
+  @ApiEnvelopeList(AdminRegistrationOrderDto)
+  @ApiErrors(401, 403)
+  async orders(@Query() query: ListRegistrationOrderQueryDto) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
+    const { total, items } = await this.commerce.adminOrders({
+      page,
+      pageSize,
+      status: query.status as never,
+      search: query.search,
+    });
+    return new Paginated(items, page, pageSize, total);
+  }
+
+  @Get('admin/registration-orders/summary')
+  @RequirePermissions(PERMISSIONS.COMMERCE_MANAGE)
+  @ApiOperation({ summary: 'Ringkasan seluruh pesanan, bukan satu halaman' })
+  @ApiEnvelope(RegistrationOrderSummaryDto)
+  @ApiErrors(401, 403)
+  orderSummary() {
+    return this.commerce.adminOrderSummary();
   }
 
   @Get('admin/access-tiers')

@@ -5297,6 +5297,161 @@
         ]
       }
     },
+    "/api/v1/admin/registration-orders": {
+      "get": {
+        "operationId": "CommerceController_orders",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Kode pesanan, nama, email, atau nomor telepon.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "PENDING",
+                "PAID",
+                "FAILED",
+                "EXPIRED",
+                "CANCELLED",
+                "REFUNDED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminRegistrationOrderDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Daftar pesanan pendaftaran beserta status pembayarannya",
+        "tags": [
+          "registration"
+        ]
+      }
+    },
+    "/api/v1/admin/registration-orders/summary": {
+      "get": {
+        "operationId": "CommerceController_orderSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RegistrationOrderSummaryDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Ringkasan seluruh pesanan, bukan satu halaman",
+        "tags": [
+          "registration"
+        ]
+      }
+    },
     "/api/v1/admin/access-tiers": {
       "get": {
         "operationId": "CommerceController_adminTiers",
@@ -15133,6 +15288,120 @@
         },
         "required": [
           "accepted"
+        ]
+      },
+      "AdminRegistrationOrderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderCode": {
+            "type": "string",
+            "description": "Kode yang dipakai Midtrans dan halaman status."
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "grossAmount": {
+            "type": "number",
+            "description": "Rupiah, tanpa desimal."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PAID",
+              "FAILED",
+              "EXPIRED",
+              "CANCELLED",
+              "REFUNDED"
+            ]
+          },
+          "paymentType": {
+            "type": "string",
+            "nullable": true
+          },
+          "paidAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "tierName": {
+            "type": "string"
+          },
+          "emailDeliveryStatus": {
+            "type": "string",
+            "description": "Status pengantaran email undangan."
+          },
+          "whatsAppDeliveryStatus": {
+            "type": "string",
+            "description": "Status pengantaran WhatsApp."
+          },
+          "provisionedUserId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Akun yang dibuatkan setelah pembayaran lunas; kosong bila belum."
+          }
+        },
+        "required": [
+          "id",
+          "orderCode",
+          "fullName",
+          "email",
+          "phone",
+          "grossAmount",
+          "status",
+          "createdAt",
+          "expiresAt",
+          "tierName",
+          "emailDeliveryStatus",
+          "whatsAppDeliveryStatus"
+        ]
+      },
+      "RegistrationOrderSummaryDto": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          },
+          "paid": {
+            "type": "number"
+          },
+          "pending": {
+            "type": "number"
+          },
+          "failed": {
+            "type": "number",
+            "description": "Gagal, kedaluwarsa, dan dibatalkan digabung."
+          },
+          "paidAmount": {
+            "type": "number",
+            "description": "Jumlah rupiah dari pesanan yang lunas."
+          }
+        },
+        "required": [
+          "total",
+          "paid",
+          "pending",
+          "failed",
+          "paidAmount"
         ]
       },
       "CreateAccessTierDto": {

@@ -18,6 +18,17 @@ Master (`commerce.manage`):
 - `GET /api/v1/admin/access-tiers`
 - `POST /api/v1/admin/access-tiers`
 - `PATCH /api/v1/admin/access-tiers/{tierId}`
+- `GET /api/v1/admin/registration-orders` — daftar pesanan berhalaman. `status`
+  dan `search` disaring di database, bukan diserahkan ke browser dari satu
+  halaman besar; `search` mencocokkan kode pesanan, nama, email, dan nomor
+  telepon sekaligus, karena itulah yang dipegang seseorang saat mengaku sudah
+  membayar. Tiap baris juga membawa status pengantaran undangan email dan
+  WhatsApp serta `provisionedUserId` — kosongnya nilai itu pada pesanan lunas
+  berarti janji "akun otomatis" belum terpenuhi.
+- `GET /api/v1/admin/registration-orders/summary` — jumlah pesanan per keadaan
+  dan total rupiah yang benar-benar lunas, dihitung dari seluruh pesanan dan
+  bukan dari halaman yang sedang dibuka. Gagal, kedaluwarsa, dan dibatalkan
+  digabung; nilainya tidak pernah ikut dijumlahkan ke pendapatan.
 
 Harga dan kursus selalu diambil ulang dari database; client tidak dapat
 menentukan nominal. Webhook wajib lolos signature dan status verification

@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsEmail,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -126,4 +127,22 @@ export class MidtransNotificationDto {
   @IsOptional() @IsString() transaction_id?: string;
   @IsOptional() @IsString() payment_type?: string;
   @IsOptional() @IsString() fraud_status?: string;
+}
+
+export const PAYMENT_ORDER_STATUS_VALUES = [
+  'PENDING', 'PAID', 'FAILED', 'EXPIRED', 'CANCELLED', 'REFUNDED',
+] as const;
+
+export class ListRegistrationOrderQueryDto {
+  @ApiPropertyOptional({ description: 'Kode pesanan, nama, email, atau nomor telepon.' })
+  @IsOptional() @IsString() @MaxLength(200) search?: string;
+
+  @ApiPropertyOptional({ enum: PAYMENT_ORDER_STATUS_VALUES })
+  @IsOptional() @IsIn(PAYMENT_ORDER_STATUS_VALUES) status?: (typeof PAYMENT_ORDER_STATUS_VALUES)[number];
+
+  @ApiPropertyOptional({ type: Number, default: 1 })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
+
+  @ApiPropertyOptional({ type: Number, default: 20 })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) pageSize?: number;
 }

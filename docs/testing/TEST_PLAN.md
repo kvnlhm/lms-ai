@@ -338,6 +338,16 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
 - Durasi dan progres kursus sesudah penyelesaian ikut ditampilkan; keduanya
   opsional sekaligus nullable pada kontrak dan diperlakukan sama.
 
+## 7e. Transaksi Pendaftaran
+
+- Pelajar ditolak `403` pada daftar maupun ringkasan transaksi.
+- Penyaringan status dikerjakan database, dan `meta.total` ikut menyempit
+  supaya pager tidak menjanjikan halaman yang isinya sudah tersaring habis.
+- Pencarian mencocokkan kode pesanan, nama, email, dan nomor telepon.
+- Ringkasan dihitung dari seluruh pesanan, bukan dari halaman yang dibuka, dan
+  pendapatannya hanya menjumlah pesanan lunas — dibandingkan langsung dengan
+  agregat database, bukan sekadar "lebih besar dari sekian".
+
 ## 8. Community Feed Test Cases
 
 - Tanpa sesi tidak dapat membaca channel atau feed.

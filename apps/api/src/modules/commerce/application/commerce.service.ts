@@ -249,6 +249,90 @@ export class CommerceService {
     return order;
   }
 
+  /**
+   * Daftar pesanan pendaftaran untuk Master.
+   *
+   * Uang sudah lama masuk lewat Midtrans, tetapi tidak ada satu layar pun untuk
+   * melihat siapa membayar apa dan kapan — satu-satunya jalan adalah membuka
+   * dashboard Midtrans atau psql. Penyaringan dan pencariannya dikerjakan
+   * database, bukan disaring ulang di browser dari satu halaman besar.
+   */
+  async adminOrders(input: {
+    page: number;
+    pageSize: number;
+    status?: PaymentOrderStatus;
+    search?: string;
+  }) {
+    const search = input.search?.trim();
+    const where: Prisma.RegistrationOrderWhereInput = {
+      ...(input.status ? { status: input.status } : {}),
+      ...(search
+        ? {
+            OR: [
+              { orderCode: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { fullName: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search } },
+            ],
+          }
+        : {}),
+    };
+
+    const [total, rows] = await this.prisma.$transaction([
+      this.prisma.registrationOrder.count({ where }),
+      this.prisma.registrationOrder.findMany({
+        where,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (input.page - 1) * input.pageSize,
+        take: input.pageSize,
+        select: {
+          id: true, orderCode: true, fullName: true, email: true, phone: true,
+          grossAmount: true, status: true, paymentType: true, paidAt: true,
+          createdAt: true, expiresAt: true,
+          emailDeliveryStatus: true, whatsAppDeliveryStatus: true,
+          provisionedUserId: true,
+          tier: { select: { id: true, name: true } },
+        },
+      }),
+    ]);
+
+    return { total, items: rows.map((row) => ({ ...row, tierName: row.tier.name })) };
+  }
+
+  /**
+   * Ringkasan uang masuk, dihitung dari seluruh pesanan — bukan dari halaman
+   * yang sedang dibuka. Ringkasan yang hanya menjumlah satu halaman akan
+   * berbohong justru ketika pesanannya mulai banyak.
+   */
+  async adminOrderSummary() {
+    const GAGAL = [
+      PaymentOrderStatus.FAILED,
+      PaymentOrderStatus.EXPIRED,
+      PaymentOrderStatus.CANCELLED,
+    ];
+    // Dihitung satu per satu, bukan lewat groupBy: jumlahnya cuma empat dan
+    // bentuknya jauh lebih jelas dibaca daripada memetakan hasil kelompok.
+    const [total, paid, pending, failed, terbayar] = await this.prisma.$transaction([
+      this.prisma.registrationOrder.count(),
+      this.prisma.registrationOrder.count({ where: { status: PaymentOrderStatus.PAID } }),
+      this.prisma.registrationOrder.count({ where: { status: PaymentOrderStatus.PENDING } }),
+      this.prisma.registrationOrder.count({ where: { status: { in: GAGAL } } }),
+      this.prisma.registrationOrder.aggregate({
+        where: { status: PaymentOrderStatus.PAID },
+        _sum: { grossAmount: true },
+      }),
+    ]);
+
+    return {
+      total,
+      paid,
+      pending,
+      failed,
+      // Rupiah tanpa desimal; nilainya sudah bulat sejak checkout.
+      paidAmount: terbayar._sum.grossAmount ?? 0,
+    };
+  }
+
   async handleMidtrans(notification: MidtransNotificationDto): Promise<void> {
     if (!this.midtrans.verifySignature(notification)) {
       throw AppError.permissionDenied();

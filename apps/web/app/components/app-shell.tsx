@@ -29,6 +29,7 @@ const MASTER_NAV = [
   { href: '/master/courses', label: 'Kursus', icon: Courses, permission: 'courses.manage' },
   { href: '/master/users', label: 'Pengguna', icon: Users, permission: 'users.read' },
   { href: '/master/access-tiers', label: 'Paket akses', icon: Courses, permission: 'commerce.manage' },
+  { href: '/master/transactions', label: 'Transaksi', icon: Dashboard, permission: 'commerce.manage' },
   { href: '/master/forum', label: 'Forum', icon: Users, permission: 'discussions.moderate' },
   { href: '/master/community', label: 'Channel komunitas', icon: Users, permission: 'discussions.moderate' },
   { href: '/master/insights', label: 'Insight', icon: Dashboard, permission: 'analytics.read' },
