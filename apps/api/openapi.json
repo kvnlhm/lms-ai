@@ -13189,6 +13189,15 @@
               "MINIMUM_ACTIVE_SECONDS",
               "VIDEO_PERCENTAGE"
             ]
+          },
+          "completionVideoPercentage": {
+            "type": "number",
+            "nullable": true,
+            "description": "Ambang yang berlaku; bawaan bila belum diatur."
+          },
+          "completionMinimumSeconds": {
+            "type": "number",
+            "nullable": true
           }
         },
         "required": [
@@ -13201,7 +13210,9 @@
           "isRequired",
           "isPreview",
           "isActive",
-          "completionRule"
+          "completionRule",
+          "completionVideoPercentage",
+          "completionMinimumSeconds"
         ]
       },
       "AdminModuleWithLessonsDto": {
@@ -13646,6 +13657,17 @@
               "VIDEO_PERCENTAGE"
             ],
             "default": "MANUAL"
+          },
+          "completionVideoPercentage": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Persentase tontonan yang menyelesaikan pelajaran, untuk aturan VIDEO_PERCENTAGE. Bila kosong, ambang bawaan 90% yang berlaku."
+          },
+          "completionMinimumSeconds": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Detik minimum, untuk aturan MINIMUM_ACTIVE_SECONDS. Bila kosong, 60 detik."
           }
         },
         "required": [
@@ -13702,6 +13724,17 @@
               "VIDEO_PERCENTAGE"
             ],
             "default": "MANUAL"
+          },
+          "completionVideoPercentage": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Persentase tontonan yang menyelesaikan pelajaran, untuk aturan VIDEO_PERCENTAGE. Bila kosong, ambang bawaan 90% yang berlaku."
+          },
+          "completionMinimumSeconds": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Detik minimum, untuk aturan MINIMUM_ACTIVE_SECONDS. Bila kosong, 60 detik."
           }
         }
       },
@@ -14903,6 +14936,16 @@
               "VIDEO_PERCENTAGE"
             ]
           },
+          "completionVideoPercentage": {
+            "type": "number",
+            "nullable": true,
+            "description": "Persentase tontonan yang menyelesaikan pelajaran ini; terisi hanya pada aturan VIDEO_PERCENTAGE. Dikirim agar antarmuka dapat menyebut targetnya, bukan agar antarmuka yang menegakkannya."
+          },
+          "completionMinimumSeconds": {
+            "type": "number",
+            "nullable": true,
+            "description": "Detik minimum; terisi hanya pada aturan MINIMUM_ACTIVE_SECONDS."
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -14939,6 +14982,8 @@
           "courseId",
           "isRequired",
           "completionRule",
+          "completionVideoPercentage",
+          "completionMinimumSeconds",
           "status",
           "courseProgress",
           "bookmarked"

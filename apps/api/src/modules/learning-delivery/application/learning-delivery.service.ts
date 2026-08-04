@@ -4,6 +4,7 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
 import { flattenLessons, neighbours, nextIncomplete } from './lesson-navigation';
+import { ambangPelajaran } from '../../learning-progress/application/completion-rule';
 
 @Injectable()
 export class LearningDeliveryService {
@@ -104,6 +105,8 @@ export class LearningDeliveryService {
       progressRows.filter((row) => row.status === LessonProgressStatus.COMPLETED).map((row) => row.lessonId),
     );
 
+    const ambang = ambangPelajaran(lesson.completionRule, lesson.completionConfig);
+
     const unmet = lesson.prerequisites.filter((row) => !completed.has(row.prerequisiteLessonId));
     if (unmet.length > 0) {
       throw AppError.lessonLocked('Selesaikan pelajaran prasyarat terlebih dahulu.');
@@ -142,6 +145,10 @@ export class LearningDeliveryService {
       courseId: lesson.module.courseId,
       isRequired: lesson.isRequired,
       completionRule: lesson.completionRule,
+      // Ambangnya ikut dikirim supaya pelajar melihat targetnya sebelum
+      // mencoba, bukan menemukan penolakan setelah menekan tombol.
+      completionVideoPercentage: ambang.videoPercentage,
+      completionMinimumSeconds: ambang.minimumActiveSeconds,
       status: progressRows.find((row) => row.lessonId === lessonId)?.status ?? LessonProgressStatus.NOT_STARTED,
       previousLessonId,
       nextLessonId,

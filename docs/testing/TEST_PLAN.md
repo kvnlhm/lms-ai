@@ -299,6 +299,20 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
 - Tombolnya hanya muncul bila ada lebih dari satu perangkat; dengan satu sesi ia
   identik dengan "Keluar di sini".
 
+## 7c. Aturan Penyelesaian Pelajaran
+
+- Ambang bawaan berlaku ketika pelajaran belum menyimpan konfigurasinya, dan
+  konfigurasi yang bentuknya tidak masuk akal diabaikan alih-alih dipercaya.
+- Penyelesaian `VIDEO_PERCENTAGE` ditolak `422` sebelum ambangnya terpenuhi,
+  termasuk ketika bukti tontonan tidak dikirim sama sekali; pesannya menyebut
+  target dan keadaan sekarang.
+- Ambang milik pelajaran mengalahkan bawaan, dan ikut dikirim ke pelajar
+  sebelum ia mencoba.
+- Pelajaran `OPENED` selesai begitu dibuka.
+- Pelajaran kuis tidak pernah selesai hanya karena dibuka, berapa pun aturannya.
+  Kondisinya dibuat di dalam test, bukan dicari di data seed: versi pertamanya
+  melewati dirinya sendiri diam-diam ketika kursus uji tidak memiliki kuis.
+
 ## 8. Community Feed Test Cases
 
 - Tanpa sesi tidak dapat membaca channel atau feed.

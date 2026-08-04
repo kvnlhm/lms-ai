@@ -709,6 +709,31 @@ MINIMUM_ACTIVE_SECONDS
 VIDEO_PERCENTAGE
 ```
 
+Aturan ini ditegakkan server, bukan sekadar disimpan:
+
+- `MANUAL` — pelajar menekan "Tandai selesai".
+- `OPENED` — membuka pelajaran langsung menyelesaikannya, dan tombolnya tidak
+  ditampilkan. Ditujukan untuk materi yang tidak dapat kita ukur, seperti video
+  YouTube dan tautan ke luar. **Pelajaran kuis dikecualikan tanpa syarat**:
+  penyelesaiannya hanya lahir dari penilaian server, sehingga aturan yang salah
+  setel tidak dapat menjadi jalan pintas melewati kuisnya.
+- `MINIMUM_ACTIVE_SECONDS` — menuntut `completionEvidence.activeSeconds`
+  mencapai ambangnya; bawaan 60 detik.
+- `VIDEO_PERCENTAGE` — menuntut `completionEvidence.videoPercentage` mencapai
+  ambangnya; bawaan 90%.
+
+Ambangnya disimpan pada `completionConfig` dan dapat diatur Master lewat
+`completionVideoPercentage` / `completionMinimumSeconds` saat membuat atau
+mengubah pelajaran. Nilai bawaan dipakai bila belum diatur — tanpa itu aturan
+yang dipilih Master tidak berarti apa-apa, karena seluruh `completion_config`
+di produksi kosong.
+
+Ambang yang berlaku ikut dikirim ke pelajar pada detail pelajaran
+(`completionVideoPercentage`, `completionMinimumSeconds`) supaya antarmuka
+dapat menyebut targetnya lebih dulu. Itu untuk ditampilkan, bukan untuk
+ditegakkan: buktinya berasal dari klien, jadi penolakannya tetap di server dan
+permintaan yang tidak memuat bukti sama sekali ikut ditolak.
+
 ## PATCH `/admin/lessons/{lessonId}`
 
 ## DELETE `/admin/lessons/{lessonId}`

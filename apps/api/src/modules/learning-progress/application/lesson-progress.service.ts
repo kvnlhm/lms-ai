@@ -1,11 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { EnrollmentStatus, LessonContentType, LessonProgressStatus, Prisma } from '@prisma/client';
+import {
+  CompletionRule,
+  EnrollmentStatus,
+  LessonContentType,
+  LessonProgressStatus,
+  Prisma,
+} from '@prisma/client';
 import { PrismaService, type PrismaTransaction } from '../../../infrastructure/prisma/prisma.service';
 import { OutboxWriter } from '../../../infrastructure/outbox/outbox.writer';
 import { AppError } from '../../../shared/errors/app-error';
 import type { CourseAccess } from '../../enrollment/application/enrollment-access.service';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
 import { flattenLessons, nextIncomplete } from '../../learning-delivery/application/lesson-navigation';
+import { periksaAturanPenyelesaian } from './completion-rule';
 import { calculateProgress } from './progress-calculation';
 
 export interface CompleteLessonCommand {
@@ -35,6 +42,10 @@ export class LessonProgressService {
   async open(userId: string, lessonId: string, sessionId?: string): Promise<{ status: LessonProgressStatus }> {
     const access = await this.access.assertLessonAccess(userId, lessonId);
     const now = new Date();
+    const lesson = await this.prisma.lesson.findUniqueOrThrow({
+      where: { id: lessonId },
+      select: { contentType: true, completionRule: true },
+    });
 
     const progress = await this.prisma.lessonProgress.upsert({
       where: { enrollmentId_lessonId: { enrollmentId: access.enrollmentId, lessonId } },
@@ -74,6 +85,29 @@ export class LessonProgressService {
       });
     });
 
+    /**
+     * Aturan `OPENED` berarti membuka pelajaran sudah cukup untuk
+     * menyelesaikannya. Dipilih Master untuk materi yang memang tidak dapat
+     * kita ukur — video YouTube dan tautan ke luar tidak melaporkan apa pun
+     * kembali ke sini, sehingga menuntut bukti lain berarti menuntut sesuatu
+     * yang tidak akan pernah datang.
+     *
+     * Pelajaran kuis dikecualikan tanpa syarat: penyelesaiannya hanya boleh
+     * lahir dari penilaian server atas jawaban yang dikirim. Tanpa penjagaan
+     * ini, satu kuis yang aturannya salah setel dapat diselesaikan hanya
+     * dengan membuka halamannya.
+     */
+    if (
+      lesson.completionRule === CompletionRule.OPENED &&
+      lesson.contentType !== LessonContentType.QUIZ &&
+      progress.status !== LessonProgressStatus.COMPLETED
+    ) {
+      await this.prisma.$transaction((tx) =>
+        this.completeWithin(tx, access, { userId, lessonId, sessionId }),
+      );
+      return { status: LessonProgressStatus.COMPLETED };
+    }
+
     return { status: progress.status };
   }
 
@@ -90,13 +124,17 @@ export class LessonProgressService {
 
     const lesson = await this.prisma.lesson.findUniqueOrThrow({
       where: { id: command.lessonId },
-      select: { contentType: true },
+      select: { contentType: true, completionRule: true, completionConfig: true },
     });
     if (lesson.contentType === LessonContentType.QUIZ) {
       throw AppError.validation({
         lesson: ['Pelajaran kuis selesai dengan mengerjakan kuisnya sampai lulus.'],
       });
     }
+    periksaAturanPenyelesaian(lesson.completionRule, lesson.completionConfig, {
+      activeSeconds: command.activeSeconds,
+      videoPercentage: command.videoPercentage,
+    });
 
     return this.prisma.$transaction((tx) => this.completeWithin(tx, access, command));
   }

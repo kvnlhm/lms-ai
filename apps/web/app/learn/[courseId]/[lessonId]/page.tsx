@@ -166,13 +166,14 @@ export default async function LessonPage({ params }: Props) {
             {/* Materi kuis tidak punya tombol "tandai selesai": penyelesaiannya
                 lahir dari nilai yang dihitung server, dan endpoint biasa memang
                 menolak pelajaran berjenis kuis. */}
-            {lesson.contentType === 'QUIZ' ? null : (
+            {lesson.contentType === 'QUIZ' || lesson.completionRule === 'OPENED' ? null : (
               <CompleteButton
                 courseId={courseId}
                 lessonId={lessonId}
                 nextLessonId={lesson.nextLessonId ?? null}
                 alreadyCompleted={isCompleted}
                 openedAt={Date.now()}
+                videoPercentageTarget={lesson.completionVideoPercentage}
               />
             )}
           </div>

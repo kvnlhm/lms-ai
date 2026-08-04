@@ -1,10 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNotifier } from '../../../components/notifier';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 import { ArrowRight, Check } from '../../../components/icons';
+import { langgananKemajuan, persenDitonton } from './watch-progress';
 
 interface Props {
   courseId: string;
@@ -12,6 +13,8 @@ interface Props {
   nextLessonId: string | null;
   alreadyCompleted: boolean;
   openedAt: number;
+  /** Ambang tontonan yang menyelesaikan pelajaran ini, bila aturannya menuntut. */
+  videoPercentageTarget: number | null;
 }
 
 export function CompleteButton({
@@ -20,10 +23,22 @@ export function CompleteButton({
   nextLessonId,
   alreadyCompleted,
   openedAt,
+  videoPercentageTarget,
 }: Props) {
   const router = useRouter();
   const notifier = useNotifier();
   const [busy, setBusy] = useState(false);
+  const [ditonton, setDitonton] = useState(0);
+
+  // Hanya berlangganan bila ada yang perlu ditunggu. Pelajaran tanpa ambang
+  // tidak perlu ikut dirender ulang setiap kali video bergerak.
+  useEffect(() => {
+    if (videoPercentageTarget === null) return;
+    setDitonton(persenDitonton(lessonId));
+    return langgananKemajuan(lessonId, setDitonton);
+  }, [lessonId, videoPercentageTarget]);
+
+  const belumCukup = videoPercentageTarget !== null && ditonton < videoPercentageTarget;
 
   /**
    * Kunci idempotensi dibuat sekali per pemasangan komponen.
@@ -48,6 +63,9 @@ export function CompleteButton({
           body: {
             completionEvidence: {
               activeSeconds: Math.max(0, Math.round((Date.now() - openedAt) / 1000)),
+              // Diukur pemutar, ditegakkan server. Dikirim selalu, bukan hanya
+              // saat ada ambang: buktinya juga tersimpan untuk laporan.
+              videoPercentage: persenDitonton(lessonId),
             },
           },
         }),
@@ -96,10 +114,17 @@ export function CompleteButton({
 
   return (
     <>
-      <button type="button" className="btn" onClick={handleComplete} disabled={busy}>
+      <button type="button" className="btn" onClick={handleComplete} disabled={busy || belumCukup}>
         {busy ? 'Menyimpan…' : 'Tandai selesai'}
-        {busy ? null : <ArrowRight size={16} />}
+        {busy || belumCukup ? null : <ArrowRight size={16} />}
       </button>
+      {/* Menyebut targetnya di depan. Tombol yang mati tanpa penjelasan
+          membuat orang mengira ada yang rusak, bukan ada yang belum dipenuhi. */}
+      {belumCukup ? (
+        <span className="completionHint" role="status">
+          Tonton {videoPercentageTarget}% untuk menyelesaikan — baru {ditonton}%.
+        </span>
+      ) : null}
     </>
   );
 }

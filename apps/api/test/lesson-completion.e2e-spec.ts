@@ -75,6 +75,125 @@ describe('Penyelesaian pelajaran', () => {
     expect(continuation.body.data.lesson.id).toBe(lessonIds[1]);
   });
 
+  describe('aturan penyelesaian', () => {
+    /** Mengembalikan aturan pelajaran setelah setiap test agar tidak menular. */
+    async function pakaiAturan(lessonId: string, rule: string, config: unknown = {}) {
+      await h.prisma.lesson.update({
+        where: { id: lessonId },
+        data: { completionRule: rule as never, completionConfig: config as never },
+      });
+    }
+
+    afterEach(async () => {
+      await h.prisma.lesson.updateMany({
+        where: { id: { in: lessonIds } },
+        data: { completionRule: 'MANUAL', completionConfig: {} },
+      });
+    });
+
+    it('menolak penyelesaian video sebelum ambang tontonan terpenuhi', async () => {
+      await pakaiAturan(lessonIds[0], 'VIDEO_PERCENTAGE');
+
+      const ditolak = await request(h.server)
+        .post(`${prefix}/learn/lessons/${lessonIds[0]}/complete`)
+        .set('Cookie', session.cookie)
+        .set('X-CSRF-Token', session.csrfToken)
+        .send({ completionEvidence: { videoPercentage: 40 } })
+        .expect(422);
+      expect(JSON.stringify(ditolak.body)).toContain('90%');
+
+      // Tanpa bukti sama sekali pun ditolak: klien tidak boleh lolos hanya
+      // karena diam.
+      await request(h.server)
+        .post(`${prefix}/learn/lessons/${lessonIds[0]}/complete`)
+        .set('Cookie', session.cookie)
+        .set('X-CSRF-Token', session.csrfToken)
+        .send({})
+        .expect(422);
+
+      await request(h.server)
+        .post(`${prefix}/learn/lessons/${lessonIds[0]}/complete`)
+        .set('Cookie', session.cookie)
+        .set('X-CSRF-Token', session.csrfToken)
+        .send({ completionEvidence: { videoPercentage: 92 } })
+        .expect(200);
+    });
+
+    it('memakai ambang milik pelajaran bila Master mengaturnya', async () => {
+      await pakaiAturan(lessonIds[0], 'VIDEO_PERCENTAGE', { videoPercentage: 50 });
+      await request(h.server)
+        .post(`${prefix}/learn/lessons/${lessonIds[0]}/complete`)
+        .set('Cookie', session.cookie)
+        .set('X-CSRF-Token', session.csrfToken)
+        .send({ completionEvidence: { videoPercentage: 55 } })
+        .expect(200);
+    });
+
+    it('menyebut ambangnya kepada pelajar sebelum ia mencoba', async () => {
+      await pakaiAturan(lessonIds[0], 'VIDEO_PERCENTAGE', { videoPercentage: 70 });
+      const pelajaran = await request(h.server)
+        .get(`${prefix}/learn/lessons/${lessonIds[0]}`)
+        .set('Cookie', session.cookie)
+        .expect(200);
+      expect(pelajaran.body.data.completionVideoPercentage).toBe(70);
+      expect(pelajaran.body.data.completionMinimumSeconds).toBeNull();
+    });
+
+    it('menyelesaikan pelajaran beraturan OPENED begitu dibuka', async () => {
+      await pakaiAturan(lessonIds[1], 'OPENED');
+      const dibuka = await request(h.server)
+        .post(`${prefix}/learn/lessons/${lessonIds[1]}/open`)
+        .set('Cookie', session.cookie)
+        .set('X-CSRF-Token', session.csrfToken)
+        .send({})
+        .expect(200);
+      expect(dibuka.body.data.status).toBe('COMPLETED');
+
+      const tersimpan = await h.prisma.lessonProgress.findFirstOrThrow({
+        where: { lessonId: lessonIds[1] },
+        select: { status: true },
+      });
+      expect(tersimpan.status).toBe('COMPLETED');
+    });
+
+    it('tidak pernah menyelesaikan kuis hanya karena dibuka', async () => {
+      // Penjagaan yang paling penting di sini: aturan yang salah setel pada
+      // pelajaran kuis tidak boleh menjadi jalan pintas melewati penilaian.
+      //
+      // Kondisinya dibuat sendiri, bukan dicari di data seed. Versi pertama
+      // test ini melewati dirinya sendiri diam-diam ketika kursusnya tidak
+      // punya pelajaran kuis — lulus tanpa menguji apa pun.
+      const lessonId = lessonIds[2];
+      const asli = await h.prisma.lesson.findUniqueOrThrow({
+        where: { id: lessonId },
+        select: { contentType: true },
+      });
+      await h.prisma.lesson.update({ where: { id: lessonId }, data: { contentType: 'QUIZ' } });
+      await pakaiAturan(lessonId, 'OPENED');
+
+      try {
+        const dibuka = await request(h.server)
+          .post(`${prefix}/learn/lessons/${lessonId}/open`)
+          .set('Cookie', session.cookie)
+          .set('X-CSRF-Token', session.csrfToken)
+          .send({})
+          .expect(200);
+        expect(dibuka.body.data.status).not.toBe('COMPLETED');
+
+        const tersimpan = await h.prisma.lessonProgress.findFirstOrThrow({
+          where: { lessonId },
+          select: { status: true },
+        });
+        expect(tersimpan.status).toBe('IN_PROGRESS');
+      } finally {
+        await h.prisma.lesson.update({
+          where: { id: lessonId },
+          data: { contentType: asli.contentType },
+        });
+      }
+    });
+  });
+
   it('mengembalikan pelajaran aktif untuk dilanjutkan', async () => {
     await request(h.server)
       .post(`${prefix}/learn/lessons/${lessonIds[0]}/open`)

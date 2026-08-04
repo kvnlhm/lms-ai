@@ -46,6 +46,7 @@ type LessonUpdateInput = {
   isPreview: boolean;
   isActive: boolean;
   completionRule: (typeof COMPLETION_RULES)[number]['value'];
+  completionVideoPercentage?: number;
 };
 
 type UploadState = {
@@ -1068,6 +1069,12 @@ function LessonEditForm({
       completionRule: String(
         form.get('completionRule') ?? 'MANUAL',
       ) as (typeof COMPLETION_RULES)[number]['value'],
+      // Hanya dikirim bila kolomnya memang tampil; server yang menentukan
+      // bawaannya, dan mengirim angka pada aturan lain hanya akan
+      // meninggalkan konfigurasi yatim.
+      ...(form.get('completionVideoPercentage')
+        ? { completionVideoPercentage: Number(form.get('completionVideoPercentage')) }
+        : {}),
     });
   }
 
@@ -1174,6 +1181,23 @@ function LessonEditForm({
             </select>
           </div>
         )}
+        {/* Ambangnya hanya berarti pada aturan persentase. Nilai yang tampil
+            adalah yang benar-benar ditegakkan server, termasuk bawaannya —
+            kolom kosong akan tampak seperti "tidak ada aturan". */}
+        {lesson.completionRule === 'VIDEO_PERCENTAGE' ? (
+          <div className="field">
+            <label htmlFor={`lesson-completion-target-${lesson.id}`}>Persentase tontonan</label>
+            <input
+              id={`lesson-completion-target-${lesson.id}`}
+              name="completionVideoPercentage"
+              type="number"
+              min={1}
+              max={100}
+              defaultValue={lesson.completionVideoPercentage ?? 90}
+              disabled={disabled}
+            />
+          </div>
+        ) : null}
       </div>
       <div className="lessonOptions">
         <label className="checkRow">
@@ -1292,6 +1316,9 @@ function AddLessonForm({
       isPreview: form.get('isPreview') === 'on',
       isActive: form.get('isActive') === 'on',
       completionRule,
+      ...(completionRule === 'VIDEO_PERCENTAGE' && form.get('completionVideoPercentage')
+        ? { completionVideoPercentage: Number(form.get('completionVideoPercentage')) }
+        : {}),
     });
     if (ok) {
       formElement.reset();
@@ -1423,6 +1450,20 @@ function AddLessonForm({
               ))}
             </select>
           </div>
+          {completionRule === 'VIDEO_PERCENTAGE' ? (
+            <div className="field">
+              <label htmlFor={`new-lesson-target-${moduleId}`}>Persentase tontonan</label>
+              <input
+                id={`new-lesson-target-${moduleId}`}
+                name="completionVideoPercentage"
+                type="number"
+                min={1}
+                max={100}
+                defaultValue={90}
+                disabled={disabled}
+              />
+            </div>
+          ) : null}
         </div>
         <div className="lessonOptions">
           <label className="checkRow">

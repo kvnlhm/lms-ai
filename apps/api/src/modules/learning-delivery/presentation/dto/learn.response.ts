@@ -74,6 +74,20 @@ export class LearnLessonResponseDto {
   @ApiProperty({ format: 'uuid' }) courseId!: string;
   @ApiProperty() isRequired!: boolean;
   @ApiProperty({ enum: COMPLETION_RULES }) completionRule!: string;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'Persentase tontonan yang menyelesaikan pelajaran ini; terisi hanya pada aturan VIDEO_PERCENTAGE. ' +
+      'Dikirim agar antarmuka dapat menyebut targetnya, bukan agar antarmuka yang menegakkannya.',
+  })
+  completionVideoPercentage!: number | null;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description: 'Detik minimum; terisi hanya pada aturan MINIMUM_ACTIVE_SECONDS.',
+  })
+  completionMinimumSeconds!: number | null;
   @ApiProperty({ enum: LESSON_STATUSES }) status!: string;
   @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true }) previousLessonId!: string | null;
   @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true }) nextLessonId!: string | null;

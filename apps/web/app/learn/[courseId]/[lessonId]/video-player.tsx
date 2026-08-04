@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
+import { catatKemajuan } from './watch-progress';
 
 /**
  * Bentuknya kini datang dari kontrak, bukan disalin dengan tangan. Selama
@@ -84,11 +85,10 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
 
   if (!session.playbackUrl) return <p className="stageNote">Menyiapkan video…</p>;
 
-
   return (
     <div className="protectedVideoFrame" onContextMenu={(event) => event.preventDefault()}>
       {session.kind === 'HLS' ? (
-        <HlsVideo src={session.playbackUrl} onFailure={gagalDiputar} />
+        <HlsVideo src={session.playbackUrl} lessonId={lessonId} onFailure={gagalDiputar} />
       ) : (
         <video
           controls
@@ -98,6 +98,7 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
           preload="metadata"
           src={session.playbackUrl}
           onError={gagalDiputar}
+          onTimeUpdate={(event) => lacak(lessonId, event.currentTarget)}
         >
           Browser kamu tidak mendukung pemutar video HTML5.
         </video>
@@ -105,6 +106,21 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
       <span className="videoViewerWatermark" aria-hidden="true">{session.watermark.text}</span>
     </div>
   );
+}
+
+/**
+ * Posisi terakhir tiap elemen video, untuk membedakan menonton dari menyeret.
+ *
+ * Disimpan pada elemennya lewat WeakMap, bukan state React: `timeupdate`
+ * menyala beberapa kali per detik, dan mengubah state secepat itu akan
+ * merender ulang pemutarnya terus-menerus.
+ */
+const posisiTerakhir = new WeakMap<HTMLVideoElement, number>();
+
+function lacak(lessonId: string, video: HTMLVideoElement): void {
+  const sebelumnya = posisiTerakhir.get(video) ?? 0;
+  catatKemajuan(lessonId, video.currentTime, video.duration, sebelumnya);
+  posisiTerakhir.set(video, video.currentTime);
 }
 
 /**
@@ -118,7 +134,7 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
  * dipakai karena pemutar bawaannya lebih hemat baterai dan mendukung
  * pemutaran layar penuh milik sistem.
  */
-function HlsVideo({ src, onFailure }: { src: string; onFailure: () => void }) {
+function HlsVideo({ src, lessonId, onFailure }: { src: string; lessonId: string; onFailure: () => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -162,6 +178,7 @@ function HlsVideo({ src, onFailure }: { src: string; onFailure: () => void }) {
       disablePictureInPicture
       disableRemotePlayback
       preload="metadata"
+      onTimeUpdate={(event) => lacak(lessonId, event.currentTarget)}
     >
       Browser kamu tidak mendukung pemutar video HTML5.
     </video>

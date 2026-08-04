@@ -255,6 +255,30 @@ export class CreateLessonDto {
   @IsOptional()
   @IsIn(COMPLETION_RULES)
   completionRule?: (typeof COMPLETION_RULES)[number];
+
+  @ApiPropertyOptional({
+    minimum: 1,
+    maximum: 100,
+    description:
+      'Persentase tontonan yang menyelesaikan pelajaran, untuk aturan VIDEO_PERCENTAGE. ' +
+      'Bila kosong, ambang bawaan 90% yang berlaku.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  completionVideoPercentage?: number;
+
+  @ApiPropertyOptional({
+    minimum: 1,
+    description: 'Detik minimum, untuk aturan MINIMUM_ACTIVE_SECONDS. Bila kosong, 60 detik.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  completionMinimumSeconds?: number;
 }
 
 export class UpdateLessonDto extends CreateLessonDto {

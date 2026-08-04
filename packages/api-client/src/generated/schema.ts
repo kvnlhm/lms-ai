@@ -2765,6 +2765,9 @@ export interface components {
             isActive: boolean;
             /** @enum {string} */
             completionRule: "MANUAL" | "OPENED" | "MINIMUM_ACTIVE_SECONDS" | "VIDEO_PERCENTAGE";
+            /** @description Ambang yang berlaku; bawaan bila belum diatur. */
+            completionVideoPercentage: number | null;
+            completionMinimumSeconds: number | null;
         };
         AdminModuleWithLessonsDto: {
             /** Format: uuid */
@@ -2901,6 +2904,10 @@ export interface components {
              * @enum {string}
              */
             completionRule?: "MANUAL" | "OPENED" | "MINIMUM_ACTIVE_SECONDS" | "VIDEO_PERCENTAGE";
+            /** @description Persentase tontonan yang menyelesaikan pelajaran, untuk aturan VIDEO_PERCENTAGE. Bila kosong, ambang bawaan 90% yang berlaku. */
+            completionVideoPercentage?: number;
+            /** @description Detik minimum, untuk aturan MINIMUM_ACTIVE_SECONDS. Bila kosong, 60 detik. */
+            completionMinimumSeconds?: number;
         };
         UpdateLessonDto: {
             title?: string;
@@ -2921,6 +2928,10 @@ export interface components {
              * @enum {string}
              */
             completionRule?: "MANUAL" | "OPENED" | "MINIMUM_ACTIVE_SECONDS" | "VIDEO_PERCENTAGE";
+            /** @description Persentase tontonan yang menyelesaikan pelajaran, untuk aturan VIDEO_PERCENTAGE. Bila kosong, ambang bawaan 90% yang berlaku. */
+            completionVideoPercentage?: number;
+            /** @description Detik minimum, untuk aturan MINIMUM_ACTIVE_SECONDS. Bila kosong, 60 detik. */
+            completionMinimumSeconds?: number;
         };
         CreateVideoUploadIntentDto: {
             title: string;
@@ -3302,6 +3313,10 @@ export interface components {
             isRequired: boolean;
             /** @enum {string} */
             completionRule: "MANUAL" | "OPENED" | "MINIMUM_ACTIVE_SECONDS" | "VIDEO_PERCENTAGE";
+            /** @description Persentase tontonan yang menyelesaikan pelajaran ini; terisi hanya pada aturan VIDEO_PERCENTAGE. Dikirim agar antarmuka dapat menyebut targetnya, bukan agar antarmuka yang menegakkannya. */
+            completionVideoPercentage: number | null;
+            /** @description Detik minimum; terisi hanya pada aturan MINIMUM_ACTIVE_SECONDS. */
+            completionMinimumSeconds: number | null;
             /** @enum {string} */
             status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
             /** Format: uuid */

@@ -63,6 +63,10 @@ export class AdminLessonDto {
   @ApiProperty() isPreview!: boolean;
   @ApiProperty() isActive!: boolean;
   @ApiProperty({ enum: COMPLETION_RULES }) completionRule!: string;
+  @ApiProperty({ type: Number, nullable: true, description: 'Ambang yang berlaku; bawaan bila belum diatur.' })
+  completionVideoPercentage!: number | null;
+  @ApiProperty({ type: Number, nullable: true })
+  completionMinimumSeconds!: number | null;
 }
 
 export class AdminModuleDto {

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Prisma, PublicationStatus } from '@prisma/client';
+import { CompletionRule, Prisma, PublicationStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
 import {
@@ -9,6 +9,7 @@ import {
 import { checkPublishable } from './publication-rules';
 import { CourseThumbnailService } from './course-thumbnail.service';
 import { PaidMembershipAccessService } from '../../commerce/application/paid-membership-access.service';
+import { ambangPelajaran } from '../../learning-progress/application/completion-rule';
 
 export interface CreateCourseInput {
   title: string;
@@ -40,6 +41,8 @@ export interface LessonInput {
   isPreview?: boolean;
   isActive?: boolean;
   completionRule?: 'MANUAL' | 'OPENED' | 'MINIMUM_ACTIVE_SECONDS' | 'VIDEO_PERCENTAGE';
+  completionVideoPercentage?: number;
+  completionMinimumSeconds?: number;
 }
 
 /**
@@ -88,11 +91,21 @@ function toModule(row: {
   };
 }
 
+/** Ambang untuk ditampilkan di editor; namanya mengikuti bentuk DTO-nya. */
+function ambangTampil(rule: string, config: unknown) {
+  const ambang = ambangPelajaran(rule as CompletionRule, config);
+  return {
+    completionVideoPercentage: ambang.videoPercentage,
+    completionMinimumSeconds: ambang.minimumActiveSeconds,
+  };
+}
+
 function toLesson(row: {
   id: string; moduleId: string; title: string; description: string | null;
   contentType: string; textContent: string | null; externalUrl: string | null;
   position: number; estimatedMinutes: number;
   isRequired: boolean; isPreview: boolean; isActive: boolean; completionRule: string;
+  completionConfig: unknown;
 }) {
   return {
     id: row.id,
@@ -108,6 +121,10 @@ function toLesson(row: {
     isPreview: row.isPreview,
     isActive: row.isActive,
     completionRule: row.completionRule,
+    // Ambang yang benar-benar berlaku, termasuk nilai bawaan — supaya editor
+    // menampilkan angka yang sama dengan yang ditegakkan server, bukan kolom
+    // kosong yang tampak seperti "tidak ada aturan".
+    ...ambangTampil(row.completionRule, row.completionConfig),
   };
 }
 
@@ -465,9 +482,27 @@ export class CourseAuthoringService {
         isPreview: input.isPreview ?? false,
         isActive: input.isActive ?? true,
         completionRule: input.completionRule ?? 'MANUAL',
+        completionConfig: this.susunCompletionConfig(input) ?? {},
         position: (last?.position ?? 0) + 1,
       },
     }));
+  }
+
+  /**
+   * Menyusun `completionConfig` dari isian Master.
+   *
+   * Disimpan hanya bila aturannya memang memakainya, supaya konfigurasi tidak
+   * meninggalkan angka yatim yang membingungkan saat aturannya diganti nanti.
+   */
+  private susunCompletionConfig(input: Partial<LessonInput>): Prisma.InputJsonValue | undefined {
+    if (input.completionRule === undefined) return undefined;
+    if (input.completionRule === 'VIDEO_PERCENTAGE' && input.completionVideoPercentage !== undefined) {
+      return { videoPercentage: input.completionVideoPercentage };
+    }
+    if (input.completionRule === 'MINIMUM_ACTIVE_SECONDS' && input.completionMinimumSeconds !== undefined) {
+      return { minimumActiveSeconds: input.completionMinimumSeconds };
+    }
+    return {};
   }
 
   async updateLesson(lessonId: string, input: Partial<LessonInput>) {
@@ -485,6 +520,7 @@ export class CourseAuthoringService {
         isPreview: input.isPreview,
         isActive: input.isActive,
         completionRule: input.completionRule,
+        completionConfig: this.susunCompletionConfig(input),
       },
     }));
   }
