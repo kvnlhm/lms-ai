@@ -283,7 +283,7 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                 <th>Status</th>
                 <th>Login terakhir</th>
                 <th>Bergabung</th>
-                <th>Aksi</th>
+                <th className="cellActions">Aksi</th>
               </tr>
             </thead>
             <tbody>

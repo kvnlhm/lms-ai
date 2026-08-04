@@ -132,7 +132,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
                     <th className="num">Pelajaran</th>
                     <th className="num">Terdaftar</th>
                     <th>Diperbarui</th>
-                    <th />
+                    <th className="cellActions">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
