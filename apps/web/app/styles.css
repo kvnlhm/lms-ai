@@ -1057,7 +1057,15 @@ table.data tbody tr:hover { background: var(--raised); }
 }
 .masterContent .btnGhost { background: var(--surface); color: var(--text); }
 .masterContent .pill { border-radius: 9px; padding: 7px 14px; background: transparent; }
-.masterContent .pillAccent { background: var(--raised); border-color: var(--line); color: var(--text); }
+/* Penanda keadaan aktif — filter yang sedang dipilih, "Disematkan", jumlah
+   laporan, "Wajib" — sebelumnya dinetralkan menjadi abu-abu di sisi Master,
+   sehingga satu-satunya beda dari pil biasa hanyalah latar yang sedikit lebih
+   terang. Warnanya dikembalikan ke aksen, sama seperti sisi pelajar.
+   Latarnya harus ditulis di sini karena `.masterContent .pill` di atas
+   menyetel `transparent` dengan kekhususan yang lebih tinggi. */
+.masterContent .pillAccent {
+  background: var(--accent-soft); border-color: transparent; color: var(--accent-text);
+}
 .masterWorkspace { gap: 24px; }
 .masterFormPanel { padding: 28px; gap: 0; }
 .masterFormPanel .field > span { font-size: 13px; font-weight: 600; color: var(--text-2); }
@@ -1269,7 +1277,10 @@ table.data tbody tr:hover { background: var(--raised); }
   color: var(--muted); font-size: 13px; font-weight: 500;
 }
 .courseTabs a:hover { color: var(--text); background: var(--raised); }
-.courseTabs a[aria-current='page'] { color: var(--text); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+/* Tab yang sedang dibuka sudah terangkat lewat latar dan bayangan; warnanya
+   disamakan dengan .masterTab supaya penanda aktif di seluruh sisi Master
+   berbicara dengan bahasa yang sama. */
+.courseTabs a[aria-current='page'] { color: var(--accent-text); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
 .courseOverview { width: min(900px, 100%); margin: 0 auto; }
 .courseHeroAdmin { display: flex; gap: 18px; align-items: center; padding: 18px; }
 .courseHeroVisual {
