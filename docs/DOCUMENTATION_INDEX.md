@@ -29,8 +29,9 @@ Dokumen ini menjadi peta utama seluruh dokumentasi proyek.
 4. `docs/security/DATA_CLASSIFICATION.md`
 5. `docs/operations/DEPLOYMENT.md`
 6. `docs/operations/ENVIRONMENT_VARIABLES.md`
-7. `docs/operations/BACKUP_RESTORE.md`
-8. `docs/operations/INCIDENT_RESPONSE.md`
+7. `docs/operations/STAGING.md`
+8. `docs/operations/BACKUP_RESTORE.md`
+9. `docs/operations/INCIDENT_RESPONSE.md`
 
 ### Quality
 

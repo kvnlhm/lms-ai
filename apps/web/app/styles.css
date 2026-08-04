@@ -2822,6 +2822,11 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 /* Keterangan di samping tombol selesai saat ambang tontonan belum terpenuhi. */
 .completionHint{color:var(--muted);font-size:12px;line-height:1.4}
 
+/* Penanda lingkungan non-produksi. Sengaja mencolok dan menempel di puncak:
+   gunanya justru mengganggu, supaya staging tidak pernah disangka produksi. */
+.envBanner{position:sticky;top:0;z-index:60;padding:6px 16px;background:var(--danger-solid);color:#fff;font-size:12px;text-align:center;letter-spacing:.02em}
+.envBanner strong{text-transform:uppercase;letter-spacing:.08em}
+
 /* Ringkasan transaksi: empat angka besar di atas daftarnya. */
 .trxSummary{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px}.trxStat{padding:16px 18px;display:grid;gap:3px}.trxStat strong{font-size:22px;line-height:1.2}.trxStat small{color:var(--muted);font-size:12px}.trxWarn{color:var(--danger)}
 

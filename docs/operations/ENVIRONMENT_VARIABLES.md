@@ -1,5 +1,17 @@
 # Environment Variables
 
+## APP_ENV dan kredensial produksi
+
+`APP_ENV` menentukan lebih dari sekadar label. Pada nilai selain `production`:
+
+- Setiap halaman menampilkan bilah penanda lingkungan dan mengirim `noindex`.
+- Konfigurasi **menolak boot** bila `MIDTRANS_ENVIRONMENT=PRODUCTION`.
+
+Penolakan itu disengaja. Staging biasanya lahir sebagai salinan produksi beserta
+seluruh env-nya, dan kunci Midtrans produksi di lingkungan uji berarti checkout
+yang benar-benar menagih kartu orang. Lihat `docs/operations/STAGING.md`.
+
+
 Dokumen ini mendefinisikan nama dan tujuan environment variable. Nilai secret tidak boleh disimpan di Git.
 
 ## Application

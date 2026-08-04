@@ -92,6 +92,8 @@ services:
       dockerfile: apps/web/Dockerfile
     environment:
       API_URL: http://api:3001
+      # Dibaca komponen server: menentukan penanda lingkungan dan noindex.
+      APP_ENV: ${APP_ENV:-production}
     restart: unless-stopped
     depends_on:
       api:

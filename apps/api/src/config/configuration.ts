@@ -169,6 +169,7 @@ export function loadConfig(): AppConfig {
   if (!['lax', 'strict', 'none'].includes(sameSite)) {
     throw new Error('SESSION_COOKIE_SAME_SITE harus lax, strict, atau none.');
   }
+  const appEnv = process.env.APP_ENV ?? 'local';
   const videoProvider = process.env.VIDEO_PROVIDER ?? 'SELF_HOSTED';
   if (!['SELF_HOSTED', 'BUNNY_STREAM'].includes(videoProvider)) {
     throw new Error('VIDEO_PROVIDER harus SELF_HOSTED atau BUNNY_STREAM.');
@@ -177,6 +178,26 @@ export function loadConfig(): AppConfig {
   if (!['SANDBOX', 'PRODUCTION'].includes(midtransEnvironment)) {
     throw new Error('MIDTRANS_ENVIRONMENT harus SANDBOX atau PRODUCTION.');
   }
+  /**
+   * Kredensial pembayaran sungguhan hanya boleh hidup di produksi.
+   *
+   * Staging biasanya lahir sebagai salinan produksi, dan salinan itu membawa
+   * seluruh env-nya — termasuk kunci Midtrans PRODUCTION. Akibatnya bukan
+   * sekadar data uji yang kotor: checkout di staging akan benar-benar menagih
+   * kartu orang, dan webhook-nya akan membuatkan akun di database staging
+   * sementara pembelinya menunggu akses di produksi.
+   *
+   * Karena itu ini menolak boot, bukan sekadar memperingatkan. Aplikasi yang
+   * mati saat dinyalakan jauh lebih murah daripada aplikasi yang menerima uang
+   * secara diam-diam.
+   */
+  if (appEnv !== 'production' && midtransEnvironment === 'PRODUCTION') {
+    throw new Error(
+      `MIDTRANS_ENVIRONMENT=PRODUCTION tidak diizinkan saat APP_ENV=${appEnv}. ` +
+        'Gunakan kunci SANDBOX di lingkungan non-produksi.',
+    );
+  }
+
   const emailProvider = process.env.EMAIL_PROVIDER ?? 'DISABLED';
   if (!['RESEND', 'DISABLED'].includes(emailProvider)) {
     throw new Error('EMAIL_PROVIDER harus RESEND atau DISABLED.');
@@ -187,7 +208,7 @@ export function loadConfig(): AppConfig {
   }
 
   return {
-    env: process.env.APP_ENV ?? 'local',
+    env: appEnv,
     appName: process.env.APP_NAME ?? 'LMS Akademi Online',
     port: int('PORT', 3001),
     webUrl: process.env.WEB_URL ?? 'http://localhost:3000',
