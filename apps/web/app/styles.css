@@ -1078,6 +1078,9 @@ table.data tbody tr:hover { background: var(--raised); }
   margin-top: 10px;
 }
 .masterListHead .sectionTitle { margin: 6px 0 0; }
+/* Judul boleh menyusut sampai membungkus; tombolnya tidak. Tanpa ini, judul
+   panjang menekan tombol sampai labelnya patah di tengah kata — "Paka / i ini". */
+.masterListHead > button { flex: none; white-space: nowrap; }
 .masterRecordList { gap: 10px; }
 .masterRecordCard { padding: 20px; gap: 12px !important; }
 .masterRecordCard > p { margin: 2px 0; color: var(--text-2); line-height: 1.6; }
