@@ -78,7 +78,7 @@ export function ErrorMonitor() {
         setHalaman(hasil.meta.page);
         setTotalHalaman(hasil.meta.totalPages);
         setTotal(hasil.meta.total);
-        setSummary(unwrap(stats) as unknown as Summary);
+        setSummary(unwrap<Summary>(stats));
       } catch (cause) {
         setError(
           cause instanceof ApiError ? cause.message : 'Daftar galat tidak dapat dimuat sekarang.',

@@ -1,7 +1,4 @@
-import type { Schemas } from '@lms/api-client';
 import { serverClient } from '../../lib/api';
-
-type Session = Schemas['LearnerLiveSessionDto'];
 
 function formatDate(value: string | Date): string {
   return new Date(value).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' });
@@ -20,7 +17,7 @@ export async function LiveSessions({ courseId }: { courseId: string }) {
   });
   if (response.error !== undefined || !response.data) return null;
 
-  const sessions = (response.data.data as unknown as Session[]).filter(
+  const sessions = response.data.data.filter(
     (session) => session.status !== 'ENDED',
   );
   if (sessions.length === 0) return null;

@@ -62,3 +62,22 @@ export class DeviceSessionDto {
   @ApiProperty({ format: 'date-time' }) createdAt!: string;
   @ApiProperty({ format: 'date-time' }) expiresAt!: string;
 }
+
+export class InvitationAcceptedDto {
+  @ApiProperty({ example: true }) accepted!: boolean;
+}
+
+export class PasswordResetDto {
+  @ApiProperty({ example: true }) reset!: boolean;
+}
+
+/**
+ * Rahasia TOTP hanya dikirim sekali, saat penyiapan. Sesudah dikonfirmasi ia
+ * tidak pernah keluar lagi dari server.
+ */
+export class MfaSetupDto {
+  @ApiProperty({ description: 'Base32; ditampilkan sekali untuk dicatat manual.' })
+  secret!: string;
+  @ApiProperty({ description: 'URI otpauth:// untuk dipindai aplikasi authenticator.' })
+  otpauthUrl!: string;
+}

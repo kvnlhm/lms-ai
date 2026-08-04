@@ -263,6 +263,19 @@ Production release memerlukan:
 - Web bundle tidak mengandung Bunny secret.
 - Webhook secret dapat dirotasi.
 
+## 7a0. Kontrak Respons
+
+Tes `check-response-contract` menolak endpoint yang mengembalikan body tanpa
+mendokumentasikan bentuknya. Tanpa dokumentasi itu, endpointnya tidak muncul di
+klien yang di-generate dan pemanggilnya terpaksa memakai `as unknown as` —
+cast yang mematikan pemeriksaan tipe justru pada batas tempat kontrak paling
+mudah bergeser tanpa ketahuan.
+
+- Endpoint tanpa body (probe health, unggahan streaming, penyajian berkas lewat
+  reverse proxy) didaftarkan tegas beserta alasannya.
+- Method yang menyatakan `Promise<void>` dan endpoint `204` dikecualikan dari
+  aturannya sendiri.
+
 ## 7a. Endpoint Coverage
 
 Satu pola berulang di repo ini: server sanggup menjawab, tetapi tidak ada

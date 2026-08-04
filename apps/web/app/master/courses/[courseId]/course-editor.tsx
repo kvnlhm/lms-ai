@@ -300,7 +300,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
         await client().POST('/api/v1/admin/videos/youtube', {
           body: { title, url },
         }),
-      ) as unknown as { videoAssetId: string };
+  );
       unwrap(
         await client().PUT('/api/v1/admin/lessons/{lessonId}/video', {
           params: { path: { lessonId } },

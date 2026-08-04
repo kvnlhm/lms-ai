@@ -6,13 +6,16 @@ import {
   ApiErrors,
 } from '../../../../shared/http/api-envelope';
 import {
+  AvatarUploadResponseDto,
   CurrentUserResponseDto,
   DeviceSessionDto,
+  ForgotPasswordResponseDto,
+  InvitationAcceptedDto,
   LoginResponseDto,
   LogoutAllResponseDto,
+  MfaSetupDto,
   PasswordChangedResponseDto,
-  AvatarUploadResponseDto,
-  ForgotPasswordResponseDto,
+  PasswordResetDto,
 } from '../dto/auth.response';
 import { ConfigService } from '@nestjs/config';
 import type { CookieOptions, Request, Response } from 'express';
@@ -59,6 +62,7 @@ export class AuthController {
   @Post('accept-invitation')
   @HttpCode(200)
   @ApiOperation({ summary: 'Menetapkan password dari undangan sekali pakai' })
+  @ApiEnvelope(InvitationAcceptedDto)
   @ApiErrors(422)
   async acceptInvitation(@Body() dto: AcceptInvitationDto) {
     this.assertPasswordConfirmation(dto.password, dto.passwordConfirmation);
@@ -81,6 +85,7 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(200)
   @ApiOperation({ summary: 'Mengganti password menggunakan token sekali pakai' })
+  @ApiEnvelope(PasswordResetDto)
   @ApiErrors(422)
   async resetPassword(@Body() dto: ResetPasswordDto) {
     this.assertPasswordConfirmation(dto.password, dto.passwordConfirmation);
@@ -91,6 +96,7 @@ export class AuthController {
   @Post('mfa/setup')
   @AllowPendingMfa()
   @ApiOperation({ summary: 'Menyiapkan TOTP pertama untuk Master' })
+  @ApiEnvelope(MfaSetupDto)
   @ApiErrors(401, 403)
   async setupMfa(@CurrentSession() session: ActiveSession) {
     if (session.roleCode !== 'MASTER' || !session.mfaSetupRequired) {

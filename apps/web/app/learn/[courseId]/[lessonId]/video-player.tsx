@@ -32,12 +32,12 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
     setError(null);
     void (async () => {
       try {
-        const playback = unwrap(
-          await browserClient().POST('/api/v1/learn/lessons/{lessonId}/playback-sessions', {
+        const playback = unwrap<PlaybackSession>(
+await browserClient().POST('/api/v1/learn/lessons/{lessonId}/playback-sessions', {
             params: { path: { lessonId } },
             body: { deviceId: navigator.userAgent.slice(0, 200) },
           }),
-        ) as unknown as PlaybackSession;
+  );
         if (active) setSession(playback);
       } catch (caught) {
         if (active) {

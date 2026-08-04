@@ -18,7 +18,7 @@ export default async function AccessTiersPage() {
     client.GET('/api/v1/admin/access-tiers'),
     ambilSemuaKursus(),
   ]);
-  const tiers = unwrap(tiersResponse) as unknown as Schemas['AccessTierDto'][];
+  const tiers = unwrap<Schemas['AccessTierDto'][]>(tiersResponse);
   const courses = semuaKursus.courses;
 
   return (

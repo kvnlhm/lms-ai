@@ -73,7 +73,9 @@ const FAQ = [
 
 export default async function RegisterPage() {
   const client = await serverClient();
-  const tiers = unwrap(await client.GET('/api/v1/registration/tiers')) as unknown as Tier[];
+  const tiers = unwrap<Tier[]>(
+await client.GET('/api/v1/registration/tiers')
+  );
 
   return (
     <main className="regPage">

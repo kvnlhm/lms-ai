@@ -59,9 +59,9 @@ export default async function InsightsPage({
   const days = [7, 14, 30, 90].includes(Number(rawDays)) ? Number(rawDays) : 30;
 
   const client = await serverClient();
-  const insights = unwrap(
+  const insights = unwrap<Insights>(
     await client.GET('/api/v1/admin/analytics/insights', { params: { query: { days } } }),
-  ) as unknown as Insights;
+  );
 
   const { habit, retention, forum, risk } = insights;
   const needsAttention = risk.counts.MEDIUM + risk.counts.HIGH;

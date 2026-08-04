@@ -41,7 +41,7 @@ export function LoginForm({ nextPath }: Props) {
         if (login.user.mfaSetupRequired) {
           const setup = unwrap(
             await browserClient().POST('/api/v1/auth/mfa/setup', {}),
-          ) as unknown as { secret: string; otpauthUrl: string };
+          );
           setMfaSecret(setup.secret);
           setMfaMode('setup');
         } else {

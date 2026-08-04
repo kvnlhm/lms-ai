@@ -7,7 +7,7 @@
     "dev": "nest start --watch",
     "start": "node dist/src/main.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint \"src/**/*.ts\" && node scripts/check-pagination-contract.mjs",
+    "lint": "eslint \"src/**/*.ts\" && node scripts/check-pagination-contract.mjs && node scripts/check-response-contract.mjs",
     "test": "jest --config jest.config.js",
     "test:e2e": "jest --config jest.e2e.config.js --runInBand",
     "db:seed": "ts-node --files --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/seed.ts",

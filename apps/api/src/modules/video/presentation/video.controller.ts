@@ -28,6 +28,9 @@ import {
   CreatePlaybackSessionDto,
   CreateVideoUploadIntentDto,
   CreateYoutubeVideoDto,
+  CreateYoutubeVideoResultDto,
+  LessonVideoMutationDto,
+  VideoUploadIntentResultDto,
   ListVideoLibraryQueryDto,
   PlaybackSessionDto,
   VideoLibraryItemDto,
@@ -42,6 +45,7 @@ export class VideoController {
   @Post('admin/videos/upload-intents')
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
   @ApiOperation({ summary: 'Membuat intent upload video self-hosted' })
+  @ApiEnvelope(VideoUploadIntentResultDto)
   @ApiErrors(401, 403, 404, 422)
   createIntent(@Body() dto: CreateVideoUploadIntentDto, @CurrentUser() user: AuthenticatedUser) {
     return this.videos.createUploadIntent(dto, user.id);
@@ -51,6 +55,7 @@ export class VideoController {
   @HttpCode(201)
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
   @ApiOperation({ summary: 'Menambahkan video YouTube ke perpustakaan' })
+  @ApiEnvelope(CreateYoutubeVideoResultDto)
   @ApiErrors(401, 403, 404, 422)
   createYoutube(@Body() dto: CreateYoutubeVideoDto, @CurrentUser() user: AuthenticatedUser) {
     return this.videos.createYoutubeVideo(dto, user.id);
@@ -95,6 +100,7 @@ export class VideoController {
   @HttpCode(200)
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
   @ApiOperation({ summary: 'Memasang video perpustakaan pada sebuah pelajaran' })
+  @ApiEnvelope(LessonVideoMutationDto)
   @ApiErrors(401, 403, 404, 422)
   attach(
     @Param('lessonId', new ParseUUIDPipe()) lessonId: string,
@@ -107,6 +113,7 @@ export class VideoController {
   @HttpCode(200)
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
   @ApiOperation({ summary: 'Melepas video dari pelajaran tanpa menghapus berkasnya' })
+  @ApiEnvelope(LessonVideoMutationDto)
   @ApiErrors(401, 403, 404)
   detach(@Param('lessonId', new ParseUUIDPipe()) lessonId: string) {
     return this.videos.detachFromLesson(lessonId);
@@ -116,6 +123,7 @@ export class VideoController {
   @HttpCode(200)
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
   @ApiOperation({ summary: 'Menghapus aset perpustakaan yang tidak dipakai pelajaran mana pun' })
+  @ApiEnvelope(LessonVideoMutationDto)
   @ApiErrors(401, 403, 404, 422)
   destroy(@Param('videoAssetId', new ParseUUIDPipe()) videoAssetId: string) {
     return this.videos.deleteAsset(videoAssetId);

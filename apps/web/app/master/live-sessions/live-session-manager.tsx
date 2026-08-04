@@ -1,20 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import type { Schemas } from '@lms/api-client';
 import { Modal } from '../../components/modal';
 import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../lib/browser-api';
 
-interface LiveSession {
-  id: string;
-  title: string;
-  description: string | null;
-  joinUrl: string;
-  startsAt: string;
-  durationMinutes: number;
-  cancelledAt: string | null;
-  course: { id: string; title: string };
-}
+/**
+ * Bentuknya datang dari kontrak, bukan disalin dengan tangan.
+ *
+ * Salinan sebelumnya sudah menyimpang: ia menulis `description: string | null`
+ * sementara kontraknya juga mengizinkan `undefined`. Selama pemanggilnya
+ * memakai `as unknown as`, selisih itu tidak pernah terlihat.
+ */
+type LiveSession = Schemas['AdminLiveSessionDto'];
 
 interface CourseOption {
   id: string;
@@ -52,8 +51,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
     setLoading(true);
     try {
       setSessions(
-        unwrap(await browserClient().GET('/api/v1/admin/live-sessions', {})) as unknown as
-          LiveSession[],
+        unwrap<LiveSession[]>(await browserClient().GET('/api/v1/admin/live-sessions', {})),
       );
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'Jadwal gagal dimuat.');

@@ -2328,14 +2328,18 @@ export interface components {
         ApiErrorDto: {
             error: components["schemas"]["ApiErrorBodyDto"];
         };
+        ResponseMetaDto: {
+            /** Format: uuid */
+            requestId: string;
+        };
+        InvitationAcceptedDto: {
+            /** @example true */
+            accepted: boolean;
+        };
         AcceptInvitationDto: {
             token: string;
             password: string;
             passwordConfirmation: string;
-        };
-        ResponseMetaDto: {
-            /** Format: uuid */
-            requestId: string;
         };
         ForgotPasswordResponseDto: {
             /** @example true */
@@ -2345,10 +2349,20 @@ export interface components {
             /** @example pelajar@akademionline.id */
             email: string;
         };
+        PasswordResetDto: {
+            /** @example true */
+            reset: boolean;
+        };
         ResetPasswordDto: {
             token: string;
             password: string;
             passwordConfirmation: string;
+        };
+        MfaSetupDto: {
+            /** @description Base32; ditampilkan sekali untuk dicatat manual. */
+            secret: string;
+            /** @description URI otpauth:// untuk dipindai aplikasi authenticator. */
+            otpauthUrl: string;
         };
         MfaCodeDto: {
             /** @example 123456 */
@@ -2933,6 +2947,24 @@ export interface components {
             /** @description Detik minimum, untuk aturan MINIMUM_ACTIVE_SECONDS. Bila kosong, 60 detik. */
             completionMinimumSeconds?: number;
         };
+        VideoUploadHeadersDto: {
+            /** @example video/mp4 */
+            "Content-Type": string;
+            /** @example 10485760 */
+            "Content-Length": string;
+        };
+        VideoUploadIntentResultDto: {
+            /** Format: uuid */
+            videoAssetId: string;
+            /** @enum {string} */
+            provider: "SELF_HOSTED" | "BUNNY_STREAM" | "YOUTUBE";
+            providerVideoId: string;
+            /** @description Tujuan unggahan; berkasnya dikirim lewat PUT. */
+            uploadUrl: string;
+            /** @example PUT */
+            method: string;
+            headers: components["schemas"]["VideoUploadHeadersDto"];
+        };
         CreateVideoUploadIntentDto: {
             title: string;
             /** @example lesson-01.mp4 */
@@ -2940,6 +2972,16 @@ export interface components {
             /** @example video/mp4 */
             mimeType: string;
             sizeBytes: number;
+        };
+        CreateYoutubeVideoResultDto: {
+            /** Format: uuid */
+            videoAssetId: string;
+            /** @enum {string} */
+            provider: "SELF_HOSTED" | "BUNNY_STREAM" | "YOUTUBE";
+            /** @enum {string} */
+            status: "CREATED" | "UPLOADING" | "PROCESSING" | "AVAILABLE" | "FAILED" | "DELETED";
+            youtubeVideoId: string;
+            sourceUrl: string | null;
         };
         CreateYoutubeVideoDto: {
             title: string;
@@ -2996,6 +3038,15 @@ export interface components {
             problem: number;
             /** @description Jumlah byte di disk kita; video eksternal tidak dihitung. */
             totalBytes: string;
+        };
+        LessonVideoMutationDto: {
+            /** Format: uuid */
+            videoAssetId: string;
+            /** @enum {string} */
+            status?: "CREATED" | "UPLOADING" | "PROCESSING" | "AVAILABLE" | "FAILED" | "DELETED";
+            /** @description Benar bila aset dilepas atau dihapus. */
+            detached?: boolean;
+            deleted?: boolean;
         };
         AttachLessonVideoDto: {
             /** Format: uuid */
@@ -3911,6 +3962,12 @@ export interface components {
         UnreadCountDto: {
             unread: number;
         };
+        NotificationReadDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            readAt: string;
+        };
         MarkAllReadDto: {
             updated: number;
         };
@@ -3928,6 +3985,12 @@ export interface components {
         };
         AnnouncementUnreadCountDto: {
             unread: number;
+        };
+        AnnouncementReadDto: {
+            /** Format: uuid */
+            announcementId: string;
+            /** Format: date-time */
+            readAt: string;
         };
         AnnouncementCourseRefDto: {
             /** Format: uuid */
@@ -4003,6 +4066,24 @@ export interface components {
             status: "UPCOMING" | "LIVE" | "ENDED";
             /** @description Kosong setelah sesi berakhir */
             joinUrl?: string | null;
+        };
+        LiveSessionCourseRefDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+        };
+        AdminLiveSessionDto: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            description?: string | null;
+            joinUrl: string;
+            /** Format: date-time */
+            startsAt: string;
+            durationMinutes: number;
+            /** Format: date-time */
+            cancelledAt?: string | null;
+            course: components["schemas"]["LiveSessionCourseRefDto"];
         };
         CreateLiveSessionDto: {
             /** Format: uuid */
@@ -4225,6 +4306,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["InvitationAcceptedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4291,6 +4383,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PasswordResetDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4310,6 +4413,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["MfaSetupDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6580,6 +6694,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["VideoUploadIntentResultDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6627,6 +6752,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CreateYoutubeVideoResultDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6808,6 +6944,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LessonVideoMutationDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6853,6 +7000,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LessonVideoMutationDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6890,6 +7048,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LessonVideoMutationDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -9830,6 +9999,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["NotificationReadDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -9952,6 +10132,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AnnouncementReadDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -10025,6 +10216,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAnnouncementDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -10103,6 +10305,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAnnouncementDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -10148,6 +10361,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAnnouncementDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -10193,6 +10417,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminAnnouncementDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -10278,6 +10513,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminLiveSessionDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -10309,6 +10555,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminLiveSessionDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -10387,6 +10644,17 @@ export interface operations {
             };
         };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AdminLiveSessionDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
             401: {
                 headers: {
                     [name: string]: unknown;

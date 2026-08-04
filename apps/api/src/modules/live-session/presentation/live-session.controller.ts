@@ -12,11 +12,12 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PERMISSIONS } from '@lms/contracts';
-import { ApiEnvelopeArray, ApiErrors } from '../../../shared/http/api-envelope';
+import { ApiEnvelope, ApiEnvelopeArray, ApiErrors } from '../../../shared/http/api-envelope';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { LiveSessionService } from '../application/live-session.service';
 import {
+  AdminLiveSessionDto,
   CreateLiveSessionDto,
   LearnerLiveSessionDto,
   ListLiveSessionQueryDto,
@@ -42,6 +43,7 @@ export class LiveSessionController {
   @Get('admin/live-sessions')
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
   @ApiOperation({ summary: 'Seluruh sesi langsung, termasuk yang dibatalkan' })
+  @ApiEnvelopeArray(AdminLiveSessionDto)
   @ApiErrors(401, 403)
   list(@Query() query: ListLiveSessionQueryDto) {
     return this.sessions.list(query.courseId);
@@ -51,6 +53,7 @@ export class LiveSessionController {
   @HttpCode(201)
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
   @ApiOperation({ summary: 'Menjadwalkan sesi langsung' })
+  @ApiEnvelope(AdminLiveSessionDto)
   @ApiErrors(401, 403, 422)
   create(@Body() dto: CreateLiveSessionDto, @CurrentUser() user: AuthenticatedUser) {
     return this.sessions.create(
@@ -69,6 +72,7 @@ export class LiveSessionController {
   @Patch('admin/live-sessions/:sessionId')
   @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
   @ApiOperation({ summary: 'Mengubah jadwal atau tautan sesi' })
+  @ApiEnvelope(AdminLiveSessionDto)
   @ApiErrors(401, 403, 404, 422)
   update(
     @Param('sessionId', new ParseUUIDPipe()) sessionId: string,

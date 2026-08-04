@@ -39,11 +39,11 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
     setBusy(true);
     setMessage('Menyiapkan pembayaran aman…');
     try {
-      const checkout = unwrap(
-        await browserClient().POST('/api/v1/registration/checkout', {
+      const checkout = unwrap<Checkout>(
+await browserClient().POST('/api/v1/registration/checkout', {
           body: { tierId, fullName, email, phone, termsAccepted },
         }),
-      ) as unknown as Checkout;
+  );
       await loadSnap(checkout.clientKey, checkout.isProduction);
       window.snap!.pay(checkout.snapToken, {
         onSuccess: () => goToStatus(checkout.orderCode),

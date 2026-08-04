@@ -147,3 +147,8 @@ export class AdminAnnouncementDto {
 export class AnnouncementUnreadCountDto {
   @ApiProperty() unread!: number;
 }
+
+export class AnnouncementReadDto {
+  @ApiProperty({ format: 'uuid' }) announcementId!: string;
+  @ApiProperty({ format: 'date-time' }) readAt!: Date;
+}

@@ -109,7 +109,7 @@ export async function uploadToLibrary(
     await browserClient().POST('/api/v1/admin/videos/upload-intents', {
       body: { title, fileName: file.name, mimeType: 'video/mp4', sizeBytes: file.size },
     }),
-  ) as unknown as { uploadUrl: string; method: string; videoAssetId: string };
+  );
 
   await uploadFile(intent.uploadUrl, intent.method, file, onProgress);
   return intent.videoAssetId;

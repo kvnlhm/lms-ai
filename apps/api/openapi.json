@@ -16,6 +16,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/InvitationAcceptedDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "422": {
             "description": "",
             "content": {
@@ -112,6 +134,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PasswordResetDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "422": {
             "description": "",
             "content": {
@@ -134,6 +178,28 @@
         "operationId": "AuthController_setupMfa",
         "parameters": [],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MfaSetupDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -3557,6 +3623,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/VideoUploadIntentResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -3619,6 +3707,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CreateYoutubeVideoResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -3917,6 +4027,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LessonVideoMutationDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -3976,6 +4108,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LessonVideoMutationDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -4027,6 +4181,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LessonVideoMutationDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -8608,6 +8784,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/NotificationReadDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -8803,6 +9001,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AnnouncementReadDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -8932,6 +9152,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAnnouncementDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -8993,6 +9235,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAnnouncementDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -9103,6 +9367,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAnnouncementDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -9164,6 +9450,28 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminAnnouncementDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -9292,6 +9600,31 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminLiveSessionDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -9332,6 +9665,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminLiveSessionDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -9393,6 +9748,28 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminLiveSessionDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "401": {
             "description": "",
             "content": {
@@ -11679,6 +12056,30 @@
           "error"
         ]
       },
+      "ResponseMetaDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "requestId"
+        ]
+      },
+      "InvitationAcceptedDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "accepted"
+        ]
+      },
       "AcceptInvitationDto": {
         "type": "object",
         "properties": {
@@ -11698,18 +12099,6 @@
           "token",
           "password",
           "passwordConfirmation"
-        ]
-      },
-      "ResponseMetaDto": {
-        "type": "object",
-        "properties": {
-          "requestId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "requestId"
         ]
       },
       "ForgotPasswordResponseDto": {
@@ -11736,6 +12125,18 @@
           "email"
         ]
       },
+      "PasswordResetDto": {
+        "type": "object",
+        "properties": {
+          "reset": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "reset"
+        ]
+      },
       "ResetPasswordDto": {
         "type": "object",
         "properties": {
@@ -11755,6 +12156,23 @@
           "token",
           "password",
           "passwordConfirmation"
+        ]
+      },
+      "MfaSetupDto": {
+        "type": "object",
+        "properties": {
+          "secret": {
+            "type": "string",
+            "description": "Base32; ditampilkan sekali untuk dicatat manual."
+          },
+          "otpauthUrl": {
+            "type": "string",
+            "description": "URI otpauth:// untuk dipindai aplikasi authenticator."
+          }
+        },
+        "required": [
+          "secret",
+          "otpauthUrl"
         ]
       },
       "MfaCodeDto": {
@@ -13738,6 +14156,62 @@
           }
         }
       },
+      "VideoUploadHeadersDto": {
+        "type": "object",
+        "properties": {
+          "Content-Type": {
+            "type": "string",
+            "example": "video/mp4"
+          },
+          "Content-Length": {
+            "type": "string",
+            "example": "10485760"
+          }
+        },
+        "required": [
+          "Content-Type",
+          "Content-Length"
+        ]
+      },
+      "VideoUploadIntentResultDto": {
+        "type": "object",
+        "properties": {
+          "videoAssetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "SELF_HOSTED",
+              "BUNNY_STREAM",
+              "YOUTUBE"
+            ]
+          },
+          "providerVideoId": {
+            "type": "string"
+          },
+          "uploadUrl": {
+            "type": "string",
+            "description": "Tujuan unggahan; berkasnya dikirim lewat PUT."
+          },
+          "method": {
+            "type": "string",
+            "example": "PUT"
+          },
+          "headers": {
+            "$ref": "#/components/schemas/VideoUploadHeadersDto"
+          }
+        },
+        "required": [
+          "videoAssetId",
+          "provider",
+          "providerVideoId",
+          "uploadUrl",
+          "method",
+          "headers"
+        ]
+      },
       "CreateVideoUploadIntentDto": {
         "type": "object",
         "properties": {
@@ -13761,6 +14235,48 @@
           "fileName",
           "mimeType",
           "sizeBytes"
+        ]
+      },
+      "CreateYoutubeVideoResultDto": {
+        "type": "object",
+        "properties": {
+          "videoAssetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "SELF_HOSTED",
+              "BUNNY_STREAM",
+              "YOUTUBE"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CREATED",
+              "UPLOADING",
+              "PROCESSING",
+              "AVAILABLE",
+              "FAILED",
+              "DELETED"
+            ]
+          },
+          "youtubeVideoId": {
+            "type": "string"
+          },
+          "sourceUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "videoAssetId",
+          "provider",
+          "status",
+          "youtubeVideoId",
+          "sourceUrl"
         ]
       },
       "CreateYoutubeVideoDto": {
@@ -13950,6 +14466,36 @@
           "orphan",
           "problem",
           "totalBytes"
+        ]
+      },
+      "LessonVideoMutationDto": {
+        "type": "object",
+        "properties": {
+          "videoAssetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CREATED",
+              "UPLOADING",
+              "PROCESSING",
+              "AVAILABLE",
+              "FAILED",
+              "DELETED"
+            ]
+          },
+          "detached": {
+            "type": "boolean",
+            "description": "Benar bila aset dilepas atau dihapus."
+          },
+          "deleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "videoAssetId"
         ]
       },
       "AttachLessonVideoDto": {
@@ -16921,6 +17467,23 @@
           "unread"
         ]
       },
+      "NotificationReadDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "readAt"
+        ]
+      },
       "MarkAllReadDto": {
         "type": "object",
         "properties": {
@@ -16976,6 +17539,23 @@
         },
         "required": [
           "unread"
+        ]
+      },
+      "AnnouncementReadDto": {
+        "type": "object",
+        "properties": {
+          "announcementId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "announcementId",
+          "readAt"
         ]
       },
       "AnnouncementCourseRefDto": {
@@ -17218,6 +17798,64 @@
           "endsAt",
           "durationMinutes",
           "status"
+        ]
+      },
+      "LiveSessionCourseRefDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "AdminLiveSessionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "joinUrl": {
+            "type": "string"
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "number"
+          },
+          "cancelledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "course": {
+            "$ref": "#/components/schemas/LiveSessionCourseRefDto"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "joinUrl",
+          "startsAt",
+          "durationMinutes",
+          "course"
         ]
       },
       "CreateLiveSessionDto": {

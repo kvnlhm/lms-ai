@@ -19,6 +19,7 @@ import { CurrentUser, RequirePermissions } from '../../identity/presentation/dec
 import { AnnouncementService } from '../application/announcement.service';
 import {
   AdminAnnouncementDto,
+  AnnouncementReadDto,
   AnnouncementUnreadCountDto,
   CreateAnnouncementDto,
   LearnerAnnouncementDto,
@@ -56,6 +57,7 @@ export class AnnouncementController {
   @Post('me/announcements/:announcementId/read')
   @HttpCode(200)
   @ApiOperation({ summary: 'Menandai pengumuman sudah dibaca' })
+  @ApiEnvelope(AnnouncementReadDto)
   @ApiErrors(401, 404)
   markRead(
     @Param('announcementId', new ParseUUIDPipe()) announcementId: string,
@@ -82,6 +84,7 @@ export class AnnouncementController {
   @HttpCode(201)
   @RequirePermissions(PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   @ApiOperation({ summary: 'Membuat pengumuman sebagai draft' })
+  @ApiEnvelope(AdminAnnouncementDto)
   @ApiErrors(401, 403, 422)
   create(@Body() dto: CreateAnnouncementDto, @CurrentUser() user: AuthenticatedUser) {
     return this.announcements.create(
@@ -101,6 +104,7 @@ export class AnnouncementController {
   @Patch('admin/announcements/:announcementId')
   @RequirePermissions(PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   @ApiOperation({ summary: 'Mengubah isi, audiens, atau jadwal pengumuman' })
+  @ApiEnvelope(AdminAnnouncementDto)
   @ApiErrors(401, 403, 404, 422)
   update(
     @Param('announcementId', new ParseUUIDPipe()) announcementId: string,
@@ -121,6 +125,7 @@ export class AnnouncementController {
   @HttpCode(200)
   @RequirePermissions(PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   @ApiOperation({ summary: 'Menerbitkan pengumuman dan memberi tahu penerimanya' })
+  @ApiEnvelope(AdminAnnouncementDto)
   @ApiErrors(401, 403, 404, 422)
   publish(@Param('announcementId', new ParseUUIDPipe()) announcementId: string) {
     return this.announcements.publish(announcementId);
@@ -130,6 +135,7 @@ export class AnnouncementController {
   @HttpCode(200)
   @RequirePermissions(PERMISSIONS.ANNOUNCEMENTS_MANAGE)
   @ApiOperation({ summary: 'Mengarsipkan pengumuman agar berhenti tampil' })
+  @ApiEnvelope(AdminAnnouncementDto)
   @ApiErrors(401, 403, 404)
   archive(@Param('announcementId', new ParseUUIDPipe()) announcementId: string) {
     return this.announcements.archive(announcementId);

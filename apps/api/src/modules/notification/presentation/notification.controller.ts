@@ -9,6 +9,7 @@ import {
   ListNotificationsQueryDto,
   MarkAllReadDto,
   NotificationDto,
+  NotificationReadDto,
   UnreadCountDto,
 } from './notification.dto';
 
@@ -42,6 +43,7 @@ export class NotificationController {
 
   @Patch(':notificationId/read')
   @ApiOperation({ summary: 'Menandai satu notifikasi sebagai dibaca' })
+  @ApiEnvelope(NotificationReadDto)
   @ApiErrors(401, 404)
   markRead(
     @Param('notificationId', new ParseUUIDPipe()) notificationId: string,

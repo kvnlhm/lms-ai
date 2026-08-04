@@ -51,11 +51,11 @@ export function AccessTierManager({
   async function create() {
     setBusy(true);
     try {
-      const tier = unwrap(
-        await browserClient().POST('/api/v1/admin/access-tiers', {
+      const tier = unwrap<Tier>(
+await browserClient().POST('/api/v1/admin/access-tiers', {
           body: payload(draft),
         }),
-      ) as unknown as Tier;
+  );
       setTiers((current) => [...current, tier].sort((a, b) => a.position - b.position));
       setDraft(emptyDraft);
       notifier.success('Paket berhasil dibuat dan siap ditampilkan.');
@@ -74,12 +74,12 @@ export function AccessTierManager({
     if (!editing || !editingDraft) return;
     setBusy(true);
     try {
-      const tier = unwrap(
-        await browserClient().PATCH('/api/v1/admin/access-tiers/{tierId}', {
+      const tier = unwrap<Tier>(
+await browserClient().PATCH('/api/v1/admin/access-tiers/{tierId}', {
           params: { path: { tierId: editing.id } },
           body: payload(editingDraft),
         }),
-      ) as unknown as Tier;
+  );
       setTiers((current) =>
         current.map((item) => (item.id === tier.id ? tier : item)).sort((a, b) => a.position - b.position),
       );

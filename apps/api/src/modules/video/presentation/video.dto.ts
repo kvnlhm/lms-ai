@@ -166,3 +166,32 @@ export class PlaybackSessionDto {
   @ApiProperty({ type: PlaybackDrmDto }) drm!: PlaybackDrmDto;
   @ApiProperty({ type: PlaybackWatermarkDto }) watermark!: PlaybackWatermarkDto;
 }
+
+export class VideoUploadHeadersDto {
+  @ApiProperty({ example: 'video/mp4' }) 'Content-Type'!: string;
+  @ApiProperty({ example: '10485760' }) 'Content-Length'!: string;
+}
+
+export class VideoUploadIntentResultDto {
+  @ApiProperty({ format: 'uuid' }) videoAssetId!: string;
+  @ApiProperty({ enum: VideoProvider }) provider!: VideoProvider;
+  @ApiProperty() providerVideoId!: string;
+  @ApiProperty({ description: 'Tujuan unggahan; berkasnya dikirim lewat PUT.' }) uploadUrl!: string;
+  @ApiProperty({ example: 'PUT' }) method!: string;
+  @ApiProperty({ type: VideoUploadHeadersDto }) headers!: VideoUploadHeadersDto;
+}
+
+export class CreateYoutubeVideoResultDto {
+  @ApiProperty({ format: 'uuid' }) videoAssetId!: string;
+  @ApiProperty({ enum: VideoProvider }) provider!: VideoProvider;
+  @ApiProperty({ enum: VideoStatus }) status!: VideoStatus;
+  @ApiProperty() youtubeVideoId!: string;
+  @ApiProperty({ type: String, nullable: true }) sourceUrl!: string | null;
+}
+
+export class LessonVideoMutationDto {
+  @ApiProperty({ format: 'uuid' }) videoAssetId!: string;
+  @ApiPropertyOptional({ enum: VideoStatus }) status?: VideoStatus;
+  @ApiPropertyOptional({ description: 'Benar bila aset dilepas atau dihapus.' }) detached?: boolean;
+  @ApiPropertyOptional() deleted?: boolean;
+}

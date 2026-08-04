@@ -45,3 +45,8 @@ export class UnreadCountDto {
 export class MarkAllReadDto {
   @ApiProperty() updated!: number;
 }
+
+export class NotificationReadDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty({ format: 'date-time' }) readAt!: Date;
+}

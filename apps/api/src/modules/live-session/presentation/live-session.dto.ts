@@ -63,3 +63,21 @@ export class LearnerLiveSessionDto {
   })
   joinUrl!: string | null;
 }
+
+export class LiveSessionCourseRefDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() title!: string;
+}
+
+/** Bentuk sesi langsung sebagaimana dilihat Master, termasuk yang dibatalkan. */
+export class AdminLiveSessionDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() title!: string;
+  @ApiPropertyOptional({ type: String, nullable: true }) description!: string | null;
+  @ApiProperty() joinUrl!: string;
+  @ApiProperty({ format: 'date-time' }) startsAt!: Date;
+  @ApiProperty() durationMinutes!: number;
+  @ApiPropertyOptional({ type: Date, format: 'date-time', nullable: true })
+  cancelledAt!: Date | null;
+  @ApiProperty({ type: LiveSessionCourseRefDto }) course!: LiveSessionCourseRefDto;
+}
