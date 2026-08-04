@@ -85,8 +85,14 @@ export class VideoLibrarySummaryDto {
   @ApiProperty() used!: number;
   @ApiProperty() orphan!: number;
   @ApiProperty() problem!: number;
-  @ApiProperty({ description: 'Jumlah byte di disk kita; video eksternal tidak dihitung.' })
+  @ApiProperty({
+    description:
+      'Jumlah byte yang benar-benar menempati disk kita. Aset yang isinya di Bunny atau ' +
+      'YouTube tidak dihitung meski ukurannya diketahui.',
+  })
   totalBytes!: string;
+  @ApiProperty({ description: 'Aset yang isinya di penyedia luar; tidak menempati disk kita.' })
+  external!: number;
 }
 
 // Tidak ada `lessonId` pada kedua DTO di bawah: unggahan dan tautan YouTube

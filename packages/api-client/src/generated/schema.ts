@@ -3156,8 +3156,10 @@ export interface components {
             used: number;
             orphan: number;
             problem: number;
-            /** @description Jumlah byte di disk kita; video eksternal tidak dihitung. */
+            /** @description Jumlah byte yang benar-benar menempati disk kita. Aset yang isinya di Bunny atau YouTube tidak dihitung meski ukurannya diketahui. */
             totalBytes: string;
+            /** @description Aset yang isinya di penyedia luar; tidak menempati disk kita. */
+            external: number;
         };
         LessonVideoMutationDto: {
             /** Format: uuid */

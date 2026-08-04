@@ -724,13 +724,20 @@ export class VideoService implements LessonVideoCleanupPort, StaleUploadReconcil
    */
   async librarySummary() {
     const where: Prisma.VideoAssetWhereInput = { deletedAt: null };
-    const [total, used, problem, ukuran] = await this.prisma.$transaction([
+    // Yang menempati disk kita adalah yang punya berkas, bukan yang punya
+    // ukuran. Keduanya dulu sama saja, lalu Bunny masuk: aset Bunny menyimpan
+    // ukuran dari sisi Bunny, tanpa satu byte pun di sini. Menjumlahkan
+    // semuanya membuat angka "terpakai di disk" naik justru ketika video
+    // dipindahkan keluar — kebalikan dari yang sebenarnya terjadi.
+    const berkasLokal: Prisma.VideoAssetWhereInput = { ...where, objectKey: { not: null } };
+    const [total, used, problem, ukuran, external] = await this.prisma.$transaction([
       this.prisma.videoAsset.count({ where }),
       this.prisma.videoAsset.count({ where: { ...where, lessons: { some: {} } } }),
       this.prisma.videoAsset.count({
         where: { ...where, status: { not: VideoStatus.AVAILABLE } },
       }),
-      this.prisma.videoAsset.aggregate({ where, _sum: { sizeBytes: true } }),
+      this.prisma.videoAsset.aggregate({ where: berkasLokal, _sum: { sizeBytes: true } }),
+      this.prisma.videoAsset.count({ where: { ...where, objectKey: null } }),
     ]);
 
     return {
@@ -738,9 +745,9 @@ export class VideoService implements LessonVideoCleanupPort, StaleUploadReconcil
       used,
       orphan: total - used,
       problem,
-      // Hanya berkas yang benar-benar memakai disk kita yang punya sizeBytes;
-      // video YouTube tidak menempati apa pun di sini.
       totalBytes: String(ukuran._sum.sizeBytes ?? BigInt(0)),
+      /** Aset yang isinya berada di penyedia luar; tidak menempati disk kita. */
+      external,
     };
   }
 

@@ -315,8 +315,12 @@ export function VideoLibrary() {
       {ringkasan ? (
         <p className="muted">
           {disaring ? `${total} dari ${ringkasan.total} video` : `${ringkasan.total} video`} ·{' '}
-          {formatBytes(ringkasan.totalBytes)} terpakai di disk · {ringkasan.used} dipakai pelajaran ·{' '}
-          {ringkasan.orphan} belum dipakai
+          {formatBytes(ringkasan.totalBytes)} terpakai di disk
+          {/* Angka inilah yang menjawab "apakah pemindahan ke Bunny berhasil".
+              Tanpa disebut, disk yang menyusut terlihat seperti tidak terjadi
+              apa-apa. */}
+          {ringkasan.external > 0 ? ` · ${ringkasan.external} di penyedia luar` : ''} ·{' '}
+          {ringkasan.used} dipakai pelajaran · {ringkasan.orphan} belum dipakai
           {ringkasan.problem > 0 ? ` · ${ringkasan.problem} bermasalah` : ''}
         </p>
       ) : null}
@@ -361,9 +365,12 @@ export function VideoLibrary() {
         </p>
       ) : (
         <>
-          <ul className="masterRecordList">
+          {/* `stack` melepas butir daftar bawaan dan `card` memberi panelnya;
+              tanpa keduanya barisnya tampil sebagai daftar bertitik tanpa
+              latar, seperti halaman yang gayanya gagal dimuat. */}
+          <ul className="stack masterRecordList">
             {items.map((item) => (
-              <li key={item.videoAssetId} className="masterRecordCard">
+              <li key={item.videoAssetId} className="card masterRecordCard">
                 <div className="masterListHead">
                   <h2 className="cellTitle">{item.title}</h2>
                   <span className="pill">{namaPenyedia(item.provider)}</span>
@@ -402,7 +409,11 @@ export function VideoLibrary() {
                   </button>
                   <button
                     type="button"
-                    className="btn btnDanger btnSmall"
+                    // `btn` adalah tombol utama bergaya penuh; dipasangkan
+                    // dengan `btnDanger` — yang hanya mengubah warna teks —
+                    // tombol hapus tampil dengan latar aksen persis seperti
+                    // tindakan yang dianjurkan. Dasarnya harus bergaris.
+                    className="btnGhost btnDanger btnSmall"
                     // Dibiarkan dapat ditekan meski masih dipakai: pesan dari
                     // server menyebut berapa pelajaran yang memakainya, yang
                     // lebih berguna daripada tombol mati tanpa penjelasan.

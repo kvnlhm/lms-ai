@@ -167,9 +167,9 @@ export function BunnyLibraryBrowser({
         </p>
       ) : (
         <>
-          <ul className="masterRecordList">
+          <ul className="stack masterRecordList">
             {items.map((video) => (
-              <li key={video.guid} className="masterRecordCard bunnyRow">
+              <li key={video.guid} className="card masterRecordCard bunnyRow">
                 {video.thumbnailUrl ? (
                   // Sampul datang dari CDN Bunny dengan URL bertanda tangan yang
                   // berumur pendek; pengoptimal gambar Next tidak dapat

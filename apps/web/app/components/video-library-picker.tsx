@@ -187,9 +187,9 @@ export function VideoLibraryPicker({
           </p>
         ) : (
           <>
-            <ul className="masterRecordList">
+            <ul className="stack masterRecordList">
               {items.map((item) => (
-                <li key={item.videoAssetId} className="masterRecordCard">
+                <li key={item.videoAssetId} className="card masterRecordCard">
                   <div className="masterListHead">
                     <span className="cellTitle">{item.title}</span>
                     <button

@@ -178,6 +178,32 @@ describe('VideoService.listLibrary — penyelarasan aset Bunny tertunda', () => 
   });
 });
 
+describe('VideoService.librarySummary', () => {
+  it('menghitung disk dari berkas yang ada, bukan dari ukuran yang diketahui', async () => {
+    // Aset Bunny menyimpan ukuran dari sisi Bunny tanpa satu byte pun di sini.
+    // Menjumlahkan semuanya membuat "terpakai di disk" naik justru ketika video
+    // dipindahkan keluar — kebalikan dari yang sebenarnya terjadi.
+    const aggregate = jest.fn().mockResolvedValue({ _sum: { sizeBytes: BigInt(100) } });
+    const prisma = {
+      videoAsset: { count: jest.fn().mockResolvedValue(0), aggregate },
+      $transaction: jest.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
+    } as unknown as PrismaService;
+    const app = { video: { storagePath: '/x', playbackTtlSeconds: 1, bunny: {} } } as unknown as AppConfig;
+    const service = new VideoService(
+      prisma,
+      {} as EnrollmentAccessService,
+      {} as BunnyStreamClient,
+      { get: () => app } as unknown as ConfigService<{ app: AppConfig }, true>,
+    );
+
+    await service.librarySummary();
+
+    expect(aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ objectKey: { not: null } }) }),
+    );
+  });
+});
+
 describe('VideoService.replaceAssetSource', () => {
   beforeEach(() => rm.mockReset());
 

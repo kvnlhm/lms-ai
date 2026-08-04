@@ -14971,7 +14971,11 @@
           },
           "totalBytes": {
             "type": "string",
-            "description": "Jumlah byte di disk kita; video eksternal tidak dihitung."
+            "description": "Jumlah byte yang benar-benar menempati disk kita. Aset yang isinya di Bunny atau YouTube tidak dihitung meski ukurannya diketahui."
+          },
+          "external": {
+            "type": "number",
+            "description": "Aset yang isinya di penyedia luar; tidak menempati disk kita."
           }
         },
         "required": [
@@ -14979,7 +14983,8 @@
           "used",
           "orphan",
           "problem",
-          "totalBytes"
+          "totalBytes",
+          "external"
         ]
       },
       "LessonVideoMutationDto": {
