@@ -3,6 +3,7 @@
 import type { Schemas } from '@lms/api-client';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { ActionMenu } from '../../components/action-menu';
 import { Plus } from '../../components/icons';
 import { Modal } from '../../components/modal';
 import { useNotifier } from '../../components/notifier';
@@ -307,7 +308,11 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                   <td data-label="Login terakhir">{formatDate(item.lastLoginAt)}</td>
                   <td data-label="Bergabung">{formatDate(item.createdAt)}</td>
                   <td className="cellActions">
-                    <div className="inlineActions">
+                    {/* Sampai lima tombol pernah berjajar di satu sel, dan pada
+                        layar sempit kolomnya menyempit sampai labelnya pecah.
+                        Bentuknya kini sama dengan daftar kursus: satu tombol
+                        "Aksi", isinya terbuka saat dibutuhkan. */}
+                    <ActionMenu label="Aksi">
                       <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => issuePasswordReset(item)}>
                         Reset password
                       </button>
@@ -338,7 +343,7 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                           Hapus
                         </button>
                       ) : null}
-                    </div>
+                    </ActionMenu>
                   </td>
                 </tr>
               ))}

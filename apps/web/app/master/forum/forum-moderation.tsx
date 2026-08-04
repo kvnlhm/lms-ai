@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
+import { ActionMenu } from '../../components/action-menu';
 import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, unwrap, unwrapList } from '../../lib/browser-api';
 
@@ -302,7 +303,9 @@ export function ForumModeration() {
                     <span>{topic.moderationReason}</span>
                   </div>
                 ) : null}
-                <div className="inlineActions masterForumActions">
+                {/* Enam tindakan moderasi pernah berjajar sekaligus. Diringkas
+                    menjadi satu tombol seperti pada daftar kursus. */}
+                <ActionMenu label="Aksi">
                   {/* Daftar ini hanya menyebut judul. Membaca isinya — dan
                       karenanya menjawab, menandai jawaban terbaik, atau
                       menghapus balasan — menuntut halaman tersendiri. */}
@@ -370,7 +373,7 @@ export function ForumModeration() {
                   >
                     Cabut hak di semua forum
                   </button>
-                </div>
+                </ActionMenu>
               </li>
             ))}
           </ul>

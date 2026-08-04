@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { Modal } from '../../components/modal';
+import { ActionMenu } from '../../components/action-menu';
 import { useNotifier } from '../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrapList } from '../../lib/browser-api';
 
@@ -304,7 +305,9 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
                 <small className="muted">
                   Tampil: {formatDate(item.publishedAt)} · Berakhir: {formatDate(item.endsAt)}
                 </small>
-                <div className="inlineActions">
+                {/* Diringkas menjadi satu tombol, sebentuk dengan daftar kursus
+                    dan daftar pengguna. */}
+                <ActionMenu label="Aksi">
                   {item.status === 'DRAFT' ? (
                     <button
                       className="btnTiny"
@@ -370,7 +373,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
                   >
                     Hapus
                   </button>
-                </div>
+                </ActionMenu>
               </li>
             );
           })}

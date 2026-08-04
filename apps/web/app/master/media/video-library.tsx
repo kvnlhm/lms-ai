@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
 import { Search } from '../../components/icons';
+import { ActionMenu } from '../../components/action-menu';
 import { useNotifier } from '../../components/notifier';
 import { BunnyLibraryBrowser, type BunnyVideo } from '../../components/bunny-library-browser';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
@@ -396,9 +397,10 @@ export function VideoLibrary() {
                 )}
 
                 <div className="inlineActions">
+                  <ActionMenu label="Aksi">
                   <button
                     type="button"
-                    className="btnSecondary btnSmall"
+                    className="btnTiny"
                     disabled={busy === item.videoAssetId || mengunggah}
                     onClick={() => {
                       setHapusLokal(item.provider === 'SELF_HOSTED');
@@ -409,11 +411,7 @@ export function VideoLibrary() {
                   </button>
                   <button
                     type="button"
-                    // `btn` adalah tombol utama bergaya penuh; dipasangkan
-                    // dengan `btnDanger` — yang hanya mengubah warna teks —
-                    // tombol hapus tampil dengan latar aksen persis seperti
-                    // tindakan yang dianjurkan. Dasarnya harus bergaris.
-                    className="btnGhost btnDanger btnSmall"
+                    className="btnTiny btnDanger"
                     // Dibiarkan dapat ditekan meski masih dipakai: pesan dari
                     // server menyebut berapa pelajaran yang memakainya, yang
                     // lebih berguna daripada tombol mati tanpa penjelasan.
@@ -422,6 +420,7 @@ export function VideoLibrary() {
                   >
                     {busy === item.videoAssetId ? 'Menghapus…' : 'Hapus'}
                   </button>
+                  </ActionMenu>
                 </div>
               </li>
             ))}
