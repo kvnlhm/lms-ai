@@ -40,6 +40,11 @@ const ADMIN_ENDPOINTS: Array<{ method: 'get' | 'post' | 'patch' | 'put' | 'delet
   { method: 'delete', path: '/admin/lessons/00000000-0000-4000-8000-000000000000/quiz' },
   { method: 'post', path: '/admin/videos/upload-intents' },
   { method: 'put', path: '/admin/videos/00000000-0000-4000-8000-000000000000/content' },
+  // Ketiganya menyentuh library Bunny milik akademi: membaca isinya, membuat
+  // izin unggah ke sana, dan memindahkan aset ke video di dalamnya.
+  { method: 'get', path: '/admin/videos/bunny/library' },
+  { method: 'post', path: '/admin/videos/bunny/upload-tickets' },
+  { method: 'put', path: '/admin/videos/00000000-0000-4000-8000-000000000000/source' },
 ];
 
 describe('Otorisasi endpoint Master', () => {

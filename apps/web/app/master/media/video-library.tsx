@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import type { Schemas } from '@lms/api-client';
 import { Search } from '../../components/icons';
 import { useNotifier } from '../../components/notifier';
+import { BunnyLibraryBrowser, type BunnyVideo } from '../../components/bunny-library-browser';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 import {
   ambilPerpustakaan,
@@ -54,6 +56,14 @@ export function VideoLibrary() {
   const [cari, setCari] = useState('');
   const [kataTermuat, setKataTermuat] = useState('');
   const [saring, setSaring] = useState<LibraryFilter | null>(null);
+  /** Aset yang sedang dicarikan sumber pengganti; null berarti dialognya tertutup. */
+  const [gantiAset, setGantiAset] = useState<LibraryAsset | null>(null);
+  /**
+   * Tercentang secara bawaan: memindahkan video ke Bunny justru dilakukan untuk
+   * melegakan disk VPS, jadi menyisakan berkas lamanya membatalkan tujuannya.
+   * Tetap dapat dimatikan, dan yang akan hilang disebut namanya lebih dulu.
+   */
+  const [hapusLokal, setHapusLokal] = useState(true);
 
   /**
    * Pencarian dan penyaringan dikerjakan server sekarang.
@@ -182,6 +192,41 @@ export function VideoLibrary() {
     setMengunggah(false);
     // Yang baru diunggah berada di halaman pertama karena daftarnya terbaru dulu.
     await Promise.all([load(kataTermuat, saring, 1), muatRingkasan()]);
+  }
+
+  /**
+   * Mengganti sumber video sebuah aset dengan video dari Bunny.
+   *
+   * Pelajaran yang memakainya tidak disentuh sama sekali — itulah gunanya
+   * mengganti di perpustakaan alih-alih menempel ulang satu per satu. Satu aset
+   * yang dipakai lima pelajaran berpindah lima-limanya sekaligus.
+   */
+  async function gantiSumber(video: BunnyVideo) {
+    const aset = gantiAset;
+    if (!aset || busy || mengunggah) return;
+    setGantiAset(null);
+    setBusy(aset.videoAssetId);
+    try {
+      const hasil = unwrap<Schemas['ReplaceVideoSourceResultDto']>(
+        await browserClient().PUT('/api/v1/admin/videos/{videoAssetId}/source', {
+          params: { path: { videoAssetId: aset.videoAssetId } },
+          body: { source: video.guid, deleteLocalFile: hapusLokal },
+        }),
+      );
+      await segarkan();
+      notifier.success(
+        hasil.status === 'AVAILABLE'
+          ? `Sumber "${aset.title}" berpindah ke Bunny${hasil.localFileDeleted ? ' dan berkas lamanya dihapus' : ''}.`
+          : `Sumber "${aset.title}" berpindah ke Bunny, tetapi videonya masih diproses Bunny.`,
+      );
+    } catch (caught) {
+      void notifier.error('Sumber video gagal diganti', {
+        text: caught instanceof ApiError ? caught.message : undefined,
+        reasons: caught instanceof ApiError ? Object.values(caught.fields ?? {}).flat() : [],
+      });
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function hapus(item: LibraryAsset) {
@@ -346,6 +391,17 @@ export function VideoLibrary() {
                 <div className="inlineActions">
                   <button
                     type="button"
+                    className="btnSecondary btnSmall"
+                    disabled={busy === item.videoAssetId || mengunggah}
+                    onClick={() => {
+                      setHapusLokal(item.provider === 'SELF_HOSTED');
+                      setGantiAset(item);
+                    }}
+                  >
+                    Ganti sumber
+                  </button>
+                  <button
+                    type="button"
                     className="btn btnDanger btnSmall"
                     // Dibiarkan dapat ditekan meski masih dipakai: pesan dari
                     // server menyebut berapa pelajaran yang memakainya, yang
@@ -385,6 +441,57 @@ export function VideoLibrary() {
           ) : null}
         </>
       )}
+
+      {gantiAset ? (
+        <div className="modalBackdrop" role="dialog" aria-modal="true" aria-label="Ganti sumber video">
+          <div className="modalCard">
+            <div className="masterListHead">
+              <h2 className="cellTitle">Ganti sumber “{gantiAset.title}”</h2>
+              <button
+                className="btnTiny"
+                type="button"
+                onClick={() => setGantiAset(null)}
+                disabled={busy !== null}
+              >
+                Tutup
+              </button>
+            </div>
+
+            <p className="cellSub gantiSumberInfo">
+              Sekarang {namaPenyedia(gantiAset.provider)}
+              {gantiAset.originalName ? ` · ${gantiAset.originalName}` : ''} ·{' '}
+              {formatBytes(gantiAset.sizeBytes)}
+              {gantiAset.usedBy.length > 0
+                ? ` · dipakai ${gantiAset.usedBy.length} pelajaran, semuanya ikut berpindah`
+                : ' · belum dipakai pelajaran mana pun'}
+            </p>
+
+            {gantiAset.provider === 'SELF_HOSTED' ? (
+              <label className="gantiSumberOpsi">
+                <input
+                  type="checkbox"
+                  checked={hapusLokal}
+                  disabled={busy !== null}
+                  onChange={(event) => setHapusLokal(event.currentTarget.checked)}
+                />
+                <span>
+                  Hapus berkas lama di server setelah berpindah
+                  {gantiAset.originalName ? ` (${gantiAset.originalName}, ` : ' ('}
+                  {formatBytes(gantiAset.sizeBytes)}). Berkasnya hilang dari disk dan hanya dapat
+                  dikembalikan dari backup atau diunggah ulang.
+                </span>
+              </label>
+            ) : null}
+
+            <BunnyLibraryBrowser
+              awalCari={gantiAset.title}
+              busy={busy !== null}
+              onPilih={(video) => void gantiSumber(video)}
+              labelAksi="Pakai ini"
+            />
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

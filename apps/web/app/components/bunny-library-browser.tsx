@@ -171,7 +171,9 @@ export function BunnyLibraryBrowser({
             {items.map((video) => (
               <li key={video.guid} className="masterRecordCard bunnyRow">
                 {video.thumbnailUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+                  // Sampul datang dari CDN Bunny dengan URL bertanda tangan yang
+                  // berumur pendek; pengoptimal gambar Next tidak dapat
+                  // menyentuhnya, jadi `img` biasa memang yang tepat.
                   <img className="bunnyThumb" src={video.thumbnailUrl} alt="" loading="lazy" />
                 ) : (
                   <span className="bunnyThumb bunnyThumbKosong" aria-hidden="true" />
