@@ -232,3 +232,14 @@ test('pencarian dapat menyempit ke satu jenis, bukan sekadar mengaku punya lebih
     assert.match(isi, /Lihat semua/, 'tidak ada jalan menuju hasil selebihnya');
   });
 });
+
+test('lambang merek dirujuk lewat impor, bukan alamat polos', async () => {
+  // Alamat statis seperti `/icon.png` dilayani dengan `immutable` selama
+  // setahun. Lambang yang sudah diganti tetap tampil versi lama di browser
+  // yang pernah membukanya, dan tidak ada cara memberitahunya. Impor membuat
+  // alamatnya membawa sidik jari isi berkas, sehingga penggantian berikutnya
+  // langsung terlihat.
+  const berkas = await readFile(new URL('components/brand-mark.tsx', web), 'utf8');
+  assert.match(berkas, /^import \w+ from '\.\.\/icon\.png';/m, 'lambang tidak diimpor');
+  assert.doesNotMatch(berkas, /src="\/icon\.png"/, 'lambang masih memakai alamat polos');
+});
