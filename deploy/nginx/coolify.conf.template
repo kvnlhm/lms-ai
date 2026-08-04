@@ -79,6 +79,19 @@ server {
         types { video/mp4 mp4; }
     }
 
+    # Materi terlindungi, mengikuti pola yang sama dengan video: hanya dapat
+    # dicapai lewat X-Accel-Redirect dari API, jadi tidak ada URL publik yang
+    # bisa disalin. `inline` supaya PDF terbuka di penampil browser, bukan
+    # langsung terunduh.
+    location /protected-materials/ {
+        internal;
+        alias /data/materials/;
+        add_header Cache-Control "private, no-store" always;
+        add_header Content-Disposition "inline" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        types { application/pdf pdf; }
+    }
+
     location / {
         set $web_upstream "web:3000";
         proxy_pass http://$web_upstream$request_uri;

@@ -5,6 +5,7 @@ import { useState, type FormEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { useNotifier } from '../../../components/notifier';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../../lib/browser-api';
+import { uploadMaterial } from '../../../lib/material-upload';
 import {
   attachToLesson,
   uploadErrorMessage,
@@ -377,6 +378,42 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
     }
   }
 
+  /**
+   * Mengunggah berkas materi PDF pelajaran.
+   *
+   * Berkasnya disimpan di server kita dan tidak pernah punya URL publik —
+   * itulah bedanya dengan menempel tautan Google Drive, yang begitu tersebar
+   * tidak dapat ditarik kembali.
+   */
+  async function unggahMateri(lessonId: string, file: File) {
+    if (busy) return;
+    setBusy(`material-${lessonId}`);
+    setUpload({ lessonId, fileName: file.name, percent: 0, status: 'UPLOADING', message: 'Mengunggah materi…' });
+    try {
+      await uploadMaterial(lessonId, file, (percent) =>
+        setUpload((current) => (current ? { ...current, percent } : current)),
+      );
+      setUpload({
+        lessonId,
+        fileName: file.name,
+        percent: 100,
+        status: 'SUCCESS',
+        message: 'Materi terunggah dan hanya dapat dibuka pelajar yang berhak.',
+      });
+      router.refresh();
+    } catch (caught) {
+      setUpload({
+        lessonId,
+        fileName: file.name,
+        percent: 0,
+        status: 'ERROR',
+        message: caught instanceof ApiError ? caught.message : 'Materi gagal diunggah.',
+      });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function uploadVideo(lessonId: string, title: string, file: File) {
     if (busy) return;
     const action = `upload-video-${lessonId}`;
@@ -604,6 +641,22 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                         ) : (
                           <span className="pill">Opsional</span>
                         )}
+                        {lesson.contentType === 'PDF' ? (
+                          <label className="btnTiny">
+                            {busy === `material-${lesson.id}` ? 'Sedang mengunggah…' : 'Unggah PDF'}
+                            <input
+                              type="file"
+                              accept="application/pdf,.pdf"
+                              hidden
+                              disabled={busy !== null}
+                              onChange={(event) => {
+                                const file = event.currentTarget.files?.[0];
+                                event.currentTarget.value = '';
+                                if (file) void unggahMateri(lesson.id, file);
+                              }}
+                            />
+                          </label>
+                        ) : null}
                         {lesson.contentType === 'VIDEO' ? (
                           <label className="btnTiny">
                             {busy === `upload-video-${lesson.id}` ? 'Sedang mengunggah…' : 'Unggah MP4'}

@@ -2770,6 +2770,152 @@
         ]
       }
     },
+    "/api/v1/admin/lessons/{lessonId}/material": {
+      "put": {
+        "operationId": "AdminCoursesController_uploadMaterial",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LessonMaterialDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengunggah atau mengganti berkas materi pelajaran",
+        "tags": [
+          "admin-catalog"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminCoursesController_removeMaterial",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Materi pelajaran dihapus."
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus berkas materi pelajaran",
+        "tags": [
+          "admin-catalog"
+        ]
+      }
+    },
     "/api/v1/admin/courses/{courseId}/publish": {
       "post": {
         "operationId": "AdminCoursesController_publish",
@@ -5792,6 +5938,57 @@
           }
         },
         "summary": "Isi satu pelajaran",
+        "tags": [
+          "learning-delivery"
+        ]
+      }
+    },
+    "/api/v1/learn/lessons/{lessonId}/material": {
+      "get": {
+        "operationId": "LearnController_material",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengunduh materi pelajaran lewat reverse proxy",
         "tags": [
           "learning-delivery"
         ]
@@ -14079,6 +14276,37 @@
           "thumbnailUrl"
         ]
       },
+      "LessonMaterialDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "originalName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string",
+            "example": "application/pdf"
+          },
+          "sizeBytes": {
+            "type": "string",
+            "description": "String, bukan angka: ukurannya dapat melampaui batas aman JSON."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "createdAt"
+        ]
+      },
       "AdminModuleDto": {
         "type": "object",
         "properties": {
@@ -15728,6 +15956,10 @@
           "content": {
             "$ref": "#/components/schemas/LessonContentDto"
           },
+          "hasMaterial": {
+            "type": "boolean",
+            "description": "Benar bila pelajaran ini punya berkas materi terunggah. URL-nya tidak dikirim: berkasnya diambil lewat endpoint tersendiri yang memeriksa hak."
+          },
           "moduleId": {
             "type": "string",
             "format": "uuid"
@@ -15792,6 +16024,7 @@
           "title",
           "contentType",
           "content",
+          "hasMaterial",
           "moduleId",
           "moduleTitle",
           "courseId",

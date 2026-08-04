@@ -87,6 +87,11 @@ export interface AppConfig {
     storagePath: string;
     maxUploadBytes: number;
   };
+  /** Berkas materi pelajaran, mis. PDF. Tidak pernah punya URL publik. */
+  lessonMaterial: {
+    storagePath: string;
+    maxUploadBytes: number;
+  };
   /**
    * Bukan lagi bagian commerce: aktivasi akun dan pemulihan password sama-sama
    * memakainya, sehingga identity tidak perlu bergantung pada modul commerce.
@@ -229,6 +234,10 @@ export function loadConfig(): AppConfig {
     courseThumbnail: {
       storagePath: process.env.COURSE_THUMBNAIL_STORAGE_PATH ?? '/data/course-thumbnails',
       maxUploadBytes: int('COURSE_THUMBNAIL_MAX_UPLOAD_BYTES', 5_242_880),
+    },
+    lessonMaterial: {
+      storagePath: process.env.LESSON_MATERIAL_STORAGE_PATH ?? '/data/materials',
+      maxUploadBytes: int('LESSON_MATERIAL_MAX_UPLOAD_BYTES', 52_428_800),
     },
     email: {
       provider: emailProvider as 'RESEND' | 'DISABLED',

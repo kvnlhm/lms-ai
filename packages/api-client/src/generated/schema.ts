@@ -593,6 +593,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/lessons/{lessonId}/material": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mengunggah atau mengganti berkas materi pelajaran */
+        put: operations["AdminCoursesController_uploadMaterial"];
+        post?: never;
+        /** Menghapus berkas materi pelajaran */
+        delete: operations["AdminCoursesController_removeMaterial"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/courses/{courseId}/publish": {
         parameters: {
             query?: never;
@@ -1186,6 +1204,23 @@ export interface paths {
         };
         /** Isi satu pelajaran */
         get: operations["LearnController_lesson"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/learn/lessons/{lessonId}/material": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mengunduh materi pelajaran lewat reverse proxy */
+        get: operations["LearnController_material"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2902,6 +2937,17 @@ export interface components {
         CourseThumbnailResponseDto: {
             thumbnailUrl: string;
         };
+        LessonMaterialDto: {
+            /** Format: uuid */
+            id: string;
+            originalName: string;
+            /** @example application/pdf */
+            mimeType: string;
+            /** @description String, bukan angka: ukurannya dapat melampaui batas aman JSON. */
+            sizeBytes: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         AdminModuleDto: {
             /** Format: uuid */
             id: string;
@@ -3427,6 +3473,8 @@ export interface components {
             /** @enum {string} */
             contentType: "VIDEO" | "TEXT" | "PDF" | "EXTERNAL_LINK" | "QUIZ";
             content: components["schemas"]["LessonContentDto"];
+            /** @description Benar bila pelajaran ini punya berkas materi terunggah. URL-nya tidak dikirim: berkasnya diambil lewat endpoint tersendiri yang memeriksa hak. */
+            hasMaterial: boolean;
             /** Format: uuid */
             moduleId: string;
             moduleTitle: string;
@@ -6184,6 +6232,110 @@ export interface operations {
             };
         };
     };
+    AdminCoursesController_uploadMaterial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/pdf": string;
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LessonMaterialDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_removeMaterial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Materi pelajaran dihapus. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     AdminCoursesController_publish: {
         parameters: {
             query?: never;
@@ -8127,6 +8279,43 @@ export interface operations {
                     };
                 };
             };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    LearnController_material: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lessonId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
             401: {
                 headers: {
                     [name: string]: unknown;

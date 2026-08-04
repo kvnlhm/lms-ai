@@ -271,6 +271,30 @@ function LessonStage({ lesson }: { lesson: LearnLesson }) {
   // sudah menjadi <h1> tepat di atasnya. Sekarang ia menyebut jenis materinya.
   const label = STAGE_LABEL[lesson.contentType] ?? 'Materi';
 
+  // Berkas yang kita simpan sendiri didahulukan atas tautan luar: kalau Master
+  // sudah mengunggah PDF-nya, itulah yang dibuka pelajar — bukan salinan lama
+  // di layanan lain yang tautannya dapat disalin siapa pun.
+  if (lesson.hasMaterial) {
+    return (
+      <div className="stage">
+        <div className="stageLabel">
+          <h2>{label}</h2>
+        </div>
+        <a
+          className="btn"
+          href={`/api/v1/learn/lessons/${lesson.id}/material`}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          Buka dokumen PDF
+        </a>
+        <p className="stageNote">
+          Dokumen ini hanya dapat dibuka lewat akunmu; tautannya tidak berlaku bagi orang lain.
+        </p>
+      </div>
+    );
+  }
+
   if (
     (lesson.contentType === 'EXTERNAL_LINK' || lesson.contentType === 'PDF') &&
     lesson.content.externalUrl

@@ -348,6 +348,19 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
   pendapatannya hanya menjumlah pesanan lunas — dibandingkan langsung dengan
   agregat database, bukan sekadar "lebih besar dari sekian".
 
+## 7f. Materi Pelajaran Terlindungi
+
+- Pelajar ditolak mengunggah materi.
+- Berkas yang bukan PDF ditolak `422` meski bernama `.pdf` dan ber-Content-Type
+  `application/pdf`; yang menentukan adalah byte awalnya, dan tidak ada baris
+  yang tertinggal setelah penolakan.
+- Detail pelajaran menyebut `hasMaterial` tanpa pernah membocorkan `objectKey`.
+- Penyajian memakai `X-Accel-Redirect` ke `/protected-materials/` dengan
+  `Cache-Control: no-store`; tanpa sesi ditolak `401`, dan pelajaran pada kursus
+  yang belum terbit tetap tertutup.
+- Unggahan baru mengganti berkas lama tanpa menumpuk baris, dan penghapusan
+  membuang keduanya.
+
 ## 8. Community Feed Test Cases
 
 - Tanpa sesi tidak dapat membaca channel atau feed.

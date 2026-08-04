@@ -158,6 +158,7 @@ model User {
   sessions               AuthSession[]
   resetTokens            PasswordResetToken[]
   mfaMethods             MfaMethod[]
+  lessonMaterials        LessonMaterial[] @relation("LessonMaterialCreator")
   enrollments            Enrollment[]            @relation("EnrollmentOwner")
   enrollmentsMade        Enrollment[]            @relation("EnrollmentActor")
   createdCourses         Course[]
@@ -478,6 +479,7 @@ model Lesson {
   progress      LessonProgress[]
   lastForCourse CourseProgress[]     @relation("LastLesson")
   prerequisites LessonPrerequisite[] @relation("LessonSide")
+  material      LessonMaterial?
   requiredBy    LessonPrerequisite[] @relation("PrerequisiteSide")
   videoAsset       VideoAsset?          @relation("LessonVideo", fields: [videoAssetId], references: [id], onDelete: Restrict)
   playbackSessions VideoPlaybackSession[]
@@ -489,6 +491,24 @@ model Lesson {
   @@index([moduleId, isActive])
   @@index([videoAssetId])
   @@map("lessons")
+}
+
+/// Berkas materi terlindungi milik sebuah pelajaran, mis. PDF.
+model LessonMaterial {
+  id           String   @id @default(uuid()) @db.Uuid
+  lessonId     String   @unique @map("lesson_id") @db.Uuid
+  objectKey    String   @unique @map("object_key")
+  originalName String   @map("original_name")
+  mimeType     String   @map("mime_type")
+  sizeBytes    BigInt   @map("size_bytes")
+  createdBy    String   @map("created_by") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  creator User   @relation("LessonMaterialCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@map("lesson_materials")
 }
 
 model LessonPrerequisite {

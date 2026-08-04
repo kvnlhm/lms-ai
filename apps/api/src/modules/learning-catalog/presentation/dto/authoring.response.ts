@@ -97,3 +97,12 @@ export class ReorderResultDto {
 export class CourseThumbnailResponseDto {
   @ApiProperty() thumbnailUrl!: string;
 }
+
+export class LessonMaterialDto {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() originalName!: string;
+  @ApiProperty({ example: 'application/pdf' }) mimeType!: string;
+  @ApiProperty({ description: 'String, bukan angka: ukurannya dapat melampaui batas aman JSON.' })
+  sizeBytes!: string;
+  @ApiProperty({ format: 'date-time' }) createdAt!: Date;
+}

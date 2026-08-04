@@ -69,6 +69,13 @@ export class LearnLessonResponseDto {
   @ApiPropertyOptional({ type: String, nullable: true }) description!: string | null;
   @ApiProperty({ enum: CONTENT_TYPES }) contentType!: string;
   @ApiProperty({ type: LessonContentDto }) content!: LessonContentDto;
+  @ApiProperty({
+    type: Boolean,
+    description:
+      'Benar bila pelajaran ini punya berkas materi terunggah. URL-nya tidak dikirim: ' +
+      'berkasnya diambil lewat endpoint tersendiri yang memeriksa hak.',
+  })
+  hasMaterial!: boolean;
   @ApiProperty({ format: 'uuid' }) moduleId!: string;
   @ApiProperty() moduleTitle!: string;
   @ApiProperty({ format: 'uuid' }) courseId!: string;

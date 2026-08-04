@@ -28,14 +28,15 @@ import {
   ApiErrors,
 } from '../../../../shared/http/api-envelope';
 import {
+  AdminCategoryDto,
   AdminCourseDetailDto,
   AdminCourseDto,
   AdminCourseListItemDto,
-  AdminCategoryDto,
   AdminLessonDto,
   AdminModuleDto,
-  ReorderResultDto,
   CourseThumbnailResponseDto,
+  LessonMaterialDto,
+  ReorderResultDto,
 } from '../dto/authoring.response';
 import { PERMISSIONS } from '@lms/contracts';
 import type { Request } from 'express';
@@ -45,6 +46,7 @@ import type { AuthenticatedUser } from '../../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../../identity/presentation/decorators';
 import { CourseAuthoringService } from '../../application/course-authoring.service';
 import { CourseThumbnailService } from '../../application/course-thumbnail.service';
+import { LessonMaterialService } from '../../application/lesson-material.service';
 import {
   CreateCourseDto,
   CreateLessonDto,
@@ -70,6 +72,7 @@ export class AdminCoursesController {
   constructor(
     private readonly authoring: CourseAuthoringService,
     private readonly thumbnails: CourseThumbnailService,
+    private readonly materials: LessonMaterialService,
     private readonly audit: AuditService,
   ) {}
 
@@ -168,6 +171,44 @@ export class AdminCoursesController {
   ) {
     await this.thumbnails.remove(courseId);
     await this.record(request, user, 'course.thumbnail_removed', 'course', courseId);
+  }
+
+  @Put('lessons/:lessonId/material')
+  @HttpCode(200)
+  @ApiConsumes('application/pdf')
+  @ApiBody({ schema: { type: 'string', format: 'binary' } })
+  @ApiOperation({ summary: 'Mengunggah atau mengganti berkas materi pelajaran' })
+  @ApiEnvelope(LessonMaterialDto)
+  @ApiErrors(401, 403, 404, 422)
+  async uploadMaterial(
+    @Param('lessonId', new ParseUUIDPipe()) lessonId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const rawLength = request.header('content-length');
+    const hasil = await this.materials.upload(
+      lessonId,
+      user.id,
+      request,
+      request.header('x-file-name') ?? 'materi.pdf',
+      rawLength ? Number.parseInt(rawLength, 10) : undefined,
+    );
+    await this.record(request, user, 'lesson.material_updated', 'lesson', lessonId);
+    return hasil;
+  }
+
+  @Delete('lessons/:lessonId/material')
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Menghapus berkas materi pelajaran' })
+  @ApiNoContentResponse({ description: 'Materi pelajaran dihapus.' })
+  @ApiErrors(401, 403, 404)
+  async removeMaterial(
+    @Param('lessonId', new ParseUUIDPipe()) lessonId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    await this.materials.remove(lessonId);
+    await this.record(request, user, 'lesson.material_removed', 'lesson', lessonId);
   }
 
   @Post('courses/:courseId/publish')

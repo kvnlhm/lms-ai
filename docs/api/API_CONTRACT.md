@@ -1714,7 +1714,36 @@ dapat diputar. Mendaftarkan video yang sama dua kali dijawab `422`, karena
 `providerVideoId` unik global. Bila `BUNNY_STREAM_LIBRARY_ID` atau
 `BUNNY_STREAM_API_KEY` belum diisi, endpoint menjawab `422`.
 
-### POST `/webhooks/bunny-stream`
+### PUT `/admin/lessons/{lessonId}/material`
+
+Requires `courses.manage`. Mengunggah berkas materi pelajaran sebagai aliran
+PDF mentah, dengan nama berkas pada header `X-File-Name` — bukan multipart,
+supaya bodynya dapat ditulis langsung ke disk tanpa ditampung dulu di memori.
+
+Isinya diperiksa sambil mengalir: byte awal harus benar-benar `%PDF`, dan
+panjangnya harus cocok dengan `Content-Length`. Ekstensi dan `Content-Type`
+sama-sama dapat dipalsukan, jadi keduanya bukan yang menentukan. Berkas ditulis
+ke nama sementara dan baru dipindahkan setelah keduanya terbukti.
+
+Satu pelajaran punya satu berkas; unggahan baru menggantikan yang lama, dan
+berkas lamanya dibuang setelah barisnya menunjuk yang baru.
+
+## DELETE `/admin/lessons/{lessonId}/material`
+
+Requires `courses.manage`. Menghapus baris beserta berkasnya.
+
+## GET `/learn/lessons/{lessonId}/material`
+
+Menyajikan berkas kepada pelajar yang berhak. Haknya diperiksa lewat
+`assertLessonAccess` — aturan yang sama persis dengan video self-hosted — lalu
+penyajiannya diserahkan reverse proxy dengan `X-Accel-Redirect` ke lokasi
+internal `/protected-materials/`. Berkasnya **tidak pernah punya URL publik**:
+`objectKey` tidak keluar ke browser, sehingga mengetahui id pelajaran saja tidak
+memberi akses.
+
+Detail pelajaran hanya menyebut `hasMaterial`, bukan nama berkasnya.
+
+## POST `/webhooks/bunny-stream`
 
 Menerima status `CREATED`, `UPLOADING`, `PROCESSING`, `AVAILABLE`, `FAILED`, atau `DELETED`.
 

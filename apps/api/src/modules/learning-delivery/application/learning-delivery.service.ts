@@ -94,6 +94,7 @@ export class LearningDeliveryService {
       include: {
         prerequisites: { select: { prerequisiteLessonId: true } },
         module: { select: { id: true, courseId: true, title: true } },
+        material: { select: { id: true } },
       },
     });
 
@@ -140,6 +141,9 @@ export class LearningDeliveryService {
         externalUrl: lesson.externalUrl,
         streamUrl: null as string | null,
       },
+      // Hanya keberadaannya yang disebut, bukan kuncinya: mengetahui nama
+      // berkas tidak boleh pernah menjadi jalan pintas menuju isinya.
+      hasMaterial: lesson.material !== null,
       moduleId: lesson.module.id,
       moduleTitle: lesson.module.title,
       courseId: lesson.module.courseId,

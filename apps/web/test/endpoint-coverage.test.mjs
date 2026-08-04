@@ -27,6 +27,8 @@ const DILUAR_JANGKAUAN_WEB = new Map([
   ['/api/v1/playback-sessions/{playbackSessionId}/content', 'ditarik langsung oleh tag <video>'],
   ['/api/v1/admin/videos/{videoAssetId}/content', 'diunggah lewat XHR agar ada progres'],
   ['/api/v1/admin/reports/{reportKey}.csv', 'diunduh lewat href, bukan fetch'],
+  ['/api/v1/admin/lessons/{lessonId}/material', 'diunggah lewat XHR agar ada progres'],
+  ['/api/v1/learn/lessons/{lessonId}/material', 'dibuka lewat href, bukan fetch'],
   ['/api/v1/admin/errors/{errorId}/resolve', 'dipanggil lewat template literal'],
   ['/api/v1/admin/errors/{errorId}/reopen', 'dipanggil lewat template literal'],
 ]);
