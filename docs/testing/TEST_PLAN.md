@@ -313,6 +313,18 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
   Kondisinya dibuat di dalam test, bukan dicari di data seed: versi pertamanya
   melewati dirinya sendiri diam-diam ketika kursus uji tidak memiliki kuis.
 
+## 7d. Histori Belajar
+
+- Riwayat menumpuk lewat "Muat aktivitas lama", bukan menukar isi halaman lewat
+  kursor di URL. Bentuk lamanya satu arah tanpa jalan kembali: sekali ditekan,
+  riwayat yang baru dibaca hilang dari layar.
+- Penumpukan menyaring id yang sudah tampil, karena peristiwa baru yang masuk
+  di antara dua permintaan menggeser jendela kursornya.
+- Aktivitas dikelompokkan per hari pada zona waktu yang sama dengan yang
+  ditampilkan, dengan label "Hari ini" dan "Kemarin".
+- Durasi dan progres kursus sesudah penyelesaian ikut ditampilkan; keduanya
+  opsional sekaligus nullable pada kontrak dan diperlakukan sama.
+
 ## 8. Community Feed Test Cases
 
 - Tanpa sesi tidak dapat membaca channel atau feed.

@@ -1310,7 +1310,14 @@ table.data tbody tr:hover { background: var(--raised); }
 .historyItem:last-child { border-bottom: 0; }
 .historyDot { width: 10px; height: 10px; border: 2px solid var(--accent); border-radius: 50%; }
 .historyDot.complete { background: var(--accent); }
-.historyItem h2 { margin: 5px 0 3px; font-size: 16px; }
+.historyItem h2, .historyItem h3 { margin: 5px 0 3px; font-size: 16px; }
+/* Riwayat dikelompokkan per hari: satu label lengket di atas tiap kelompok,
+   dan fakta-fakta kecil disusun mendatar di bawah judul pelajarannya. */
+.historyDay { margin-top: 22px; }
+.historyDay:first-of-type { margin-top: 0; }
+.historyDayLabel { position: sticky; top: 72px; z-index: 1; margin: 0 0 10px; padding: 6px 0; background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.historyFacts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.historyFacts > span::before { content: '·'; margin-right: 10px; }
 .historyItem p, .historyItem time { margin: 0; color: var(--muted); font-size: 12px; }
 .historyItem time { display: block; margin-top: 7px; }
 .historyPagination { display: flex; justify-content: center; margin-top: 22px; }
