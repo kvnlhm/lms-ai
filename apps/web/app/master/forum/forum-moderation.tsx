@@ -78,6 +78,32 @@ function Halaman({
 }
 
 /** Baris per halaman pada daftar moderasi. */
+/**
+ * Lama pencabutan hak berdiskusi.
+ *
+ * Server sudah lama menerima `expiresAt` dan menegakkannya — pesan penolakannya
+ * bahkan berbunyi "sampai <tanggal>" — tetapi antarmuka tidak pernah mengirim
+ * apa pun, jadi setiap pencabutan menjadi permanen dan daftarnya selalu
+ * bertuliskan "sampai dicabut".
+ *
+ * Permanen sengaja ditaruh paling akhir: yang paling keras tidak pantas
+ * menjadi pilihan bawaan.
+ */
+const LAMA_PENCABUTAN = [
+  { value: '7', label: '7 hari' },
+  { value: '30', label: '30 hari' },
+  { value: '90', label: '90 hari' },
+  { value: 'permanen', label: 'Sampai dipulihkan' },
+] as const;
+
+/** `null` untuk pencabutan permanen; selebihnya tanggal berakhirnya. */
+function akhirPencabutan(pilihan: string): string | null {
+  if (pilihan === 'permanen') return null;
+  const hari = Number(pilihan);
+  if (!Number.isFinite(hari) || hari <= 0) return null;
+  return new Date(Date.now() + hari * 86_400_000).toISOString();
+}
+
 const UKURAN_HALAMAN = 25;
 
 export function ForumModeration() {
@@ -173,7 +199,7 @@ export function ForumModeration() {
   };
 
   const banUser = async (topic: ModerationTopic, scope: 'course' | 'global') => {
-    const reason = await notifier.prompt(
+    const jawaban = await notifier.prompt(
       `Cabut hak berdiskusi ${topic.author.fullName}?`,
       {
         text:
@@ -185,9 +211,12 @@ export function ForumModeration() {
         minLength: 3,
         confirmLabel: 'Cabut hak',
         danger: true,
+        choiceLabel: 'Lama pencabutan',
+        choices: LAMA_PENCABUTAN,
       },
     );
-    if (!reason) return;
+    if (!jawaban) return;
+    const berakhir = akhirPencabutan(jawaban.choice);
     return run(
       `ban-${topic.id}`,
       () =>
@@ -195,10 +224,13 @@ export function ForumModeration() {
           body: {
             userId: topic.author.id,
             courseId: scope === 'course' ? topic.course.id : undefined,
-            reason,
+            reason: jawaban.text,
+            ...(berakhir ? { expiresAt: berakhir } : {}),
           },
         }),
-      `Hak berdiskusi ${topic.author.fullName} dicabut.`,
+      berakhir
+        ? `Hak berdiskusi ${topic.author.fullName} dicabut sampai ${formatDate(berakhir)}.`
+        : `Hak berdiskusi ${topic.author.fullName} dicabut sampai dipulihkan.`,
     );
   };
 

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { Search } from './icons';
 import { ApiError, browserClient, unwrap, unwrapList } from '../lib/browser-api';
+import { formatBytes, namaPenyedia } from '../lib/video-format';
+import { BunnyLibraryBrowser, type BunnyVideo } from './bunny-library-browser';
 
 /** Bentuknya datang dari OpenAPI, jadi perubahan di API terlihat saat typecheck. */
 export type LibraryAsset = Schemas['VideoLibraryItemDto'];
@@ -12,27 +14,9 @@ export type LibraryFilter = 'USED' | 'ORPHAN' | 'PROBLEM' | 'AVAILABLE';
 
 export const UKURAN_HALAMAN_PERPUSTAKAAN = 20;
 
-/**
- * Nama penyedia untuk dibaca manusia.
- *
- * Sebelumnya apa pun yang bukan YouTube disebut "Self-hosted", sehingga video
- * Bunny — yang justru tidak disimpan di server kita — mengaku sebaliknya.
- */
-export function namaPenyedia(provider: string): string {
-  if (provider === 'YOUTUBE') return 'YouTube';
-  if (provider === 'BUNNY_STREAM') return 'Bunny Stream';
-  return 'Self-hosted';
-}
-
-export function formatBytes(value: string | null | undefined): string {
-  if (value === null || value === undefined) return '—';
-  const bytes = Number(value);
-  if (!Number.isFinite(bytes) || bytes <= 0) return '—';
-  const satuan = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const tingkat = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), satuan.length - 1);
-  const angka = bytes / 1024 ** tingkat;
-  return `${angka.toFixed(angka >= 10 || tingkat === 0 ? 0 : 1)} ${satuan[tingkat]}`;
-}
+// Dipakai di berkas ini sekaligus diteruskan, supaya halaman yang sudah
+// mengimpornya dari sini tidak perlu ikut berubah.
+export { formatBytes, namaPenyedia };
 
 /**
  * Mengambil satu halaman perpustakaan; dipakai pemilih maupun halaman media.
@@ -80,19 +64,30 @@ export async function ambilRingkasanPerpustakaan(): Promise<LibrarySummary> {
 export function VideoLibraryPicker({
   lessonTitle,
   onSelect,
+  onSelectBunny,
   onClose,
   busy,
+  tabAwal = 'AKADEMI',
 }: {
   lessonTitle: string;
   onSelect: (videoAssetId: string) => void;
+  /** Memilih video Bunny yang mungkin belum terdaftar; pemanggil yang mendaftarkannya. */
+  onSelectBunny?: (video: BunnyVideo) => void;
   onClose: () => void;
   busy: boolean;
+  tabAwal?: 'AKADEMI' | 'BUNNY';
 }) {
   const [items, setItems] = useState<LibraryAsset[]>([]);
   const [total, setTotal] = useState(0);
   const [halaman, setHalaman] = useState(1);
   const [totalHalaman, setTotalHalaman] = useState(1);
-  const [query, setQuery] = useState('');
+  const [tab, setTab] = useState<'AKADEMI' | 'BUNNY'>(tabAwal);
+  /**
+   * Judul pelajarannya sudah diketahui aplikasi, jadi mengetiknya ulang adalah
+   * pekerjaan yang tidak perlu ada. Video yang benar hampir selalu bernama
+   * mirip pelajarannya; dengan ini ia sudah di layar sebelum ada yang mengetik.
+   */
+  const [query, setQuery] = useState(lessonTitle.trim());
   const [kataTermuat, setKataTermuat] = useState('');
   const [loading, setLoading] = useState(true);
   const [memuatLagi, setMemuatLagi] = useState(false);
@@ -124,9 +119,10 @@ export function VideoLibraryPicker({
   // Pencarian kini menempuh jaringan, jadi ketikan ditahan sebentar dulu —
   // tanpa jeda ini setiap huruf menjadi satu permintaan.
   useEffect(() => {
+    if (tab !== 'AKADEMI') return undefined;
     const timer = setTimeout(() => void load(query.trim(), 1), 250);
     return () => clearTimeout(timer);
-  }, [load, query]);
+  }, [load, query, tab]);
 
   return (
     <div className="modalBackdrop" role="dialog" aria-modal="true" aria-label="Pilih video">
@@ -140,6 +136,32 @@ export function VideoLibraryPicker({
 
         {error ? <p className="notice noticeError">{error}</p> : null}
 
+        {onSelectBunny ? (
+          <div className="inlineActions">
+            {(
+              [
+                ['AKADEMI', 'Perpustakaan akademi'],
+                ['BUNNY', 'Library Bunny'],
+              ] as const
+            ).map(([nilai, label]) => (
+              <button
+                key={nilai}
+                type="button"
+                className={tab === nilai ? 'btnTiny btnActive' : 'btnTiny'}
+                aria-pressed={tab === nilai}
+                disabled={busy}
+                onClick={() => setTab(nilai)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {onSelectBunny && tab === 'BUNNY' ? (
+          <BunnyLibraryBrowser awalCari={lessonTitle} busy={busy} onPilih={onSelectBunny} />
+        ) : (
+          <>
         {/* Kelasnya dulu dipasang langsung pada `input`, padahal `.userSearch`
             adalah pembungkus: ikonnya tidak pernah muncul dan gaya inputnya
             tidak pernah menyala. Strukturnya kini sama dengan halaman
@@ -206,6 +228,8 @@ export function VideoLibraryPicker({
                 </button>
               </div>
             ) : null}
+          </>
+        )}
           </>
         )}
       </div>

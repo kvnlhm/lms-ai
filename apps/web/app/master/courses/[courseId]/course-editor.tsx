@@ -50,6 +50,7 @@ type LessonUpdateInput = {
   isActive: boolean;
   completionRule: (typeof COMPLETION_RULES)[number]['value'];
   completionVideoPercentage?: number;
+  completionMinimumSeconds?: number;
 };
 
 type UploadState = {
@@ -76,6 +77,8 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
   const [bunnyLessonId, setBunnyLessonId] = useState<string | null>(null);
   const [bunnySource, setBunnySource] = useState('');
   const [pickerLesson, setPickerLesson] = useState<{ id: string; title: string } | null>(null);
+  /** Tab mana yang terbuka lebih dulu saat pemilih video muncul. */
+  const [pickerTab, setPickerTab] = useState<'AKADEMI' | 'BUNNY'>('AKADEMI');
   const [quizLessonId, setQuizLessonId] = useState<string | null>(null);
 
   /**
@@ -336,12 +339,12 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
    * Berkasnya tidak lewat server ini sama sekali: Master mengunggahnya di
    * dashboard Bunny, dan yang ditempel di sini adalah GUID-nya.
    */
-  async function linkBunny(lessonId: string, title: string) {
+  async function linkBunny(lessonId: string, title: string, guid?: string) {
     if (busy) return;
-    const source = bunnySource.trim();
+    const source = (guid ?? bunnySource).trim();
     if (!source) {
       void notifier.error('GUID belum diisi', {
-        text: 'Tempel GUID video dari dashboard Bunny terlebih dahulu.',
+        text: 'Pilih video dari library Bunny, atau tempel GUID-nya terlebih dahulu.',
       });
       return;
     }
@@ -685,7 +688,10 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             className="btnTiny"
                             type="button"
                             disabled={busy !== null}
-                            onClick={() => setPickerLesson({ id: lesson.id, title: lesson.title })}
+                            onClick={() => {
+                              setPickerTab('AKADEMI');
+                              setPickerLesson({ id: lesson.id, title: lesson.title });
+                            }}
                           >
                             Pilih dari perpustakaan
                           </button>
@@ -726,13 +732,16 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             className="btnTiny"
                             type="button"
                             disabled={busy !== null}
+                            // Dulu tombol ini membuka kotak GUID: video Bunny
+                            // hanya dapat dirujuk dengan menyalin identitasnya
+                            // dari dashboard di tab lain. Sekarang ia membuka
+                            // library Bunny itu sendiri.
                             onClick={() => {
                               setBunnySource('');
-                              setBunnyLessonId((current) =>
-                                current === lesson.id ? null : lesson.id,
-                              );
+                              setBunnyLessonId(null);
+                              setPickerTab('BUNNY');
+                              setPickerLesson({ id: lesson.id, title: lesson.title });
                             }}
-                            aria-expanded={bunnyLessonId === lesson.id}
                           >
                             Tautkan Bunny
                           </button>
@@ -1030,7 +1039,13 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
         <VideoLibraryPicker
           lessonTitle={pickerLesson.title}
           busy={busy !== null}
+          tabAwal={pickerTab}
           onClose={() => setPickerLesson(null)}
+          onSelectBunny={(video) => {
+            const target = pickerLesson;
+            setPickerLesson(null);
+            void linkBunny(target.id, target.title, video.guid);
+          }}
           onSelect={(videoAssetId) => {
             const target = pickerLesson;
             setPickerLesson(null);
@@ -1121,6 +1136,12 @@ function LessonEditForm({
   const [contentType, setContentType] = useState<
     (typeof CONTENT_TYPES)[number]['value']
   >(lesson.contentType);
+  // Aturan selesai perlu disimpan di state, bukan dibaca dari `lesson`.
+  // Sebelumnya kolom ambangnya bergantung pada nilai yang sudah tersimpan,
+  // sehingga memilih aturan berambang tidak memunculkan kolomnya sampai
+  // formnya disimpan sekali — dan "Durasi aktif minimum" tidak pernah punya
+  // kolom sama sekali.
+  const [completionRule, setCompletionRule] = useState(lesson.completionRule);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1138,14 +1159,15 @@ function LessonEditForm({
       isRequired: form.get('isRequired') === 'on',
       isPreview: form.get('isPreview') === 'on',
       isActive: form.get('isActive') === 'on',
-      completionRule: String(
-        form.get('completionRule') ?? 'MANUAL',
-      ) as (typeof COMPLETION_RULES)[number]['value'],
-      // Hanya dikirim bila kolomnya memang tampil; server yang menentukan
-      // bawaannya, dan mengirim angka pada aturan lain hanya akan
+      completionRule,
+      // Ambang hanya dikirim untuk aturan yang memakainya. Server yang
+      // menentukan bawaannya, dan mengirim angka pada aturan lain hanya akan
       // meninggalkan konfigurasi yatim.
-      ...(form.get('completionVideoPercentage')
+      ...(completionRule === 'VIDEO_PERCENTAGE' && form.get('completionVideoPercentage')
         ? { completionVideoPercentage: Number(form.get('completionVideoPercentage')) }
+        : {}),
+      ...(completionRule === 'MINIMUM_ACTIVE_SECONDS' && form.get('completionMinimumSeconds')
+        ? { completionMinimumSeconds: Number(form.get('completionMinimumSeconds')) }
         : {}),
     });
   }
@@ -1244,7 +1266,12 @@ function LessonEditForm({
             <select
               id={`lesson-completion-${lesson.id}`}
               name="completionRule"
-              defaultValue={lesson.completionRule}
+              value={completionRule}
+              onChange={(event) =>
+                setCompletionRule(
+                  event.target.value as (typeof COMPLETION_RULES)[number]['value'],
+                )
+              }
               disabled={disabled}
             >
               {COMPLETION_RULES.map((rule) => (
@@ -1253,10 +1280,10 @@ function LessonEditForm({
             </select>
           </div>
         )}
-        {/* Ambangnya hanya berarti pada aturan persentase. Nilai yang tampil
-            adalah yang benar-benar ditegakkan server, termasuk bawaannya —
-            kolom kosong akan tampak seperti "tidak ada aturan". */}
-        {lesson.completionRule === 'VIDEO_PERCENTAGE' ? (
+        {/* Nilai yang tampil adalah yang benar-benar ditegakkan server,
+            termasuk bawaannya — kolom kosong akan tampak seperti "tidak ada
+            aturan". */}
+        {completionRule === 'VIDEO_PERCENTAGE' ? (
           <div className="field">
             <label htmlFor={`lesson-completion-target-${lesson.id}`}>Persentase tontonan</label>
             <input
@@ -1266,6 +1293,19 @@ function LessonEditForm({
               min={1}
               max={100}
               defaultValue={lesson.completionVideoPercentage ?? 90}
+              disabled={disabled}
+            />
+          </div>
+        ) : null}
+        {completionRule === 'MINIMUM_ACTIVE_SECONDS' ? (
+          <div className="field">
+            <label htmlFor={`lesson-completion-seconds-${lesson.id}`}>Detik aktif minimum</label>
+            <input
+              id={`lesson-completion-seconds-${lesson.id}`}
+              name="completionMinimumSeconds"
+              type="number"
+              min={1}
+              defaultValue={lesson.completionMinimumSeconds ?? 60}
               disabled={disabled}
             />
           </div>

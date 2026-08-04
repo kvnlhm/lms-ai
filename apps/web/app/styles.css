@@ -246,6 +246,24 @@ input, select, textarea { min-width: 0; }
 /* Pratinjau kursus belum terbit. Kuning, bukan biru: ini bukan kabar, ini
    peringatan bahwa yang terlihat belum tayang bagi siapa pun. */
 .previewBanner { margin: 0 0 18px; background: var(--warn-soft); color: var(--warn); }
+
+/* ── Penjelajah library Bunny ──────────────────────────────── */
+.bunnyBrowser { display: flex; flex-direction: column; gap: 12px; }
+/* Sampul memberi kepastian yang tidak diberikan judul: library ini penuh
+   berkas bernama Outro.mp4 dan Opening.mp4. */
+.bunnyRow { display: flex; gap: 12px; align-items: flex-start; }
+.bunnyRowBody { flex: 1; min-width: 0; }
+.bunnyThumb {
+  width: 96px; aspect-ratio: 16 / 9; flex: none;
+  border-radius: var(--r-sm); object-fit: cover; background: var(--surface-2);
+}
+.bunnyThumbKosong { display: block; }
+.gantiSumberInfo { margin: 0 0 12px; }
+.gantiSumberOpsi {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: 12px 0 0; font-size: 14px; line-height: 1.5;
+}
+.gantiSumberOpsi input { margin-top: 3px; flex: none; }
 .empty { padding: 48px 24px; text-align: center; color: var(--muted); font-size: 14px; }
 
 /* ── Login ─────────────────────────────────────────────────── */
@@ -2201,6 +2219,9 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 /* Dialog rata tengah, tetapi kolom isian dan labelnya harus rata kiri supaya
    terbaca seperti kolom form lain di aplikasi ini. */
 .alertField { width: 100%; margin-top: 18px; margin-bottom: 0; text-align: left; }
+/* Pilihan tambahan duduk di bawah kolom isian, di dalam kolom yang sama,
+   sehingga label dan jaraknya mengikuti gaya field biasa. */
+.alertChoice { width: 100%; margin-top: 14px; margin-bottom: 0; text-align: left; }
 
 .alertActions { display: flex; gap: 10px; margin-top: 22px; width: 100%; }
 .alertActions > .btn { flex: 1; justify-content: center; }

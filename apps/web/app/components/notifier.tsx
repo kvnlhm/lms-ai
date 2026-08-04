@@ -34,8 +34,20 @@ import { AlertTriangle, Check, Info, X } from './icons';
  * yang dimaksud.
  */
 
-/** `false`/`null` berarti dibatalkan; string adalah isian dari dialog prompt. */
-type DialogResult = boolean | string | null;
+/** Satu pilihan pada dialog prompt yang menyertakan daftar pilihan. */
+export interface PromptChoice {
+  value: string;
+  label: string;
+}
+
+/** Isian prompt ketika dialognya juga menawarkan pilihan. */
+export interface PromptAnswer {
+  text: string;
+  choice: string;
+}
+
+/** `false`/`null` berarti dibatalkan; string atau PromptAnswer adalah isian prompt. */
+type DialogResult = boolean | string | PromptAnswer | null;
 
 interface DialogRequest {
   kind: 'error' | 'info' | 'confirm' | 'prompt';
@@ -51,6 +63,8 @@ interface DialogRequest {
   multiline?: boolean;
   /** Panjang minimum isian; dijaga di dalam dialog supaya tidak perlu ditutup dulu. */
   minLength?: number;
+  choices?: readonly PromptChoice[];
+  choiceLabel?: string;
   resolve: (nilai: DialogResult) => void;
 }
 
@@ -86,6 +100,13 @@ export interface PromptOptions extends ConfirmOptions {
    * memunculkan galat terpisah membuat isian yang sudah diketik hilang.
    */
   minLength?: number;
+  /**
+   * Pilihan tambahan di samping kolom isian, mis. lama berlakunya sebuah
+   * tindakan. Ketika ini diisi, `prompt` mengembalikan objek berisi teks dan
+   * pilihannya alih-alih string — pemanggil lama tidak terpengaruh.
+   */
+  choices?: readonly PromptChoice[];
+  choiceLabel?: string;
 }
 
 export interface Notifier {
@@ -98,7 +119,13 @@ export interface Notifier {
   /** Konfirmasi ya/tidak. `false` bila dibatalkan atau ditutup dengan Escape. */
   confirm: (title: string, options?: ConfirmOptions) => Promise<boolean>;
   /** Meminta satu isian teks. `null` bila dibatalkan. Hasilnya sudah di-trim. */
-  prompt: (title: string, options?: PromptOptions) => Promise<string | null>;
+  prompt: {
+    (
+      title: string,
+      options: PromptOptions & { choices: readonly PromptChoice[] },
+    ): Promise<PromptAnswer | null>;
+    (title: string, options?: PromptOptions): Promise<string | null>;
+  };
 }
 
 const NotifierContext = createContext<Notifier | null>(null);
@@ -149,10 +176,11 @@ export function NotifierProvider({ children }: { children: ReactNode }) {
       success: (message) => tambahToast('good', message),
       confirm: async (title, options) =>
         (await bukaDialog({ kind: 'confirm', title, ...options })) === true,
-      prompt: async (title, options) => {
+      prompt: (async (title: string, options?: PromptOptions) => {
         const hasil = await bukaDialog({ kind: 'prompt', title, ...options });
+        if (options?.choices) return typeof hasil === 'object' && hasil !== null ? hasil : null;
         return typeof hasil === 'string' ? hasil : null;
-      },
+      }) as Notifier['prompt'],
     };
   }, []);
 
@@ -184,6 +212,7 @@ function AlertDialog({
   const utama = useRef<HTMLButtonElement>(null);
   const isian = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
   const [nilai, setNilai] = useState(request.defaultValue ?? '');
+  const [pilihan, setPilihan] = useState(request.choices?.[0]?.value ?? '');
   const [galatIsian, setGalatIsian] = useState<string | null>(null);
 
   useEffect(() => {
@@ -253,7 +282,7 @@ function AlertDialog({
       isian.current?.focus();
       return;
     }
-    onClose(bersih);
+    onClose(request.choices ? { text: bersih, choice: pilihan } : bersih);
   }
 
   return (
@@ -342,6 +371,24 @@ function AlertDialog({
               <span className="fieldError" role="alert">
                 {galatIsian}
               </span>
+            ) : null}
+            {request.choices ? (
+              <div className="field alertChoice">
+                {request.choiceLabel ? (
+                  <label htmlFor="alertChoice">{request.choiceLabel}</label>
+                ) : null}
+                <select
+                  id="alertChoice"
+                  value={pilihan}
+                  onChange={(event) => setPilihan(event.target.value)}
+                >
+                  {request.choices.map((opsi) => (
+                    <option key={opsi.value} value={opsi.value}>
+                      {opsi.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             ) : null}
           </div>
         ) : null}
