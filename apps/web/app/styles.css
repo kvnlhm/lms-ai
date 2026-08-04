@@ -1926,10 +1926,24 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .globalSearchPanel ul { list-style: none; margin: 0; padding: 0; }
 
 .globalSearchGroup {
+  display: flex; align-items: baseline; gap: 6px;
   margin: 0 0 4px; padding: 0 8px;
   font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
   color: var(--muted);
 }
+/* Didorong ke tepi agar sejajar di setiap kelompok, berapa pun panjang labelnya. */
+.globalSearchMore {
+  margin-left: auto; padding: 0; border: 0; background: none;
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
+  color: var(--accent); cursor: pointer;
+}
+.globalSearchMore:hover { text-decoration: underline; }
+.globalSearchBack {
+  display: block; width: 100%; margin-bottom: 8px; padding: 6px 8px;
+  border: 0; border-radius: var(--r-md); background: var(--raised);
+  font-size: 12px; font-weight: 600; color: var(--text); text-align: left; cursor: pointer;
+}
+.globalSearchBack:hover { background: var(--line); }
 .globalSearchHit {
   display: block; padding: 8px; border-radius: var(--r-md);
   color: var(--text); text-decoration: none;

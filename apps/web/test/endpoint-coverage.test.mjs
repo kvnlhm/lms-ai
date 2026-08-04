@@ -155,3 +155,80 @@ test('pembukaan pelajaran benar-benar dicatat', async () => {
   assert.match(tracker, /POST\('\/api\/v1\/learn\/lessons\/\{lessonId\}\/open'/);
   assert.match(halaman, /<LessonOpenTracker lessonId=\{lessonId\} \/>/);
 });
+
+/**
+ * Parameter query yang diterima API tetapi tidak pernah dikirim antarmuka.
+ *
+ * Lapisan kedua dari cacat yang sama. Penjaga di atas hanya melihat apakah
+ * sebuah endpoint punya pemanggil; ia tidak melihat apakah pemanggil itu
+ * memakai seluruh kemampuannya. Sebuah endpoint dapat terpanggil setiap hari
+ * dan tetap menyembunyikan setengah kegunaannya di balik parameter yang tidak
+ * pernah diisi siapa pun.
+ *
+ * Persis itu yang terjadi pada `types` di `/api/v1/search`: pencariannya
+ * dipakai terus-menerus, sanggup menyempit ke satu jenis, dan header
+ * kelompoknya bahkan sudah menyebutkan "12 kecocokan" — sementara tujuh
+ * sisanya tidak dapat dicapai lewat jalan mana pun.
+ */
+const PARAMETER_DILUAR_JANGKAUAN = new Map([]);
+
+/**
+ * Sebuah parameter dihitung terkirim bila namanya muncul sebagai kunci objek,
+ * bentuk yang dipakai klien: `params: { query: { limit: 5 } }`.
+ *
+ * Sengaja longgar. Nama sependek `q` akan cocok di banyak tempat yang tidak
+ * ada hubungannya, dan itu dapat membuat parameter yang mati terbaca sebagai
+ * hidup. Mengetatkannya menuntut penguraian TypeScript sungguhan, dan penjaga
+ * yang salah menuduh akan lebih cepat dimatikan orang daripada diperbaiki.
+ * Yang penting ia menangkap parameter yang namanya tidak muncul sama sekali —
+ * dan itulah bentuk kelalaian yang sebenarnya terjadi.
+ */
+export function dikirimDi(sumber, nama) {
+  return (
+    new RegExp(`\\b${nama}\\s*:`).test(sumber) ||
+    sumber.includes(`'${nama}'`) ||
+    sumber.includes(`"${nama}"`)
+  );
+}
+
+function parameterQuery() {
+  const daftar = [];
+  for (const [path, operasi] of Object.entries(spec.paths)) {
+    for (const [metode, op] of Object.entries(operasi)) {
+      if (!['get', 'post', 'put', 'patch', 'delete'].includes(metode)) continue;
+      for (const parameter of op.parameters ?? []) {
+        if (parameter.in === 'query') {
+          daftar.push({ path, metode: metode.toUpperCase(), nama: parameter.name });
+        }
+      }
+    }
+  }
+  return daftar;
+}
+
+test('setiap parameter query punya pengirim di web, atau alasan tertulis mengapa tidak', () => {
+  const mati = parameterQuery()
+    .filter(({ path, nama }) => {
+      if (DILUAR_JANGKAUAN_WEB.has(path) || BELUM_DIPUTUSKAN.has(path)) return false;
+      if (PARAMETER_DILUAR_JANGKAUAN.has(`${path} ${nama}`)) return false;
+      return !dikirimDi(blob, nama);
+    })
+    .map(({ metode, path, nama }) => `${metode} ${path} — ${nama}`);
+
+  assert.deepEqual(
+    mati,
+    [],
+    `Parameter yang diterima API tetapi tidak pernah dikirim web:\n  ${mati.join('\n  ')}\n` +
+      'Sambungkan ke antarmuka, atau daftarkan di PARAMETER_DILUAR_JANGKAUAN beserta alasannya.',
+  );
+});
+
+test('pencarian dapat menyempit ke satu jenis, bukan sekadar mengaku punya lebih banyak', () => {
+  // Kontrol atas celah yang baru ditutup. Menyebut jumlah kecocokan tanpa
+  // menyediakan jalan ke sana lebih buruk daripada tidak menyebutkannya.
+  const berkas = new URL('components/global-search.tsx', web);
+  return readFile(berkas, 'utf8').then((isi) => {
+    assert.match(isi, /types:\s*\[/, 'pencarian tidak pernah mengirim penyempitan jenis');
+    assert.match(isi, /Lihat semua/, 'tidak ada jalan menuju hasil selebihnya');
+  });
+});

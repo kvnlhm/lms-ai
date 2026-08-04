@@ -6,6 +6,12 @@ import type { Schemas } from '@lms/api-client';
 import { browserClient, unwrap } from '../lib/browser-api';
 
 type SearchGroup = Schemas['SearchGroupDto'];
+/**
+ * Diturunkan dari kontrak, bukan ditulis ulang. Menambah jenis pencarian baru
+ * di server akan langsung terbaca di sini; menyalin daftarnya akan membuat
+ * keduanya berpisah diam-diam.
+ */
+type SearchType = SearchGroup['type'];
 
 const TYPE_LABEL: Record<string, string> = {
   users: 'Pengguna',
@@ -15,17 +21,34 @@ const TYPE_LABEL: Record<string, string> = {
   announcements: 'Pengumuman',
 };
 
+/** Sekilas semua jenis; cukup untuk mengenali, tidak untuk menelusuri. */
+const BATAS_SEKILAS = 5;
+/** Batas atas yang diterima server pada satu jenis. */
+const BATAS_SATU_JENIS = 25;
+
 /**
  * Pencarian lintas area (PRD 10).
  *
  * Cakupan hasilnya ditentukan server dari permission pada session, jadi
  * komponen ini tidak perlu — dan tidak boleh — menyaring apa pun sendiri.
+ *
+ * Panel ini punya dua keadaan. Sekilas menampilkan lima teratas per jenis;
+ * itu bentuk yang tepat untuk melompat cepat ke sesuatu yang sudah diketahui
+ * namanya. Ketika sebuah jenis punya lebih banyak kecocokan daripada yang
+ * muat, jenis itu dapat dibuka sendiri dan permintaannya diulang dengan
+ * `types` menyempit dan batas dinaikkan.
+ *
+ * Dua keadaan itu ada karena keadaan pertama saja berbohong: header kelompok
+ * sudah menyebutkan "12 kecocokan" sejak awal, tetapi tujuh sisanya tidak
+ * dapat dicapai lewat jalan mana pun.
  */
 export function GlobalSearch() {
   const [term, setTerm] = useState('');
   const [groups, setGroups] = useState<SearchGroup[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Jenis yang sedang ditelusuri sendiri; null berarti tampilan sekilas.
+  const [fokus, setFokus] = useState<SearchType | null>(null);
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,7 +70,13 @@ export function GlobalSearch() {
       void (async () => {
         try {
           const response = await browserClient().GET('/api/v1/search', {
-            params: { query: { q: keyword, limit: 5 } },
+            params: {
+              query: {
+                q: keyword,
+                limit: fokus ? BATAS_SATU_JENIS : BATAS_SEKILAS,
+                ...(fokus ? { types: [fokus] } : {}),
+              },
+            },
           });
           if (!cancelled) setGroups(unwrap(response) as SearchGroup[]);
         } catch {
@@ -62,7 +91,7 @@ export function GlobalSearch() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [term]);
+  }, [term, fokus]);
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -96,6 +125,9 @@ export function GlobalSearch() {
         autoComplete="off"
         onChange={(event) => {
           setTerm(event.target.value);
+          // Kata kunci baru berarti pertanyaan baru; penyempitan jenis dari
+          // pencarian sebelumnya tidak lagi berlaku untuknya.
+          setFokus(null);
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
@@ -106,6 +138,11 @@ export function GlobalSearch() {
 
       {showPanel ? (
         <div className="globalSearchPanel" id="globalSearchResults" role="listbox">
+          {fokus ? (
+            <button type="button" className="globalSearchBack" onClick={() => setFokus(null)}>
+              ← Semua hasil
+            </button>
+          ) : null}
           {loading && withHits.length === 0 ? (
             <p className="globalSearchEmpty">Mencari…</p>
           ) : withHits.length === 0 ? (
@@ -116,7 +153,20 @@ export function GlobalSearch() {
                 <h3 className="globalSearchGroup">
                   {TYPE_LABEL[group.type] ?? group.type}
                   {group.total > group.items.length ? (
+                    // Sengaja tetap disebutkan meski sedang difokuskan: pada
+                    // jenis dengan lebih dari 25 kecocokan, batas server tetap
+                    // memotong, dan menyembunyikan itu akan membuat daftarnya
+                    // terbaca seolah sudah lengkap.
                     <span className="muted"> · {group.total} kecocokan</span>
+                  ) : null}
+                  {!fokus && group.total > group.items.length ? (
+                    <button
+                      type="button"
+                      className="globalSearchMore"
+                      onClick={() => setFokus(group.type)}
+                    >
+                      Lihat semua
+                    </button>
                   ) : null}
                 </h3>
                 <ul>
