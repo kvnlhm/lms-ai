@@ -628,7 +628,7 @@ table.data tbody tr:hover { background: var(--raised); }
   .tierAdminCard { flex-direction: column; }
 }
 
-.moduleCard { border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 14px; overflow: hidden; }
+.moduleCard { border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 14px; overflow: visible; }
 .moduleHead {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 13px 16px; background: var(--raised); border-bottom: 1px solid var(--line);
@@ -2925,6 +2925,11 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .continueContent>.btn{margin-top:2px;align-self:flex-start}
 .sectionTitleRow>a,.railTitle>a{color:var(--text)}
 .sectionTitleRow>a:hover,.railTitle>a:hover{color:var(--text);text-decoration:underline}
+
+/* Satu pintu tindakan menggantikan deretan tombol yang memenuhi tabel/editor. */
+.actionMenu{position:relative;display:inline-block;text-align:left}.actionMenu>summary{display:flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:7px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);font-size:12px;font-weight:650;cursor:pointer;list-style:none}.actionMenu>summary::-webkit-details-marker{display:none}.actionMenuPanel{position:absolute;right:0;top:100%;z-index:35;display:grid;min-width:190px;padding:6px;border:1px solid var(--border);border-radius:11px;background:var(--surface);box-shadow:0 16px 40px rgba(0,0,0,.28);opacity:0;visibility:hidden;transform:translateY(-4px);transition:.14s ease}.actionMenu[open]>.actionMenuPanel,.actionMenu:hover>.actionMenuPanel,.actionMenu:focus-within>.actionMenuPanel{opacity:1;visibility:visible;transform:none}.actionMenuPanel>a,.actionMenuPanel>button,.actionMenuPanel>label{display:flex;width:100%;height:auto;align-items:center;justify-content:flex-start;gap:8px;padding:9px 10px;border:0;border-radius:7px;background:transparent;color:var(--text);font:inherit;font-size:12px;text-align:left;text-decoration:none;cursor:pointer}.actionMenuPanel>a:hover,.actionMenuPanel>button:hover,.actionMenuPanel>label:hover{background:var(--surface-2)}.actionMenuPanel .btnDanger{color:var(--danger)}
+
+@media (min-width:901px){.masterShell .tableWrap{overflow:visible}}
 
 @media(max-width:1180px){
   .learnerShellBody{grid-template-columns:190px minmax(0,1fr)}

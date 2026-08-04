@@ -75,7 +75,8 @@ await browserClient().POST('/api/v1/learn/lessons/{lessonId}/playback-sessions',
         <iframe
           src={session.embedUrl}
           title="Video pelajaran"
-          allow="accelerometer; autoplay; encrypted-media; gyroscope"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; fullscreen; picture-in-picture"
+          allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
         />
         <span className="videoViewerWatermark" aria-hidden="true">{session.watermark.text}</span>
@@ -92,7 +93,7 @@ await browserClient().POST('/api/v1/learn/lessons/{lessonId}/playback-sessions',
       ) : (
         <video
           controls
-          controlsList="nodownload noremoteplayback nofullscreen"
+          controlsList="nodownload noremoteplayback"
           disablePictureInPicture
           disableRemotePlayback
           preload="metadata"
@@ -174,7 +175,7 @@ function HlsVideo({ src, lessonId, onFailure }: { src: string; lessonId: string;
     <video
       ref={videoRef}
       controls
-      controlsList="nodownload noremoteplayback nofullscreen"
+      controlsList="nodownload noremoteplayback"
       disablePictureInPicture
       disableRemotePlayback
       preload="metadata"

@@ -54,11 +54,10 @@
         height: 48px;
         border-radius: 12px;
         background: #2f6feb;
-        color: #fff;
-        font-weight: 700;
-        letter-spacing: 0.02em;
         margin-bottom: 20px;
+        overflow: hidden;
       }
+      .tanda svg { display: block; width: 34px; height: 34px; }
       h1 { font-size: 1.35rem; margin: 0 0 12px; }
       p { margin: 0 0 8px; color: var(--redup); }
       .kecil { font-size: 0.875rem; margin-top: 20px; }
@@ -66,7 +65,11 @@
   </head>
   <body>
     <main>
-      <span class="tanda" aria-hidden="true">AI</span>
+      <span class="tanda" aria-hidden="true">
+        <svg viewBox="0 0 64 64" role="img">
+          <path fill="#fff" d="M32 8 7 52h12l5-9h16l5 9h12L32 8Zm0 19 4 8h-8l4-8Z"/>
+        </svg>
+      </span>
       <h1>Sedang diperbarui</h1>
       <p>Akademi sedang memasang pembaruan. Biasanya selesai dalam beberapa detik.</p>
       <p>Progres belajarmu aman dan tidak terpengaruh.</p>

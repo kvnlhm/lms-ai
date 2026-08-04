@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../../components/app-shell';
+import { ActionMenu } from '../../components/action-menu';
 import { Search } from '../../components/icons';
 import { StatusPill } from '../../components/status-pill';
 import { serverClient, unwrapList } from '../../lib/api';
@@ -158,17 +159,15 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
                       <td className="num" data-label="Terdaftar">{course.enrollmentCount}</td>
                       <td data-label="Diperbarui">{formatDate(course.updatedAt)}</td>
                       <td className="num cellActions">
-                        <span className="inlineActions" style={{ justifyContent: 'flex-end' }}>
-                          <Link className="btnTiny" href={`/master/courses/${course.id}`}>
-                            Kelola
-                          </Link>
+                        <ActionMenu label="Aksi">
+                          <Link href={`/master/courses/${course.id}`}>Kelola kursus</Link>
+                          <Link href={`/courses/${course.id}`} target="_blank" rel="noreferrer">Pratinjau</Link>
                           <Link
-                            className="btnTiny"
                             href={`/master/courses/${course.id}/enrollments`}
                           >
-                            Pelajar
+                            Kelola peserta
                           </Link>
-                        </span>
+                        </ActionMenu>
                       </td>
                     </tr>
                   ))}

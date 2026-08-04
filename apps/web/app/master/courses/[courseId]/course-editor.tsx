@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { useNotifier } from '../../../components/notifier';
+import { ActionMenu } from '../../../components/action-menu';
 import { ApiError, browserClient, ensureSuccess, unwrap } from '../../../lib/browser-api';
 import { uploadMaterial } from '../../../lib/material-upload';
 import {
@@ -515,7 +517,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
           </p>
         </div>
 
-        <div className="inlineActions">
+        <ActionMenu label="Aksi kursus">
           {course.status !== 'PUBLISHED' ? (
             <button className="btn" onClick={publish} disabled={busy !== null}>
               {busy === 'publish' ? 'Menerbitkan…' : 'Terbitkan'}
@@ -533,7 +535,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
           >
             {busy === 'delete' ? 'Menghapus…' : 'Hapus kursus'}
           </button>
-        </div>
+        </ActionMenu>
       </div>
 
       {course.status === 'DRAFT' ? (
@@ -576,7 +578,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                 <span className="cellSub" style={{ margin: 0 }}>
                   {courseModule.lessons.length} pelajaran
                 </span>
-                <span className="inlineActions">
+                <ActionMenu label="Aksi bagian">
                   <button
                     className="iconAction"
                     onClick={() =>
@@ -589,6 +591,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                     aria-expanded={editingModuleId === courseModule.id}
                   >
                     <Edit size={16} />
+                    Edit nama bagian
                   </button>
                   <button
                     className="iconAction"
@@ -597,6 +600,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                     aria-label={`Naikkan bagian ${courseModule.title}`}
                   >
                     <ChevronUp size={16} />
+                    Naikkan bagian
                   </button>
                   <button
                     className="iconAction"
@@ -605,6 +609,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                     aria-label={`Turunkan bagian ${courseModule.title}`}
                   >
                     <ChevronDown size={16} />
+                    Turunkan bagian
                   </button>
                   <button
                     className="iconAction btnDanger"
@@ -615,8 +620,9 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                     aria-label={`Hapus bagian ${courseModule.title}`}
                   >
                     <Trash size={16} />
+                    Hapus bagian
                   </button>
-                </span>
+                </ActionMenu>
               </div>
 
               <div className="moduleBody">
@@ -641,6 +647,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                         ) : (
                           <span className="pill">Opsional</span>
                         )}
+                        <ActionMenu label="Aksi materi">
                         {lesson.contentType === 'PDF' ? (
                           <label className="btnTiny">
                             {busy === `material-${lesson.id}` ? 'Sedang mengunggah…' : 'Unggah PDF'}
@@ -730,7 +737,14 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             Tautkan Bunny
                           </button>
                         ) : null}
-                        <span className="inlineActions lessonActions">
+                        <Link
+                          href={`/learn/${course.id}/${lesson.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Pratinjau materi
+                        </Link>
+                        <>
                           <button
                             className="iconAction"
                             onClick={() =>
@@ -743,6 +757,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             aria-expanded={editingLessonId === lesson.id}
                           >
                             <Edit size={16} />
+                            Edit materi
                           </button>
                           <button
                             className="iconAction"
@@ -751,6 +766,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             aria-label={`Naikkan pelajaran ${lesson.title}`}
                           >
                             <ChevronUp size={16} />
+                            Naikkan materi
                           </button>
                           <button
                             className="iconAction"
@@ -761,6 +777,7 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             aria-label={`Turunkan pelajaran ${lesson.title}`}
                           >
                             <ChevronDown size={16} />
+                            Turunkan materi
                           </button>
                           <button
                             className="iconAction btnDanger"
@@ -771,8 +788,10 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
                             aria-label={`Hapus pelajaran ${lesson.title}`}
                           >
                             <Trash size={16} />
+                            Hapus materi
                           </button>
-                        </span>
+                        </>
+                        </ActionMenu>
                       </div>
                       {youtubeLessonId === lesson.id ? (
                         <div className="videoUploadProgress">

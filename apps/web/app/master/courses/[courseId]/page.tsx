@@ -54,6 +54,9 @@ export default async function MasterCourseEditorPage({ params, searchParams }: P
             <h1 className="pageTitle">{course.title}</h1>
             <p className="pageSub">/{course.slug} · {course.modules.length} bagian</p>
           </div>
+          <Link className="btn btnGhost" href={`/courses/${course.id}`} target="_blank" rel="noreferrer">
+            Pratinjau sebagai pelajar
+          </Link>
         </div>
         <nav className="courseTabs" aria-label="Kelola kursus">
           <Link href={`/master/courses/${courseId}?tab=overview`} aria-current={tab === 'overview' ? 'page' : undefined}>Overview</Link>
@@ -85,7 +88,10 @@ function CourseOverview({ course }: { course: CourseDetail }) {
           <p>{course.shortDescription || 'Tambahkan deskripsi singkat pada tab Pengaturan.'}</p>
           <div className="courseMetaLine">{course.level} · {course.estimatedMinutes} menit</div>
         </div>
-        <Link className="btn btnGhost" href={`/master/courses/${course.id}?tab=lessons`}>Edit materi</Link>
+        <div className="inlineActions">
+          <Link className="btn btnGhost" href={`/courses/${course.id}`} target="_blank" rel="noreferrer">Pratinjau</Link>
+          <Link className="btn btnGhost" href={`/master/courses/${course.id}?tab=lessons`}>Edit materi</Link>
+        </div>
       </article>
       <section className="metricGrid courseMetricGrid">
         <Metric label="Bagian" value={course.modules.length} />

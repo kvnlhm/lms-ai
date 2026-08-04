@@ -9,7 +9,10 @@ import type { ReactNode } from 'react';
  * sendiri — Insight, Forum, Audit log, dan seterusnya — tetap memakai judulnya.
  */
 export const metadata: Metadata = {
-  title: 'Academy AIPreneur | Admin',
+  title: {
+    default: 'Master · Academy AIPreneur',
+    template: '%s · Master',
+  },
 };
 
 export default function MasterLayout({ children }: { children: ReactNode }) {

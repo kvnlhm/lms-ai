@@ -22,7 +22,10 @@ const PRODUKSI = LINGKUNGAN === 'production';
  * sendiri lewat app/master/layout.tsx.
  */
 export const metadata: Metadata = {
-  title: 'Academy AIPreneur',
+  title: {
+    default: 'Pelajar · Academy AIPreneur',
+    template: '%s · Pelajar',
+  },
   description: 'Platform pembelajaran coding, AI, bisnis, marketing, dan kesiapan kerja.',
   // Salinan non-produksi tidak boleh terindeks. Staging yang muncul di hasil
   // pencarian akan menarik pelajar sungguhan ke data uji, dan memecah peringkat
