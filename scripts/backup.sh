@@ -41,7 +41,7 @@ DAILY_KEEP="${LMS_DAILY_KEEP:-14}"
 WEEKLY_KEEP="${LMS_WEEKLY_KEEP:-8}"
 MONTHLY_KEEP="${LMS_MONTHLY_KEEP:-12}"
 
-VOLUMES=(video-data avatar-data course-thumbnail-data)
+VOLUMES=(video-data avatar-data course-thumbnail-data material-data)
 COUNTED_TABLES=(users enrollments lesson_progress registration_orders video_assets forum_topics)
 
 ALERT_TO="${LMS_ALERT_TO:-}"
@@ -68,6 +68,14 @@ OFFSITE_KEEP="${LMS_OFFSITE_KEEP:-30}"
 # terlalu besar untuk diunduh setiap malam.
 OFFSITE_VERIFY="${LMS_OFFSITE_VERIFY:-penuh}"
 RCLONE_IMAGE="${LMS_RCLONE_IMAGE:-rclone/rclone:1.68}"
+
+# Frasa sandi untuk mengenkripsi arsip sebelum meninggalkan server ini.
+#
+# Kosong berarti arsip diunggah apa adanya — perilaku lama, supaya memasang
+# skrip ini tidak pernah menghentikan backup yang sudah berjalan. Tetapi
+# penyimpanan objek adalah pihak ketiga, dan isi arsip ini mencakup seluruh
+# basis data: nama, email, nomor telepon, dan riwayat belajar setiap pelajar.
+BACKUP_PASSPHRASE="${BACKUP_ENCRYPTION_PASSPHRASE:-}"
 
 log() {
   printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*" | tee -a "$LOG_FILE" >&2
@@ -215,7 +223,7 @@ rclone_jalan() {
 offsite_pangkas() {
   local daftar hapus jumlah=0
   daftar="$(rclone_jalan lsf "offsite:${S3_BUCKET}/${S3_PREFIX}" 2>/dev/null |
-    grep -E '^lms-[0-9]{8}T[0-9]{6}Z\.tar$' | sort -r || true)"
+    grep -E '^lms-[0-9]{8}T[0-9]{6}Z\.tar(\.gpg)?$' | sort -r || true)"
   hapus="$(printf '%s\n' "$daftar" | tail -n "+$((OFFSITE_KEEP + 1))" || true)"
   while read -r objek; do
     [[ -n "$objek" ]] || continue
@@ -228,22 +236,78 @@ offsite_pangkas() {
   [[ "$jumlah" -eq 0 ]] || log "offsite: $jumlah salinan lama dihapus."
 }
 
+# Mengenkripsi arsip ke berkas baru, lalu menuliskan namanya ke stdout.
+#
+# GPG simetris dengan AES-256. Dipilih bukan karena paling canggih, melainkan
+# karena paling mungkin masih dapat dibuka bertahun-tahun kemudian di mesin
+# mana pun — dan itulah satu-satunya ukuran yang penting bagi backup.
+#
+# `--pinentry-mode loopback` wajib: tanpa itu gpg mencari terminal untuk
+# menanyakan frasa sandi, dan cron tidak punya terminal.
+enkripsi_arsip() {
+  local sumber="$1" tujuan="${1}.gpg"
+
+  printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --quiet \
+    --pinentry-mode loopback --passphrase-fd 0 \
+    --symmetric --cipher-algo AES256 --digest-algo SHA512 \
+    --s2k-mode 3 --s2k-digest-algo SHA512 --s2k-count 65011712 \
+    --compress-algo none \
+    --output "$tujuan" "$sumber" ||
+    die "enkripsi gagal untuk $(basename "$sumber"). Tidak ada yang diunggah."
+
+  chmod 600 "$tujuan"
+  printf '%s' "$tujuan"
+}
+
+# Membuktikan arsip terenkripsi benar-benar dapat dibuka kembali.
+#
+# Dijalankan setiap malam, sebelum unggahan. Enkripsi yang tidak pernah diuji
+# hanya memindahkan kegagalan ke hari ketika backup itu benar-benar dibutuhkan —
+# dan pada hari itu tidak ada kesempatan kedua.
+uji_dekripsi() {
+  local terenkripsi="$1" asli="$2" sha_asli sha_bulat
+
+  sha_asli="$(sha256sum "$asli" | awk '{print $1}')"
+  sha_bulat="$(printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --quiet \
+    --pinentry-mode loopback --passphrase-fd 0 --decrypt "$terenkripsi" 2>/dev/null |
+    sha256sum | awk '{print $1}')" || true
+
+  [[ "$sha_asli" == "$sha_bulat" ]] ||
+    die "arsip terenkripsi tidak dapat dibuka kembali menjadi berkas yang sama. Unggahan dibatalkan."
+}
+
 offsite_unggah() {
   local arsip="$1" nama ukuran_lokal ukuran_jauh sha_lokal sha_jauh
-  nama="$(basename "$arsip")"
+  local kirim="$arsip" sementara=""
 
   if ! offsite_dikonfigurasi; then
     log "offsite: tidak dikonfigurasi, unggahan dilewati. Salinan hanya ada di server ini."
     return 0
   fi
 
+  # Dienkripsi sebelum keluar dari server, bukan sesudah sampai. Salinan lokal
+  # sengaja dibiarkan apa adanya: kuncinya toh ada di server yang sama, jadi
+  # mengenkripsinya di sini tidak menambah perlindungan dan hanya mempersulit
+  # pemulihan pada saat paling genting.
+  if [[ -n "$BACKUP_PASSPHRASE" ]]; then
+    log "offsite: mengenkripsi arsip sebelum diunggah."
+    sementara="$(enkripsi_arsip "$arsip")"
+    uji_dekripsi "$sementara" "$arsip"
+    kirim="$sementara"
+    log "offsite: terenkripsi dan terbukti dapat dibuka kembali."
+  else
+    log "offsite: BACKUP_ENCRYPTION_PASSPHRASE kosong — arsip diunggah tanpa enkripsi."
+  fi
+
+  nama="$(basename "$kirim")"
+
   log "offsite: mengunggah ${nama} ke ${S3_BUCKET}/${S3_PREFIX}."
-  rclone_jalan --mount "$(dirname "$arsip")" /arsip \
+  rclone_jalan --mount "$(dirname "$kirim")" /arsip \
     copyto "/arsip/${nama}" "offsite:${S3_BUCKET}/${S3_PREFIX}/${nama}" \
     --s3-no-check-bucket --retries 3 --low-level-retries 5 >/dev/null 2>&1 ||
     die "unggahan offsite gagal untuk ${nama}. Checkpoint lokal tetap utuh di ${arsip}."
 
-  ukuran_lokal="$(stat -c '%s' "$arsip")"
+  ukuran_lokal="$(stat -c '%s' "$kirim")"
   ukuran_jauh="$(rclone_jalan size "offsite:${S3_BUCKET}/${S3_PREFIX}/${nama}" --json 2>/dev/null |
     python3 -c 'import json,sys; print(json.load(sys.stdin)["bytes"])' 2>/dev/null || echo '')"
   [[ "$ukuran_jauh" == "$ukuran_lokal" ]] ||
@@ -253,7 +317,7 @@ offsite_unggah() {
     # Diunduh kembali dan di-hash. Ukuran yang cocok hanya membuktikan sesuatu
     # sampai di sana, bukan bahwa isinya sama — dan backup yang tidak pernah
     # dibuktikan baru ketahuan rusak pada saat paling buruk.
-    sha_lokal="$(sha256sum "$arsip" | awk '{print $1}')"
+    sha_lokal="$(sha256sum "$kirim" | awk '{print $1}')"
     sha_jauh="$(rclone_jalan cat "offsite:${S3_BUCKET}/${S3_PREFIX}/${nama}" 2>/dev/null |
       sha256sum | awk '{print $1}')"
     [[ "$sha_lokal" == "$sha_jauh" ]] ||
@@ -262,6 +326,10 @@ offsite_unggah() {
   else
     log "offsite: ukuran cocok (${ukuran_lokal} byte); verifikasi isi dilewati."
   fi
+
+  # Salinan terenkripsi hanya kendaraan menuju penyimpanan objek; yang disimpan
+  # di server tetap arsip aslinya.
+  [[ -z "$sementara" ]] || rm -f "$sementara"
 
   offsite_pangkas
 }
@@ -316,6 +384,38 @@ if [[ "${1:-}" == "--test-offsite" ]]; then
     die "uji hapus offsite gagal; kredensial mungkin hanya berizin tulis."
 
   log "offsite: uji tulis, baca, dan hapus berhasil."
+
+  # Jalur enkripsi ikut diuji di sini, memakai berkas kecil yang sama.
+  #
+  # Tanpa ini, satu-satunya bukti bahwa enkripsi berjalan adalah backup malam
+  # hari yang berukuran belasan gigabyte — terlalu mahal untuk dijalankan
+  # setiap kali seseorang mengubah skrip ini.
+  if [[ -n "$BACKUP_PASSPHRASE" ]]; then
+    log "enkripsi: menguji putaran enkripsi, unggah, unduh, dan dekripsi."
+    UJI_SANDI="$(enkripsi_arsip "$UJI_DIR/$UJI_NAMA")"
+    uji_dekripsi "$UJI_SANDI" "$UJI_DIR/$UJI_NAMA"
+
+    rclone_jalan --mount "$UJI_DIR" /arsip \
+      copyto "/arsip/$(basename "$UJI_SANDI")" "offsite:${S3_BUCKET}/${S3_PREFIX}/$(basename "$UJI_SANDI")" \
+      --s3-no-check-bucket --retries 2 >/dev/null 2>&1 || die "uji unggah arsip terenkripsi gagal."
+
+    # Diunduh kembali lalu didekripsi: yang harus terbukti bukan sekadar
+    # "terenkripsi", melainkan "masih dapat dibuka setelah pulang-pergi".
+    #
+    # Ciphertext-nya ditulis ke berkas dulu, bukan disalurkan lewat pipe.
+    # `--passphrase-fd 0` sudah memakai stdin untuk frasa sandi, jadi ciphertext
+    # harus datang sebagai argumen berkas — memberi keduanya lewat stdin
+    # membuat gpg mencoba mendekripsi frasa sandinya sendiri.
+    rclone_jalan cat "offsite:${S3_BUCKET}/${S3_PREFIX}/$(basename "$UJI_SANDI")" \
+      >"$UJI_DIR/pulang.gpg" 2>/dev/null || die "uji unduh arsip terenkripsi gagal."
+    uji_dekripsi "$UJI_DIR/pulang.gpg" "$UJI_DIR/$UJI_NAMA"
+
+    rclone_jalan deletefile "offsite:${S3_BUCKET}/${S3_PREFIX}/$(basename "$UJI_SANDI")" >/dev/null 2>&1 || true
+    log "enkripsi: putaran penuh berhasil — terenkripsi, terunggah, terunduh, dan pulih utuh."
+  else
+    log "enkripsi: BACKUP_ENCRYPTION_PASSPHRASE kosong, jalur enkripsi tidak diuji."
+  fi
+
   exit 0
 fi
 

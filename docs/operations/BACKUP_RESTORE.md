@@ -165,12 +165,37 @@ Konsekuensi yang perlu disadari: pada kehilangan VPS total, kehilangan data
 dapat mencapai **tujuh hari** — bukan 24 jam — karena checkpoint harian ikut
 hilang bersama disknya. Itulah celah yang ditutup §4b.
 
-### Yang belum terpenuhi
+### Enkripsi sebelum meninggalkan server
 
-- **Encryption at rest.** Arsip hanya dilindungi permission `0600` di server,
-  dan mengandalkan enkripsi sisi penyedia setelah diunggah. Arsipnya sendiri
-  belum dienkripsi sebelum meninggalkan server, sehingga siapa pun yang dapat
-  membaca keranjang objek dapat membaca isinya.
+Arsip dienkripsi dengan GPG simetris (AES-256) tepat sebelum diunggah, dan
+salinan terenkripsi itulah yang dikirim ke penyimpanan objek. Siapa pun yang
+dapat membaca keranjangnya hanya menemukan data acak.
+
+Salinan **lokal** sengaja dibiarkan apa adanya, dilindungi permission `0600`.
+Kuncinya toh ada di server yang sama, jadi mengenkripsi salinan lokal tidak
+menambah perlindungan — ia hanya mempersulit pemulihan pada saat paling genting.
+
+GPG dipilih bukan karena paling canggih, melainkan karena paling mungkin masih
+dapat dibuka bertahun-tahun kemudian di mesin mana pun. Untuk backup, itulah
+satu-satunya ukuran yang penting.
+
+**Frasa sandinya ada di `/etc/lms-backup.env` (`BACKUP_ENCRYPTION_PASSPHRASE`,
+mode 0600, hanya root).** Kalau server ini hilang bersama frasa sandinya,
+seluruh salinan offsite menjadi tidak dapat dibuka — dan justru itulah keadaan
+ketika backup offsite paling dibutuhkan. Simpan salinannya di password manager,
+di luar server ini.
+
+Setiap malam skrip mendekripsi kembali arsipnya sendiri dan membandingkan
+sha256 sebelum mengunggah. Bila tidak cocok, unggahan dibatalkan dan
+peringatan terkirim. Enkripsi yang tidak pernah diuji hanya memindahkan
+kegagalan ke hari ketika backup itu benar-benar dibutuhkan.
+
+Putaran penuhnya — enkripsi, unggah, unduh, dekripsi — dapat diuji kapan saja
+tanpa menunggu arsip belasan gigabyte:
+
+```bash
+. /etc/lms-backup.env && LMS_APP_UUID=<uuid> lms-backup --test-offsite
+```
 
 ## 4b. Salinan di Luar Server
 
@@ -228,6 +253,17 @@ menutup syarat "failure domain berbeda" pada §1, bukan jarak antar-checkpoint.
 
 Sudah dijalankan dan terbukti pada 31 Juli 2026 memakai checkpoint
 `20260731T105134Z`, direstore ke container PostgreSQL 16 terpisah:
+
+Arsip dari penyimpanan objek berakhiran `.tar.gpg` dan harus didekripsi lebih
+dulu. Salinan lokal di server tidak terenkripsi, jadi langkah ini dilewati bila
+memulihkan dari sana.
+
+```bash
+# Hanya untuk arsip yang diambil dari penyimpanan objek.
+gpg --batch --pinentry-mode loopback --passphrase-file <(sudo grep -oP \
+  '(?<=^export BACKUP_ENCRYPTION_PASSPHRASE=).*' /etc/lms-backup.env) \
+  --decrypt lms-<stempel>.tar.gpg > lms-<stempel>.tar
+```
 
 ```bash
 tar xf /var/backups/lms-ai/daily/lms-<stempel>.tar -C /tmp/pulih
