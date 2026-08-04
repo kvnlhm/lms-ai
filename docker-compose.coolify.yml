@@ -97,6 +97,7 @@ services:
       - video-data:/data/videos
       - avatar-data:/data/avatars
       - course-thumbnail-data:/data/course-thumbnails
+      - material-data:/data/materials
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -166,6 +167,7 @@ services:
       - '8080'
     volumes:
       - video-data:/data/videos:ro
+      - material-data:/data/materials:ro
     # Sengaja tanpa depends_on.
     #
     # Dulu gateway menunggu web sehat, sehingga ia selalu yang terakhir menyala
@@ -185,3 +187,4 @@ volumes:
   video-data:
   avatar-data:
   course-thumbnail-data:
+  material-data:

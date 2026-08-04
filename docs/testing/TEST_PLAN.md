@@ -276,6 +276,20 @@ mudah bergeser tanpa ketahuan.
 - Method yang menyatakan `Promise<void>` dan endpoint `204` dikecualikan dari
   aturannya sendiri.
 
+## 7a1. Volume Penyimpanan
+
+Tes `check-storage-volumes` menolak direktori penyimpanan yang tidak punya
+volume. Cacat yang mendorongnya lolos dari seluruh lapisan: berkas materi
+ditulis ke `/data/materials`, nginx menyajikannya dari sana, dan tidak ada satu
+pun volume di keduanya — unggahan "berhasil" ke filesystem sementara kontainer,
+penyajiannya 404, dan berkasnya lenyap pada deploy berikutnya. Tes tidak
+melihatnya karena tidak menjalankan compose; verifikasi deploy tidak melihatnya
+karena seluruh kontainer memang sehat.
+
+Aturannya sengaja tidak seragam: pemasangan pada layanan api wajib bagi semua,
+sedangkan pemasangan di gateway hanya wajib bagi direktori yang benar-benar
+disajikan nginx lewat `alias`. Avatar dan thumbnail disajikan API sendiri.
+
 ## 7a. Endpoint Coverage
 
 Satu pola berulang di repo ini: server sanggup menjawab, tetapi tidak ada

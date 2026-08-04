@@ -53,6 +53,7 @@ services:
       - video-data:/data/videos
       - avatar-data:/data/avatars
       - course-thumbnail-data:/data/course-thumbnails
+      - material-data:/data/materials
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -111,6 +112,7 @@ services:
       - letsencrypt:/etc/letsencrypt:ro
       - certbot-webroot:/var/www/certbot:ro
       - video-data:/data/videos:ro
+      - material-data:/data/materials:ro
     depends_on:
       - web
     networks: [backend]
@@ -134,5 +136,6 @@ volumes:
   video-data:
   avatar-data:
   course-thumbnail-data:
+  material-data:
   letsencrypt:
   certbot-webroot:
