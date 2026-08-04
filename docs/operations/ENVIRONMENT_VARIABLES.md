@@ -128,6 +128,28 @@ COURSE_THUMBNAIL_MAX_UPLOAD_BYTES
 Default produksi menyimpan thumbnail kursus pada volume persisten terpisah di
 `/data/course-thumbnails` dengan batas 5 MiB.
 
+## Penyapu unggahan terbengkalai
+
+```text
+UPLOAD_SWEEPER_ENABLED=true
+UPLOAD_SWEEPER_INTERVAL_SECONDS=900
+UPLOAD_STALE_AFTER_SECONDS=21600
+```
+
+Setiap unggahan ditulis ke `<nama>.uploading` lalu di-`rename` begitu berkasnya
+utuh. Pengunggah membersihkan berkas sementara itu ketika unggahannya gagal,
+tetapi hanya bila prosesnya masih hidup untuk menjalankannya — deploy yang
+mengganti kontainer di tengah unggahan meninggalkan berkas separuh jadi yang
+tidak ada lagi yang mengetahui keberadaannya. Poller ini menyapu keempat
+direktori penyimpanan dan menutup aset video yang mandek menjadi `FAILED`,
+sehingga Master dapat menghapusnya.
+
+`UPLOAD_STALE_AFTER_SECONDS` harus melampaui unggahan sah paling lambat yang
+masuk akal; video 2 GiB pada koneksi 1 Mbps memakan sekitar lima jam. Umur
+berkas dibaca dari mtime, jadi unggahan yang masih menulis tidak pernah
+tersapu betapa pun lamanya. Test end-to-end mematikan poller dan memanggil satu
+siklus secara manual, karena penyapu ini menghapus berkas.
+
 ## Queue
 
 ```text

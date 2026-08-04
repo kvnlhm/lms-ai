@@ -93,6 +93,27 @@ export interface AppConfig {
     maxUploadBytes: number;
   };
   /**
+   * Penyapu unggahan yang tidak pernah selesai.
+   *
+   * Setiap unggahan ditulis ke berkas `.uploading` lalu di-`rename` begitu utuh.
+   * Blok `catch` pengunggah membersihkannya bila unggahannya gagal — tetapi hanya
+   * bila prosesnya masih hidup untuk menjalankannya. Ketika kontainer diganti di
+   * tengah unggahan, berkas separuh jadi itu tidak ada lagi yang membuang.
+   */
+  upload: {
+    /** Dimatikan pada test agar poller tidak berlomba dengan berkas milik test. */
+    sweeperEnabled: boolean;
+    sweeperIntervalSeconds: number;
+    /**
+     * Umur minimum sebuah `.uploading` sebelum dianggap terbengkalai.
+     *
+     * Harus melampaui unggahan sah paling lambat yang masuk akal: video 2 GB
+     * pada koneksi 1 Mbps memakan sekitar lima jam. Enam jam memberi kelonggaran
+     * tanpa membiarkan sampahnya menginap berhari-hari.
+     */
+    staleAfterSeconds: number;
+  };
+  /**
    * Bukan lagi bagian commerce: aktivasi akun dan pemulihan password sama-sama
    * memakainya, sehingga identity tidak perlu bergantung pada modul commerce.
    */
@@ -259,6 +280,11 @@ export function loadConfig(): AppConfig {
     lessonMaterial: {
       storagePath: process.env.LESSON_MATERIAL_STORAGE_PATH ?? '/data/materials',
       maxUploadBytes: int('LESSON_MATERIAL_MAX_UPLOAD_BYTES', 52_428_800),
+    },
+    upload: {
+      sweeperEnabled: bool('UPLOAD_SWEEPER_ENABLED', true),
+      sweeperIntervalSeconds: int('UPLOAD_SWEEPER_INTERVAL_SECONDS', 900),
+      staleAfterSeconds: int('UPLOAD_STALE_AFTER_SECONDS', 21_600),
     },
     email: {
       provider: emailProvider as 'RESEND' | 'DISABLED',

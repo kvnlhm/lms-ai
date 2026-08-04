@@ -56,6 +56,10 @@ export async function startHarness(options: HarnessOptions = {}): Promise<Harnes
   // test membalas 429. Hasilnya bergantung pada urutan penjadwalan jest:
   // hijau di satu mesin, merah di mesin lain, tanpa satu pun perubahan kode.
   process.env.ANNOUNCEMENT_SCHEDULER_ENABLED = 'false';
+  // Alasan yang sama, ditambah satu: penyapu ini menghapus berkas. Dibiarkan
+  // hidup, ia akan berjalan di latar sementara spec unggahan sedang menulis
+  // berkas sementaranya sendiri.
+  process.env.UPLOAD_SWEEPER_ENABLED = 'false';
   // Ditulis tanpa syarat karena alasan yang sama: nilainya tetap di seluruh
   // spec, jadi endpoint webhook WhatsApp berperilaku sama di mana pun ia diuji.
   process.env.WHATSAPP_APP_SECRET = WHATSAPP_APP_SECRET;

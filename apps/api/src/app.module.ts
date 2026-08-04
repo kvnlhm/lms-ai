@@ -33,6 +33,7 @@ import { RateLimitGuard } from './shared/http/rate-limit.guard';
 import { RequestContextMiddleware } from './shared/http/request-context.middleware';
 import { ResponseInterceptor } from './shared/http/response.interceptor';
 import { IdempotencyModule } from './shared/idempotency/idempotency.module';
+import { StorageModule } from './shared/storage/storage.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
 import { CommunityModule } from './modules/community/community.module';
 
@@ -59,6 +60,7 @@ import { CommunityModule } from './modules/community/community.module';
     LearningProgressModule,
     QuizModule,
     VideoModule,
+    StorageModule,
     ForumModule,
     NotificationModule,
     AnnouncementModule,

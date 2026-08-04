@@ -11,6 +11,7 @@ import type { Readable } from 'node:stream';
 import type { AppConfig } from '../../../config/configuration';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
+import type { StaleUploadReconcilerPort } from '../../../shared/storage/stale-upload.port';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
 import type { LessonVideoCleanupPort } from '../../learning-catalog/application/lesson-video-cleanup.port';
 import { BunnyStreamClient } from '../infrastructure/bunny-stream.client';
@@ -155,7 +156,7 @@ export function playbackWatermarkText(
 }
 
 @Injectable()
-export class VideoService implements LessonVideoCleanupPort {
+export class VideoService implements LessonVideoCleanupPort, StaleUploadReconcilerPort {
   private readonly config: AppConfig['video'];
 
   constructor(
@@ -276,6 +277,35 @@ export class VideoService implements LessonVideoCleanupPort {
       });
       throw AppError.validation({ file: ['Upload MP4 gagal atau konten tidak valid.'] });
     }
+  }
+
+  /**
+   * Menutup unggahan yang tidak pernah selesai.
+   *
+   * Blok `catch` di atas sudah menandai unggahan yang gagal — tetapi hanya bila
+   * prosesnya masih hidup untuk menjalankannya. Ketika kontainer diganti di
+   * tengah unggahan, asetnya tertinggal di `CREATED` atau `UPLOADING` selamanya.
+   * Itu bukan sekadar catatan kotor: `deleteAsset` menolak status berjalan, jadi
+   * aset semacam itu tidak dapat dibuang Master lewat jalan mana pun, dan
+   * `upload` menuntut status `CREATED`, jadi tidak dapat diulang juga. Menutupnya
+   * menjadi `FAILED` mengembalikan kedua jalan keluar itu.
+   *
+   * `updateMany` menyaring ulang statusnya, sehingga unggahan yang kebetulan
+   * selesai di sela pembacaan dan penulisan tidak ikut tertandai.
+   */
+  async closeStaleUploads(batas: Date): Promise<number> {
+    const { count } = await this.prisma.videoAsset.updateMany({
+      where: {
+        status: { in: [VideoStatus.CREATED, VideoStatus.UPLOADING] },
+        updatedAt: { lt: batas },
+        deletedAt: null,
+      },
+      data: {
+        status: VideoStatus.FAILED,
+        processingError: 'Unggahan tidak pernah selesai dan ditutup otomatis.',
+      },
+    });
+    return count;
   }
 
   /**
