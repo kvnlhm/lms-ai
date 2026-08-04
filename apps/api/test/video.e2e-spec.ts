@@ -345,10 +345,19 @@ describe('Perpustakaan video self-hosted', () => {
 
     const url = new URL(playback.body.data.playbackUrl as string);
     expect(url.host).toBe(BUNNY_CDN_HOSTNAME);
-    expect(url.pathname).toBe(`/${guid}/playlist.m3u8`);
-    // Tautan yang bocor harus mati sendiri: tanda tangan dan batas waktunya ada.
-    expect(url.searchParams.get('token')).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    const kedaluwarsa = Number(url.searchParams.get('expires'));
+    // Tokennya adalah segmen path, bukan query: satu video menuntut tiga lapis
+    // permintaan, dan URL relatif di dalam playlist tidak mewarisi query induk.
+    expect(url.search).toBe('');
+    expect(url.pathname).toMatch(/^\/bcdn_token=HS256-[A-Za-z0-9_-]{43}&expires=\d+\//);
+    expect(url.pathname.endsWith(`/${guid}/playlist.m3u8`)).toBe(true);
+
+    // Karena itulah bentuknya dipilih: turunan relatif tetap membawa tokennya.
+    const turunan = new URL('720p/video.m3u8', url);
+    expect(turunan.pathname).toContain('bcdn_token=HS256-');
+    expect(turunan.pathname.endsWith(`/${guid}/720p/video.m3u8`)).toBe(true);
+
+    // Tautan yang bocor harus mati sendiri.
+    const kedaluwarsa = Number(/&expires=(\d+)\//.exec(url.pathname)?.[1]);
     expect(kedaluwarsa).toBeGreaterThan(Math.floor(Date.now() / 1000));
 
     // Tidak ada berkas kita yang boleh dialirkan untuk aset Bunny.

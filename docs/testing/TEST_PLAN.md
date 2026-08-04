@@ -238,10 +238,15 @@ Production release memerlukan:
 - Pengguna tanpa sesi, suspended account, locked lesson, course non-published, dan processing video ditolak.
 - Aset Bunny dijawab `kind: HLS` dengan URL playlist CDN bertanda tangan dan
   `embedUrl` null; endpoint konten tidak melayaninya.
-- URL playlist Bunny ditandatangani sha256 + base64url, dan tanda tangannya
-  berubah ketika batas waktunya berubah. Nilai tetapnya dipatok pada unit test
+- URL playlist Bunny ditandatangani HMAC-SHA256 + base64url dengan awalan
+  `HS256-`, dan tanda tangannya berubah ketika batas waktunya berubah. Nilai
+  tetapnya dipatok pada unit test, dihitung terpisah di luar kode yang diuji,
   karena tanda tangan yang salah bentuk hanya bergejala "video tidak dapat
   diputar".
+- Token berada pada segmen path dan meliputi seluruh direktori video, sehingga
+  URL relatif di dalam playlist mewarisinya. Diuji dengan me-resolve
+  `720p/video.m3u8` terhadap URL playlist dan memastikan tokennya ikut terbawa.
+- Tanda tangan satu video tidak berlaku untuk video lain.
 - Aset Bunny pada server tanpa hostname CDN dijawab `409`, bukan diarahkan ke
   jalur berkas yang pasti berujung 404.
 - Token expiry tersedia.

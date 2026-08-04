@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PlaybackStatus, Prisma, VideoProvider, VideoStatus } from '@prisma/client';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { chmod, mkdir, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -53,13 +53,37 @@ export function parseBunnyVideoId(input: string): string | null {
   return cocok ? cocok[0].toLowerCase() : null;
 }
 
+/** Base64 URL-safe tanpa padding, bentuk yang diminta Bunny. */
+function base64url(buffer: Buffer): string {
+  return buffer.toString('base64').replace(/\n/g, '').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
 /**
  * URL playlist HLS Bunny untuk satu video.
  *
- * Bila `tokenAuthKey` terisi, URL-nya ditandatangani dan kedaluwarsa bersamaan
- * dengan sesi pemutaran — jadi tautan yang bocor mati dengan sendirinya.
- * Selama kunci itu kosong, perlindungannya bersandar pada pembatasan referrer
- * di sisi Bunny, yang menahan hotlink biasa tetapi dapat dipalsukan.
+ * Tokennya ditanam di **path**, bukan di query string, dan menandatangani
+ * seluruh direktori video — bukan satu berkas. Keduanya disengaja, dan
+ * keduanya lahir dari bentuk HLS itu sendiri: memutar satu video menuntut tiga
+ * lapis permintaan ke path yang berbeda-beda.
+ *
+ *     /{guid}/playlist.m3u8        induk
+ *     /{guid}/720p/video.m3u8      varian, ditunjuk secara relatif
+ *     /{guid}/720p/video0.ts       puluhan segmen
+ *
+ * Menandatangani satu berkas hanya melindungi lapisan pertama; sisanya ditolak
+ * 403 dan videonya tidak jalan sama sekali. Menaruh token di query string juga
+ * tidak cukup, karena URL relatif di dalam playlist tidak mewarisi query induk
+ * — baik pada `hls.js` maupun pemutar bawaan Safari. Sebagai segmen path, ia
+ * ikut terbawa dengan sendirinya, sehingga tidak ada pemutar yang perlu ditambal.
+ *
+ * Skema dan bentuknya tidak diambil dari dokumentasi saja, tetapi diuji satu
+ * per satu terhadap pull zone ini: yang diterima adalah HMAC-SHA256 atas
+ * `direktori + expires` dengan awalan `HS256-`. Tokennya juga terbukti
+ * terbatas pada direktorinya — dipakai untuk GUID lain, CDN menjawab 403.
+ *
+ * Selama `tokenAuthKey` kosong, URL dikirim tanpa tanda tangan dan
+ * perlindungannya bersandar pada pembatasan referrer di sisi Bunny, yang
+ * menahan hotlink biasa tetapi dapat dipalsukan.
  */
 export function bunnyPlaylistUrl(
   config: { cdnHostname?: string; tokenAuthKey?: string },
@@ -67,18 +91,14 @@ export function bunnyPlaylistUrl(
   expiresAt: Date,
 ): string | null {
   if (!config.cdnHostname) return null;
-  const path = `/${videoId}/playlist.m3u8`;
-  if (!config.tokenAuthKey) return `https://${config.cdnHostname}${path}`;
+  const dir = `/${videoId}/`;
+  if (!config.tokenAuthKey) return `https://${config.cdnHostname}${dir}playlist.m3u8`;
 
   const expires = Math.floor(expiresAt.getTime() / 1000);
-  const token = createHash('sha256')
-    .update(`${config.tokenAuthKey}${path}${expires}`)
-    .digest('base64')
-    .replace(/\n/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-  return `https://${config.cdnHostname}${path}?token=${token}&expires=${expires}`;
+  const token = `HS256-${base64url(
+    createHmac('sha256', config.tokenAuthKey).update(`${dir}${expires}`).digest(),
+  )}`;
+  return `https://${config.cdnHostname}/bcdn_token=${token}&expires=${expires}${dir}playlist.m3u8`;
 }
 
 /**

@@ -1735,11 +1735,33 @@ Response:
 - `HLS` — playlist `.m3u8` diantar CDN penyedia, tetapi pemutarnya tetap milik
   aplikasi ini, bukan halaman sematan penyedia. `playbackUrl` terisi dengan URL
   CDN, `embedUrl` null, dan endpoint konten tidak melayaninya. Dengan begitu
-  watermark serta larangan unduh tidak berpindah tangan. Bila
-  `BUNNY_STREAM_TOKEN_AUTH_KEY` terisi, URL-nya ditandatangani dan kedaluwarsa
-  bersamaan dengan sesinya; selama kosong, perlindungan bersandar pada
-  pembatasan referrer di sisi Bunny — cukup untuk hotlink biasa, tetapi
-  referrer dapat dipalsukan.
+  watermark serta larangan unduh tidak berpindah tangan.
+
+  Bila `BUNNY_STREAM_TOKEN_AUTH_KEY` terisi, URL-nya ditandatangani dan
+  kedaluwarsa bersamaan dengan sesi pemutaran:
+
+  ```text
+  https://{cdn}/bcdn_token=HS256-{tandaTangan}&expires={unix}/{guid}/playlist.m3u8
+  ```
+
+  Tanda tangannya HMAC-SHA256 atas `"/{guid}/" + expires`, base64url tanpa
+  padding. Dua hal disengaja dan keduanya lahir dari bentuk HLS: tandanya
+  meliputi **seluruh direktori** video, dan letaknya di **path**, bukan query.
+  Memutar satu video menuntut tiga lapis permintaan — playlist induk, playlist
+  varian, lalu puluhan segmen `.ts` — sehingga menandatangani satu berkas saja
+  hanya melindungi lapisan pertama. Query string pun tidak cukup, karena URL
+  relatif di dalam playlist tidak mewarisi query induk, baik pada `hls.js`
+  maupun pemutar bawaan Safari. Sebagai segmen path, tokennya terbawa dengan
+  sendirinya dan tidak ada pemutar yang perlu ditambal.
+
+  Skema itu diuji langsung terhadap pull zone, bukan disimpulkan dari
+  dokumentasi saja; token satu video terbukti ditolak `403` untuk video lain.
+  Menyalakannya menuntut **CDN Token Authentication** pada pull zone milik
+  library Stream — dikelola lewat *Stream → library → API → Pull Zone →
+  Manage*, bukan dari daftar CDN biasa. Kuncinya berbeda dari token sematan
+  milik library. Selama kunci kosong, perlindungan bersandar pada pembatasan
+  referrer di sisi Bunny: cukup untuk hotlink biasa, tetapi referrer dapat
+  dipalsukan.
 
 Aset `BUNNY_STREAM` pada server yang tidak mengonfigurasi `BUNNY_STREAM_CDN_HOSTNAME`
 dijawab `409 FILE_NOT_AVAILABLE`. Sebelumnya ia jatuh ke jalur `FILE` dan

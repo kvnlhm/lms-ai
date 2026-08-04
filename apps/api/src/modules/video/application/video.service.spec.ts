@@ -86,6 +86,7 @@ describe('parseBunnyVideoId', () => {
 
 describe('bunnyPlaylistUrl', () => {
   const videoId = 'b4dcc06c-ea97-4547-aa95-c17b7c998297';
+  const dir = `/${videoId}/`;
   const expiresAt = new Date('2026-08-03T12:00:00.000Z');
 
   it('returns nothing when no CDN hostname is configured', () => {
@@ -95,26 +96,38 @@ describe('bunnyPlaylistUrl', () => {
 
   it('falls back to an unsigned URL when no signing key is set', () => {
     expect(bunnyPlaylistUrl({ cdnHostname: 'vz-abc.b-cdn.net' }, videoId, expiresAt)).toBe(
-      `https://vz-abc.b-cdn.net/${videoId}/playlist.m3u8`,
+      `https://vz-abc.b-cdn.net${dir}playlist.m3u8`,
     );
   });
 
-  it('signs the path and expiry so a leaked link dies on its own', () => {
+  it('signs the whole directory, with the token embedded in the path', () => {
     const url = bunnyPlaylistUrl(
       { cdnHostname: 'vz-abc.b-cdn.net', tokenAuthKey: 'kunci-rahasia' },
       videoId,
       expiresAt,
     );
-    // Nilai tetapnya ikut dipatok, dihitung terpisah dengan sha256 + base64url
-    // di luar kode ini: tanda tangan yang diam-diam berubah bentuk akan ditolak
-    // Bunny, dan gejalanya hanya "video tidak dapat diputar".
+    // Nilai tetapnya dihitung terpisah dengan HMAC-SHA256 + base64url di luar
+    // kode ini. Tanda tangan yang diam-diam berubah bentuk akan ditolak Bunny,
+    // dan gejalanya hanya "video tidak dapat diputar".
     expect(url).toBe(
-      `https://vz-abc.b-cdn.net/${videoId}/playlist.m3u8` +
-        '?token=livg-S9lMqHqmOFRrMPCmxXuWL4yr2pE3iM8WnASKBM&expires=1785758400',
+      'https://vz-abc.b-cdn.net/bcdn_token=HS256-gzNt3Rlf5Msg11rRhlKSTq0BeWH9AHkOyPjMsDycxq8' +
+        `&expires=1785758400${dir}playlist.m3u8`,
     );
-    // Base64 URL-safe: `+`, `/`, dan `=` tidak boleh tersisa di dalam token.
-    const token = new URL(url ?? '').searchParams.get('token') ?? '';
-    expect(token).not.toMatch(/[+/=]/);
+  });
+
+  it('keeps the token in the path so relative playlist entries inherit it', () => {
+    // Inilah alasan token tidak ditaruh di query string: pemutar me-resolve
+    // `720p/video.m3u8` relatif terhadap playlist, dan query induk tidak ikut.
+    // Sebagai segmen path, tokennya terbawa dengan sendirinya.
+    const url = bunnyPlaylistUrl(
+      { cdnHostname: 'vz-abc.b-cdn.net', tokenAuthKey: 'kunci-rahasia' },
+      videoId,
+      expiresAt,
+    );
+    expect(new URL(url ?? '').search).toBe('');
+    const turunan = new URL('720p/video.m3u8', url ?? '').toString();
+    expect(turunan).toContain('bcdn_token=HS256-');
+    expect(turunan).toContain(`${dir}720p/video.m3u8`);
   });
 
   it('gives a different signature once the session expires later', () => {
@@ -123,5 +136,11 @@ describe('bunnyPlaylistUrl', () => {
     expect(bunnyPlaylistUrl(config, videoId, kemudian)).not.toBe(
       bunnyPlaylistUrl(config, videoId, expiresAt),
     );
+  });
+
+  it('scopes the signature to one video', () => {
+    const config = { cdnHostname: 'vz-abc.b-cdn.net', tokenAuthKey: 'kunci-rahasia' };
+    const lain = bunnyPlaylistUrl(config, '00000000-0000-4000-8000-000000000000', expiresAt);
+    expect(lain).not.toContain('gzNt3Rlf5Msg11rRhlKSTq0BeWH9AHkOyPjMsDycxq8');
   });
 });
