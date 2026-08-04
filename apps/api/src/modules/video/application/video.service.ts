@@ -91,15 +91,32 @@ export function bunnyPlaylistUrl(
   videoId: string,
   expiresAt: Date,
 ): string | null {
+  return bunnySignedUrl(config, videoId, 'playlist.m3u8', expiresAt);
+}
+
+/**
+ * Berkas apa pun di dalam direktori satu video Bunny, bertanda tangan.
+ *
+ * Karena tokennya menandatangani direktori — lihat penjelasan di atas — gambar
+ * sampul memakai tanda tangan yang sama persis dengan playlist-nya. Tanpa ini
+ * setiap sampul di daftar perpustakaan akan dijawab 403 oleh pull zone yang
+ * memeriksa token.
+ */
+export function bunnySignedUrl(
+  config: { cdnHostname?: string; tokenAuthKey?: string },
+  videoId: string,
+  file: string,
+  expiresAt: Date,
+): string | null {
   if (!config.cdnHostname) return null;
   const dir = `/${videoId}/`;
-  if (!config.tokenAuthKey) return `https://${config.cdnHostname}${dir}playlist.m3u8`;
+  if (!config.tokenAuthKey) return `https://${config.cdnHostname}${dir}${file}`;
 
   const expires = Math.floor(expiresAt.getTime() / 1000);
   const token = `HS256-${base64url(
     createHmac('sha256', config.tokenAuthKey).update(`${dir}${expires}`).digest(),
   )}`;
-  return `https://${config.cdnHostname}/bcdn_token=${token}&expires=${expires}${dir}playlist.m3u8`;
+  return `https://${config.cdnHostname}/bcdn_token=${token}&expires=${expires}${dir}${file}`;
 }
 
 /**
@@ -357,6 +374,158 @@ export class VideoService implements LessonVideoCleanupPort, StaleUploadReconcil
    * menentukan ke mana berkas diunggah untuk seluruh deployment, sedangkan
    * Bunny adalah asal per-aset yang tidak memakai penyimpanan kita.
    */
+  /**
+   * Isi library Bunny, disandingkan dengan perpustakaan kita sendiri.
+   *
+   * Kolom `videoAssetId` itulah inti gunanya: tanpa penanda mana yang sudah
+   * terdaftar, Master harus mengingat sendiri video mana yang sudah dipakai —
+   * dan library ini berisi tiga berkas bernama `Outro.mp4`.
+   */
+  async listBunnyLibrary(params: { page: number; pageSize: number; search?: string }) {
+    const { items, total } = await this.bunny.listVideos(params);
+
+    const terdaftar = await this.prisma.videoAsset.findMany({
+      where: {
+        provider: VideoProvider.BUNNY_STREAM,
+        providerVideoId: { in: items.map((item) => item.guid) },
+        deletedAt: null,
+      },
+      select: { id: true, providerVideoId: true, _count: { select: { lessons: true } } },
+    });
+    const olehGuid = new Map(terdaftar.map((row) => [row.providerVideoId, row]));
+
+    // Sampul ikut ditandatangani dengan token yang sama seperti pemutaran;
+    // masa berlakunya disamakan dengan sesi menjelajah, bukan sesi menonton.
+    const kedaluwarsa = new Date(Date.now() + this.config.playbackTtlSeconds * 1000);
+
+    return {
+      total,
+      items: items.map((item) => {
+        const aset = olehGuid.get(item.guid);
+        return {
+          guid: item.guid,
+          title: item.title || `Video Bunny ${item.guid.slice(0, 8)}`,
+          durationSeconds: item.durationSeconds,
+          sizeBytes: item.sizeBytes === null ? null : String(item.sizeBytes),
+          status: item.failed ? 'FAILED' : item.ready ? 'READY' : 'PROCESSING',
+          thumbnailUrl: item.thumbnailFileName
+            ? bunnySignedUrl(this.config.bunny, item.guid, item.thumbnailFileName, kedaluwarsa)
+            : null,
+          uploadedAt: item.uploadedAt,
+          videoAssetId: aset?.id ?? null,
+          usedByLessons: aset?._count.lessons ?? 0,
+        };
+      }),
+    };
+  }
+
+  /**
+   * Wadah video baru di Bunny beserta izin unggahnya.
+   *
+   * Yang dikembalikan hanya cukup untuk mengunggah satu berkas ke satu video
+   * ini sampai izinnya kedaluwarsa. API key Bunny tetap di server: ia ikut
+   * membentuk tanda tangan, tetapi tidak pernah dikirim ke peramban.
+   */
+  async createBunnyUploadTicket(input: { title: string }) {
+    const judul = input.title.trim();
+    const videoId = await this.bunny.createVideo(judul);
+    return { ...this.bunny.uploadTicket(videoId), title: judul };
+  }
+
+  /**
+   * Mengganti sumber video sebuah aset tanpa menyentuh pelajaran yang memakainya.
+   *
+   * Ini jalan yang berbeda dari menempel video baru ke setiap pelajaran satu
+   * per satu. Satu aset dapat dipakai banyak pelajaran; mengganti sumbernya di
+   * sini membuat semuanya ikut pindah sekaligus, dan progres pelajar tetap utuh
+   * karena barisnya memang tidak berganti identitas.
+   *
+   * Berkas lama di server hanya dihapus bila diminta. Menghapusnya diam-diam
+   * akan membuat satu penggantian yang keliru menjadi kehilangan permanen.
+   */
+  async replaceAssetSource(
+    videoAssetId: string,
+    input: { source: string; deleteLocalFile?: boolean },
+  ) {
+    const asset = await this.prisma.videoAsset.findFirst({
+      where: { id: videoAssetId, deletedAt: null },
+      select: {
+        id: true,
+        provider: true,
+        providerVideoId: true,
+        objectKey: true,
+        status: true,
+        _count: { select: { lessons: true } },
+      },
+    });
+    if (!asset) throw AppError.notFound();
+    if (PENDING_STATUSES.has(asset.status)) {
+      throw AppError.validation({
+        videoAssetId: ['Tunggu unggahan yang sedang berjalan selesai sebelum mengganti sumbernya.'],
+      });
+    }
+
+    const videoId = parseBunnyVideoId(input.source);
+    if (!videoId) {
+      throw AppError.validation({
+        source: ['GUID video Bunny tidak dikenali. Tempel GUID dari dashboard Bunny, atau tautan yang memuatnya.'],
+      });
+    }
+    if (asset.provider === VideoProvider.BUNNY_STREAM && asset.providerVideoId === videoId) {
+      throw AppError.validation({ source: ['Aset ini sudah memakai video Bunny tersebut.'] });
+    }
+
+    const metadata = await this.bunny.fetchVideo(videoId);
+    if (metadata.failed) {
+      throw AppError.validation({
+        source: ['Video itu gagal diproses di Bunny. Unggah ulang di dashboard Bunny lebih dulu.'],
+      });
+    }
+
+    const berkasLama = asset.objectKey;
+    try {
+      await this.prisma.videoAsset.update({
+        where: { id: asset.id },
+        data: {
+          provider: VideoProvider.BUNNY_STREAM,
+          providerVideoId: videoId,
+          // Berkasnya tidak lagi di server kita; menyisakan kuncinya akan
+          // membuat pemutaran mencari berkas yang tidak pernah ada.
+          objectKey: null,
+          sizeBytes: metadata.sizeBytes === null ? null : BigInt(metadata.sizeBytes),
+          status: metadata.ready ? VideoStatus.AVAILABLE : VideoStatus.PROCESSING,
+          processingError: null,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw AppError.validation({
+          source: ['Video Bunny itu sudah dipakai aset lain di perpustakaan.'],
+        });
+      }
+      throw error;
+    }
+
+    // Baru dihapus setelah database berpindah dengan selamat. Urutan sebaliknya
+    // menyisakan kemungkinan berkasnya hilang sementara asetnya tetap menunjuk
+    // ke sana.
+    let berkasDihapus = false;
+    if (input.deleteLocalFile && berkasLama) {
+      await rm(join(this.config.storagePath, berkasLama), { force: true });
+      berkasDihapus = true;
+    }
+
+    return {
+      videoAssetId: asset.id,
+      provider: VideoProvider.BUNNY_STREAM,
+      providerVideoId: videoId,
+      status: metadata.ready ? VideoStatus.AVAILABLE : VideoStatus.PROCESSING,
+      affectedLessons: asset._count.lessons,
+      previousObjectKey: berkasLama,
+      localFileDeleted: berkasDihapus,
+    };
+  }
+
   async createBunnyVideo(input: { source: string; title?: string }, userId: string) {
     const videoId = parseBunnyVideoId(input.source);
     if (!videoId) {

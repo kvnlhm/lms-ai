@@ -800,6 +800,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/videos/bunny/library": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Isi library Bunny beserta penanda mana yang sudah terdaftar */
+        get: operations["VideoController_bunnyLibrary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/videos/bunny/upload-tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Izin unggah langsung dari peramban ke Bunny */
+        post: operations["VideoController_createBunnyUploadTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/videos": {
         parameters: {
             query?: never;
@@ -864,6 +898,23 @@ export interface paths {
         post?: never;
         /** Menghapus aset perpustakaan yang tidak dipakai pelajaran mana pun */
         delete: operations["VideoController_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/videos/{videoAssetId}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mengganti sumber video sebuah aset; pelajaran yang memakainya ikut berpindah */
+        put: operations["VideoController_replaceSource"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3038,6 +3089,44 @@ export interface components {
             /** @description Bila kosong, judul diambil dari Bunny. */
             title?: string;
         };
+        BunnyLibraryItemDto: {
+            /** @description GUID video di Bunny. */
+            guid: string;
+            title: string;
+            /** @description Durasi dalam detik; 0 bila Bunny belum selesai memprosesnya. */
+            durationSeconds: number;
+            /** @description String, bukan angka: ukuran berkas video melampaui batas aman JSON. */
+            sizeBytes?: string | null;
+            /** @enum {string} */
+            status: "READY" | "PROCESSING" | "FAILED";
+            /** @description Sampul bertanda tangan, berlaku terbatas. Null bila Bunny belum membuatnya. */
+            thumbnailUrl?: string | null;
+            /** Format: date-time */
+            uploadedAt?: string | null;
+            /**
+             * Format: uuid
+             * @description Terisi bila video ini sudah terdaftar di perpustakaan kita.
+             */
+            videoAssetId?: string | null;
+            /** @description Jumlah pelajaran yang memakainya; 0 bila belum terdaftar. */
+            usedByLessons: number;
+        };
+        BunnyUploadTicketDto: {
+            /** @description GUID video kosong yang baru dibuat di Bunny. */
+            videoId: string;
+            libraryId: string;
+            /** @description Tanda tangan izin unggah; dibuat server, berlaku sampai expires. */
+            signature: string;
+            /** @description Unix timestamp detik. */
+            expires: number;
+            /** @description Alamat TUS Bunny yang dituju peramban. */
+            endpoint: string;
+            title: string;
+        };
+        CreateBunnyUploadTicketDto: {
+            /** @description Judul video di Bunny; biasanya nama berkasnya. */
+            title: string;
+        };
         VideoLibraryUsageDto: {
             /** Format: uuid */
             lessonId: string;
@@ -3082,6 +3171,28 @@ export interface components {
         AttachLessonVideoDto: {
             /** Format: uuid */
             videoAssetId: string;
+        };
+        ReplaceVideoSourceResultDto: {
+            /** Format: uuid */
+            videoAssetId: string;
+            /** @enum {string} */
+            provider: "SELF_HOSTED" | "BUNNY_STREAM" | "YOUTUBE";
+            providerVideoId: string;
+            /** @enum {string} */
+            status: "CREATED" | "UPLOADING" | "PROCESSING" | "AVAILABLE" | "FAILED" | "DELETED";
+            /** @description Jumlah pelajaran yang ikut berpindah. */
+            affectedLessons: number;
+            previousObjectKey?: string | null;
+            localFileDeleted: boolean;
+        };
+        ReplaceVideoSourceDto: {
+            /** @description GUID video Bunny pengganti, atau tautan yang memuatnya. */
+            source: string;
+            /**
+             * @description Menghapus berkas lama di server setelah penggantian berhasil.
+             * @default false
+             */
+            deleteLocalFile?: boolean;
         };
         PlaybackDrmDto: {
             enabled: boolean;
@@ -6991,6 +7102,107 @@ export interface operations {
             };
         };
     };
+    VideoController_bunnyLibrary: {
+        parameters: {
+            query?: {
+                /** @description Kata kunci judul video di library Bunny */
+                search?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BunnyLibraryItemDto"][];
+                        meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoController_createBunnyUploadTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBunnyUploadTicketDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BunnyUploadTicketDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     VideoController_library: {
         parameters: {
             query?: {
@@ -7199,6 +7411,66 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["LessonVideoMutationDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    VideoController_replaceSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                videoAssetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplaceVideoSourceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReplaceVideoSourceResultDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
                 };

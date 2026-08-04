@@ -23,8 +23,14 @@ import { CurrentUser, RequirePermissions } from '../../identity/presentation/dec
 import { VideoService } from '../application/video.service';
 import {
   AttachLessonVideoDto,
+  BunnyLibraryItemDto,
+  BunnyUploadTicketDto,
+  CreateBunnyUploadTicketDto,
   CreateBunnyVideoDto,
   CreateBunnyVideoResultDto,
+  ListBunnyLibraryQueryDto,
+  ReplaceVideoSourceDto,
+  ReplaceVideoSourceResultDto,
   CreatePlaybackSessionDto,
   CreateVideoUploadIntentDto,
   CreateYoutubeVideoDto,
@@ -69,6 +75,34 @@ export class VideoController {
   @ApiErrors(401, 403, 422)
   createBunny(@Body() dto: CreateBunnyVideoDto, @CurrentUser() user: AuthenticatedUser) {
     return this.videos.createBunnyVideo(dto, user.id);
+  }
+
+  // Wajib berada di atas rute apa pun yang memakai `:videoAssetId`, dan tetap
+  // di atas `admin/videos` agar tidak tertelan sebagai kata pencarian.
+  @Get('admin/videos/bunny/library')
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({ summary: 'Isi library Bunny beserta penanda mana yang sudah terdaftar' })
+  @ApiEnvelopeList(BunnyLibraryItemDto)
+  @ApiErrors(401, 403, 422)
+  async bunnyLibrary(@Query() query: ListBunnyLibraryQueryDto) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
+    const { total, items } = await this.videos.listBunnyLibrary({
+      page,
+      pageSize,
+      search: query.search,
+    });
+    return new Paginated(items, page, pageSize, total);
+  }
+
+  @Post('admin/videos/bunny/upload-tickets')
+  @HttpCode(201)
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({ summary: 'Izin unggah langsung dari peramban ke Bunny' })
+  @ApiEnvelope(BunnyUploadTicketDto)
+  @ApiErrors(401, 403, 422)
+  createBunnyUploadTicket(@Body() dto: CreateBunnyUploadTicketDto) {
+    return this.videos.createBunnyUploadTicket(dto);
   }
 
   @Get('admin/videos')
@@ -127,6 +161,21 @@ export class VideoController {
   @ApiErrors(401, 403, 404, 422)
   destroy(@Param('videoAssetId', new ParseUUIDPipe()) videoAssetId: string) {
     return this.videos.deleteAsset(videoAssetId);
+  }
+
+  @Put('admin/videos/:videoAssetId/source')
+  @HttpCode(200)
+  @RequirePermissions(PERMISSIONS.COURSES_MANAGE)
+  @ApiOperation({
+    summary: 'Mengganti sumber video sebuah aset; pelajaran yang memakainya ikut berpindah',
+  })
+  @ApiEnvelope(ReplaceVideoSourceResultDto)
+  @ApiErrors(401, 403, 404, 422)
+  replaceSource(
+    @Param('videoAssetId', new ParseUUIDPipe()) videoAssetId: string,
+    @Body() dto: ReplaceVideoSourceDto,
+  ) {
+    return this.videos.replaceAssetSource(videoAssetId, dto);
   }
 
   @Put('admin/videos/:videoAssetId/content')

@@ -3996,6 +3996,175 @@
         ]
       }
     },
+    "/api/v1/admin/videos/bunny/library": {
+      "get": {
+        "operationId": "VideoController_bunnyLibrary",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Kata kunci judul video di library Bunny",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BunnyLibraryItemDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Isi library Bunny beserta penanda mana yang sudah terdaftar",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/admin/videos/bunny/upload-tickets": {
+      "post": {
+        "operationId": "VideoController_createBunnyUploadTicket",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBunnyUploadTicketDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BunnyUploadTicketDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Izin unggah langsung dari peramban ke Bunny",
+        "tags": [
+          "video"
+        ]
+      }
+    },
     "/api/v1/admin/videos": {
       "get": {
         "operationId": "VideoController_library",
@@ -4391,6 +4560,99 @@
           }
         },
         "summary": "Menghapus aset perpustakaan yang tidak dipakai pelajaran mana pun",
+        "tags": [
+          "video"
+        ]
+      }
+    },
+    "/api/v1/admin/videos/{videoAssetId}/source": {
+      "put": {
+        "operationId": "VideoController_replaceSource",
+        "parameters": [
+          {
+            "name": "videoAssetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceVideoSourceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReplaceVideoSourceResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengganti sumber video sebuah aset; pelajaran yang memakainya ikut berpindah",
         "tags": [
           "video"
         ]
@@ -14502,6 +14764,109 @@
           "source"
         ]
       },
+      "BunnyLibraryItemDto": {
+        "type": "object",
+        "properties": {
+          "guid": {
+            "type": "string",
+            "description": "GUID video di Bunny."
+          },
+          "title": {
+            "type": "string"
+          },
+          "durationSeconds": {
+            "type": "number",
+            "description": "Durasi dalam detik; 0 bila Bunny belum selesai memprosesnya."
+          },
+          "sizeBytes": {
+            "type": "string",
+            "nullable": true,
+            "description": "String, bukan angka: ukuran berkas video melampaui batas aman JSON."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "READY",
+              "PROCESSING",
+              "FAILED"
+            ]
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Sampul bertanda tangan, berlaku terbatas. Null bila Bunny belum membuatnya."
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "videoAssetId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Terisi bila video ini sudah terdaftar di perpustakaan kita."
+          },
+          "usedByLessons": {
+            "type": "number",
+            "description": "Jumlah pelajaran yang memakainya; 0 bila belum terdaftar."
+          }
+        },
+        "required": [
+          "guid",
+          "title",
+          "durationSeconds",
+          "status",
+          "usedByLessons"
+        ]
+      },
+      "BunnyUploadTicketDto": {
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string",
+            "description": "GUID video kosong yang baru dibuat di Bunny."
+          },
+          "libraryId": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string",
+            "description": "Tanda tangan izin unggah; dibuat server, berlaku sampai expires."
+          },
+          "expires": {
+            "type": "number",
+            "description": "Unix timestamp detik."
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "Alamat TUS Bunny yang dituju peramban."
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "videoId",
+          "libraryId",
+          "signature",
+          "expires",
+          "endpoint",
+          "title"
+        ]
+      },
+      "CreateBunnyUploadTicketDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Judul video di Bunny; biasanya nama berkasnya."
+          }
+        },
+        "required": [
+          "title"
+        ]
+      },
       "VideoLibraryUsageDto": {
         "type": "object",
         "properties": {
@@ -14657,6 +15022,73 @@
         },
         "required": [
           "videoAssetId"
+        ]
+      },
+      "ReplaceVideoSourceResultDto": {
+        "type": "object",
+        "properties": {
+          "videoAssetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "SELF_HOSTED",
+              "BUNNY_STREAM",
+              "YOUTUBE"
+            ]
+          },
+          "providerVideoId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CREATED",
+              "UPLOADING",
+              "PROCESSING",
+              "AVAILABLE",
+              "FAILED",
+              "DELETED"
+            ]
+          },
+          "affectedLessons": {
+            "type": "number",
+            "description": "Jumlah pelajaran yang ikut berpindah."
+          },
+          "previousObjectKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "localFileDeleted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "videoAssetId",
+          "provider",
+          "providerVideoId",
+          "status",
+          "affectedLessons",
+          "localFileDeleted"
+        ]
+      },
+      "ReplaceVideoSourceDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "GUID video Bunny pengganti, atau tautan yang memuatnya."
+          },
+          "deleteLocalFile": {
+            "type": "boolean",
+            "description": "Menghapus berkas lama di server setelah penggantian berhasil.",
+            "default": false
+          }
+        },
+        "required": [
+          "source"
         ]
       },
       "PlaybackDrmDto": {
