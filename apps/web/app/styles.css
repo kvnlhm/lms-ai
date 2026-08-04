@@ -243,6 +243,9 @@ input, select, textarea { min-width: 0; }
 .noticeError { background: var(--danger-soft); color: var(--danger); }
 .noticeInfo { background: var(--accent-soft); color: var(--accent-text); }
 .noticeSuccess { background: var(--good-soft); color: var(--good); }
+/* Pratinjau kursus belum terbit. Kuning, bukan biru: ini bukan kabar, ini
+   peringatan bahwa yang terlihat belum tayang bagi siapa pun. */
+.previewBanner { margin: 0 0 18px; background: var(--warn-soft); color: var(--warn); }
 .empty { padding: 48px 24px; text-align: center; color: var(--muted); font-size: 14px; }
 
 /* ── Login ─────────────────────────────────────────────────── */

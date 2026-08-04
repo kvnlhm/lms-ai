@@ -55,6 +55,7 @@ export class LearningDeliveryService {
         title: course.title,
         shortDescription: course.shortDescription,
         estimatedMinutes: course.estimatedMinutes,
+        preview: access.preview,
       },
       modules: course.modules.map((module) => ({
         id: module.id,

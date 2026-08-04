@@ -2735,6 +2735,8 @@ export interface components {
             progressPercent: number;
             /** Format: uuid */
             lastLessonId?: string | null;
+            /** @description Benar bila kursus ini dibuka sebagai pratinjau karena belum terbit. Hanya mungkin bernilai benar bagi pemegang courses.manage. */
+            preview: boolean;
         };
         CourseDetailDto: {
             /** Format: uuid */
@@ -3330,6 +3332,8 @@ export interface components {
             title: string;
             shortDescription?: string | null;
             estimatedMinutes: number;
+            /** @description Benar bila kursus dibuka sebagai pratinjau karena belum terbit. */
+            preview: boolean;
         };
         LearnLessonItemDto: {
             /** Format: uuid */

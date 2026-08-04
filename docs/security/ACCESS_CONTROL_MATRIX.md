@@ -18,6 +18,7 @@ Role bukan satu-satunya kontrol. Backend tetap memeriksa resource ownership, enr
 | View all users | Yes | No | `users.read` |
 | View own courses | Yes | Yes | Student requires enrollment |
 | Manage courses | Yes | No | `courses.manage` |
+| Preview unpublished course | Yes | No | `courses.manage`; lihat bagian Pratinjau kursus |
 | Publish course | Yes | No | Valid content required |
 | Manage enrollment | Yes | No | `enrollments.manage` |
 | View own progress | Yes | Yes | Own enrollment |
@@ -94,6 +95,27 @@ Menyematkan berdiri sendiri lagi: ia menuntut `discussions.moderate` bahkan
 atas tulisan sendiri. Menyematkan bukan hak atas tulisanmu, melainkan keputusan
 tentang apa yang dilihat semua orang lebih dulu. `canPin` yang ikut dikirim ke
 antarmuka hanya menentukan tombol apa yang digambar; penegakannya di endpoint.
+
+### Pratinjau kursus
+
+Semua pengguna terautentikasi memperoleh akses ke setiap kursus yang sudah
+terbit. Di luar itu, pemegang `courses.manage` boleh membuka kursus yang belum
+terbit maupun yang sudah diarsipkan, lewat jalur pelajar yang sama persis —
+detail kursus, kurikulum, isi pelajaran, dan pemutaran video. Pemeriksaan yang
+menempuh jalur berbeda dari pelajar tidak membuktikan apa pun tentang apa yang
+akan dilihat pelajar.
+
+Haknya diikat pada permission, bukan kode role: role baru tanpa
+`courses.manage` tidak diam-diam ikut memperolehnya. Penolakannya `404`, bukan
+`403`, karena keberadaan kursus yang belum terbit bukan sesuatu yang perlu
+dikonfirmasi kepada yang tidak berhak melihatnya.
+
+Batasnya berhenti di jalur akses. Katalog publik tetap hanya memuat kursus
+terbit, dan draf tidak pernah muncul di daftar kursus maupun riwayat belajar
+siapa pun — termasuk penyusunnya, yang jalur pratinjaunya memang ikut membuat
+baris enrollment. Respons menandai keadaan ini lewat `access.preview` pada
+detail kursus dan `course.preview` pada kurikulum, supaya antarmuka dapat
+menyatakan bahwa yang terlihat belum tayang bagi siapa pun.
 
 ### Quiz
 

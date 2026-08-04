@@ -110,9 +110,11 @@ export class CourseCatalogService {
   }
 
   async detail(courseId: string, userId: string) {
-    await this.access.ensurePublishedCourseAccess(userId, courseId);
+    // Statusnya sudah dinilai di sini: kursus belum terbit hanya lolos untuk
+    // penyusun kursus, jadi kueri di bawah tidak perlu menyaringnya lagi.
+    const akses = await this.access.ensureCourseAccess(userId, courseId);
     const course = await this.prisma.course.findFirst({
-      where: { id: courseId, status: PublicationStatus.PUBLISHED },
+      where: { id: courseId },
       include: {
         category: { select: { name: true, slug: true } },
         modules: {
@@ -176,6 +178,7 @@ export class CourseCatalogService {
         status: enrollment?.status ?? null,
         progressPercent: Number(enrollment?.courseProgress?.progressPercent ?? 0),
         lastLessonId: enrollment?.courseProgress?.lastLessonId ?? null,
+        preview: akses.preview,
       },
     };
   }

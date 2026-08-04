@@ -1,13 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { EnrollmentStatus, PublicationStatus } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
+import { COURSE_PREVIEW_ACCESS, type CoursePreviewAccessPort } from './course-preview.port';
 
 export interface CourseAccess {
   enrollmentId: string;
   userId: string;
   courseId: string;
   status: EnrollmentStatus;
+  /**
+   * Benar bila kursus dibuka lewat hak pratinjau, bukan karena sudah terbit.
+   * Dipakai antarmuka untuk menyatakan bahwa yang terlihat belum tayang bagi
+   * pelajar; tanpa itu draf dan kursus terbit tampak persis sama.
+   */
+  preview: boolean;
 }
 
 /**
@@ -19,28 +26,40 @@ export interface CourseAccess {
  */
 @Injectable()
 export class EnrollmentAccessService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(COURSE_PREVIEW_ACCESS) private readonly pratinjau: CoursePreviewAccessPort,
+  ) {}
 
   async assertActiveAccess(userId: string, courseId: string): Promise<CourseAccess> {
-    const enrollment = await this.ensurePublishedCourseAccess(userId, courseId);
+    const enrollment = await this.ensureCourseAccess(userId, courseId);
 
     return {
       enrollmentId: enrollment.id,
       userId: enrollment.userId,
       courseId: enrollment.courseId,
       status: enrollment.status,
+      preview: enrollment.preview,
     };
   }
 
   /**
    * Enrollment hanya menjadi wadah progres. Semua pengguna terautentikasi
    * otomatis memperoleh akses permanen ke setiap kursus yang sudah terbit.
+   *
+   * Di luar itu ada satu jalan masuk: penyusun kursus boleh membuka kursus yang
+   * belum terbit sebagai pratinjau. Tanpa itu, satu-satunya cara memeriksa hasil
+   * penyusunan adalah menerbitkannya lebih dulu kepada seluruh pelajar — dan
+   * tombol "Pratinjau sebagai pelajar" di editor selama ini hanya menghasilkan
+   * 404. Pratinjau memakai jalur yang sama persis dengan pelajar, karena
+   * pemeriksaan yang menempuh jalur berbeda tidak membuktikan apa-apa.
    */
-  async ensurePublishedCourseAccess(userId: string, courseId: string) {
-    const course = await this.prisma.course.findFirst({
-      where: { id: courseId, status: PublicationStatus.PUBLISHED },
+  async ensureCourseAccess(userId: string, courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
       select: {
         id: true,
+        status: true,
         modules: {
           where: { isActive: true },
           select: { lessons: { where: { isActive: true, isRequired: true }, select: { id: true } } },
@@ -48,12 +67,22 @@ export class EnrollmentAccessService {
       },
     });
     if (!course) throw AppError.notFound();
+
+    // Kursus terbit adalah jalur cepat: tidak ada pertanyaan tambahan ke modul
+    // identity, sehingga permintaan pelajar tidak menanggung biaya apa pun.
+    const preview = course.status !== PublicationStatus.PUBLISHED;
+    if (preview && !(await this.pratinjau.bolehPratinjauKursus(userId))) {
+      // Sengaja 404, bukan 403: keberadaan kursus yang belum terbit bukan
+      // sesuatu yang perlu dikonfirmasi kepada yang tidak berhak melihatnya.
+      throw AppError.notFound();
+    }
+
     const requiredLessonsTotal = course.modules.reduce(
       (total, module) => total + module.lessons.length,
       0,
     );
 
-    return this.prisma.$transaction(async (tx) => {
+    const enrollment = await this.prisma.$transaction(async (tx) => {
       const existing = await tx.enrollment.findUnique({
         where: { userId_courseId: { userId, courseId } },
         select: { id: true, status: true },
@@ -78,6 +107,8 @@ export class EnrollmentAccessService {
       });
       return enrollment;
     });
+
+    return { ...enrollment, preview };
   }
 
   async ensureAllPublishedCourseAccess(userId: string): Promise<void> {
@@ -87,7 +118,7 @@ export class EnrollmentAccessService {
       orderBy: { createdAt: 'asc' },
     });
     for (const course of courses) {
-      await this.ensurePublishedCourseAccess(userId, course.id);
+      await this.ensureCourseAccess(userId, course.id);
     }
   }
 

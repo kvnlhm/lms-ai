@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../../components/app-shell';
 import { ArrowRight, Check } from '../../components/icons';
+import { PreviewBanner } from '../../components/preview-banner';
 import { ApiError, serverClient, unwrap } from '../../lib/api';
 import { requireUser } from '../../lib/session';
 import { LiveSessions } from './live-sessions';
@@ -95,6 +96,7 @@ export default async function CourseDetailPage({ params }: Props) {
   return (
     <AppShell user={user}>
       <main className="wrap wrapNarrow">
+        {course.access.preview ? <PreviewBanner /> : null}
         <div className="courseHeader">
           <div className="courseHeaderMain">
             <span className="eyebrow">{course.category?.name ?? 'Tanpa kategori'}</span>

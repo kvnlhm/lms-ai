@@ -13489,11 +13489,16 @@
             "type": "string",
             "format": "uuid",
             "nullable": true
+          },
+          "preview": {
+            "type": "boolean",
+            "description": "Benar bila kursus ini dibuka sebagai pratinjau karena belum terbit. Hanya mungkin bernilai benar bagi pemegang courses.manage."
           }
         },
         "required": [
           "enrolled",
-          "progressPercent"
+          "progressPercent",
+          "preview"
         ]
       },
       "CourseDetailDto": {
@@ -15428,13 +15433,18 @@
           },
           "estimatedMinutes": {
             "type": "number"
+          },
+          "preview": {
+            "type": "boolean",
+            "description": "Benar bila kursus dibuka sebagai pratinjau karena belum terbit."
           }
         },
         "required": [
           "id",
           "slug",
           "title",
-          "estimatedMinutes"
+          "estimatedMinutes",
+          "preview"
         ]
       },
       "LearnLessonItemDto": {

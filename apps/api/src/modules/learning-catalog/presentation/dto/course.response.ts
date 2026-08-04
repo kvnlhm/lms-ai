@@ -75,6 +75,12 @@ export class CourseAccessDto {
   @ApiPropertyOptional({ enum: ENROLLMENT_STATUSES, nullable: true }) status!: string | null;
   @ApiProperty() progressPercent!: number;
   @ApiPropertyOptional({ type: String, format: 'uuid', nullable: true }) lastLessonId!: string | null;
+  @ApiProperty({
+    description:
+      'Benar bila kursus ini dibuka sebagai pratinjau karena belum terbit. Hanya mungkin ' +
+      'bernilai benar bagi pemegang courses.manage.',
+  })
+  preview!: boolean;
 }
 
 export class CourseDetailDto {

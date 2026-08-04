@@ -10,6 +10,10 @@ export class LearnCourseSummaryDto {
   @ApiProperty() title!: string;
   @ApiPropertyOptional({ type: String, nullable: true }) shortDescription!: string | null;
   @ApiProperty() estimatedMinutes!: number;
+  @ApiProperty({
+    description: 'Benar bila kursus dibuka sebagai pratinjau karena belum terbit.',
+  })
+  preview!: boolean;
 }
 
 export class LearnLessonItemDto {

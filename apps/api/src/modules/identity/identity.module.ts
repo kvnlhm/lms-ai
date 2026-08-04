@@ -10,6 +10,8 @@ import { CredentialTokenService } from './application/credential-token.service';
 import { UserCredentialService } from './application/user-credential.service';
 import { AvatarService } from './application/avatar.service';
 import { ProfilePreferencesController } from './presentation/controllers/profile-preferences.controller';
+import { CoursePreviewAccessService } from './application/course-preview-access.service';
+import { COURSE_PREVIEW_ACCESS } from '../enrollment/application/course-preview.port';
 
 @Module({
   controllers: [AuthController, ProfilePreferencesController],
@@ -23,8 +25,9 @@ import { ProfilePreferencesController } from './presentation/controllers/profile
     CredentialTokenService,
     UserCredentialService,
     AvatarService,
+    { provide: COURSE_PREVIEW_ACCESS, useClass: CoursePreviewAccessService },
   ],
   // Facade credential diekspor agar Users tidak mengakses persistence identity.
-  exports: [SessionService, UserCredentialService],
+  exports: [SessionService, UserCredentialService, COURSE_PREVIEW_ACCESS],
 })
 export class IdentityModule {}

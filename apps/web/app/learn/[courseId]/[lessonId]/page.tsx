@@ -5,6 +5,7 @@ import { notFound, redirect } from 'next/navigation';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../../../components/app-shell';
 import { ArrowLeft, ArrowRight } from '../../../components/icons';
+import { PreviewBanner } from '../../../components/preview-banner';
 import { ApiError, serverClient, unwrap } from '../../../lib/api';
 import { requireUser } from '../../../lib/session';
 import { BookmarkButton } from './bookmark-button';
@@ -115,6 +116,7 @@ export default async function LessonPage({ params }: Props) {
       <div className="player">
         <div className="playerMain">
           <div className="playerStage">
+            {course.course.preview ? <PreviewBanner /> : null}
             <Link href={`/courses/${courseId}`} className="pill playerBack">
               <ArrowLeft size={13} /> {course.course.title}
             </Link>
