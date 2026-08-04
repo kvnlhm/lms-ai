@@ -31,6 +31,34 @@ const DILUAR_JANGKAUAN_WEB = new Map([
   ['/api/v1/learn/lessons/{lessonId}/material', 'dibuka lewat href, bukan fetch'],
   ['/api/v1/admin/errors/{errorId}/resolve', 'dipanggil lewat template literal'],
   ['/api/v1/admin/errors/{errorId}/reopen', 'dipanggil lewat template literal'],
+  [
+    '/api/v1/telemetry/client-errors',
+    'dipanggil lewat template literal dari app/lib/report-error.ts dan instrumentation.ts',
+  ],
+  [
+    '/api/v1/admin/reports',
+    'katalog laporan sengaja ditulis di web agar keterangan tiap laporan lebih jelas; lihat app/master/reports/report-exporter.tsx',
+  ],
+]);
+
+/**
+ * Endpoint yang memang belum tersambung, dan sengaja dibiarkan begitu sampai
+ * ada keputusan.
+ *
+ * Dipisahkan dari daftar di atas karena alasannya berbeda jenis: yang di atas
+ * tidak akan pernah dipanggil kode web, sedangkan yang di sini adalah celah
+ * yang diakui. Menaruhnya di satu daftar akan membuat celah tampak seperti
+ * keputusan desain, dan setahun lagi tidak ada yang bisa membedakannya.
+ */
+const BELUM_DIPUTUSKAN = new Map([
+  [
+    '/api/v1/admin/enrollments/{enrollmentId}',
+    'Menyetel masa berlaku akses. Tidak disambungkan karena masa akses belum ' +
+      'ditegakkan di mana pun: EnrollmentAccessService.ensurePublishedCourseAccess ' +
+      'justru menulis accessStartsAt/accessEndsAt menjadi null setiap kali pelajar ' +
+      'membuka kursus terbit. Menyambungkannya akan membuat Master menyetel tanggal ' +
+      'yang tidak berpengaruh dan menghilang sendiri.',
+  ],
 ]);
 
 async function sumberWeb() {
@@ -48,15 +76,76 @@ async function sumberWeb() {
 
 const blob = await sumberWeb();
 
+/**
+ * Sebuah endpoint dihitung terpanggil hanya bila path-nya muncul sebagai
+ * literal utuh di antara tanda kutip — persis bentuk yang dipakai klien:
+ * `client.GET('/api/v1/...')`.
+ *
+ * Sebelumnya pemeriksaan ini memakai `blob.includes(path)` tanpa kutip, dan itu
+ * membuatnya buta terhadap path yang menjadi awalan path lain:
+ * `/admin/enrollments/{enrollmentId}` dianggap terpanggil semata-mata karena
+ * `/admin/enrollments/{enrollmentId}/remove` ada di kode. Tiga endpoint lolos
+ * karena celah itu, satu di antaranya memang tidak pernah tersambung —
+ * tepat jenis cacat yang seharusnya ditangkap penjaga ini.
+ *
+ * Panggilan lewat template literal tidak akan cocok dengan aturan ini. Itu
+ * disengaja: bentuk begitu tidak dapat diperiksa dengan andal, jadi ia harus
+ * didaftarkan beserta alasannya alih-alih lolos diam-diam.
+ */
+export function dipanggilDi(sumber, path) {
+  return sumber.includes(`'${path}'`) || sumber.includes(`"${path}"`);
+}
+
 test('setiap endpoint API punya pemanggil di web, atau alasan tertulis mengapa tidak', () => {
   const yatim = Object.keys(spec.paths).filter(
-    (path) => !blob.includes(path) && !DILUAR_JANGKAUAN_WEB.has(path),
+    (path) =>
+      !dipanggilDi(blob, path) &&
+      !DILUAR_JANGKAUAN_WEB.has(path) &&
+      !BELUM_DIPUTUSKAN.has(path),
   );
   assert.deepEqual(
     yatim,
     [],
     `Endpoint tanpa pemanggil di web:\n  ${yatim.join('\n  ')}\n` +
       'Sambungkan ke antarmuka, atau daftarkan di DILUAR_JANGKAUAN_WEB beserta alasannya.',
+  );
+});
+
+test('celah yang diakui tetap terlihat, dan hilang begitu tersambung', () => {
+  // Daftar ini tidak boleh menjadi tempat sampah. Begitu sebuah endpoint
+  // benar-benar dipanggil, barisnya wajib dicabut — kalau dibiarkan, penjaga
+  // ini berhenti mengawasi endpoint tersebut tanpa ada yang menyadarinya.
+  for (const [path, alasan] of BELUM_DIPUTUSKAN) {
+    assert.ok(spec.paths[path], `${path} sudah tidak ada di API; cabut barisnya.`);
+    assert.ok(alasan.length > 60, `${path} perlu alasan yang menjelaskan, bukan sekadar label.`);
+    assert.equal(
+      dipanggilDi(blob, path),
+      false,
+      `${path} ternyata sudah dipanggil dari web; pindahkan keluar dari BELUM_DIPUTUSKAN.`,
+    );
+  }
+});
+
+test('path yang menjadi awalan path lain tidak dianggap terpanggil', () => {
+  // Kontrol atas celah yang baru ditutup. Tanpa test ini, seseorang dapat
+  // mengembalikan pencocokan longgar dan seluruh berkas tetap hijau.
+  const sumber = `client.POST('/api/v1/admin/enrollments/{enrollmentId}/remove', {})`;
+  assert.equal(dipanggilDi(sumber, '/api/v1/admin/enrollments/{enrollmentId}/remove'), true);
+  assert.equal(dipanggilDi(sumber, '/api/v1/admin/enrollments/{enrollmentId}'), false);
+});
+
+test('daftar pengecualian tidak menyimpan baris yang sudah tidak relevan', () => {
+  // Pengecualian yang endpoint-nya sudah dihapus dari API, atau yang ternyata
+  // sudah tersambung, akan menumpuk diam-diam dan melemahkan penjaga ini.
+  const adaDiSpec = Object.keys(spec.paths);
+  const usang = [...DILUAR_JANGKAUAN_WEB.keys()].filter((path) => !adaDiSpec.includes(path));
+  assert.deepEqual(usang, [], `Pengecualian menunjuk endpoint yang tidak ada lagi:\n  ${usang.join('\n  ')}`);
+
+  const sudahTersambung = [...DILUAR_JANGKAUAN_WEB.keys()].filter((path) => dipanggilDi(blob, path));
+  assert.deepEqual(
+    sudahTersambung,
+    [],
+    `Sudah dipanggil dari web, jadi pengecualiannya perlu dihapus:\n  ${sudahTersambung.join('\n  ')}`,
   );
 });
 
