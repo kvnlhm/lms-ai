@@ -243,23 +243,8 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
       {user.isImpersonating ? <ImpersonationBanner /> : null}
       <header className="topbar">
         <MobileNavigation title="Academy AIPreneur">
-          <nav className="mobileDrawerNav" aria-label="Navigasi Pelajar mobile">
-            {[
-              ...LEARNER_NAV,
-              ...MASTER_NAV.filter((item) => can(user, item.permission)),
-            ].map((item) => (
-              <NavLink key={`drawer-${item.href}`} href={item.href}>
-                {item.label}
-                {item.href === '/announcements' ? (
-                  <LencanaBelumDibaca jumlah={pengumumanBelumDibaca} />
-                ) : null}
-              </NavLink>
-            ))}
-            <Link className="navLink" href="/profile">
-              <UserAvatar user={user} />
-              Profil
-            </Link>
-          </nav>
+          <LearnerChannelSidebar placement="drawer" />
+          {MASTER_NAV.some((item) => can(user, item.permission)) ? <nav className="mobileDrawerNav learnerDrawerMasterLinks" aria-label="Workspace Master">{MASTER_NAV.filter((item) => can(user, item.permission)).map((item) => <NavLink key={`drawer-${item.href}`} href={item.href}>{item.label}</NavLink>)}</nav> : null}
           <div className="mobileDrawerActions">
             <ThemeToggle />
             <LogoutButton />
@@ -311,7 +296,7 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
         ))}
       </nav>
       <div className="learnerShellBody">
-        <LearnerChannelSidebar />
+        <LearnerChannelSidebar placement="desktop" />
         <div className="learnerShellContent">{children}</div>
       </div>
       <LearnerMobileNav unread={notifikasiBelumDibaca} />

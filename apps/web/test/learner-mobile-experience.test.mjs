@@ -16,11 +16,14 @@ test('Pelajar memiliki navigasi bawah mobile dengan empat tujuan utama', () => {
   assert.match(css, /\.learnerBottomNav\{position:fixed[^}]*grid-template-columns:repeat\(4,1fr\)/);
 });
 
-test('seluruh tujuan Pelajar tetap dapat dijangkau melalui tab horizontal mobile', () => {
+test('seluruh tujuan Pelajar tetap dapat dijangkau dan pintasan lengkap berada di drawer burger', () => {
   assert.match(shell, /className="learnerMobileTabs"/);
   assert.match(shell, /LEARNER_NAV\.map/);
+  assert.match(shell, /LearnerChannelSidebar placement="drawer"/);
   assert.match(css, /\.learnerMobileTabs\{position:sticky[^}]*overflow-x:auto/);
-  assert.match(css, /\.learnerChannelSidebar\{top:123px/);
+  assert.match(css, /\.topbar>\.mobileNavigation\{display:block;order:0\}/);
+  assert.match(css, /\.learnerShellBody>\.learnerChannelSidebarDesktop\{display:none\}/);
+  assert.match(css, /\.mobileDrawerBody \.learnerChannelSidebarDrawer\{position:static[^}]*flex-direction:column/);
 });
 
 test('pencarian mobile dapat ditutup dan memakai id aksesibilitas yang unik', () => {

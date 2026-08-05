@@ -19,7 +19,7 @@ const LEARNER_SHORTCUTS = [
 ] as const;
 
 /** Pintasan ruang komunitas yang dipilih Master, dikelompokkan per Channel. */
-export function LearnerChannelSidebar() {
+export function LearnerChannelSidebar({ placement = 'desktop' }: { placement?: 'desktop' | 'drawer' }) {
   const pathname = usePathname();
   const [channels, setChannels] = useState<CommunityChannel[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
@@ -42,7 +42,7 @@ export function LearnerChannelSidebar() {
     setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   }
 
-  return <aside className="learnerChannelSidebar" aria-label="Pintasan Pelajar">
+  return <aside className={`learnerChannelSidebar learnerChannelSidebar${placement === 'drawer' ? 'Drawer' : 'Desktop'}`} aria-label="Pintasan Pelajar">
     <span className="channelGroup learnerMenuLabel">Menu belajar</span>
     {LEARNER_SHORTCUTS.map((item) => {
       const Icon = item.icon;

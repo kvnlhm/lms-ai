@@ -10,10 +10,11 @@ const channelManager = await readFile(new URL('../app/master/community/channel-m
 const learnerSidebar = await readFile(new URL('../app/components/learner-channel-sidebar.tsx', import.meta.url), 'utf8');
 const channelPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/page.tsx', import.meta.url), 'utf8');
 
-test('shell Pelajar menyediakan sidebar channel desktop dan navigasi horizontal mobile', () => {
+test('shell Pelajar menyediakan sidebar desktop dan memindahkannya ke drawer pada mobile', () => {
   assert.match(css, /\.learnerShellBody\{[^}]*grid-template-columns:220px minmax\(0,1fr\)/);
   assert.match(css, /\.learnerChannelSidebar\{[^}]*position:sticky/);
-  assert.match(css, /@media\(max-width:760px\)[\s\S]*\.learnerChannelSidebar\{position:sticky[^}]*flex-direction:row/);
+  assert.match(shell, /LearnerChannelSidebar placement="drawer"/);
+  assert.match(css, /@media\(max-width:760px\)[\s\S]*\.learnerShellBody>\.learnerChannelSidebarDesktop\{display:none\}/);
   assert.match(css, /\.communityLayout\{grid-template-columns:minmax\(0,1fr\) 310px/);
 });
 
