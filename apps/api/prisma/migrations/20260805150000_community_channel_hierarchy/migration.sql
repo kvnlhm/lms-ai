@@ -24,6 +24,10 @@ ALTER TABLE "community_channel_groups"
 
 ALTER TABLE "community_channels" ADD COLUMN "group_id" UUID;
 
+-- Slug lama unik secara global. Lepaskan batasan itu sebelum setiap ruang lama
+-- diberi slug sub-channel "umum"; keunikannya nanti ditegakkan per induk.
+DROP INDEX "community_channels_slug_key";
+
 INSERT INTO "community_channel_groups" (
   "id", "slug", "name", "description", "position", "created_by", "archived_at", "created_at", "updated_at"
 )
@@ -40,7 +44,6 @@ FROM "community_channel_groups" AS parent
 WHERE parent."slug" = sub."slug";
 
 ALTER TABLE "community_channels" ALTER COLUMN "group_id" SET NOT NULL;
-DROP INDEX "community_channels_slug_key";
 CREATE UNIQUE INDEX "community_channels_group_id_slug_key" ON "community_channels"("group_id", "slug");
 
 ALTER TABLE "community_channels"
