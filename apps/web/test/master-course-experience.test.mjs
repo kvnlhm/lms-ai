@@ -33,8 +33,14 @@ test('halaman kelola kursus menyediakan menu aksi dan pratinjau langsung', async
   assert.match(editor, /Pratinjau materi/);
 });
 
-test('halaman pemeliharaan memakai logo tanpa teks AI', async () => {
-  const source = await read('../../../deploy/nginx/pemeliharaan/__pemeliharaan.html');
-  assert.match(source, /<svg/);
+test('halaman pemeliharaan memakai logo aplikasi yang dilayani gateway sendiri', async () => {
+  const [source, dockerfile, nginx] = await Promise.all([
+    read('../../../deploy/nginx/pemeliharaan/__pemeliharaan.html'),
+    read('../../../deploy/nginx/Dockerfile.coolify'),
+    read('../../../deploy/nginx/coolify.conf.template'),
+  ]);
+  assert.match(source, /<img src="\/__brand\.png"/);
   assert.doesNotMatch(source, />AI</);
+  assert.match(dockerfile, /COPY apps\/web\/app\/icon\.png \/usr\/share\/nginx\/pemeliharaan\/__brand\.png/);
+  assert.match(nginx, /location = \/__brand\.png/);
 });

@@ -45,3 +45,4 @@
 | ADR-023 | Accepted | Pemantauan galat dibangun sendiri |
 | ADR-024 | Accepted | Community feed dan channel yang dikelola Master |
 | ADR-025 | Accepted | Hierarki channel, sub-channel, dan ruang chat komunitas |
+| ADR-026 | Accepted | Pintasan komunitas Pelajar dipilih Master |

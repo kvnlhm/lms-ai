@@ -8,8 +8,8 @@ import { browserClient, unwrap, unwrapList } from '../lib/browser-api';
 /** Satu tarikan pesan atau balasan; dipakai baik saat memuat lama maupun menyegarkan. */
 const UKURAN_HALAMAN = 30;
 
-export type CommunitySubchannel = { id: string; slug: string; name: string; description: string | null; isReadOnly: boolean; postCount: number; archivedAt?: string | null; position?: number };
-export type CommunityChannel = { id: string; slug: string; name: string; description: string | null; position?: number; archivedAt?: string | null; subchannels: CommunitySubchannel[] };
+export type CommunitySubchannel = { id: string; slug: string; name: string; description: string | null; isReadOnly: boolean; postCount: number; showInSidebar: boolean; archivedAt?: string | null; position?: number };
+export type CommunityChannel = { id: string; slug: string; name: string; description: string | null; showInSidebar: boolean; position?: number; archivedAt?: string | null; subchannels: CommunitySubchannel[] };
 type Person = { id: string; fullName: string; avatarUrl: string | null };
 export type CommunityComment = {
   id: string; body: string; editedAt: string | null; createdAt: string; author: Person;

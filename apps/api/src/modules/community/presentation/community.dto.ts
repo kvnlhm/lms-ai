@@ -17,6 +17,10 @@ export class CreateCommunityChannelDto {
   @IsOptional() @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @MaxLength(80) slug?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) description?: string;
   @ApiPropertyOptional({ default: 0 }) @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
+  @ApiProperty({ description: 'Nama sub-channel pertama yang menjadi ruang chat.' }) @IsString() @MinLength(2) @MaxLength(80) subchannelName!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) subchannelDescription?: string;
+  @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() isReadOnly?: boolean;
+  @ApiPropertyOptional({ default: true }) @IsOptional() @IsBoolean() showInSidebar?: boolean;
 }
 
 export class UpdateCommunityChannelDto {
@@ -24,6 +28,7 @@ export class UpdateCommunityChannelDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @MaxLength(80) slug?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) description?: string;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() showInSidebar?: boolean;
 }
 
 export class CreateCommunitySubchannelDto {
@@ -33,6 +38,7 @@ export class CreateCommunitySubchannelDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) description?: string;
   @ApiPropertyOptional({ default: 0 }) @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
   @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() isReadOnly?: boolean;
+  @ApiPropertyOptional({ default: true }) @IsOptional() @IsBoolean() showInSidebar?: boolean;
 }
 
 export class UpdateCommunitySubchannelDto extends PartialType(CreateCommunitySubchannelDto) {}
@@ -45,6 +51,7 @@ export class CommunitySubchannelDto {
   @ApiProperty() position!: number;
   @ApiProperty() isReadOnly!: boolean;
   @ApiProperty() postCount!: number;
+  @ApiProperty() showInSidebar!: boolean;
 }
 
 export class CommunityChannelDto {
@@ -53,6 +60,7 @@ export class CommunityChannelDto {
   @ApiProperty() name!: string;
   @ApiProperty({ type: String, nullable: true }) description!: string | null;
   @ApiProperty() position!: number;
+  @ApiProperty() showInSidebar!: boolean;
   @ApiProperty({ type: [CommunitySubchannelDto] }) subchannels!: CommunitySubchannelDto[];
 }
 

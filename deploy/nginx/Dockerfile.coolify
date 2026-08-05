@@ -4,3 +4,7 @@ COPY deploy/nginx/coolify.conf.template /etc/nginx/templates/default.conf.templa
 # Halaman pemeliharaan ikut ke dalam image, bukan dipasang lewat volume: ia
 # justru dibutuhkan tepat ketika layanan lain sedang tidak ada.
 COPY deploy/nginx/pemeliharaan/ /usr/share/nginx/pemeliharaan/
+# Logo harus hidup di gateway itu sendiri. Saat halaman pemeliharaan muncul,
+# container Web justru sedang tidak dapat dijangkau, jadi mengambil ikon dari
+# Next.js akan gagal pada saat ikon itu paling dibutuhkan.
+COPY apps/web/app/icon.png /usr/share/nginx/pemeliharaan/__brand.png

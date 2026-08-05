@@ -10393,6 +10393,53 @@
         ]
       }
     },
+    "/api/v1/community/sidebar-channels": {
+      "get": {
+        "operationId": "CommunityController_sidebarChannels",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommunityChannelDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Pintasan channel yang dipilih Master untuk sidebar Pelajar",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/v1/community/feed": {
       "get": {
         "operationId": "CommunityController_feed",
@@ -18996,6 +19043,9 @@
           },
           "postCount": {
             "type": "number"
+          },
+          "showInSidebar": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -19005,7 +19055,8 @@
           "description",
           "position",
           "isReadOnly",
-          "postCount"
+          "postCount",
+          "showInSidebar"
         ]
       },
       "CommunityChannelDto": {
@@ -19027,6 +19078,9 @@
           "position": {
             "type": "number"
           },
+          "showInSidebar": {
+            "type": "boolean"
+          },
           "subchannels": {
             "type": "array",
             "items": {
@@ -19040,6 +19094,7 @@
           "name",
           "description",
           "position",
+          "showInSidebar",
           "subchannels"
         ]
       },
@@ -19269,6 +19324,9 @@
           "position": {
             "type": "number"
           },
+          "showInSidebar": {
+            "type": "boolean"
+          },
           "subchannels": {
             "type": "array",
             "items": {
@@ -19291,6 +19349,7 @@
           "name",
           "description",
           "position",
+          "showInSidebar",
           "subchannels",
           "archivedAt",
           "createdAt"
@@ -19312,10 +19371,26 @@
           "position": {
             "type": "number",
             "default": 0
+          },
+          "subchannelName": {
+            "type": "string",
+            "description": "Nama sub-channel pertama yang menjadi ruang chat."
+          },
+          "subchannelDescription": {
+            "type": "string"
+          },
+          "isReadOnly": {
+            "type": "boolean",
+            "default": false
+          },
+          "showInSidebar": {
+            "type": "boolean",
+            "default": true
           }
         },
         "required": [
-          "name"
+          "name",
+          "subchannelName"
         ]
       },
       "UpdateCommunityChannelDto": {
@@ -19332,6 +19407,9 @@
           },
           "position": {
             "type": "number"
+          },
+          "showInSidebar": {
+            "type": "boolean"
           }
         }
       },
@@ -19355,6 +19433,10 @@
           "isReadOnly": {
             "type": "boolean",
             "default": false
+          },
+          "showInSidebar": {
+            "type": "boolean",
+            "default": true
           }
         },
         "required": [
@@ -19381,6 +19463,10 @@
           "isReadOnly": {
             "type": "boolean",
             "default": false
+          },
+          "showInSidebar": {
+            "type": "boolean",
+            "default": true
           }
         }
       },

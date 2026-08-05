@@ -2526,6 +2526,8 @@ Memenuhi perluasan produk yang disetujui pada ADR-024. Seluruh endpoint learner
 memerlukan sesi aktif.
 
 - `GET /community/channels` — channel aktif untuk sidebar.
+- `GET /community/sidebar-channels` — subset Channel dan Sub-channel aktif yang
+  dipilih Master sebagai pintasan sidebar Pelajar.
 - `GET /community/feed` — feed lintas channel, terurut pin dan aktivitas terbaru.
 - `GET /community/channels/{channelSlug}/{subchannelSlug}/posts` — pesan sebuah sub-channel, kronologis
   (terbaru dulu) dan berhalaman. Urutannya sengaja berbeda dari feed: di sebuah
@@ -2547,7 +2549,7 @@ memerlukan sesi aktif.
 - `GET /community/posts/{postId}/comments` — seluruh balasan sebuah tulisan,
   berhalaman menaik. Daftar tulisan hanya membawa enam balasan **terakhir**
   sebagai pratinjau, sehingga sisanya harus diambil dari sini.
-- `POST /community/channels/{channelId}/posts` — membuat post; channel baca-saja
+- `POST /community/subchannels/{subchannelId}/posts` — membuat post; sub-channel baca-saja
   menuntut `discussions.moderate`.
 - `POST /community/posts/{postId}/comments` — membalas post.
 - `POST /community/posts/{postId}/reaction` — menyalakan/mematikan reaksi pengguna.
@@ -2560,11 +2562,14 @@ memerlukan sesi aktif.
   atas tulisan siapa pun. Penghapusan tulisan orang lain dicatat ke audit log
   (`community.post.delete`, `community.comment.delete`) beserta isi aslinya.
   Menghapus balasan menghitung ulang `commentCount`, bukan menguranginya.
-- `GET|POST|PATCH|DELETE /admin/community/channels` — pengelolaan channel oleh
-  Master dengan `discussions.moderate`; PATCH menerima perubahan nama, slug,
-  deskripsi, posisi, dan `isReadOnly`, sedangkan DELETE mengarsipkan, bukan
-  menghapus isi. `GET` sengaja menyertakan channel terarsip beserta
-  `archivedAt` dan `postCount`-nya, karena di sanalah jalan pulangnya.
+- `GET|POST|PATCH|DELETE /admin/community/channels` — pengelolaan Channel induk
+  oleh Master dengan `discussions.moderate`. POST wajib menyertakan
+  `subchannelName` agar Channel lahir bersama minimal satu ruang chat. PATCH
+  dapat mengatur `showInSidebar`; DELETE mengarsipkan, bukan menghapus isi.
+- `POST /admin/community/channels/{id}/subchannels` dan
+  `PATCH|DELETE /admin/community/channels/subchannels/{id}` — mengelola
+  Sub-channel. PATCH dapat mengatur `showInSidebar`. Sub-channel aktif terakhir
+  tidak dapat diarsipkan.
 - `POST /admin/community/channels/{id}/restore` — mengembalikan channel yang
   diarsipkan beserta seluruh postnya. Slug tidak pernah dilepas selama
   diarsipkan (kolomnya unik global), sehingga pemulihan tidak dapat

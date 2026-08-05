@@ -7,6 +7,7 @@ const shell = await readFile(new URL('../app/components/app-shell.tsx', import.m
 const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const channel = await readFile(new URL('../app/community/community-feed.tsx', import.meta.url), 'utf8');
 const channelManager = await readFile(new URL('../app/master/community/channel-manager.tsx', import.meta.url), 'utf8');
+const learnerSidebar = await readFile(new URL('../app/components/learner-channel-sidebar.tsx', import.meta.url), 'utf8');
 const channelPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/page.tsx', import.meta.url), 'utf8');
 
 test('shell Pelajar menyediakan sidebar channel desktop dan navigasi horizontal mobile', () => {
@@ -59,9 +60,25 @@ test('Master dapat membuat sub-channel dan mengatur akses menulis ruang chat', (
   assert.match(channelManager, /POST\('\/api\/v1\/admin\/community\/channels\/\{id\}\/subchannels'/);
   assert.match(channelManager, /name: draft\.name\.trim\(\)/);
   assert.match(channelManager, /description: draft\.description\.trim\(\)/);
-  assert.match(channelManager, /isReadOnly: draft\.isReadOnly/);
+  assert.match(channelManager, /isReadOnly: firstSub\.isReadOnly/);
   assert.match(channelManager, /Master dan Pelajar/);
   assert.match(channelManager, /Hanya Master/);
+});
+
+test('Channel wajib lahir bersama sub-channel dan daftar Master dapat dibuka-tutup', () => {
+  assert.match(channelManager, /subchannelName: firstSub\.name\.trim\(\)/);
+  assert.match(channelManager, /name\.trim\(\)\.length < 2 \|\| firstSub\.name\.trim\(\)\.length < 2/);
+  assert.match(channelManager, /aria-expanded=\{open\}/);
+  assert.match(channelManager, /expanded\.has\(group\.id\)/);
+  assert.match(channelManager, /open \? <div className="channelAccordionPanel"/);
+});
+
+test('sidebar Pelajar hanya memakai pintasan pilihan Master dan menampilkan sub-channel secara accordion', () => {
+  assert.match(learnerSidebar, /GET\('\/api\/v1\/community\/sidebar-channels'/);
+  assert.match(learnerSidebar, /aria-expanded=\{open\}/);
+  assert.match(learnerSidebar, /open \? <div className="learnerShortcutChildren"/);
+  assert.match(channelManager, /showInSidebar/);
+  assert.match(channelManager, /Sembunyikan dari sidebar/);
 });
 
 test('sunting dan hapus pesan bersandar pada kewenangan dari server, bukan tebakan browser', () => {

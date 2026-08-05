@@ -7,26 +7,35 @@ import { browserClient, unwrap } from '../../lib/browser-api';
 import type { CommunityChannel, CommunitySubchannel } from '../../community/community-feed';
 
 type ManagedChannel = CommunityChannel & { archivedAt?: string | null; createdAt?: string };
-type Draft = { name: string; description: string; isReadOnly: boolean };
+type SubDraft = { name: string; description: string; isReadOnly: boolean; showInSidebar: boolean };
+const EMPTY_SUB: SubDraft = { name: '', description: '', isReadOnly: false, showInSidebar: true };
 
 export function ChannelManager({ initialChannels }: { initialChannels: ManagedChannel[] }) {
   const notifier = useNotifier();
   const [channels, setChannels] = useState(initialChannels);
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [firstSub, setFirstSub] = useState<SubDraft>(EMPTY_SUB);
   const [addingTo, setAddingTo] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Draft>({ name: '', description: '', isReadOnly: false });
+  const [draft, setDraft] = useState<SubDraft>(EMPTY_SUB);
   const [message, setMessage] = useState('');
   const [pending, startTransition] = useTransition();
 
   const replace = (groupId: string, value: ManagedChannel) => setChannels((items) => items.map((item) => item.id === groupId ? value : item));
+  const toggle = (id: string) => setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
 
   function createChannel() {
-    if (name.trim().length < 2) return;
+    if (name.trim().length < 2 || firstSub.name.trim().length < 2) return;
     startTransition(async () => {
       try {
-        const created = unwrap<ManagedChannel>(await browserClient().POST('/api/v1/admin/community/channels', { body: { name: name.trim(), description: description.trim() || undefined, position: channels.length } }));
-        setChannels((items) => [...items, created]); setName(''); setDescription(''); setMessage('Channel berhasil dibuat. Tambahkan sub-channel sebagai ruang chat.');
+        const created = unwrap<ManagedChannel>(await browserClient().POST('/api/v1/admin/community/channels', { body: {
+          name: name.trim(), description: description.trim() || undefined, position: channels.length,
+          subchannelName: firstSub.name.trim(), subchannelDescription: firstSub.description.trim() || undefined,
+          isReadOnly: firstSub.isReadOnly, showInSidebar: firstSub.showInSidebar,
+        } }));
+        setChannels((items) => [...items, created]); setExpanded((items) => new Set(items).add(created.id));
+        setName(''); setDescription(''); setFirstSub(EMPTY_SUB); setMessage('Channel beserta sub-channel pertamanya berhasil dibuat.');
       } catch (error) { setMessage(error instanceof Error ? error.message : 'Channel gagal dibuat.'); }
     });
   }
@@ -35,72 +44,73 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
     if (draft.name.trim().length < 2) return;
     startTransition(async () => {
       try {
-        const created = unwrap<CommunitySubchannel>(await browserClient().POST('/api/v1/admin/community/channels/{id}/subchannels', { params: { path: { id: group.id } }, body: { name: draft.name.trim(), description: draft.description.trim() || undefined, isReadOnly: draft.isReadOnly, position: group.subchannels.length } }));
-        replace(group.id, { ...group, subchannels: [...group.subchannels, created] });
-        setAddingTo(null); setDraft({ name: '', description: '', isReadOnly: false }); setMessage('Sub-channel berhasil dibuat.');
+        const created = unwrap<CommunitySubchannel>(await browserClient().POST('/api/v1/admin/community/channels/{id}/subchannels', { params: { path: { id: group.id } }, body: { ...draft, name: draft.name.trim(), description: draft.description.trim() || undefined, position: group.subchannels.length } }));
+        replace(group.id, { ...group, subchannels: [...group.subchannels, created] }); setAddingTo(null); setDraft(EMPTY_SUB); setMessage('Sub-channel berhasil ditambahkan.');
       } catch (error) { setMessage(error instanceof Error ? error.message : 'Sub-channel gagal dibuat.'); }
     });
   }
 
-  async function editChannel(group: ManagedChannel) {
+  async function renameChannel(group: ManagedChannel) {
     const nextName = await notifier.prompt('Edit channel', { label: 'Nama channel', defaultValue: group.name, minLength: 2, confirmLabel: 'Simpan' });
     if (nextName === null || nextName === group.name) return;
-    startTransition(async () => {
-      try { const updated = unwrap<ManagedChannel>(await browserClient().PATCH('/api/v1/admin/community/channels/{id}', { params: { path: { id: group.id } }, body: { name: nextName.trim() } })); replace(group.id, updated); setMessage('Channel berhasil diperbarui.'); }
-      catch (error) { setMessage(error instanceof Error ? error.message : 'Channel gagal diperbarui.'); }
-    });
+    startTransition(async () => { try { replace(group.id, unwrap<ManagedChannel>(await browserClient().PATCH('/api/v1/admin/community/channels/{id}', { params: { path: { id: group.id } }, body: { name: nextName.trim() } }))); } catch (error) { setMessage(error instanceof Error ? error.message : 'Channel gagal diperbarui.'); } });
   }
 
-  async function editSubchannel(group: ManagedChannel, sub: CommunitySubchannel) {
+  async function renameSubchannel(group: ManagedChannel, sub: CommunitySubchannel) {
     const nextName = await notifier.prompt('Edit sub-channel', { label: 'Nama sub-channel', defaultValue: sub.name, minLength: 2, confirmLabel: 'Simpan' });
     if (nextName === null || nextName === sub.name) return;
-    startTransition(async () => {
-      try { const updated = unwrap<CommunitySubchannel>(await browserClient().PATCH('/api/v1/admin/community/channels/subchannels/{id}', { params: { path: { id: sub.id } }, body: { name: nextName.trim() } })); replace(group.id, { ...group, subchannels: group.subchannels.map((item) => item.id === sub.id ? updated : item) }); setMessage('Sub-channel berhasil diperbarui.'); }
-      catch (error) { setMessage(error instanceof Error ? error.message : 'Sub-channel gagal diperbarui.'); }
-    });
+    startTransition(async () => { try { const updated = unwrap<CommunitySubchannel>(await browserClient().PATCH('/api/v1/admin/community/channels/subchannels/{id}', { params: { path: { id: sub.id } }, body: { name: nextName.trim() } })); replace(group.id, { ...group, subchannels: group.subchannels.map((item) => item.id === sub.id ? updated : item) }); } catch (error) { setMessage(error instanceof Error ? error.message : 'Sub-channel gagal diperbarui.'); } });
+  }
+
+  function setGroupShortcut(group: ManagedChannel, value: boolean) {
+    startTransition(async () => { try { const updated = unwrap<ManagedChannel>(await browserClient().PATCH('/api/v1/admin/community/channels/{id}', { params: { path: { id: group.id } }, body: { showInSidebar: value } })); replace(group.id, updated); setMessage(value ? 'Channel ditampilkan di sidebar Pelajar.' : 'Channel disembunyikan dari sidebar Pelajar.'); } catch (error) { setMessage(error instanceof Error ? error.message : 'Pintasan gagal diperbarui.'); } });
+  }
+
+  function setSubShortcut(group: ManagedChannel, sub: CommunitySubchannel, value: boolean) {
+    startTransition(async () => { try { const updated = unwrap<CommunitySubchannel>(await browserClient().PATCH('/api/v1/admin/community/channels/subchannels/{id}', { params: { path: { id: sub.id } }, body: { showInSidebar: value } })); replace(group.id, { ...group, subchannels: group.subchannels.map((item) => item.id === sub.id ? updated : item) }); setMessage(value ? 'Sub-channel ditampilkan sebagai pintasan.' : 'Sub-channel disembunyikan dari sidebar.'); } catch (error) { setMessage(error instanceof Error ? error.message : 'Pintasan gagal diperbarui.'); } });
   }
 
   async function archiveChannel(group: ManagedChannel) {
     if (!await notifier.confirm(`Hapus channel ${group.name}?`, { text: 'Semua sub-channel dan chat di dalamnya akan disembunyikan dan dapat dipulihkan.', confirmLabel: 'Hapus channel', danger: true })) return;
-    startTransition(async () => {
-      try { await browserClient().DELETE('/api/v1/admin/community/channels/{id}', { params: { path: { id: group.id } } }); replace(group.id, { ...group, archivedAt: new Date().toISOString() }); setMessage('Channel dipindahkan ke arsip.'); }
-      catch (error) { setMessage(error instanceof Error ? error.message : 'Channel gagal diarsipkan.'); }
-    });
-  }
-
-  function restoreChannel(group: ManagedChannel) {
-    startTransition(async () => {
-      try { const restored = unwrap<ManagedChannel>(await browserClient().POST('/api/v1/admin/community/channels/{id}/restore', { params: { path: { id: group.id } } })); replace(group.id, restored); setMessage('Channel berhasil dipulihkan.'); }
-      catch (error) { setMessage(error instanceof Error ? error.message : 'Channel gagal dipulihkan.'); }
-    });
+    startTransition(async () => { try { await browserClient().DELETE('/api/v1/admin/community/channels/{id}', { params: { path: { id: group.id } } }); replace(group.id, { ...group, archivedAt: new Date().toISOString() }); } catch (error) { setMessage(error instanceof Error ? error.message : 'Channel gagal diarsipkan.'); } });
   }
 
   async function archiveSubchannel(group: ManagedChannel, sub: CommunitySubchannel) {
-    if (!await notifier.confirm(`Hapus sub-channel ${sub.name}?`, { text: 'Ruang chat akan disembunyikan dan dapat dipulihkan.', confirmLabel: 'Hapus sub-channel', danger: true })) return;
-    startTransition(async () => {
-      try { await browserClient().DELETE('/api/v1/admin/community/channels/subchannels/{id}', { params: { path: { id: sub.id } } }); replace(group.id, { ...group, subchannels: group.subchannels.map((item) => item.id === sub.id ? { ...item, archivedAt: new Date().toISOString() } : item) }); setMessage('Sub-channel dipindahkan ke arsip.'); }
-      catch (error) { setMessage(error instanceof Error ? error.message : 'Sub-channel gagal diarsipkan.'); }
-    });
+    if (!await notifier.confirm(`Hapus sub-channel ${sub.name}?`, { text: 'Ruang chat akan disembunyikan. Channel harus tetap memiliki minimal satu sub-channel aktif.', confirmLabel: 'Hapus sub-channel', danger: true })) return;
+    startTransition(async () => { try { await browserClient().DELETE('/api/v1/admin/community/channels/subchannels/{id}', { params: { path: { id: sub.id } } }); replace(group.id, { ...group, subchannels: group.subchannels.map((item) => item.id === sub.id ? { ...item, archivedAt: new Date().toISOString() } : item) }); } catch (error) { setMessage(error instanceof Error ? error.message : 'Sub-channel gagal diarsipkan.'); } });
   }
 
-  function restoreSubchannel(group: ManagedChannel, sub: CommunitySubchannel) {
-    startTransition(async () => {
-      try { const restored = unwrap<CommunitySubchannel>(await browserClient().POST('/api/v1/admin/community/channels/subchannels/{id}/restore', { params: { path: { id: sub.id } } })); replace(group.id, { ...group, subchannels: group.subchannels.map((item) => item.id === sub.id ? restored : item) }); setMessage('Sub-channel berhasil dipulihkan.'); }
-      catch (error) { setMessage(error instanceof Error ? error.message : 'Sub-channel gagal dipulihkan.'); }
-    });
-  }
+  function restoreChannel(group: ManagedChannel) { startTransition(async () => { try { replace(group.id, unwrap<ManagedChannel>(await browserClient().POST('/api/v1/admin/community/channels/{id}/restore', { params: { path: { id: group.id } } }))); } catch (error) { setMessage(error instanceof Error ? error.message : 'Channel gagal dipulihkan.'); } }); }
+  function restoreSubchannel(group: ManagedChannel, sub: CommunitySubchannel) { startTransition(async () => { try { const restored = unwrap<CommunitySubchannel>(await browserClient().POST('/api/v1/admin/community/channels/subchannels/{id}/restore', { params: { path: { id: sub.id } } })); replace(group.id, { ...group, subchannels: group.subchannels.map((item) => item.id === sub.id ? restored : item) }); } catch (error) { setMessage(error instanceof Error ? error.message : 'Sub-channel gagal dipulihkan.'); } }); }
 
+  const active = channels.filter((item) => !item.archivedAt);
+  const archived = channels.filter((item) => item.archivedAt);
   return <div className="channelManager">
-    <section className="card channelForm"><div><span className="eyebrow">CHANNEL BARU</span><h2>Buat kelompok channel</h2><p className="communityMuted">Channel hanya menjadi kategori. Ruang chat dibuat sebagai sub-channel di dalamnya.</p></div><div className="field"><label htmlFor="channel-name">Nama channel</label><input id="channel-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Contoh: Diskusi Kelas" /></div><div className="field"><label htmlFor="channel-desc">Keterangan</label><textarea id="channel-desc" value={description} onChange={(event) => setDescription(event.target.value)} /></div><button className="btn" type="button" disabled={pending || name.trim().length < 2} onClick={createChannel}>Buat channel</button></section>
-    <section className="channelAdminList"><div className="channelListHeading"><div><span className="eyebrow">KOMUNITAS</span><h2>Channel dan sub-channel</h2></div><span>{channels.filter((item) => !item.archivedAt).length} channel</span></div>{message ? <p role="status" className="communityMessage">{message}</p> : null}
-      {channels.filter((item) => !item.archivedAt).map((group) => <article className="card" key={group.id}>
-        <div className="channelAdminItem"><span className="channelHash">#</span><div><strong>{group.name}</strong><small>{group.description ?? 'Tanpa keterangan'}</small><span className="channelAccessBadge">{group.subchannels.filter((item) => !item.archivedAt).length} sub-channel</span></div><ActionMenu><a href={`/community/${group.slug}`}>Buka channel</a><button type="button" onClick={() => void editChannel(group)}>Edit channel</button><button className="btnDanger" type="button" onClick={() => void archiveChannel(group)}>Hapus channel</button></ActionMenu></div>
-        <div className="channelArchive"><div className="channelListHeading"><strong>Sub-channel</strong><button className="btn secondary" type="button" onClick={() => { setAddingTo(group.id); setDraft({ name: '', description: '', isReadOnly: false }); }}>Tambah sub-channel</button></div>
-          {group.subchannels.map((sub) => <div className={`channelAdminItem${sub.archivedAt ? ' channelArchived' : ''}`} key={sub.id}><span className="channelHash">#</span><div><strong>{sub.name}</strong><small>{sub.description ?? 'Ruang chat'}</small><span className="channelAccessBadge">{sub.postCount} post · {sub.isReadOnly ? 'Hanya Master' : 'Master dan Pelajar'}</span></div><ActionMenu>{sub.archivedAt ? <button type="button" onClick={() => restoreSubchannel(group, sub)}>Pulihkan</button> : <><a href={`/community/${group.slug}/${sub.slug}`}>Buka chat</a><button type="button" onClick={() => void editSubchannel(group, sub)}>Edit sub-channel</button><button className="btnDanger" type="button" onClick={() => void archiveSubchannel(group, sub)}>Hapus</button></>}</ActionMenu></div>)}
-          {addingTo === group.id ? <div className="channelEditForm"><div className="field"><label htmlFor={`sub-name-${group.id}`}>Nama sub-channel</label><input id={`sub-name-${group.id}`} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></div><div className="field"><label htmlFor={`sub-desc-${group.id}`}>Keterangan</label><input id={`sub-desc-${group.id}`} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></div><div className="field"><label htmlFor={`sub-access-${group.id}`}>Yang dapat mengirim</label><select id={`sub-access-${group.id}`} value={draft.isReadOnly ? 'MASTER' : 'ALL'} onChange={(event) => setDraft({ ...draft, isReadOnly: event.target.value === 'MASTER' })}><option value="ALL">Master dan Pelajar</option><option value="MASTER">Hanya Master</option></select></div><div className="channelAdminActions"><button className="btn secondary" type="button" onClick={() => setAddingTo(null)}>Batal</button><button className="btn" type="button" disabled={pending || draft.name.trim().length < 2} onClick={() => createSubchannel(group)}>Simpan</button></div></div> : null}
-        </div>
-      </article>)}
-      {channels.filter((item) => item.archivedAt).map((group) => <article className="card channelAdminItem channelArchived" key={group.id}><span className="channelHash">#</span><div><strong>{group.name}</strong><small>Channel terarsip</small></div><ActionMenu><button type="button" onClick={() => restoreChannel(group)}>Pulihkan channel</button></ActionMenu></article>)}
+    <section className="card channelForm">
+      <div><span className="eyebrow">CHANNEL BARU</span><h2>Buat channel dan ruang chat</h2><p className="communityMuted">Setiap Channel wajib memiliki minimal satu sub-channel. Sub-channel inilah yang menjadi ruang chat.</p></div>
+      <div className="field"><label htmlFor="channel-name">Nama channel</label><input id="channel-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Contoh: Komunitas" /></div>
+      <div className="field"><label htmlFor="channel-desc">Keterangan channel</label><textarea id="channel-desc" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Jelaskan isi kelompok ini" /></div>
+      <div className="channelFormDivider"><strong>Sub-channel pertama</strong><small>Anda dapat menambah sub-channel lain setelah Channel dibuat.</small></div>
+      <SubchannelFields id="first" value={firstSub} onChange={setFirstSub} />
+      <button className="btn" type="button" disabled={pending || name.trim().length < 2 || firstSub.name.trim().length < 2} onClick={createChannel}>Buat channel</button>
+    </section>
+
+    <section className="channelAdminList"><div className="channelListHeading"><div><span className="eyebrow">KOMUNITAS</span><h2>Channel dan sub-channel</h2></div><span>{active.length} channel</span></div>{message ? <p role="status" className="communityMessage">{message}</p> : null}
+      <div className="channelAccordion">{active.map((group) => {
+        const open = expanded.has(group.id); const activeSubs = group.subchannels.filter((item) => !item.archivedAt);
+        return <article className={`channelAccordionItem${open ? ' open' : ''}`} key={group.id}>
+          <div className="channelAccordionHead"><button type="button" className="channelExpand" aria-expanded={open} onClick={() => toggle(group.id)}><span className="channelChevron" aria-hidden="true">›</span><span className="channelHash">#</span><span><strong>{group.name}</strong><small>{group.description ?? `${activeSubs.length} ruang chat`}</small></span></button><span className="channelShortcutState">{group.showInSidebar ? 'Tampil di sidebar' : 'Tidak di sidebar'}</span><ActionMenu><a href={`/community/${group.slug}`}>Buka channel</a><button type="button" onClick={() => void renameChannel(group)}>Edit channel</button><button type="button" onClick={() => setGroupShortcut(group, !group.showInSidebar)}>{group.showInSidebar ? 'Sembunyikan dari sidebar' : 'Tampilkan di sidebar'}</button><button className="btnDanger" type="button" onClick={() => void archiveChannel(group)}>Hapus channel</button></ActionMenu></div>
+          {open ? <div className="channelAccordionPanel"><div className="channelSubHead"><div><strong>Sub-channel</strong><small>{activeSubs.length} ruang chat di dalam {group.name}</small></div><button className="btn secondary" type="button" onClick={() => { setAddingTo(group.id); setDraft(EMPTY_SUB); }}>Tambah sub-channel</button></div>
+            {group.subchannels.map((sub) => <div className={`channelSubRow${sub.archivedAt ? ' channelArchived' : ''}`} key={sub.id}><span className="channelHash">#</span><div><strong>{sub.name}</strong><small>{sub.description ?? 'Ruang chat'} · {sub.postCount} post</small></div><span className="channelShortcutState">{sub.showInSidebar ? 'Pintasan aktif' : 'Pintasan nonaktif'}</span><ActionMenu>{sub.archivedAt ? <button type="button" onClick={() => restoreSubchannel(group, sub)}>Pulihkan</button> : <><a href={`/community/${group.slug}/${sub.slug}`}>Buka chat</a><button type="button" onClick={() => void renameSubchannel(group, sub)}>Edit sub-channel</button><button type="button" onClick={() => setSubShortcut(group, sub, !sub.showInSidebar)}>{sub.showInSidebar ? 'Sembunyikan pintasan' : 'Tampilkan pintasan'}</button><button className="btnDanger" type="button" onClick={() => void archiveSubchannel(group, sub)}>Hapus</button></>}</ActionMenu></div>)}
+            {addingTo === group.id ? <div className="channelSubCreate"><SubchannelFields id={group.id} value={draft} onChange={setDraft} /><div className="channelAdminActions"><button className="btn secondary" type="button" onClick={() => setAddingTo(null)}>Batal</button><button className="btn" type="button" disabled={pending || draft.name.trim().length < 2} onClick={() => createSubchannel(group)}>Tambah</button></div></div> : null}
+          </div> : null}
+        </article>;
+      })}</div>
+      {archived.length ? <div className="channelArchive"><div className="channelListHeading"><h2>Channel terarsip</h2><span>{archived.length}</span></div>{archived.map((group) => <div className="card channelAdminItem channelArchived" key={group.id}><span className="channelHash">#</span><div><strong>{group.name}</strong><small>Seluruh isinya tersembunyi</small></div><ActionMenu><button type="button" onClick={() => restoreChannel(group)}>Pulihkan channel</button></ActionMenu></div>)}</div> : null}
     </section>
   </div>;
+}
+
+function SubchannelFields({ id, value, onChange }: { id: string; value: SubDraft; onChange: (value: SubDraft) => void }) {
+  return <div className="channelSubFields"><div className="field"><label htmlFor={`sub-name-${id}`}>Nama sub-channel</label><input id={`sub-name-${id}`} value={value.name} onChange={(event) => onChange({ ...value, name: event.target.value })} placeholder="Contoh: Tanya Jawab" /></div><div className="field"><label htmlFor={`sub-desc-${id}`}>Keterangan</label><input id={`sub-desc-${id}`} value={value.description} onChange={(event) => onChange({ ...value, description: event.target.value })} placeholder="Topik ruang chat ini" /></div><div className="field"><label htmlFor={`sub-access-${id}`}>Yang dapat mengirim</label><select id={`sub-access-${id}`} value={value.isReadOnly ? 'MASTER' : 'ALL'} onChange={(event) => onChange({ ...value, isReadOnly: event.target.value === 'MASTER' })}><option value="ALL">Master dan Pelajar</option><option value="MASTER">Hanya Master</option></select></div><label className="channelShortcutCheck"><input type="checkbox" checked={value.showInSidebar} onChange={(event) => onChange({ ...value, showInSidebar: event.target.checked })} /><span><strong>Tampilkan sebagai pintasan</strong><small>Muncul di sidebar Pelajar.</small></span></label></div>;
 }

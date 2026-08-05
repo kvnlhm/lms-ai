@@ -21,6 +21,9 @@ export class CommunityController {
   @Get('channels') @ApiOperation({ summary: 'Daftar channel komunitas aktif' }) @ApiEnvelopeArray(CommunityChannelDto) @ApiErrors(401)
   channels() { return this.community.listChannels(); }
 
+  @Get('sidebar-channels') @ApiOperation({ summary: 'Pintasan channel yang dipilih Master untuk sidebar Pelajar' }) @ApiEnvelopeArray(CommunityChannelDto) @ApiErrors(401)
+  sidebarChannels() { return this.community.listSidebarChannels(); }
+
   @Get('feed') @ApiOperation({ summary: 'Feed komunitas lintas channel' }) @ApiEnvelopeList(CommunityPostDto) @ApiErrors(401)
   async feed(@Query() query: CommunityPageQueryDto, @CurrentUser() user: AuthenticatedUser) {
     const page = query.page ?? 1; const pageSize = query.pageSize ?? 20;

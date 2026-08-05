@@ -203,6 +203,7 @@ model CommunityChannelGroup {
   name        String
   description String?
   position    Int       @default(0)
+  showInSidebar Boolean @default(true) @map("show_in_sidebar")
   createdBy   String    @map("created_by") @db.Uuid
   archivedAt  DateTime? @map("archived_at") @db.Timestamptz(6)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -223,6 +224,7 @@ model CommunityChannel {
   description String?
   position    Int       @default(0)
   isReadOnly  Boolean   @default(false) @map("is_read_only")
+  showInSidebar Boolean @default(true) @map("show_in_sidebar")
   createdBy   String    @map("created_by") @db.Uuid
   archivedAt  DateTime? @map("archived_at") @db.Timestamptz(6)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)

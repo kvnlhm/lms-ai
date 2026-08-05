@@ -1990,6 +1990,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/community/sidebar-channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pintasan channel yang dipilih Master untuk sidebar Pelajar */
+        get: operations["CommunityController_sidebarChannels"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/community/feed": {
         parameters: {
             query?: never;
@@ -4332,6 +4349,7 @@ export interface components {
             position: number;
             isReadOnly: boolean;
             postCount: number;
+            showInSidebar: boolean;
         };
         CommunityChannelDto: {
             id: string;
@@ -4339,6 +4357,7 @@ export interface components {
             name: string;
             description: string | null;
             position: number;
+            showInSidebar: boolean;
             subchannels: components["schemas"]["CommunitySubchannelDto"][];
         };
         CommunityPersonDto: {
@@ -4412,6 +4431,7 @@ export interface components {
             name: string;
             description: string | null;
             position: number;
+            showInSidebar: boolean;
             subchannels: components["schemas"]["CommunitySubchannelDto"][];
             /** Format: date-time */
             archivedAt: string | null;
@@ -4425,12 +4445,20 @@ export interface components {
             description?: string;
             /** @default 0 */
             position?: number;
+            /** @description Nama sub-channel pertama yang menjadi ruang chat. */
+            subchannelName: string;
+            subchannelDescription?: string;
+            /** @default false */
+            isReadOnly?: boolean;
+            /** @default true */
+            showInSidebar?: boolean;
         };
         UpdateCommunityChannelDto: {
             name?: string;
             slug?: string;
             description?: string;
             position?: number;
+            showInSidebar?: boolean;
         };
         CreateCommunitySubchannelDto: {
             name: string;
@@ -4441,6 +4469,8 @@ export interface components {
             position?: number;
             /** @default false */
             isReadOnly?: boolean;
+            /** @default true */
+            showInSidebar?: boolean;
         };
         UpdateCommunitySubchannelDto: {
             name?: string;
@@ -4451,6 +4481,8 @@ export interface components {
             position?: number;
             /** @default false */
             isReadOnly?: boolean;
+            /** @default true */
+            showInSidebar?: boolean;
         };
         AuditLogActorDto: {
             /** Format: uuid */
@@ -11216,6 +11248,36 @@ export interface operations {
         };
     };
     CommunityController_channels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunityChannelDto"][];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_sidebarChannels: {
         parameters: {
             query?: never;
             header?: never;

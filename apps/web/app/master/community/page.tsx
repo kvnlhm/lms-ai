@@ -8,5 +8,5 @@ export const dynamic = 'force-dynamic';
 export default async function MasterCommunityPage() {
   const user = await requirePermission('discussions.moderate', '/master/community'); const client = await serverClient();
   const channels = await client.GET('/api/v1/admin/community/channels', {}).then((value) => unwrap<(CommunityChannel & { archivedAt?: string | null })[]>(value));
-  return <AppShell user={user}><main className="masterContent"><div className="pageHead"><div className="pageHeadMain"><span className="eyebrow">Komunitas</span><h1 className="pageTitle">Channel komunitas</h1><p className="pageSub">Buat ruang percakapan yang akan muncul di sidebar Beranda pelajar.</p></div></div><ChannelManager initialChannels={channels} /></main></AppShell>;
+  return <AppShell user={user}><main className="masterContent"><div className="pageHead"><div className="pageHeadMain"><span className="eyebrow">Komunitas</span><h1 className="pageTitle">Channel komunitas</h1><p className="pageSub">Kelompokkan ruang chat ke dalam Channel dan pilih pintasan yang muncul di sidebar Pelajar.</p></div></div><ChannelManager initialChannels={channels} /></main></AppShell>;
 }

@@ -117,4 +117,11 @@ server {
         add_header Retry-After 20 always;
         add_header Cache-Control "no-store" always;
     }
+
+    # Aset halaman pemeliharaan dilayani langsung oleh gateway. Jangan jadikan
+    # internal: browser perlu meminta gambar ini setelah menerima HTML 503.
+    location = /__brand.png {
+        root /usr/share/nginx/pemeliharaan;
+        add_header Cache-Control "no-store" always;
+    }
 }
