@@ -19,8 +19,6 @@ const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
   { href: '/community', label: 'Komunitas' },
   { href: '/courses', label: 'Kursus' },
-  { href: '/history', label: 'Histori' },
-  { href: '/bookmarks', label: 'Ditandai' },
   { href: '/announcements', label: 'Pengumuman' },
   { href: '/notifications', label: 'Notifikasi' },
 ];

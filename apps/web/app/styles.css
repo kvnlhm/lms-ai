@@ -3030,6 +3030,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
    Mengikuti ritme referensi: header bersih, channel horizontal, dan empat
    tujuan utama yang selalu berada dalam jangkauan ibu jari. */
 .learnerBottomNav,.learnerSearchSheet,.learnerMobileTabs{display:none}
+.learnerInsights{grid-template-columns:repeat(3,minmax(0,1fr))}
 
 @media(max-width:760px){
   .learnerShellBody{padding-bottom:calc(70px + env(safe-area-inset-bottom))}

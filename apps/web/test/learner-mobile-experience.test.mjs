@@ -5,6 +5,8 @@ import test from 'node:test';
 const css = await readFile(new URL('../app/styles.css', import.meta.url), 'utf8');
 const shell = await readFile(new URL('../app/components/app-shell.tsx', import.meta.url), 'utf8');
 const mobileNav = await readFile(new URL('../app/components/learner-mobile-nav.tsx', import.meta.url), 'utf8');
+const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
+const lesson = await readFile(new URL('../app/learn/[courseId]/[lessonId]/page.tsx', import.meta.url), 'utf8');
 
 test('Pelajar memiliki navigasi bawah mobile dengan empat tujuan utama', () => {
   assert.match(shell, /LearnerMobileNav unread=\{notifikasiBelumDibaca\}/);
@@ -30,4 +32,10 @@ test('pencarian mobile dapat ditutup dan memakai id aksesibilitas yang unik', ()
 test('konten tidak tertutup safe area navigasi bawah', () => {
   assert.match(css, /\.learnerShellBody\{padding-bottom:calc\(70px \+ env\(safe-area-inset-bottom\)\)\}/);
   assert.match(css, /height:calc\(70px \+ env\(safe-area-inset-bottom\)\)/);
+});
+
+test('Histori dan bookmark tidak ditampilkan pada pengalaman Pelajar', () => {
+  assert.doesNotMatch(shell, /href: '\/history'|href: '\/bookmarks'/);
+  assert.doesNotMatch(home, /Aktivitas terbaru|Riwayat belajar|learning-history/);
+  assert.doesNotMatch(lesson, /BookmarkButton|bookmark-button/);
 });

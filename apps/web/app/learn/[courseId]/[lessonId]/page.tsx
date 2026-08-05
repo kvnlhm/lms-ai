@@ -8,7 +8,6 @@ import { ArrowLeft, ArrowRight } from '../../../components/icons';
 import { PreviewBanner } from '../../../components/preview-banner';
 import { ApiError, serverClient, unwrap } from '../../../lib/api';
 import { requireUser } from '../../../lib/session';
-import { BookmarkButton } from './bookmark-button';
 import { CompleteButton } from './complete-button';
 import { LessonOpenTracker } from './lesson-open-tracker';
 import { QuizRunner } from './quiz-runner';
@@ -164,7 +163,6 @@ export default async function LessonPage({ params }: Props) {
           </div>
 
           <div className="playerFoot">
-            <BookmarkButton lessonId={lessonId} initiallyBookmarked={lesson.bookmarked} />
             {/* Materi kuis tidak punya tombol "tandai selesai": penyelesaiannya
                 lahir dari nilai yang dihitung server, dan endpoint biasa memang
                 menolak pelajaran berjenis kuis. */}
