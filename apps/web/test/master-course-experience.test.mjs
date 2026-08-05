@@ -23,6 +23,12 @@ test('pemutar video mengizinkan fullscreen tanpa menawarkan unduhan', async () =
   assert.match(source, /requestFullscreen/);
   assert.doesNotMatch(source, /videoViewerWatermark/);
   assert.doesNotMatch(source, /session\.watermark\.text/);
+  assert.match(source, /Mundur 10 detik/);
+  assert.match(source, /Maju 10 detik/);
+  assert.match(source, /Pengaturan video/);
+  assert.match(source, /Kecepatan/);
+  assert.match(source, /Kualitas/);
+  assert.match(source, /MANIFEST_PARSED/);
 });
 
 test('halaman kelola kursus menyediakan menu aksi dan pratinjau langsung', async () => {

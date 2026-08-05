@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { CSSProperties, KeyboardEvent } from 'react';
+import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
-import { Maximize, Pause, Play, Volume } from '../../../components/icons';
+import { FastForward, Maximize, Pause, Play, Rewind, Settings, Volume, VolumeOff } from '../../../components/icons';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 import { catatKemajuan } from './watch-progress';
 
@@ -123,10 +123,17 @@ function lacak(lessonId: string, video: HTMLVideoElement): void {
 function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; hls: boolean; lessonId: string; onFailure: () => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
+  const hlsRef = useRef<import('hls.js').default | null>(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [qualities, setQualities] = useState<Array<{ index: number; height: number }>>([]);
+  const [quality, setQuality] = useState(-1);
+  const [seekPreview, setSeekPreview] = useState<{ left: number; time: number } | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -151,8 +158,17 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
         return;
       }
       hls = new Hls({ enableWorker: true });
+      hlsRef.current = hls;
       hls.loadSource(src);
       hls.attachMedia(videoRef.current);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        const seen = new Set<number>();
+        setQualities(hls!.levels.flatMap((level, index) => {
+          if (!level.height || seen.has(level.height)) return [];
+          seen.add(level.height);
+          return [{ index, height: level.height }];
+        }).sort((a, b) => b.height - a.height));
+      });
       hls.on(Hls.Events.ERROR, (_event, data) => {
         // Hanya kegagalan fatal yang dilaporkan; hls.js memulihkan sendiri
         // gangguan jaringan sesaat, dan itu justru gunanya memakai HLS.
@@ -162,6 +178,7 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
 
     return () => {
       dibatalkan = true;
+      hlsRef.current = null;
       hls?.destroy();
     };
   }, [src, useHls, onFailure]);
@@ -191,7 +208,39 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
     const video = videoRef.current;
     if (!video) return;
     video.volume = value;
+    video.muted = value === 0;
     setVolume(value);
+    setMuted(value === 0);
+  }
+
+  function toggleMute() {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+  }
+
+  function changeSpeed(value: number) {
+    const video = videoRef.current;
+    if (!video) return;
+    video.playbackRate = value;
+    setSpeed(value);
+  }
+
+  function changeQuality(level: number) {
+    if (!hlsRef.current) return;
+    hlsRef.current.currentLevel = level;
+    setQuality(level);
+  }
+
+  function skip(seconds: number) {
+    seek(Math.min(duration, Math.max(0, currentTime + seconds)));
+  }
+
+  function previewSeek(event: PointerEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    setSeekPreview({ left: ratio * 100, time: ratio * duration });
   }
 
   function fullscreen() {
@@ -200,8 +249,9 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
 
   function keyboard(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === ' ' || event.key === 'k') { event.preventDefault(); togglePlay(); }
-    if (event.key === 'ArrowLeft') seek(Math.max(0, currentTime - 5));
-    if (event.key === 'ArrowRight') seek(Math.min(duration, currentTime + 5));
+    if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'j') skip(-10);
+    if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'l') skip(10);
+    if (event.key.toLowerCase() === 'm') toggleMute();
     if (event.key.toLowerCase() === 'f') fullscreen();
   }
 
@@ -212,12 +262,21 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
       </video>
       {!playing ? <button className="courseVideoCenterPlay" type="button" onClick={togglePlay} aria-label="Putar video"><Play size={30} /></button> : null}
       <div className="courseVideoControls">
-        <input className="courseVideoSeek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} onChange={(event) => seek(Number(event.target.value))} aria-label="Posisi video" style={{ '--video-progress': `${duration ? currentTime / duration * 100 : 0}%` } as CSSProperties} />
+        <div className="courseVideoSeekWrap" onPointerMove={previewSeek} onPointerLeave={() => setSeekPreview(null)}>
+          {seekPreview ? <span className="courseVideoSeekPreview" style={{ left: `${seekPreview.left}%` }}>{formatTime(seekPreview.time)}</span> : null}
+          <input className="courseVideoSeek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} onChange={(event) => seek(Number(event.target.value))} aria-label="Posisi video" style={{ '--video-progress': `${duration ? currentTime / duration * 100 : 0}%` } as CSSProperties} />
+        </div>
         <div className="courseVideoControlRow">
           <button type="button" onClick={togglePlay} aria-label={playing ? 'Jeda video' : 'Putar video'}>{playing ? <Pause size={20} /> : <Play size={20} />}</button>
+          <button type="button" onClick={() => skip(-10)} aria-label="Mundur 10 detik"><Rewind size={20} /></button>
+          <button type="button" onClick={() => skip(10)} aria-label="Maju 10 detik"><FastForward size={20} /></button>
           <span className="courseVideoTime">{formatTime(currentTime)} / {formatTime(duration)}</span>
-          <label className="courseVideoVolume"><Volume size={18} /><span className="srOnly">Volume</span><input type="range" min="0" max="1" step="0.05" value={volume} onChange={(event) => changeVolume(Number(event.target.value))} /></label>
+          <div className="courseVideoVolume"><button type="button" onClick={toggleMute} aria-label={muted ? 'Aktifkan suara' : 'Bisukan'}>{muted ? <VolumeOff size={18} /> : <Volume size={18} />}</button><label><span className="srOnly">Volume</span><input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={(event) => changeVolume(Number(event.target.value))} /></label></div>
           <span className="courseVideoProtected">Konten terlindungi</span>
+          <div className="courseVideoSettings">
+            <button type="button" aria-label="Pengaturan video" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((value) => !value)}><Settings size={20} /></button>
+            {settingsOpen ? <div className="courseVideoSettingsPanel"><div><strong>Kecepatan</strong>{[0.5, 0.75, 1, 1.25, 1.5, 2].map((value) => <button className={speed === value ? 'active' : ''} type="button" key={value} onClick={() => changeSpeed(value)}>{value === 1 ? 'Normal' : `${value}×`}</button>)}</div>{qualities.length ? <div><strong>Kualitas</strong><button className={quality === -1 ? 'active' : ''} type="button" onClick={() => changeQuality(-1)}>Otomatis</button>{qualities.map((item) => <button className={quality === item.index ? 'active' : ''} type="button" key={item.index} onClick={() => changeQuality(item.index)}>{item.height}p</button>)}</div> : null}</div> : null}
+          </div>
           <button type="button" onClick={fullscreen} aria-label="Layar penuh"><Maximize size={20} /></button>
         </div>
       </div>

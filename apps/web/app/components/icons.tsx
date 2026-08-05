@@ -114,6 +114,31 @@ export const Maximize = (props: IconProps) => (
   </Base>
 );
 
+export const Rewind = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M11 19l-8-7 8-7v14zM21 19l-8-7 8-7v14z" />
+  </Base>
+);
+
+export const FastForward = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M3 5l8 7-8 7V5zM13 5l8 7-8 7V5z" />
+  </Base>
+);
+
+export const VolumeOff = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M5 9H2v6h3l5 4V5L5 9zM16 9l6 6M22 9l-6 6" />
+  </Base>
+);
+
+export const Settings = (props: IconProps) => (
+  <Base {...props}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6V21h-4v-.1a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 00.3-1.9A1.7 1.7 0 003 14H3v-4h.1a1.7 1.7 0 001.6-1 1.7 1.7 0 00-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 009 4.6a1.7 1.7 0 001-1.6V3h4v.1a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 00-.3 1.9 1.7 1.7 0 001.6 1h.1v4H21a1.7 1.7 0 00-1.6 1z" />
+  </Base>
+);
+
 export const LogOut = (props: IconProps) => (
   <Base {...props}>
     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
