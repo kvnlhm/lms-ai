@@ -553,6 +553,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/courses/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mengubah urutan tampil kursus di katalog */
+        put: operations["AdminCoursesController_reorderCourses"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/courses/{courseId}": {
         parameters: {
             query?: never;
@@ -2827,10 +2844,19 @@ export interface components {
             moduleCount: number;
             lessonCount: number;
             enrollmentCount: number;
+            /** @example 1 */
+            position: number;
             /** Format: date-time */
             publishedAt?: string | null;
             /** Format: date-time */
             updatedAt: string;
+        };
+        ReorderResultDto: {
+            /** @example 3 */
+            reordered: number;
+        };
+        ReorderDto: {
+            ids: string[];
         };
         AdminLessonDto: {
             /** Format: uuid */
@@ -2973,13 +2999,6 @@ export interface components {
             description?: string;
             estimatedMinutes?: number;
             isActive?: boolean;
-        };
-        ReorderResultDto: {
-            /** @example 3 */
-            reordered: number;
-        };
-        ReorderDto: {
-            ids: string[];
         };
         CreateLessonDto: {
             title: string;
@@ -5967,6 +5986,56 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["AdminCourseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AdminCoursesController_reorderCourses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ReorderResultDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
                 };

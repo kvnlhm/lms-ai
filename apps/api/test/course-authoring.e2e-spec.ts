@@ -318,6 +318,106 @@ describe('Penyusunan kursus oleh Master', () => {
     expect((catalog.body.data as Array<{ slug: string }>).map((c) => c.slug)).not.toContain(slug);
   });
 
+  // ── Urutan katalog ──────────────────────────────────────────
+  //
+  // Seluruh urutan bercakupan satu tabel, bukan satu kursus, jadi test di
+  // bawah ini menyusun ulang katalog yang sama yang dipakai test lain. Aman
+  // karena e2e berjalan `--runInBand` dan tidak ada test lain yang bergantung
+  // pada urutan katalog — semuanya memeriksa keanggotaan, bukan posisi.
+
+  /** Seluruh id kursus menurut urutan tampilnya sekarang. */
+  async function urutanSekarang(): Promise<string[]> {
+    const rows = await h.prisma.course.findMany({
+      orderBy: { position: 'asc' },
+      select: { id: true },
+    });
+    return rows.map((row) => row.id);
+  }
+
+  it('menempatkan kursus baru di ekor urutan, bukan di kepala', async () => {
+    // Bawaan kolomnya nol, dan nol berarti paling depan. Tanpa penetapan
+    // eksplisit saat pembuatan, setiap kursus baru — yang bahkan belum punya
+    // satu pun bagian — akan memimpin katalog begitu diterbitkan.
+    const sebelum = await h.prisma.course.aggregate({ _max: { position: true } });
+    const courseId = await createCourse(`uji-ekor-${Date.now()}`);
+
+    const dibuat = await h.prisma.course.findUniqueOrThrow({
+      where: { id: courseId },
+      select: { position: true },
+    });
+    expect(dibuat.position).toBe((sebelum._max.position ?? 0) + 1);
+  });
+
+  it('menyusun ulang katalog dan katalog pelajar mengikutinya', async () => {
+    const slug = `uji-urut-katalog-${Date.now()}`;
+    const courseId = await createCourse(slug);
+    const moduleId = (
+      await asMaster('post', `/admin/courses/${courseId}/modules`)
+        .send({ title: 'Bagian Satu' })
+        .expect(201)
+    ).body.data.id;
+    await asMaster('post', `/admin/modules/${moduleId}/lessons`)
+      .send({ title: 'Pelajaran Wajib', contentType: 'TEXT', isRequired: true })
+      .expect(201);
+    await asMaster('post', `/admin/courses/${courseId}/publish`).expect(200);
+
+    // Kursus ini baru dibuat, jadi ia berada di ekor. Dipindahkan ke kepala.
+    const semua = await urutanSekarang();
+    const baru = [courseId, ...semua.filter((id) => id !== courseId)];
+    const response = await asMaster('put', '/admin/courses/order')
+      .send({ ids: baru })
+      .expect(200);
+    expect(response.body.data.reordered).toBe(baru.length);
+
+    expect(await urutanSekarang()).toEqual(baru);
+
+    // Yang sesungguhnya diuji: pelajar melihat urutan itu, bukan urutan terbit.
+    const student = await login(h.server, STUDENT.email, STUDENT.password);
+    const catalog = await request(h.server)
+      .get(`${prefix}/courses?pageSize=100`)
+      .set('Cookie', student.cookie)
+      .expect(200);
+    expect((catalog.body.data as Array<{ slug: string }>)[0]!.slug).toBe(slug);
+  });
+
+  it('menolak urutan yang tidak memuat seluruh kursus', async () => {
+    // Urutannya satu untuk seluruh tabel. Menerima sebagian saja berarti
+    // menerima urutan berlubang: kursus yang tidak disebut mempertahankan nomor
+    // lamanya dan bertabrakan dengan nomor baru milik kursus lain.
+    const semua = await urutanSekarang();
+    expect(semua.length).toBeGreaterThan(1);
+
+    const response = await asMaster('put', '/admin/courses/order')
+      .send({ ids: semua.slice(0, 1) })
+      .expect(422);
+
+    expect(response.body.error.fields.order).toBeDefined();
+  });
+
+  it('tidak menandai kursus sebagai baru disunting hanya karena urutannya digeser', async () => {
+    // Kolom "Diperbarui" di halaman Master membaca `updatedAt`. Menyusun urutan
+    // lewat klien Prisma akan menyentuh kolom itu pada setiap kursus sekaligus,
+    // sehingga seluruh katalog terbaca seolah baru saja disunting isinya.
+    const semua = await urutanSekarang();
+    const sebelum = await h.prisma.course.findUniqueOrThrow({
+      where: { id: semua[0]! },
+      select: { updatedAt: true },
+    });
+
+    await asMaster('put', '/admin/courses/order')
+      .send({ ids: [...semua].reverse() })
+      .expect(200);
+
+    const sesudah = await h.prisma.course.findUniqueOrThrow({
+      where: { id: semua[0]! },
+      select: { updatedAt: true },
+    });
+    expect(sesudah.updatedAt).toEqual(sebelum.updatedAt);
+
+    // Dikembalikan supaya test berikutnya tidak mewarisi katalog terbalik.
+    await asMaster('put', '/admin/courses/order').send({ ids: semua }).expect(200);
+  });
+
   it('memberi posisi berurutan pada bagian tanpa diminta klien', async () => {
     const courseId = await createCourse(`uji-posisi-${Date.now()}`);
 

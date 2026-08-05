@@ -170,7 +170,11 @@ export class CourseAuthoringService {
           category: { select: { id: true, name: true, slug: true } },
           _count: { select: { modules: true, enrollments: true } },
         },
-        orderBy: { updatedAt: 'desc' },
+        // Urutan yang sama dengan yang dilihat pelajar, supaya menyeret di sini
+        // berarti sesuatu. Daftar yang diurutkan `updatedAt` tidak dapat diatur
+        // ulang: menyimpan urutan baru akan langsung mengubah `updatedAt` dan
+        // mengacak kembali daftarnya di depan mata yang baru saja menatanya.
+        orderBy: [{ position: 'asc' }, { updatedAt: 'desc' }],
         skip: (params.page - 1) * params.pageSize,
         take: params.pageSize,
       }),
@@ -192,6 +196,7 @@ export class CourseAuthoringService {
         moduleCount: course._count.modules,
         enrollmentCount: course._count.enrollments,
         lessonCount: await this.prisma.lesson.count({ where: { module: { courseId: course.id } } }),
+        position: course.position,
         publishedAt: course.publishedAt,
         updatedAt: course.updatedAt,
       })),
@@ -203,6 +208,14 @@ export class CourseAuthoringService {
   async create(input: CreateCourseInput, actorId: string) {
     await this.assertSlugAvailable(input.slug);
 
+    // Kursus baru masuk ke ekor urutan, bukan ke kepala. Bawaan kolomnya nol,
+    // dan nol berarti tampil paling depan — kursus yang bahkan belum punya satu
+    // pun bagian akan memimpin katalog begitu diterbitkan.
+    const terakhir = await this.prisma.course.findFirst({
+      orderBy: { position: 'desc' },
+      select: { position: true },
+    });
+
     return toCourse(await this.prisma.course.create({
       data: {
         title: input.title,
@@ -212,12 +225,52 @@ export class CourseAuthoringService {
         description: input.description ?? null,
         level: input.level,
         estimatedMinutes: input.estimatedMinutes ?? 0,
+        position: (terakhir?.position ?? 0) + 1,
         createdBy: actorId,
         // Kursus baru selalu draf. Penerbitan adalah tindakan terpisah yang
         // punya aturan kelayakannya sendiri.
         status: PublicationStatus.DRAFT,
       },
     }));
+  }
+
+  /**
+   * Menyusun ulang urutan tampil seluruh kursus.
+   *
+   * `courseIds` harus memuat tepat seluruh kursus yang ada — draf dan arsip
+   * ikut, bukan hanya yang terbit. Urutannya satu untuk seluruh tabel, jadi
+   * menerima sebagian saja berarti menerima urutan berlubang: kursus yang tidak
+   * disebut akan mempertahankan nomor lamanya dan bertabrakan dengan nomor baru
+   * milik kursus lain.
+   */
+  async reorderCourses(courseIds: string[]): Promise<void> {
+    const existing = await this.prisma.course.findMany({ select: { id: true } });
+
+    assertSamePermutation(
+      existing.map((row) => row.id),
+      courseIds,
+      'Daftar kursus sudah berubah sejak halaman ini dibuka. Muat ulang halaman, ' +
+        'lalu susun urutannya kembali.',
+    );
+
+    // SQL langsung, bukan `prisma.course.update`, karena dua alasan.
+    //
+    // Pertama, `updatedAt` bertanda `@updatedAt`: memutar urutan lewat klien
+    // Prisma akan menandai seluruh kursus sebagai baru saja disunting, padahal
+    // isinya tidak disentuh sama sekali. Kolom "terakhir diperbarui" di halaman
+    // Master lalu berbohong tentang setiap kursus sekaligus.
+    //
+    // Kedua, satu pernyataan bersifat atomik dengan sendirinya, jadi tidak ada
+    // sesaat pun katalog terbaca setengah tersusun oleh pelajar yang kebetulan
+    // memuat halaman pada detik yang sama.
+    await this.prisma.$executeRaw`
+      UPDATE "courses" AS c
+      SET "position" = v.pos
+      FROM (VALUES ${Prisma.join(
+        courseIds.map((id, index) => Prisma.sql`(${id}::uuid, ${index + 1})`),
+      )}) AS v(id, pos)
+      WHERE c.id = v.id
+    `;
   }
 
   async update(courseId: string, input: UpdateCourseInput) {

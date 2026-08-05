@@ -78,7 +78,10 @@ export class CourseCatalogService {
           },
           _count: { select: { modules: true } },
         },
-        orderBy: [{ publishedAt: 'desc' }, { title: 'asc' }],
+        // Urutan yang ditentukan Master lebih dulu; tanggal terbit dan abjad
+        // tinggal menjadi pemutus seri, supaya urutannya tetap pasti walau dua
+        // kursus kebetulan bernomor sama.
+        orderBy: [{ position: 'asc' }, { publishedAt: 'desc' }, { title: 'asc' }],
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
       }),

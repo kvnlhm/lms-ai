@@ -3025,3 +3025,40 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .homeCommunityGrid{display:grid;grid-template-columns:1fr;gap:16px}
   .homeCommunityGrid .communityRail{grid-template-columns:1fr}
 }
+
+
+/* ── Urutan katalog ──────────────────────────────────────────────────────
+   Master menyusun urutan kartu yang dilihat pelajar di /courses. Barisnya
+   sengaja tidak memakai `table`: yang diseret harus berpindah utuh, sementara
+   sel tabel tidak dapat diangkat dari barisnya tanpa merusak tata letaknya. */
+.pageHeadActions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.orderCard{padding:16px}
+.orderHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.orderLead{margin:0;max-width:56ch;font-size:13px;color:var(--muted)}
+.orderWarn{margin:8px 0 0;max-width:56ch;font-size:12.5px;color:var(--danger)}
+.orderActions{display:flex;gap:10px;flex-wrap:wrap}
+.orderList{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.orderRow{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid var(--border);border-radius:11px;background:var(--surface-2)}
+/* Baris yang sedang diseret dibuat tembus terhadap penunjuk, supaya
+   `elementFromPoint` mengembalikan baris di bawahnya, bukan dirinya sendiri.
+   Tanpa itu tujuan perpindahan tidak pernah dapat dihitung. */
+.orderRowDragging{pointer-events:none;border-color:var(--primary);box-shadow:0 10px 26px rgba(0,0,0,.24);opacity:.92}
+.orderGrip{display:grid;place-items:center;flex:0 0 auto;width:30px;height:32px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted);cursor:grab;touch-action:none}
+.orderGrip:hover{color:var(--text);border-color:var(--border)}
+.orderGrip:active{cursor:grabbing}
+.orderNumber input{width:52px;padding:6px 7px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;font-size:12.5px;text-align:center}
+.orderTitle{flex:1;min-width:0;display:block}
+.orderTitle .cellTitle{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.orderNudge{display:flex;gap:6px;flex:0 0 auto}
+.orderNudge .btnTiny{min-width:30px;padding:5px 6px;display:grid;place-items:center}
+
+@media(max-width:760px){
+  .orderHead{flex-direction:column}
+  .orderActions{width:100%}
+  .orderActions .btn{flex:1}
+  /* Angka dan panah tetap ada di ponsel; menyeret sudah bekerja lewat sentuh,
+     tetapi memindahkan satu langkah lebih mudah ditekan daripada dibidik. */
+  .orderRow{flex-wrap:wrap;row-gap:9px}
+  .orderTitle{flex:1 1 100%;order:5}
+  .orderNudge{margin-left:auto}
+}

@@ -413,6 +413,16 @@ model Course {
   level            CourseLevel       @default(BEGINNER)
   status           PublicationStatus @default(DRAFT)
   estimatedMinutes Int               @default(0) @map("estimated_minutes")
+  /// Urutan tampil yang ditentukan Master, 1..n di seluruh katalog.
+  ///
+  /// Sengaja tidak diberi unique seperti `position` pada bagian dan pelajaran.
+  /// Keduanya bercakupan satu induk dan hanya berubah lewat satu jalur; ini
+  /// bercakupan seluruh tabel dan ikut bergerak setiap kursus dibuat atau
+  /// dipindah. Unique global akan menjadikan setiap selisih sesaat sebagai
+  /// galat 500 pada halaman yang dilihat pelajar, dan yang dilindunginya —
+  /// urutan tanpa nomor kembar — sudah dijamin oleh penulisan 1..n sekaligus
+  /// di dalam satu transaksi.
+  position         Int               @default(0)
   publishedAt      DateTime?         @map("published_at") @db.Timestamptz(6)
   archivedAt       DateTime?         @map("archived_at") @db.Timestamptz(6)
   createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -429,6 +439,7 @@ model Course {
   announcements Announcement[]
 
   @@index([status, publishedAt])
+  @@index([status, position])
   @@index([categoryId])
   @@map("courses")
 }

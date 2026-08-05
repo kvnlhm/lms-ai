@@ -645,6 +645,24 @@ Rules:
 
 Hanya diperbolehkan jika belum pernah memiliki enrollment atau progress. Selain itu gunakan archive.
 
+## PUT `/admin/courses/order`
+
+Urutan tampil katalog, ditentukan Master. Kursus menerima `position` 1..n sesuai
+urutan `ids`, dan `GET /courses` mengurutkan dengan `position` lebih dulu.
+
+`ids` harus memuat **seluruh** kursus yang ada — draf dan arsip ikut. Daftar
+sebagian ditolak 422 dengan `fields.order`, karena kursus yang tidak disebut akan
+mempertahankan nomor lamanya dan bertabrakan dengan nomor baru milik kursus lain.
+
+```json
+{
+  "ids": [
+    "uuid-1",
+    "uuid-2"
+  ]
+}
+```
+
 ---
 
 ## 10. Modules
@@ -669,9 +687,12 @@ Business rule mengikuti histori course.
 
 ## PUT `/admin/courses/{courseId}/modules/order`
 
+Kolomnya bernama `ids`, sama seperti seluruh endpoint urutan lain. Dokumen ini
+sempat menyebutnya `moduleIds`, yang tidak pernah diterima API.
+
 ```json
 {
-  "moduleIds": [
+  "ids": [
     "uuid-1",
     "uuid-2"
   ]

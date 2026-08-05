@@ -168,6 +168,26 @@ export const ChevronDown = (props: IconProps) => (
   </Base>
 );
 
+/** Pegangan seret: enam titik, isian penuh karena titik bergaris tak terbaca. */
+export const GripVertical = ({ size = 18, ...rest }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    focusable="false"
+    {...rest}
+  >
+    <circle cx="9" cy="6" r="1.5" />
+    <circle cx="15" cy="6" r="1.5" />
+    <circle cx="9" cy="12" r="1.5" />
+    <circle cx="15" cy="12" r="1.5" />
+    <circle cx="9" cy="18" r="1.5" />
+    <circle cx="15" cy="18" r="1.5" />
+  </svg>
+);
+
 export const Search = (props: IconProps) => (
   <Base {...props}>
     <circle cx="11" cy="11" r="7" />

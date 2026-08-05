@@ -95,6 +95,27 @@ export class AdminCoursesController {
     return new Paginated(items, query.page, query.pageSize, total);
   }
 
+  // Didaftarkan sebelum rute apa pun yang berpola `courses/:courseId`, supaya
+  // 'order' tidak pernah terbaca sebagai sebuah ID kursus.
+  @Put('courses/order')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Mengubah urutan tampil kursus di katalog' })
+  @ApiEnvelope(ReorderResultDto)
+  @ApiErrors(401, 403, 422)
+  async reorderCourses(
+    @Body() dto: ReorderDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    await this.authoring.reorderCourses(dto.ids);
+    // Tanpa targetId: yang berubah adalah urutan katalog secara keseluruhan,
+    // bukan satu kursus tertentu. Urutan barunya tersimpan utuh di `after`.
+    await this.record(request, user, 'course.reordered', 'course', undefined, undefined, {
+      order: dto.ids,
+    });
+    return { reordered: dto.ids.length };
+  }
+
   @Get('courses/:courseId')
   @ApiOperation({ summary: 'Detail kursus lengkap dengan bagian dan pelajaran' })
   @ApiEnvelope(AdminCourseDetailDto)

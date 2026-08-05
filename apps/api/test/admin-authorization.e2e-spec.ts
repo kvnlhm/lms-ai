@@ -22,6 +22,9 @@ const ADMIN_ENDPOINTS: Array<{ method: 'get' | 'post' | 'patch' | 'put' | 'delet
   { method: 'get', path: '/admin/courses' },
   { method: 'get', path: '/admin/analytics/dashboard' },
   { method: 'post', path: '/admin/courses' },
+  // Urutan katalog: satu-satunya endpoint kursus yang tidak menyebut sebuah id,
+  // dan karenanya paling mudah terlewat saat guard ditinjau.
+  { method: 'put', path: '/admin/courses/order' },
   { method: 'get', path: '/admin/courses/00000000-0000-4000-8000-000000000000' },
   { method: 'patch', path: '/admin/courses/00000000-0000-4000-8000-000000000000' },
   { method: 'post', path: '/admin/courses/00000000-0000-4000-8000-000000000000/publish' },

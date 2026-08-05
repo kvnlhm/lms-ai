@@ -2376,6 +2376,80 @@
         ]
       }
     },
+    "/api/v1/admin/courses/order": {
+      "put": {
+        "operationId": "AdminCoursesController_reorderCourses",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReorderResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengubah urutan tampil kursus di katalog",
+        "tags": [
+          "admin-catalog"
+        ]
+      }
+    },
     "/api/v1/admin/courses/{courseId}": {
       "get": {
         "operationId": "AdminCoursesController_detail",
@@ -13905,6 +13979,10 @@
           "enrollmentCount": {
             "type": "number"
           },
+          "position": {
+            "type": "number",
+            "example": 1
+          },
           "publishedAt": {
             "type": "string",
             "format": "date-time",
@@ -13925,7 +14003,35 @@
           "moduleCount",
           "lessonCount",
           "enrollmentCount",
+          "position",
           "updatedAt"
+        ]
+      },
+      "ReorderResultDto": {
+        "type": "object",
+        "properties": {
+          "reordered": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": [
+          "reordered"
+        ]
+      },
+      "ReorderDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "ids"
         ]
       },
       "AdminLessonDto": {
@@ -14409,33 +14515,6 @@
             "type": "boolean"
           }
         }
-      },
-      "ReorderResultDto": {
-        "type": "object",
-        "properties": {
-          "reordered": {
-            "type": "number",
-            "example": 3
-          }
-        },
-        "required": [
-          "reordered"
-        ]
-      },
-      "ReorderDto": {
-        "type": "object",
-        "properties": {
-          "ids": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        },
-        "required": [
-          "ids"
-        ]
       },
       "CreateLessonDto": {
         "type": "object",

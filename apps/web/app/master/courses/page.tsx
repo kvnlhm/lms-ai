@@ -6,7 +6,9 @@ import { ActionMenu } from '../../components/action-menu';
 import { Search } from '../../components/icons';
 import { StatusPill } from '../../components/status-pill';
 import { serverClient, unwrapList } from '../../lib/api';
+import { ambilSemuaKursus } from '../../lib/all-courses';
 import { requirePermission } from '../../lib/session';
+import { CourseOrder } from './course-order';
 
 export const metadata: Metadata = { title: 'Kelola Kursus · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
@@ -21,12 +23,40 @@ const FILTERS = [
 ] as const;
 
 interface Props {
-  searchParams: Promise<{ status?: string; page?: string; search?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; search?: string; atur?: string }>;
 }
 
 export default async function MasterCoursesPage({ searchParams }: Props) {
   const user = await requirePermission('courses.manage', '/master/courses');
   const params = await searchParams;
+
+  // Mode susun urutan berdiri sendiri, bukan lapisan di atas daftar biasa.
+  // Penyaring status dan pencarian sengaja tidak ikut: urutannya satu untuk
+  // seluruh katalog, dan menyusunnya sambil menyembunyikan sebagian kursus
+  // berarti menyusun sesuatu yang tidak utuh terlihat.
+  if (params.atur === '1') {
+    const { courses, lengkap } = await ambilSemuaKursus();
+    return (
+      <AppShell user={user}>
+        <main className="masterContent">
+          <div className="pageHead">
+            <div className="pageHeadMain">
+              <h1 className="pageTitle">Urutan katalog</h1>
+              <p className="pageSub">
+                {courses.length} kursus, termasuk draf dan arsip. Draf ikut ditata supaya
+                nomornya sudah benar ketika nanti diterbitkan.
+              </p>
+            </div>
+            <Link className="btn btnGhost" href="/master/courses">
+              Kembali ke daftar
+            </Link>
+          </div>
+          <CourseOrder courses={courses} lengkap={lengkap} />
+        </main>
+      </AppShell>
+    );
+  }
+
   const page = Number.parseInt(params.page ?? '1', 10) || 1;
   const status = FILTERS.some((f) => f.key === params.status) ? params.status : undefined;
   const search = params.search?.trim() || undefined;
@@ -57,9 +87,14 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
                 : `${meta.total} kursus, termasuk draf dan arsip yang tidak tampil di katalog pelajar.`}
             </p>
           </div>
-          <Link className="btn" href="/master/courses/new">
-            Tambahkan Kursus
-          </Link>
+          <div className="pageHeadActions">
+            <Link className="btn btnGhost" href="/master/courses?atur=1">
+              Atur urutan
+            </Link>
+            <Link className="btn" href="/master/courses/new">
+              Tambahkan Kursus
+            </Link>
+          </div>
         </div>
 
         {/* Formulir GET biasa: kata pencariannya tinggal di URL sehingga dapat

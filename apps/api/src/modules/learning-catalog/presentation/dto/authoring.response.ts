@@ -25,6 +25,8 @@ export class AdminCourseListItemDto {
   @ApiProperty() moduleCount!: number;
   @ApiProperty() lessonCount!: number;
   @ApiProperty() enrollmentCount!: number;
+  /** Urutan tampil di katalog, 1 berarti paling depan. */
+  @ApiProperty({ example: 1 }) position!: number;
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
   publishedAt!: string | null;
   @ApiProperty({ format: 'date-time' }) updatedAt!: string;

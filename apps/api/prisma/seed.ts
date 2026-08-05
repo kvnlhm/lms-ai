@@ -182,6 +182,9 @@ async function main(): Promise<void> {
       status: PublicationStatus.PUBLISHED,
       estimatedMinutes: 19 * 6,
       publishedAt: new Date(),
+      // Urutan tampil disebut eksplisit. Tanpa ini ketiganya bernilai nol dan
+      // urutan katalog hasil seed ditentukan pemutus seri, bukan oleh seed.
+      position: 1,
       categoryId: category.id,
       createdBy: master.id,
     },
@@ -199,6 +202,7 @@ async function main(): Promise<void> {
       status: PublicationStatus.PUBLISHED,
       estimatedMinutes: 240,
       publishedAt: new Date(),
+      position: 2,
       categoryId: category.id,
       createdBy: master.id,
     },
@@ -215,6 +219,7 @@ async function main(): Promise<void> {
       shortDescription: 'Belum terbit.',
       level: CourseLevel.ADVANCED,
       status: PublicationStatus.DRAFT,
+      position: 3,
       categoryId: category.id,
       createdBy: master.id,
     },
