@@ -13,6 +13,7 @@ import { ImpersonationBanner } from './impersonation-banner';
 import { GlobalSearch } from './global-search';
 import { MobileNavigation } from './mobile-navigation';
 import { LearnerChannelSidebar } from './learner-channel-sidebar';
+import { LearnerMobileNav } from './learner-mobile-nav';
 
 const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
@@ -64,6 +65,18 @@ async function hitungPengumumanBelumDibaca(): Promise<number> {
     const client = await serverClient();
     const hasil = unwrap<{ unread: number }>(
       await client.GET('/api/v1/me/announcements/unread-count', {}),
+    );
+    return hasil.unread;
+  } catch {
+    return 0;
+  }
+}
+
+async function hitungNotifikasiBelumDibaca(): Promise<number> {
+  try {
+    const client = await serverClient();
+    const hasil = unwrap<{ unread: number }>(
+      await client.GET('/api/v1/me/notifications/unread-count', {}),
     );
     return hasil.unread;
   } catch {
@@ -222,7 +235,10 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
 
   // Diambil hanya di jalur Pelajar: navigasi Master tidak memuat "Pengumuman"
   // milik pelajar, jadi menghitungnya di sana hanya permintaan yang terbuang.
-  const pengumumanBelumDibaca = await hitungPengumumanBelumDibaca();
+  const [pengumumanBelumDibaca, notifikasiBelumDibaca] = await Promise.all([
+    hitungPengumumanBelumDibaca(),
+    hitungNotifikasiBelumDibaca(),
+  ]);
 
   return (
     <>
@@ -286,10 +302,21 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
           </Link>
         </div>
       </header>
+      <nav className="learnerMobileTabs" aria-label="Menu Pelajar">
+        {LEARNER_NAV.map((item) => (
+          <NavLink key={`mobile-tab-${item.href}`} href={item.href}>
+            {item.label === 'Beranda' ? 'Feed' : item.label}
+            {item.href === '/announcements' ? (
+              <LencanaBelumDibaca jumlah={pengumumanBelumDibaca} />
+            ) : null}
+          </NavLink>
+        ))}
+      </nav>
       <div className="learnerShellBody">
         <LearnerChannelSidebar />
         <div className="learnerShellContent">{children}</div>
       </div>
+      <LearnerMobileNav unread={notifikasiBelumDibaca} />
     </>
   );
 }

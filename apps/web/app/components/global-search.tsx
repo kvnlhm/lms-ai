@@ -42,7 +42,7 @@ const BATAS_SATU_JENIS = 25;
  * sudah menyebutkan "12 kecocokan" sejak awal, tetapi tujuh sisanya tidak
  * dapat dicapai lewat jalan mana pun.
  */
-export function GlobalSearch() {
+export function GlobalSearch({ idPrefix = 'globalSearch' }: { idPrefix?: string }) {
   const [term, setTerm] = useState('');
   const [groups, setGroups] = useState<SearchGroup[]>([]);
   const [open, setOpen] = useState(false);
@@ -113,11 +113,11 @@ export function GlobalSearch() {
 
   return (
     <div className="globalSearch" ref={container}>
-      <label className="srOnly" htmlFor="globalSearchInput">
+      <label className="srOnly" htmlFor={`${idPrefix}Input`}>
         Cari kursus, materi, forum, dan pengumuman
       </label>
       <input
-        id="globalSearchInput"
+        id={`${idPrefix}Input`}
         type="search"
         className="globalSearchInput"
         placeholder="Cari…"
@@ -133,11 +133,11 @@ export function GlobalSearch() {
         onFocus={() => setOpen(true)}
         role="combobox"
         aria-expanded={showPanel}
-        aria-controls="globalSearchResults"
+        aria-controls={`${idPrefix}Results`}
       />
 
       {showPanel ? (
-        <div className="globalSearchPanel" id="globalSearchResults" role="listbox">
+        <div className="globalSearchPanel" id={`${idPrefix}Results`} role="listbox">
           {fokus ? (
             <button type="button" className="globalSearchBack" onClick={() => setFokus(null)}>
               ← Semua hasil

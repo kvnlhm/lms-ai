@@ -194,3 +194,17 @@ export const Search = (props: IconProps) => (
     <path d="M20 20l-4-4" />
   </Base>
 );
+
+export const Home = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M3 11.5L12 4l9 7.5" />
+    <path d="M5.5 10v10h13V10M9.5 20v-6h5v6" />
+  </Base>
+);
+
+export const MessageCircle = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M21 11.5a8.4 8.4 0 01-9 8.5 9.5 9.5 0 01-4-.9L3 21l1.7-4.5A8.2 8.2 0 013 11.5a8.4 8.4 0 019-8.5 8.4 8.4 0 019 8.5z" />
+    <path d="M8 12h.01M12 12h.01M16 12h.01" />
+  </Base>
+);

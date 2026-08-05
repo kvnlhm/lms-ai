@@ -11,7 +11,7 @@ export default async function NotificationsPage() {
 
   return (
     <AppShell user={user}>
-      <main className={user.role === 'MASTER' ? 'masterContent' : 'wrap wrapNarrow'}>
+      <main className={user.role === 'MASTER' ? 'masterContent' : 'wrap wrapNarrow learnerNotificationPage'}>
         <div className="pageHead">
           <div className="pageHeadMain">
             <span className="eyebrow">Pemberitahuan</span>

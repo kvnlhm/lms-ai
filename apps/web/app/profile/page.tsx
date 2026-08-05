@@ -20,7 +20,7 @@ export default async function ProfilePage() {
 
   return (
     <AppShell user={user}>
-      <main className={user.role === 'MASTER' ? 'masterContent masterContentNarrow' : 'page profilePage'}>
+      <main className={user.role === 'MASTER' ? 'masterContent masterContentNarrow' : 'page profilePage learnerProfilePage'}>
         <div className="pageHead">
           <div className="pageHeadMain">
             <p className="eyebrow">Akun saya</p>

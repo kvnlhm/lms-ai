@@ -3029,10 +3029,10 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 /* ── Pengalaman mobile Pelajar ───────────────────────────────────────────
    Mengikuti ritme referensi: header bersih, channel horizontal, dan empat
    tujuan utama yang selalu berada dalam jangkauan ibu jari. */
-.learnerBottomNav,.learnerSearchSheet{display:none}
+.learnerBottomNav,.learnerSearchSheet,.learnerMobileTabs{display:none}
 
 @media(max-width:760px){
-  body{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  .learnerShellBody{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
   .topbar{top:0;height:64px;min-height:64px;padding:0 16px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(18px);border-bottom-color:var(--line-soft)}
   .topbar>.mobileNavigation{display:none}
   .topbar .brand{order:0}
@@ -3042,7 +3042,13 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .topbarRight>.iconBtn,.topbarRight>.globalSearch,.topbarRight>.logoutButton{display:none}
   .topbarRight>.avatar{display:grid;width:38px;height:38px;border:2px solid var(--line)}
 
-  .learnerChannelSidebar{top:64px;padding:10px 14px;background:var(--bg);gap:8px;scrollbar-width:none}
+  .learnerMobileTabs{position:sticky;top:64px;z-index:12;display:flex;gap:8px;width:100%;overflow-x:auto;padding:9px 14px;background:var(--bg);border-bottom:1px solid var(--line-soft);scrollbar-width:none}
+  .learnerMobileTabs::-webkit-scrollbar{display:none}
+  .learnerMobileTabs .navLink{display:flex;align-items:center;gap:6px;flex:0 0 auto;min-height:40px;padding:9px 16px;border-radius:999px;background:var(--surface);color:var(--text-2);white-space:nowrap}
+  .learnerMobileTabs .navLink[aria-current=page]{background:var(--text);color:var(--bg)}
+  .learnerMobileTabs .navBadge{background:var(--danger-solid);color:#fff}
+
+  .learnerChannelSidebar{top:123px;padding:10px 14px;background:var(--bg);gap:8px;scrollbar-width:none}
   .learnerChannelSidebar::-webkit-scrollbar{display:none}
   .learnerChannelSidebar .channelLink{min-height:40px;align-items:center;border:0;border-radius:999px;background:var(--surface);padding:9px 15px;color:var(--text-2)}
   .learnerChannelSidebar .channelLink.active{box-shadow:none;background:var(--text);color:var(--bg)}
