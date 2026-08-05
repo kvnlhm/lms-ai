@@ -88,6 +88,15 @@ test('sidebar Pelajar hanya memakai pintasan pilihan Master dan menampilkan sub-
   assert.match(channelManager, /Sembunyikan dari sidebar/);
 });
 
+test('sidebar Pelajar menyediakan pusat pintasan belajar tanpa tautan kosong', () => {
+  for (const label of ['Monitoring harian', 'Kursus', 'Tanya jawab', 'Event', 'Pengumuman', 'Komunitas', 'Notifikasi', 'Profil']) {
+    assert.match(learnerSidebar, new RegExp(`label: '${label}'`));
+  }
+  assert.match(learnerSidebar, /href: '\/questions'/);
+  assert.match(learnerSidebar, /href: '\/events'/);
+  assert.match(home, /id="monitoring-harian"/);
+});
+
 test('sunting dan hapus pesan bersandar pada kewenangan dari server, bukan tebakan browser', () => {
   // Kalau tombolnya digantungkan pada perbandingan ID di browser, Master tidak
   // akan pernah melihat tombol hapus pada tulisan orang lain — dan siapa pun
