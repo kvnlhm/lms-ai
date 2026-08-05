@@ -418,6 +418,71 @@ describe('Penyusunan kursus oleh Master', () => {
     await asMaster('put', '/admin/courses/order').send({ ids: semua }).expect(200);
   });
 
+  it('mengurutkan daftar Master menurut kolom yang diminta', async () => {
+    const menurut = async (sort: string, order: string) =>
+      (
+        await asMaster('get', `/admin/courses?pageSize=100&sort=${sort}&order=${order}`).expect(200)
+      ).body.data as Array<{ title: string; position: number; updatedAt: string }>;
+
+    const naik = await menurut('position', 'asc');
+    const turun = await menurut('position', 'desc');
+    expect(naik.map((c) => c.position)).toEqual([...naik.map((c) => c.position)].sort((a, b) => a - b));
+    expect(turun.map((c) => c.position)).toEqual([...naik.map((c) => c.position)].reverse());
+
+    // Judul diperiksa lewat sepasang kursus seed yang pasti ada, bukan dengan
+    // membandingkan seluruh daftar terhadap hasil `sort()` JavaScript. Aturan
+    // urutan huruf PostgreSQL ditentukan collation databasenya dan tidak sama
+    // dengan milik JavaScript — pada collation C, "Zebrafish" mendahului "uji"
+    // karena huruf besar lebih dulu secara byte. Menyamakan keduanya berarti
+    // menguji collation, bukan menguji penyortirannya.
+    const judulNaik = (await menurut('title', 'asc')).map((c) => c.title);
+    const judulTurun = (await menurut('title', 'desc')).map((c) => c.title);
+    expect(judulNaik.indexOf('AI Mastery')).toBeLessThan(judulNaik.indexOf('Video Editing Mastery'));
+    expect(judulTurun.indexOf('Video Editing Mastery')).toBeLessThan(judulTurun.indexOf('AI Mastery'));
+
+    const terbaru = await menurut('updatedAt', 'desc');
+    const waktu = terbaru.map((c) => new Date(c.updatedAt).getTime());
+    expect(waktu).toEqual([...waktu].sort((a, b) => b - a));
+  });
+
+  it('memakai urutan Master sebagai bawaan ketika penyortiran tidak disebut', async () => {
+    // Membuka halaman tanpa memilih apa pun harus memperlihatkan susunan yang
+    // sesungguhnya berlaku bagi pelajar, bukan susunan yang kebetulan mudah.
+    const bawaan = (await asMaster('get', '/admin/courses?pageSize=100').expect(200)).body
+      .data as Array<{ id: string }>;
+    expect(bawaan.map((c) => c.id)).toEqual(await urutanSekarang());
+  });
+
+  it('menolak nama kolom di luar daftar yang diizinkan', async () => {
+    // Nilainya berakhir di `orderBy` Prisma. Menerima nama sembarang berarti
+    // membiarkan klien menentukan bentuk query yang dijalankan server.
+    await asMaster('get', '/admin/courses?sort=passwordHash').expect(422);
+    await asMaster('get', '/admin/courses?sort=position&order=menaik').expect(422);
+  });
+
+  it('membagi halaman secara stabil walau nilai yang disortir banyak yang sama', async () => {
+    // Menyortir menurut status meninggalkan puluhan baris bernilai persis sama.
+    // Tanpa pemutus seri yang unik, PostgreSQL bebas mengembalikannya dalam
+    // urutan berbeda tiap query sementara paginasi memotongnya dengan
+    // skip/take — sehingga satu kursus dapat muncul di dua halaman sekaligus
+    // dan kursus lain tidak muncul di mana pun, tanpa satu pun galat.
+    const halaman1 = (
+      await asMaster('get', '/admin/courses?pageSize=3&page=1&sort=status&order=asc').expect(200)
+    ).body.data as Array<{ id: string }>;
+    const halaman2 = (
+      await asMaster('get', '/admin/courses?pageSize=3&page=2&sort=status&order=asc').expect(200)
+    ).body.data as Array<{ id: string }>;
+
+    const gabungan = [...halaman1, ...halaman2].map((c) => c.id);
+    expect(new Set(gabungan).size).toBe(gabungan.length);
+
+    // Dan pengulangan permintaan yang sama memberi jawaban yang sama.
+    const ulang = (
+      await asMaster('get', '/admin/courses?pageSize=3&page=1&sort=status&order=asc').expect(200)
+    ).body.data as Array<{ id: string }>;
+    expect(ulang.map((c) => c.id)).toEqual(halaman1.map((c) => c.id));
+  });
+
   it('memberi posisi berurutan pada bagian tanpa diminta klien', async () => {
     const courseId = await createCourse(`uji-posisi-${Date.now()}`);
 

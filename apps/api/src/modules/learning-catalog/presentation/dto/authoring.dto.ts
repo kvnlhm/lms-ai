@@ -1,6 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  COURSE_SORTS,
+  SORT_ORDERS,
+  type CourseSort,
+  type SortOrder,
+} from '../../application/course-authoring.service';
+import {
   ArrayNotEmpty,
   IsArray,
   IsBoolean,
@@ -47,6 +53,19 @@ export class ListAdminCoursesDto {
   @IsString()
   @MaxLength(120)
   search?: string;
+
+  // Bawaannya urutan yang ditentukan Master, sama dengan yang dilihat pelajar di
+  // katalog. Membuka halaman ini tanpa memilih apa pun harus memperlihatkan
+  // susunan yang sesungguhnya berlaku, bukan susunan yang kebetulan mudah.
+  @ApiPropertyOptional({ enum: COURSE_SORTS, default: 'position' })
+  @IsOptional()
+  @IsIn(COURSE_SORTS)
+  sort: CourseSort = 'position';
+
+  @ApiPropertyOptional({ enum: SORT_ORDERS, default: 'asc' })
+  @IsOptional()
+  @IsIn(SORT_ORDERS)
+  order: SortOrder = 'asc';
 }
 
 export class CreateCourseDto {

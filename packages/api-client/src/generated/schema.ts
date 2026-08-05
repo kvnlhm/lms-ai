@@ -5922,6 +5922,8 @@ export interface operations {
                 pageSize?: number;
                 status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
                 search?: string;
+                sort?: "position" | "title" | "status" | "moduleCount" | "enrollmentCount" | "updatedAt" | "publishedAt";
+                order?: "asc" | "desc";
             };
             header?: never;
             path?: never;

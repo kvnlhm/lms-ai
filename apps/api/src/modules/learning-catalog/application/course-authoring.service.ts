@@ -11,6 +11,35 @@ import { CourseThumbnailService } from './course-thumbnail.service';
 import { PaidMembershipAccessService } from '../../commerce/application/paid-membership-access.service';
 import { ambangPelajaran } from '../../learning-progress/application/completion-rule';
 
+/**
+ * Kolom yang boleh dipakai mengurutkan daftar kursus Master.
+ *
+ * Daftarnya tertutup, bukan nama kolom bebas dari klien: isinya berakhir di
+ * `orderBy` Prisma, jadi menerima nama sembarang berarti membiarkan klien
+ * menentukan bentuk query yang dijalankan server.
+ *
+ * `lessonCount` sengaja tidak ada. Angkanya dihitung per baris lewat query
+ * terpisah karena pelajaran berjarak dua relasi dari kursus (course → modules →
+ * lessons), dan `_count` Prisma tidak menjangkau sejauh itu. Menyortirnya
+ * menuntut query mentah tersendiri; selama belum ada yang benar-benar
+ * membutuhkannya, tidak menawarkannya lebih jujur daripada menawarkan yang
+ * diam-diam salah.
+ */
+export const COURSE_SORTS = [
+  'position',
+  'title',
+  'status',
+  'moduleCount',
+  'enrollmentCount',
+  'updatedAt',
+  'publishedAt',
+] as const;
+
+export const SORT_ORDERS = ['asc', 'desc'] as const;
+
+export type CourseSort = (typeof COURSE_SORTS)[number];
+export type SortOrder = (typeof SORT_ORDERS)[number];
+
 export interface CreateCourseInput {
   title: string;
   slug: string;
@@ -156,7 +185,14 @@ export class CourseAuthoringService {
   }
 
   /** Daftar untuk Master; mencakup draf dan arsip, tidak seperti katalog publik. */
-  async list(params: { page: number; pageSize: number; status?: PublicationStatus; search?: string }) {
+  async list(params: {
+    page: number;
+    pageSize: number;
+    status?: PublicationStatus;
+    search?: string;
+    sort?: CourseSort;
+    order?: SortOrder;
+  }) {
     const where: Prisma.CourseWhereInput = {
       ...(params.status ? { status: params.status } : {}),
       ...(params.search ? { title: { contains: params.search, mode: 'insensitive' } } : {}),
@@ -170,11 +206,7 @@ export class CourseAuthoringService {
           category: { select: { id: true, name: true, slug: true } },
           _count: { select: { modules: true, enrollments: true } },
         },
-        // Urutan yang sama dengan yang dilihat pelajar, supaya menyeret di sini
-        // berarti sesuatu. Daftar yang diurutkan `updatedAt` tidak dapat diatur
-        // ulang: menyimpan urutan baru akan langsung mengubah `updatedAt` dan
-        // mengacak kembali daftarnya di depan mata yang baru saja menatanya.
-        orderBy: [{ position: 'asc' }, { updatedAt: 'desc' }],
+        orderBy: susunUrutan(params.sort ?? 'position', params.order ?? 'asc'),
         skip: (params.page - 1) * params.pageSize,
         take: params.pageSize,
       }),
@@ -681,6 +713,37 @@ export class CourseAuthoringService {
       }
     });
   }
+}
+
+/**
+ * Menyusun `orderBy` untuk daftar kursus Master.
+ *
+ * Selalu berakhir dengan `id` sebagai pemutus seri terakhir, dan itu bukan
+ * hiasan. Menyortir menurut status meninggalkan puluhan baris yang nilainya
+ * persis sama; tanpa pemutus yang benar-benar unik, PostgreSQL bebas
+ * mengembalikannya dalam urutan berbeda pada tiap query, sementara paginasi
+ * memotongnya dengan `skip`/`take`. Akibatnya sebuah kursus dapat muncul di
+ * halaman satu dan halaman dua sekaligus, sementara kursus lain tidak muncul
+ * di mana pun — tanpa satu pun galat.
+ */
+function susunUrutan(sort: CourseSort, order: SortOrder): Prisma.CourseOrderByWithRelationInput[] {
+  const utama: Prisma.CourseOrderByWithRelationInput =
+    sort === 'moduleCount'
+      ? { modules: { _count: order } }
+      : sort === 'enrollmentCount'
+        ? { enrollments: { _count: order } }
+        : sort === 'publishedAt'
+          ? // Draf dan arsip belum pernah terbit, jadi `published_at` mereka
+            // NULL. Pada DESC, PostgreSQL menaruh NULL paling depan — sehingga
+            // "urutkan menurut tanggal terbit, terbaru dulu" justru dipimpin
+            // kursus yang belum pernah terbit sama sekali.
+            { publishedAt: { sort: order, nulls: 'last' } }
+          : { [sort]: order };
+
+  const urutan: Prisma.CourseOrderByWithRelationInput[] = [utama];
+  if (sort !== 'position') urutan.push({ position: 'asc' });
+  urutan.push({ id: 'asc' });
+  return urutan;
 }
 
 /**

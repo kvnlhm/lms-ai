@@ -3026,6 +3026,78 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .homeCommunityGrid .communityRail{grid-template-columns:1fr}
 }
 
+/* ── Pengalaman mobile Pelajar ───────────────────────────────────────────
+   Mengikuti ritme referensi: header bersih, channel horizontal, dan empat
+   tujuan utama yang selalu berada dalam jangkauan ibu jari. */
+.learnerBottomNav,.learnerSearchSheet{display:none}
+
+@media(max-width:760px){
+  body{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  .topbar{top:0;height:64px;min-height:64px;padding:0 16px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(18px);border-bottom-color:var(--line-soft)}
+  .topbar>.mobileNavigation{display:none}
+  .topbar .brand{order:0}
+  .topbar .brandMark{width:36px;height:36px;border-radius:11px}
+  .topbar .brand>span:last-child{display:none}
+  .topbarRight{order:1;margin-left:auto}
+  .topbarRight>.iconBtn,.topbarRight>.globalSearch,.topbarRight>.logoutButton{display:none}
+  .topbarRight>.avatar{display:grid;width:38px;height:38px;border:2px solid var(--line)}
+
+  .learnerChannelSidebar{top:64px;padding:10px 14px;background:var(--bg);gap:8px;scrollbar-width:none}
+  .learnerChannelSidebar::-webkit-scrollbar{display:none}
+  .learnerChannelSidebar .channelLink{min-height:40px;align-items:center;border:0;border-radius:999px;background:var(--surface);padding:9px 15px;color:var(--text-2)}
+  .learnerChannelSidebar .channelLink.active{box-shadow:none;background:var(--text);color:var(--bg)}
+
+  .learnerBottomNav{position:fixed;z-index:50;right:0;bottom:0;left:0;display:grid;grid-template-columns:repeat(4,1fr);height:calc(70px + env(safe-area-inset-bottom));padding:7px 8px env(safe-area-inset-bottom);background:color-mix(in srgb,var(--surface) 96%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(20px)}
+  .learnerBottomLink{display:flex;min-width:0;align-items:center;justify-content:center;flex-direction:column;gap:3px;border-radius:12px;color:var(--muted);font-size:10px;font-weight:600;line-height:1.1}
+  button.learnerBottomLink{width:100%}
+  .learnerBottomLink[aria-current=page]{color:var(--accent)}
+  .learnerBottomIcon{position:relative;display:grid;place-items:center;height:29px}
+  .learnerBottomBadge{position:absolute;top:-5px;left:14px;min-width:19px;height:19px;padding:0 5px;display:grid;place-items:center;border:2px solid var(--surface);border-radius:999px;background:var(--danger-solid);color:#fff;font-size:9px;line-height:1}
+
+  .learnerSearchSheet{position:fixed;z-index:80;inset:0;display:block;padding:calc(22px + env(safe-area-inset-top)) 18px calc(84px + env(safe-area-inset-bottom));background:var(--bg)}
+  .learnerSearchSheet>header{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+  .learnerSearchSheet h2{margin:0;font-size:34px;letter-spacing:-.04em}
+  .learnerSearchClose{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:var(--surface)}
+  .learnerSearchSheet .globalSearch{position:static}
+  .learnerSearchSheet .globalSearchInput,.learnerSearchSheet .globalSearchInput:focus{width:100%;max-width:none;height:54px;padding:0 18px;border:0;border-radius:16px;background:var(--raised);font-size:16px}
+  .learnerSearchSheet .globalSearchPanel{top:130px;right:18px;left:18px;max-height:calc(100dvh - 160px);border:0;box-shadow:none}
+  .learnerSearchHint{display:grid;place-items:center;gap:16px;min-height:48vh;color:var(--muted);text-align:center}
+  .learnerSearchHint p{margin:0;max-width:290px;font-size:15px}
+
+  .wrap,.wrapNarrow{width:100%;padding-right:16px;padding-left:16px}
+  .learnerDashboard{padding-top:22px;padding-bottom:30px}
+  .learnerWelcome{margin-bottom:18px;gap:15px}
+  .learnerWelcome .pageTitle{font-size:28px}
+  .learnerInsights{margin-bottom:20px}
+  .learnerInsights .card{border-radius:16px;background:var(--surface)}
+  .courseGrid{gap:20px}
+  .courseCard{border:0;border-radius:18px;background:var(--surface);box-shadow:none}
+  .courseCard .cover{border-bottom:0;border-radius:18px;overflow:hidden}
+  .communityPost{border:0;border-radius:0;padding:18px 2px;background:transparent;border-bottom:1px solid var(--line)}
+  .postList{gap:0}
+  .postComposer{border-radius:18px}
+
+  .learnerNotificationPage .pageHead{align-items:center}
+  .learnerNotificationPage .pageTitle{font-size:34px}
+  .learnerNotificationPage .pageSub,.learnerNotificationPage .eyebrow{display:none}
+  .learnerNotificationPage .notificationList{gap:0}
+  .learnerNotificationPage .notificationCard{position:relative;border:0;border-radius:0;padding:17px 8px 17px 18px;background:transparent;border-bottom:1px solid var(--line-soft)}
+  .learnerNotificationPage .notificationUnread{border-left:0}
+  .learnerNotificationPage .notificationDot{position:absolute;left:2px;top:24px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+  .learnerProfilePage>.pageHead{display:none}
+  .learnerProfilePage{padding-top:26px}
+  .learnerProfilePage .profileCard{border:0;background:transparent}
+  .learnerProfilePage .profileIdentity{align-items:center;flex-direction:column;text-align:center;padding:8px 8px 24px}
+  .learnerProfilePage .profileAvatar{width:132px;height:132px;font-size:32px;border:5px solid var(--surface)}
+  .learnerProfilePage .profileIdentity h2{margin-top:12px;font-size:25px}
+  .learnerProfilePage .profileIdentity p{font-size:14px}
+  .learnerProfilePage .avatarActions{justify-content:center}
+  .learnerProfilePage .profileForm{padding:22px 0;border-top:1px solid var(--line)}
+  .learnerProfilePage .field input,.learnerProfilePage .field textarea{border:0;border-radius:16px;background:var(--raised);padding:14px 16px}
+  .learnerProfilePage .profileActions .btn{width:100%;min-height:48px}
+}
+
 
 /* ── Urutan katalog ──────────────────────────────────────────────────────
    Master menyusun urutan kartu yang dilihat pelajar di /courses. Barisnya
@@ -3062,3 +3134,20 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .orderTitle{flex:1 1 100%;order:5}
   .orderNudge{margin-left:auto}
 }
+
+
+/* ── Penyortiran daftar kursus ───────────────────────────────────────────
+   Dua jalan menuju keadaan yang sama, keduanya tautan biasa, sehingga tidak
+   ada keadaan kedua yang bisa menyimpang: pil di atas tabel — satu-satunya
+   yang terjangkau di lebar ponsel, tempat `thead` disembunyikan — dan kepala
+   kolom yang dapat diklik di layar lebar. */
+.sortBar{margin-top:-6px}
+.sortBarLabel{margin-right:2px;font-size:12px;font-weight:650;color:var(--muted)}
+.sortHead{display:inline-flex;align-items:center;gap:5px;color:inherit;font:inherit;text-decoration:none;white-space:nowrap}
+.sortHead:hover{color:var(--text)}
+.sortHeadActive{color:var(--text)}
+/* Panah netral disamarkan sampai kepala kolomnya disentuh: tanpa itu tujuh
+   panah bersaing dengan judul kolomnya sendiri di setiap tampilan. */
+.sortHeadArrow{font-size:11px;opacity:.32}
+.sortHead:hover .sortHeadArrow,.sortHeadActive .sortHeadArrow{opacity:1}
+.cellPosition{width:1%;color:var(--muted);font-variant-numeric:tabular-nums}

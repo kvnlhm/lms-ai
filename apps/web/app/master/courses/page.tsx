@@ -22,8 +22,44 @@ const FILTERS = [
   { key: 'ARCHIVED', label: 'Arsip' },
 ] as const;
 
+/**
+ * Kolom yang dapat diurutkan, beserta arah yang masuk akal saat pertama dipilih.
+ *
+ * Arah bawaannya berbeda per kolom dengan sengaja. "Diperbarui" hampir selalu
+ * ditanyakan sebagai "mana yang terbaru", sedangkan "Judul" sebagai "dari A".
+ * Memaksa keduanya mulai dari `asc` membuat setengah pilihan selalu menuntut
+ * dua klik untuk sampai ke yang sebenarnya dimaksud.
+ */
+const SORTS = [
+  { key: 'position', label: 'Urutan', bawaan: 'asc' },
+  { key: 'title', label: 'Judul', bawaan: 'asc' },
+  { key: 'status', label: 'Status', bawaan: 'asc' },
+  { key: 'moduleCount', label: 'Bagian', bawaan: 'desc' },
+  { key: 'enrollmentCount', label: 'Terdaftar', bawaan: 'desc' },
+  { key: 'updatedAt', label: 'Diperbarui', bawaan: 'desc' },
+  { key: 'publishedAt', label: 'Terbit', bawaan: 'desc' },
+] as const;
+
+type SortKey = (typeof SORTS)[number]['key'];
+type SortOrder = 'asc' | 'desc';
+
 interface Props {
-  searchParams: Promise<{ status?: string; page?: string; search?: string; atur?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    page?: string;
+    search?: string;
+    atur?: string;
+    sort?: string;
+    order?: string;
+  }>;
+}
+
+/** Keadaan penyaring dan penyortiran yang dibawa setiap tautan di halaman ini. */
+interface Keadaan {
+  status?: string;
+  search?: string;
+  sort: SortKey;
+  order: SortOrder;
 }
 
 export default async function MasterCoursesPage({ searchParams }: Props) {
@@ -61,6 +97,16 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
   const status = FILTERS.some((f) => f.key === params.status) ? params.status : undefined;
   const search = params.search?.trim() || undefined;
 
+  // Nilai dari URL diketik siapa saja, dan API menolak yang di luar daftar
+  // dengan 422. Tanpa penyaringan di sini, satu huruf salah ketik pada tautan
+  // yang dibagikan menggagalkan seluruh halaman, bukan hanya penyortirannya.
+  const keadaan: Keadaan = {
+    status,
+    search,
+    sort: SORTS.some((s) => s.key === params.sort) ? (params.sort as SortKey) : 'position',
+    order: params.order === 'desc' ? 'desc' : 'asc',
+  };
+
   const client = await serverClient();
   const { items, meta } = unwrapList<AdminCourse>(
     await client.GET('/api/v1/admin/courses', {
@@ -68,6 +114,8 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
         query: {
           page,
           pageSize: 20,
+          sort: keadaan.sort,
+          order: keadaan.order,
           ...(status ? { status: status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' } : {}),
           ...(search ? { search } : {}),
         },
@@ -103,6 +151,11 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
         <section className="card filterCard" aria-label="Cari kursus">
           <form className="filterBar" action="/master/courses">
             {status ? <input type="hidden" name="status" value={status} /> : null}
+            {/* Penyortiran ikut dibawa formulir pencarian. Tanpa ini, mencari
+                sesuatu diam-diam mengembalikan urutan ke bawaan — dan yang
+                terlihat adalah hasil pencarian yang seolah tersusun acak. */}
+            <input type="hidden" name="sort" value={keadaan.sort} />
+            <input type="hidden" name="order" value={keadaan.order} />
             <label className="userSearch">
               <span className="srOnly">Cari kursus</span>
               <span aria-hidden="true">
@@ -119,10 +172,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
               Cari
             </button>
             {search ? (
-              <Link
-                className="btn btnGhost"
-                href={status ? `/master/courses?status=${status}` : '/master/courses'}
-              >
+              <Link className="btn btnGhost" href={buildHref({ ...keadaan, search: undefined }, 1)}>
                 Hapus
               </Link>
             ) : null}
@@ -135,11 +185,42 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
             return (
               <Link
                 key={filter.label}
-                href={buildHref(filter.key, 1, search)}
+                href={buildHref({ ...keadaan, status: filter.key }, 1)}
                 className={active ? 'pill pillAccent' : 'pill'}
                 aria-current={active ? 'true' : undefined}
               >
                 {filter.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Penyortiran diletakkan di sini, bukan hanya pada kepala tabel.
+            Di lebar ponsel `thead` disembunyikan dan tabelnya berubah menjadi
+            kartu, sehingga kepala tabel yang dapat diklik akan membuat fitur ini
+            tidak terjangkau sama sekali justru di layar yang paling sering
+            dipakai merapikan katalog. */}
+        <div className="toolbar sortBar" role="group" aria-label="Urutkan daftar">
+          <span className="sortBarLabel">Urutkan</span>
+          {SORTS.map((s) => {
+            const active = s.key === keadaan.sort;
+            return (
+              <Link
+                key={s.key}
+                href={buildHref(arahkan(keadaan, s.key), 1)}
+                className={active ? 'pill pillAccent' : 'pill'}
+                aria-current={active ? 'true' : undefined}
+              >
+                {s.label}
+                {active ? (
+                  <span aria-hidden="true"> {keadaan.order === 'asc' ? '↑' : '↓'}</span>
+                ) : null}
+                {active ? (
+                  <span className="srOnly">
+                    , aktif, {keadaan.order === 'asc' ? 'menaik' : 'menurun'}. Pilih lagi untuk
+                    membalik arah.
+                  </span>
+                ) : null}
               </Link>
             );
           })}
@@ -161,18 +242,31 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
               <table className="data">
                 <thead>
                   <tr>
-                    <th>Kursus</th>
-                    <th>Status</th>
-                    <th className="num">Bagian</th>
+                    <KepalaUrut kunci="position" label="#" keadaan={keadaan} kelas="num" />
+                    <KepalaUrut kunci="title" label="Kursus" keadaan={keadaan} />
+                    <KepalaUrut kunci="status" label="Status" keadaan={keadaan} />
+                    <KepalaUrut kunci="moduleCount" label="Bagian" keadaan={keadaan} kelas="num" />
+                    {/* Satu-satunya kolom yang tidak dapat diurutkan; angkanya
+                        dihitung terpisah karena pelajaran berjarak dua relasi
+                        dari kursus. Dibiarkan polos, bukan diberi tautan yang
+                        tidak melakukan apa-apa. */}
                     <th className="num">Pelajaran</th>
-                    <th className="num">Terdaftar</th>
-                    <th>Diperbarui</th>
+                    <KepalaUrut
+                      kunci="enrollmentCount"
+                      label="Terdaftar"
+                      keadaan={keadaan}
+                      kelas="num"
+                    />
+                    <KepalaUrut kunci="updatedAt" label="Diperbarui" keadaan={keadaan} />
                     <th className="cellActions">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((course) => (
                     <tr key={course.id}>
+                      <td className="num cellPosition" data-label="Urutan">
+                        {course.position}
+                      </td>
                       <td data-label="Kursus">
                         <span className="courseTableTitle">
                           <span className={`courseThumb${course.thumbnailUrl ? ' hasImage' : ''}`} aria-hidden="true">
@@ -218,7 +312,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
             style={{ display: 'flex', gap: 10, marginTop: 22, justifyContent: 'center' }}
           >
             {meta.page > 1 ? (
-              <Link className="btn btnGhost" href={buildHref(status, meta.page - 1, search)}>
+              <Link className="btn btnGhost" href={buildHref(keadaan, meta.page - 1)}>
                 Sebelumnya
               </Link>
             ) : null}
@@ -226,7 +320,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
               Halaman {meta.page} dari {meta.totalPages}
             </span>
             {meta.page < meta.totalPages ? (
-              <Link className="btn btnGhost" href={buildHref(status, meta.page + 1, search)}>
+              <Link className="btn btnGhost" href={buildHref(keadaan, meta.page + 1)}>
                 Berikutnya
               </Link>
             ) : null}
@@ -238,16 +332,67 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
 }
 
 /**
- * Tautan yang membawa seluruh keadaan penyaringan.
+ * Kepala kolom yang sekaligus menjadi tombol urut.
  *
- * Status, halaman, dan kata pencarian harus berjalan bersama: berpindah
- * halaman yang membuang kata pencarian, atau mengganti status yang membuangnya,
- * sama-sama melempar pengguna kembali ke daftar penuh tanpa penjelasan.
+ * Kolom yang sedang aktif menampilkan arahnya, dan menekannya lagi membalik
+ * arah itu — perilaku yang sudah diharapkan orang dari sebuah tabel, sehingga
+ * tidak perlu dijelaskan di mana pun.
  */
-function buildHref(status: string | undefined, page: number, search?: string): string {
+function KepalaUrut({
+  kunci,
+  label,
+  keadaan,
+  kelas,
+}: {
+  kunci: SortKey;
+  label: string;
+  keadaan: Keadaan;
+  kelas?: string;
+}) {
+  const aktif = keadaan.sort === kunci;
+  return (
+    <th className={kelas} aria-sort={aktif ? (keadaan.order === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <Link className={aktif ? 'sortHead sortHeadActive' : 'sortHead'} href={buildHref(arahkan(keadaan, kunci), 1)}>
+        {label}
+        <span aria-hidden="true" className="sortHeadArrow">
+          {aktif ? (keadaan.order === 'asc' ? '↑' : '↓') : '↕'}
+        </span>
+      </Link>
+    </th>
+  );
+}
+
+/**
+ * Keadaan baru setelah sebuah kolom dipilih.
+ *
+ * Memilih kolom yang sedang aktif membalik arahnya; memilih kolom lain memakai
+ * arah bawaan kolom itu.
+ */
+function arahkan(keadaan: Keadaan, kunci: SortKey): Keadaan {
+  if (keadaan.sort === kunci) {
+    return { ...keadaan, order: keadaan.order === 'asc' ? 'desc' : 'asc' };
+  }
+  const bawaan = SORTS.find((s) => s.key === kunci)?.bawaan ?? 'asc';
+  return { ...keadaan, sort: kunci, order: bawaan };
+}
+
+/**
+ * Tautan yang membawa seluruh keadaan penyaringan dan penyortiran.
+ *
+ * Status, kata pencarian, urutan, dan halaman harus berjalan bersama: berpindah
+ * halaman yang membuang kata pencarian, atau mengganti urutan yang membuang
+ * penyaring status, sama-sama melempar pengguna kembali ke daftar penuh tanpa
+ * penjelasan.
+ *
+ * Nilai bawaan tidak ditulis ke URL, supaya alamat halaman utama tetap bersih
+ * dan dua alamat yang sebenarnya sama tidak terlihat berbeda.
+ */
+function buildHref(keadaan: Keadaan, page: number): string {
   const query = new URLSearchParams();
-  if (status) query.set('status', status);
-  if (search) query.set('search', search);
+  if (keadaan.status) query.set('status', keadaan.status);
+  if (keadaan.search) query.set('search', keadaan.search);
+  if (keadaan.sort !== 'position') query.set('sort', keadaan.sort);
+  if (keadaan.order !== 'asc') query.set('order', keadaan.order);
   if (page > 1) query.set('page', String(page));
   return query.toString() ? `/master/courses?${query.toString()}` : '/master/courses';
 }
