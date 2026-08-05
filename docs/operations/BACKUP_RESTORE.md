@@ -335,6 +335,52 @@ Checkpoint `20260801T071442Z` direstore ke container PostgreSQL 16 terpisah:
 Yang belum dicakup drill ini: menjalankan critical E2E flow terhadap database
 hasil restore, dan memulihkan volume unggahan. Keduanya masih menunggu.
 
+### Drill 5 Agustus 2026
+
+Dijalankan oleh `scripts/restore-drill.sh`, yang lahir dari drill ini supaya
+yang berikutnya tidak perlu disusun ulang dari awal. Tanpa argumen ia memakai
+checkpoint harian terbaru; produksi tidak disentuh, seluruhnya berjalan di
+container dan volume terpisah yang dibuang di akhir.
+
+Checkpoint `20260804T183003Z` (3,2 G), yaitu checkpoint terenkripsi pertama —
+drill sebelumnya dibuat sebelum enkripsi offsite menyala, dan 8 migrasi lebih
+tua daripada skema sekarang.
+
+Hasil, 13 pemeriksaan lulus, 0 gagal:
+
+- `sha256sum -c SHA256SUMS` cocok untuk seluruh isi arsip.
+- Jumlah baris cocok persis dengan `MANIFEST.txt` pada keenam tabel: users 4,
+  enrollments 112, lesson_progress 28, registration_orders 6, video_assets 172,
+  forum_topics 1.
+- 29 migrasi tercatat selesai, dan yang terakhir sama dengan yang dicatat
+  MANIFEST: `20260804020000_lesson_materials`.
+- 109 enrollment berstatus ACTIVE masih tersambung utuh ke baris `users` dan
+  `courses`-nya lewat join — bukan hanya ada, melainkan masih menunjuk sesuatu.
+
+Menutup gap pertama yang dicatat drill 1 Agustus — volume unggahan kini ikut
+dipulihkan dan diperiksa:
+
+| Volume | Hasil |
+|---|---|
+| `video-data` | 90 berkas, 3,2 G |
+| `avatar-data` | 1 berkas, 196 K |
+| `course-thumbnail-data` | 1 berkas, 796 K |
+| `material-data` | kosong — benar, `lesson_materials` di produksi juga 0 baris |
+
+Satu berkas contoh dari `course-thumbnail-data` dibuka dan header binernya
+dibaca: `52494646` (RIFF/WebP). Berkasnya gambar sungguhan, bukan sekadar nama
+berukuran benar.
+
+Dua kegagalan yang muncul pada percobaan pertama keduanya ada pada alat
+ukurnya, bukan pada cadangannya, dan keduanya sudah diperbaiki di skripnya:
+jumlah migrasi dibandingkan dengan jumlah folder migrasi di repo hari ini
+(repo bergerak, arsip tidak), dan pemeriksa berkas contoh hanya mengenali PNG
+serta JPEG sehingga menyatakan WebP yang sah sebagai tidak dikenali.
+
+Yang masih belum dicakup: menjalankan critical E2E flow terhadap database
+hasil restore. Itu menuntut menyalakan API terhadap database drill, dan belum
+dikerjakan.
+
 ---
 
 ## 7. Ownership
