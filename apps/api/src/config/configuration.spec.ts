@@ -7,11 +7,27 @@ import { loadConfig } from './configuration';
  */
 const ASLI = { ...process.env };
 
+/**
+ * Ketiganya adalah satu-satunya variabel yang `loadConfig()` tuntut ada, dan
+ * ketiganya disebut di sini secara eksplisit — termasuk `MFA_ENCRYPTION_KEY`,
+ * yang tidak ada hubungannya dengan pembayaran tetapi tetap wajib.
+ *
+ * Sebelumnya kunci itu dibiarkan menumpang dari lingkungan sekitar, dan test
+ * ini lulus di mesin pengembangan hanya karena kebetulan kuncinya ada di sana.
+ * Di CI ia tidak ada: `pnpm test` berjalan lewat Turborepo, yang sejak versi 2
+ * hanya meneruskan variabel yang disebut pada `globalEnv`/`env`. Tiga test di
+ * berkas ini gagal dengan pesan "MFA_ENCRYPTION_KEY wajib diisi" — keluhan
+ * tentang kunci MFA pada test yang sedang menguji Midtrans.
+ *
+ * Test unit tidak boleh bergantung pada rahasia yang kebetulan ada di
+ * lingkungan; kalau ia butuh sesuatu, ia menyebutkannya sendiri.
+ */
 function pakaiEnv(tambahan: Record<string, string | undefined>): void {
   process.env = {
     ...ASLI,
     DATABASE_URL: 'postgresql://t:t@localhost:5432/uji',
     REDIS_URL: 'redis://localhost:6379',
+    MFA_ENCRYPTION_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
     ...tambahan,
   } as NodeJS.ProcessEnv;
 }

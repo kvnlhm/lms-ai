@@ -1,9 +1,21 @@
 name: CI
 
+# Cabang kerja ikut dipicu, bukan hanya `main`.
+#
+# Produksi berjalan dari `feat/walking-skeleton-and-master`, dan cabang itu
+# sempat 57 commit di depan `main` tanpa satu pun pemeriksaan CI — karena
+# pemicunya hanya pull request dan push ke `main`, sementara tidak ada pull
+# request yang pernah dibuka. Seluruh rangkaian ini ada, lengkap, dan diam.
+#
+# Dua kegagalan yang menumpuk selama diam itu sudah ditutup lebih dulu, di
+# container yang meniru env runner, supaya penyalaan ini tidak dimulai dengan
+# lampu merah: drift antara migrasi dan schema.prisma pada tabel community,
+# dan tiga test konfigurasi yang menumpang `MFA_ENCRYPTION_KEY` dari
+# lingkungan sekitar — variabel yang Turborepo memang tidak teruskan.
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, 'feat/**']
 
 permissions:
   contents: read
