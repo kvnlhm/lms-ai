@@ -8,7 +8,8 @@ import { browserClient, unwrap, unwrapList } from '../lib/browser-api';
 /** Satu tarikan pesan atau balasan; dipakai baik saat memuat lama maupun menyegarkan. */
 const UKURAN_HALAMAN = 30;
 
-export type CommunityChannel = { id: string; slug: string; name: string; description: string | null; isReadOnly: boolean; postCount: number };
+export type CommunitySubchannel = { id: string; slug: string; name: string; description: string | null; isReadOnly: boolean; postCount: number; archivedAt?: string | null; position?: number };
+export type CommunityChannel = { id: string; slug: string; name: string; description: string | null; position?: number; archivedAt?: string | null; subchannels: CommunitySubchannel[] };
 type Person = { id: string; fullName: string; avatarUrl: string | null };
 export type CommunityComment = {
   id: string; body: string; editedAt: string | null; createdAt: string; author: Person;
@@ -18,7 +19,7 @@ export type CommunityPost = {
   id: string; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
   reactedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
   canEdit: boolean; canDelete: boolean; canPin: boolean;
-  channel: Pick<CommunityChannel, 'id' | 'slug' | 'name' | 'isReadOnly'>;
+  channel: Pick<CommunitySubchannel, 'id' | 'slug' | 'name' | 'isReadOnly'> & { groupSlug: string; groupName: string };
   comments: CommunityComment[];
 };
 
@@ -70,8 +71,8 @@ function segarkanKronologis(lama: CommunityPost[], baru: CommunityPost[], total:
   return gabungKronologis(bertahan, baru);
 }
 
-export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug, canModerate = false, currentUserId }: {
-  channels: CommunityChannel[]; initialPosts: CommunityPost[]; initialTotal?: number; activeSlug?: string; canModerate?: boolean; currentUserId?: string;
+export function CommunityFeed({ channels, initialPosts, initialTotal, activeChannelSlug, activeSubchannelSlug, canModerate = false, currentUserId }: {
+  channels: CommunityChannel[]; initialPosts: CommunityPost[]; initialTotal?: number; activeChannelSlug?: string; activeSubchannelSlug?: string; canModerate?: boolean; currentUserId?: string;
 }) {
   const notifier = useNotifier();
   const [posts, setPosts] = useState(initialPosts);
@@ -85,23 +86,24 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
   const [tersemat, setTersemat] = useState<CommunityPost[]>([]);
   const [komentarPenuh, setKomentarPenuh] = useState<Record<string, { items: CommunityComment[]; total: number; page: number }>>({});
   const [memuatKomentar, setMemuatKomentar] = useState<string | null>(null);
-  const [channelId, setChannelId] = useState(() => channels.find((item) => item.slug === activeSlug)?.id ?? channels.find((item) => !item.isReadOnly)?.id ?? channels[0]?.id ?? '');
+  const subchannels = useMemo(() => channels.flatMap((group) => group.subchannels.map((item) => ({ ...item, groupSlug: group.slug, groupName: group.name }))), [channels]);
+  const [channelId, setChannelId] = useState(() => subchannels.find((item) => item.slug === activeSubchannelSlug && item.groupSlug === activeChannelSlug)?.id ?? subchannels.find((item) => !item.isReadOnly)?.id ?? subchannels[0]?.id ?? '');
   const [body, setBody] = useState('');
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
   const [pending, startTransition] = useTransition();
   const refreshing = useRef(false);
-  const selected = useMemo(() => channels.find((item) => item.id === channelId), [channels, channelId]);
+  const selected = useMemo(() => subchannels.find((item) => item.id === channelId), [subchannels, channelId]);
   const canPost = selected && (!selected.isReadOnly || canModerate);
 
   useEffect(() => {
-    if (!activeSlug) return;
+    if (!activeChannelSlug || !activeSubchannelSlug) return;
     let dibuang = false;
     void (async () => {
       try {
         const items = unwrap<CommunityPost[]>(
-          await browserClient().GET('/api/v1/community/channels/{slug}/pinned', {
-            params: { path: { slug: activeSlug } },
+          await browserClient().GET('/api/v1/community/channels/{channelSlug}/{subchannelSlug}/pinned', {
+            params: { path: { channelSlug: activeChannelSlug, subchannelSlug: activeSubchannelSlug } },
           }),
         );
         if (!dibuang) setTersemat(items);
@@ -111,17 +113,17 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
       }
     })();
     return () => { dibuang = true; };
-  }, [activeSlug]);
+  }, [activeChannelSlug, activeSubchannelSlug]);
 
   useEffect(() => {
-    if (!activeSlug) return;
+    if (!activeChannelSlug || !activeSubchannelSlug) return;
     let disposed = false;
     async function refresh() {
       if (refreshing.current || document.visibilityState === 'hidden') return;
       refreshing.current = true;
       try {
-        const result = await browserClient().GET('/api/v1/community/channels/{slug}/posts', {
-          params: { path: { slug: activeSlug! }, query: { page: 1, pageSize: UKURAN_HALAMAN } },
+        const result = await browserClient().GET('/api/v1/community/channels/{channelSlug}/{subchannelSlug}/posts', {
+          params: { path: { channelSlug: activeChannelSlug!, subchannelSlug: activeSubchannelSlug! }, query: { page: 1, pageSize: UKURAN_HALAMAN } },
         });
         const { items, meta } = unwrapList<CommunityPost>(result);
         if (!disposed) {
@@ -138,7 +140,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
     const onVisible = () => { if (document.visibilityState === 'visible') void refresh(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => { disposed = true; window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
-  }, [activeSlug]);
+  }, [activeChannelSlug, activeSubchannelSlug]);
 
   /**
    * Menarik satu halaman tulisan yang lebih lama.
@@ -153,13 +155,13 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
       const berikut = halaman + 1;
       try {
         const query = { page: berikut, pageSize: UKURAN_HALAMAN };
-        const result = activeSlug
-          ? await browserClient().GET('/api/v1/community/channels/{slug}/posts', { params: { path: { slug: activeSlug }, query } })
+        const result = activeChannelSlug && activeSubchannelSlug
+          ? await browserClient().GET('/api/v1/community/channels/{channelSlug}/{subchannelSlug}/posts', { params: { path: { channelSlug: activeChannelSlug, subchannelSlug: activeSubchannelSlug }, query } })
           : await browserClient().GET('/api/v1/community/feed', { params: { query } });
         const { items, meta } = unwrapList<CommunityPost>(result);
         setTotal(meta.total);
         setHalaman(berikut);
-        setPosts((current) => (activeSlug
+        setPosts((current) => (activeChannelSlug
           ? gabungKronologis(current, items)
           // Feed memakai urutan tersemat-lalu-teraktif dari server; menyusun
           // ulang di sini justru akan melawannya.
@@ -201,11 +203,11 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
     if (!channelId || !body.trim()) return;
     startTransition(async () => {
       try {
-        const result = await browserClient().POST('/api/v1/community/channels/{channelId}/posts', { params: { path: { channelId } }, body: { body: body.trim() } });
+        const result = await browserClient().POST('/api/v1/community/subchannels/{subchannelId}/posts', { params: { path: { subchannelId: channelId } }, body: { body: body.trim() } });
         const created = unwrap<CommunityPost>(result);
         setPosts((current) => [created, ...current]); setTotal((current) => current + 1);
-        setBody(''); setMessage(activeSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
-      } catch (error) { setMessage(error instanceof Error ? error.message : activeSlug ? 'Pesan gagal dikirim.' : 'Post gagal diterbitkan.'); }
+        setBody(''); setMessage(activeSubchannelSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
+      } catch (error) { setMessage(error instanceof Error ? error.message : activeSubchannelSlug ? 'Pesan gagal dikirim.' : 'Post gagal diterbitkan.'); }
     });
   }
 
@@ -388,7 +390,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
     balasan, sisaBalasan, muatKomentar, memuatKomentar,
   };
 
-  if (activeSlug) {
+  if (activeChannelSlug && activeSubchannelSlug) {
     return <ChannelChat
       posts={posts}
       selected={selected}
@@ -410,10 +412,10 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
   return (
     <>
       <section className="communityFeed">
-        <div className="communityHeading"><div><span className="eyebrow">Komunitas</span><h1>{activeSlug ? selected?.name ?? 'Channel' : 'Feed terbaru'}</h1></div></div>
-        {channels.length > 0 ? (
+        <div className="communityHeading"><div><span className="eyebrow">Komunitas</span><h1>Feed terbaru</h1></div></div>
+        {subchannels.length > 0 ? (
           <div className="postComposer card">
-            <div className="composerChannelPicker" role="group" aria-label="Pilih channel tujuan">{channels.map((channel) => <button key={channel.id} className={channel.id === channelId ? 'active' : ''} type="button" onClick={() => setChannelId(channel.id)}># {channel.name}</button>)}</div>
+            <div className="composerChannelPicker" role="group" aria-label="Pilih sub-channel tujuan">{subchannels.map((channel) => <button key={channel.id} className={channel.id === channelId ? 'active' : ''} type="button" onClick={() => setChannelId(channel.id)}>{channel.groupName} / # {channel.name}</button>)}</div>
             {canPost ? <><textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={`Bagikan sesuatu ke #${selected?.name ?? 'channel'}...`} maxLength={5000} /><div className="composerFoot"><span>{body.length}/5000</span><button className="btn" type="button" disabled={pending || !body.trim()} onClick={publish}>Terbitkan</button></div></> : <p className="communityMuted">Channel ini hanya dapat ditulis oleh Master.</p>}
           </div>
         ) : null}
@@ -421,7 +423,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
         <div className="postList">
           {posts.map((post) => (
             <article className="communityPost card" key={post.id}>
-              <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.slug}`}>#{post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
+              <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.groupSlug}/${post.channel.slug}`}>{post.channel.groupName} / #{post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
               <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
               <div className="postActions"><button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button><span>◯ {post.commentCount} balasan</span><PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
               <MuatBalasan post={post} aksi={aksi} />
@@ -446,7 +448,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeSlug
 
 function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, pending, message, publish, aksi, tersemat, adaYangLebihLama, memuatLama, muatLebihLama }: {
   posts: CommunityPost[];
-  selected?: CommunityChannel;
+  selected?: CommunitySubchannel & { groupSlug: string; groupName: string };
   currentUserId?: string;
   body: string;
   setBody: (value: string) => void;

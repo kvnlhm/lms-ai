@@ -961,7 +961,8 @@ berarti database dan `schema.prisma` sudah berbeda.
 ## 15. Community Feed
 
 ```text
-users 1 ── * community_channels (created_by)
+users 1 ── * community_channel_groups (created_by)
+community_channel_groups 1 ── * community_channels (sub-channel)
 community_channels 1 ── * community_posts
 users 1 ── * community_posts (author_id)
 community_posts 1 ── * community_comments

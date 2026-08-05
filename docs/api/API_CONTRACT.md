@@ -2527,7 +2527,7 @@ memerlukan sesi aktif.
 
 - `GET /community/channels` — channel aktif untuk sidebar.
 - `GET /community/feed` — feed lintas channel, terurut pin dan aktivitas terbaru.
-- `GET /community/channels/{slug}/posts` — pesan sebuah channel, kronologis
+- `GET /community/channels/{channelSlug}/{subchannelSlug}/posts` — pesan sebuah sub-channel, kronologis
   (terbaru dulu) dan berhalaman. Urutannya sengaja berbeda dari feed: di sebuah
   percakapan, `lastActivityAt` membuat pesan lama melompat ke posisi terbaru
   begitu dibalas. Client boleh melakukan conditional refresh berkala ketika tab
@@ -2540,7 +2540,7 @@ memerlukan sesi aktif.
   lebih dulu, dan itu bukan hak penulis atas tulisannya. Tercatat di audit log
   (`community.post.pin`, `community.post.unpin`), dan permintaan yang tidak
   mengubah keadaan tidak menghasilkan entri.
-- `GET /community/channels/{slug}/pinned` — tulisan tersemat sebuah channel,
+- `GET /community/channels/{channelSlug}/{subchannelSlug}/pinned` — tulisan tersemat sebuah sub-channel,
   paling banyak sepuluh. Terpisah dari halaman percakapan karena yang layak
   disematkan justru pesan yang sudah lama lewat dari layar; ikut halaman berarti
   ikut tergulung hilang.

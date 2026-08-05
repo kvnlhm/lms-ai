@@ -23,8 +23,8 @@ export function LearnerChannelSidebar() {
   return <aside className="learnerChannelSidebar" aria-label="Ruang komunitas">
     <Link className={pathname === '/community' ? 'channelLink active' : 'channelLink'} href="/community"><span>▤</span><span><strong>Feed komunitas</strong><small>Post dan kabar terbaru</small></span></Link>
     <span className="channelGroup">Ruang komunitas</span>
-    {channels.map((channel) => <Link key={channel.id} className={pathname === `/community/${channel.slug}` ? 'channelLink active' : 'channelLink'} href={`/community/${channel.slug}`}>
-      <span>#</span><span><strong>{channel.name}</strong><small>{channel.description ?? `${channel.postCount} post`}</small></span>
+    {channels.map((channel) => <Link key={channel.id} className={pathname.startsWith(`/community/${channel.slug}`) ? 'channelLink active' : 'channelLink'} href={`/community/${channel.slug}`}>
+      <span>#</span><span><strong>{channel.name}</strong><small>{channel.description ?? `${channel.subchannels.length} sub-channel`}</small></span>
     </Link>)}
     {channels.length === 0 ? <p className="communityMuted">Belum ada channel.</p> : null}
   </aside>;

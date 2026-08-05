@@ -7,7 +7,7 @@ const shell = await readFile(new URL('../app/components/app-shell.tsx', import.m
 const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const channel = await readFile(new URL('../app/community/community-feed.tsx', import.meta.url), 'utf8');
 const channelManager = await readFile(new URL('../app/master/community/channel-manager.tsx', import.meta.url), 'utf8');
-const channelPage = await readFile(new URL('../app/community/[slug]/page.tsx', import.meta.url), 'utf8');
+const channelPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/page.tsx', import.meta.url), 'utf8');
 
 test('shell Pelajar menyediakan sidebar channel desktop dan navigasi horizontal mobile', () => {
   assert.match(css, /\.learnerShellBody\{[^}]*grid-template-columns:220px minmax\(0,1fr\)/);
@@ -55,12 +55,10 @@ test('channel tampil sebagai chat responsif dengan identitas pengguna dari sessi
   assert.match(css, /\.channelChat\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/);
 });
 
-test('Master dapat mengedit identitas, urutan, dan akses menulis channel', () => {
-  assert.match(channelManager, /PATCH\('\/api\/v1\/admin\/community\/channels\/\{id\}'/);
+test('Master dapat membuat sub-channel dan mengatur akses menulis ruang chat', () => {
+  assert.match(channelManager, /POST\('\/api\/v1\/admin\/community\/channels\/\{id\}\/subchannels'/);
   assert.match(channelManager, /name: draft\.name\.trim\(\)/);
-  assert.match(channelManager, /slug: draft\.slug\.trim\(\)\.toLowerCase\(\)/);
   assert.match(channelManager, /description: draft\.description\.trim\(\)/);
-  assert.match(channelManager, /position: draft\.position/);
   assert.match(channelManager, /isReadOnly: draft\.isReadOnly/);
   assert.match(channelManager, /Master dan Pelajar/);
   assert.match(channelManager, /Hanya Master/);
@@ -103,32 +101,33 @@ test('sematan punya tombolnya, dan tetap terlihat saat percakapan digulung', () 
   assert.match(channel, /Lepas sematan/);
   // Diambil terpisah: sematan yang hanya ikut halaman percakapan akan tergulung
   // hilang bersama pesannya, dan menyematkan jadi tidak ada gunanya.
-  assert.match(channel, /\/api\/v1\/community\/channels\/\{slug\}\/pinned/);
+  assert.match(channel, /\/api\/v1\/community\/channels\/\{channelSlug\}\/\{subchannelSlug\}\/pinned/);
   assert.match(css, /\.chatPinned\{[^}]*position:sticky/);
   // Bilahnya melekat di dalam linimasa, jadi grid tiga baris channel tidak berubah.
   assert.match(css, /\.channelChat\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/);
 });
 
-test('arsip channel punya jalan pulang, dan tidak lagi terjadi tanpa ditanya', () => {
+test('arsip channel dan sub-channel punya jalan pulang dan konfirmasi', () => {
   // Dulu satu tekan langsung menyembunyikan seluruh isi channel, tanpa
   // konfirmasi dan tanpa cara mengembalikannya.
-  assert.match(channelManager, /notifier\.confirm\(`Hapus #\$\{channel\.name\} dari daftar aktif\?`/);
+  assert.match(channelManager, /notifier\.confirm\(`Hapus channel \$\{group\.name\}\?`/);
   assert.match(channelManager, /POST\('\/api\/v1\/admin\/community\/channels\/\{id\}\/restore'/);
   assert.match(channelManager, /Pulihkan/);
   // Channel yang diarsipkan tetap ada di daftar, sebab kalau ia dibuang dari
   // state, tombol pulihnya ikut hilang sampai halaman dimuat ulang.
   assert.match(channelManager, /archivedAt: new Date\(\)\.toISOString\(\)/);
-  assert.match(channelManager, /const arsip = channels\.filter\(\(item\) => item\.archivedAt\)/);
+  assert.match(channelManager, /channels\.filter\(\(item\) => item\.archivedAt\)/);
   assert.match(css, /\.channelArchive\{/);
 });
 
 test('aksi channel diringkas dalam satu menu dan penghapusan tetap dapat dipulihkan', () => {
-  assert.match(channelManager, /<ActionMenu label=\{`Aksi \$\{item\.name\}`\}>/);
+  assert.equal((channelManager.match(/<ActionMenu>/g) ?? []).length, 3);
+  assert.doesNotMatch(channelManager, /label=\{`Aksi \$\{item\.name\}`\}/);
   assert.match(channelManager, />Buka channel<\/a>/);
-  assert.match(channelManager, />Edit channel<\/button>/);
+  assert.match(channelManager, />Tambah sub-channel<\/button>/);
   assert.match(channelManager, /className="btnDanger"[\s\S]*?Hapus channel<\/button>/);
   assert.match(channelManager, /confirmLabel: 'Hapus channel'/);
-  assert.match(channelManager, /Data tidak dihapus permanen dan channel dapat dipulihkan dari arsip/);
+  assert.match(channelManager, /dapat dipulihkan/);
 });
 
 test('ruang chat dapat membalas, bukan hanya menampilkan balasan', () => {

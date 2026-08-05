@@ -1,25 +1,28 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AppShell } from '../../components/app-shell';
-import { serverClient, unwrap, unwrapList } from '../../lib/api';
-import { can, requireUser } from '../../lib/session';
-import { CommunityFeed, type CommunityChannel, type CommunityPost } from '../community-feed';
-import { CommunityRail, type CommunityAnnouncement, type CommunityEvent } from '../community-rail';
-import type { Schemas } from '@lms/api-client';
+import { serverClient, unwrap } from '../../lib/api';
+import { requireUser } from '../../lib/session';
+import type { CommunityChannel } from '../community-feed';
 
 export const dynamic = 'force-dynamic';
+
 export default async function CommunityChannelPage({ params }: { params: Promise<{ slug: string }> }) {
-  const user = await requireUser('/community'); const { slug } = await params; const client = await serverClient();
-  type Enrollment = Schemas['MyEnrollmentDto'];
-  const [channels, posts, announcements, enrollments] = await Promise.all([
-    client.GET('/api/v1/community/channels', {}).then((value) => unwrap<CommunityChannel[]>(value)),
-    // `unwrapList`, bukan `unwrap`: jumlah totalnya menentukan apakah tombol
-    // "Muat pesan lama" perlu ada sejak render pertama.
-    client.GET('/api/v1/community/channels/{slug}/posts', { params: { path: { slug }, query: { page: 1, pageSize: 30 } } }).then((value) => unwrapList<CommunityPost>(value)),
-    client.GET('/api/v1/me/announcements', { params: { query: { page: 1, pageSize: 4 } } }).then((value) => unwrap<CommunityAnnouncement[]>(value)),
-    client.GET('/api/v1/me/enrollments', {}).then((value) => unwrap<Enrollment[]>(value)),
-  ]);
-  if (!channels.some((item) => item.slug === slug)) notFound();
-  const groups = await Promise.all(enrollments.slice(0, 12).map((item) => client.GET('/api/v1/learn/courses/{courseId}/live-sessions', { params: { path: { courseId: item.course.id } } }).then((value) => unwrap<CommunityEvent[]>(value)).catch(() => [] as CommunityEvent[])));
-  const events = groups.flat().filter((item) => item.status !== 'ENDED').sort((a, b) => +new Date(a.startsAt) - +new Date(b.startsAt));
-  return <AppShell user={user}><main className="communityLayout communityChatLayout"><CommunityFeed channels={channels} initialPosts={posts.items} initialTotal={posts.meta.total} activeSlug={slug} currentUserId={user.id} canModerate={can(user, 'discussions.moderate')} /><CommunityRail events={events} announcements={announcements} /></main></AppShell>;
+  const user = await requireUser('/community');
+  const { slug } = await params;
+  const client = await serverClient();
+  const channels = await client.GET('/api/v1/community/channels', {}).then((value) => unwrap<CommunityChannel[]>(value));
+  const channel = channels.find((item) => item.slug === slug);
+  if (!channel) notFound();
+
+  return <AppShell user={user}><main className="masterContent">
+    <div className="pageHead"><div className="pageHeadMain"><span className="eyebrow">Channel</span><h1 className="pageTitle">{channel.name}</h1><p className="pageSub">{channel.description ?? 'Pilih sub-channel untuk membuka ruang chat.'}</p></div></div>
+    <section className="channelAdminList" aria-label={`Sub-channel ${channel.name}`}>
+      <div className="channelListHeading"><div><span className="eyebrow">RUANG CHAT</span><h2>Sub-channel</h2></div><span>{channel.subchannels.length} sub-channel</span></div>
+      {channel.subchannels.map((subchannel) => <Link className="card channelAdminItem" href={`/community/${channel.slug}/${subchannel.slug}`} key={subchannel.id}>
+        <span className="channelHash">#</span><div><strong>{subchannel.name}</strong><small>{subchannel.description ?? 'Ruang percakapan komunitas'}</small><span className="channelAccessBadge">{subchannel.postCount} post</span></div><span aria-hidden="true">→</span>
+      </Link>)}
+      {channel.subchannels.length === 0 ? <div className="card empty"><p>Belum ada sub-channel di dalam channel ini.</p></div> : null}
+    </section>
+  </main></AppShell>;
 }

@@ -2007,14 +2007,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/community/channels/{slug}/posts": {
+    "/api/v1/community/channels/{channelSlug}/{subchannelSlug}/posts": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Post pada sebuah channel */
+        /** Post pada sebuah sub-channel */
         get: operations["CommunityController_channelPosts"];
         put?: never;
         post?: never;
@@ -2024,7 +2024,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/community/channels/{channelId}/posts": {
+    "/api/v1/community/subchannels/{subchannelId}/posts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2040,14 +2040,14 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/community/channels/{slug}/pinned": {
+    "/api/v1/community/channels/{channelSlug}/{subchannelSlug}/pinned": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Tulisan tersemat pada sebuah channel */
+        /** Tulisan tersemat pada sebuah sub-channel */
         get: operations["CommunityController_pinned"];
         put?: never;
         post?: never;
@@ -2187,6 +2187,54 @@ export interface paths {
         put?: never;
         /** Mengembalikan channel yang diarsipkan */
         post: operations["CommunityAdminController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/community/channels/{id}/subchannels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CommunityAdminController_createSubchannel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/community/channels/subchannels/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["CommunityAdminController_archiveSubchannel"];
+        options?: never;
+        head?: never;
+        patch: operations["CommunityAdminController_updateSubchannel"];
+        trace?: never;
+    };
+    "/api/v1/admin/community/channels/subchannels/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CommunityAdminController_restoreSubchannel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4276,7 +4324,7 @@ export interface components {
             startsAt?: string;
             durationMinutes?: number;
         };
-        CommunityChannelDto: {
+        CommunitySubchannelDto: {
             id: string;
             slug: string;
             name: string;
@@ -4284,6 +4332,14 @@ export interface components {
             position: number;
             isReadOnly: boolean;
             postCount: number;
+        };
+        CommunityChannelDto: {
+            id: string;
+            slug: string;
+            name: string;
+            description: string | null;
+            position: number;
+            subchannels: components["schemas"]["CommunitySubchannelDto"][];
         };
         CommunityPersonDto: {
             id: string;
@@ -4295,6 +4351,8 @@ export interface components {
             slug: string;
             name: string;
             isReadOnly: boolean;
+            groupSlug: string;
+            groupName: string;
         };
         CommunityCommentDto: {
             id: string;
@@ -4354,8 +4412,7 @@ export interface components {
             name: string;
             description: string | null;
             position: number;
-            isReadOnly: boolean;
-            postCount: number;
+            subchannels: components["schemas"]["CommunitySubchannelDto"][];
             /** Format: date-time */
             archivedAt: string | null;
             /** Format: date-time */
@@ -4368,14 +4425,31 @@ export interface components {
             description?: string;
             /** @default 0 */
             position?: number;
-            /** @default false */
-            isReadOnly?: boolean;
         };
         UpdateCommunityChannelDto: {
             name?: string;
             slug?: string;
             description?: string;
             position?: number;
+        };
+        CreateCommunitySubchannelDto: {
+            name: string;
+            /** @description Huruf kecil, angka, dan tanda hubung. */
+            slug?: string;
+            description?: string;
+            /** @default 0 */
+            position?: number;
+            /** @default false */
+            isReadOnly?: boolean;
+        };
+        UpdateCommunitySubchannelDto: {
+            name?: string;
+            /** @description Huruf kecil, angka, dan tanda hubung. */
+            slug?: string;
+            description?: string;
+            /** @default 0 */
+            position?: number;
+            /** @default false */
             isReadOnly?: boolean;
         };
         AuditLogActorDto: {
@@ -11212,7 +11286,8 @@ export interface operations {
             };
             header?: never;
             path: {
-                slug: string;
+                channelSlug: string;
+                subchannelSlug: string;
             };
             cookie?: never;
         };
@@ -11252,7 +11327,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                channelId: string;
+                subchannelId: string;
             };
             cookie?: never;
         };
@@ -11312,7 +11387,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                slug: string;
+                channelSlug: string;
+                subchannelSlug: string;
             };
             cookie?: never;
         };
@@ -11931,6 +12007,211 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["AdminCommunityChannelDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityAdminController_createSubchannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCommunitySubchannelDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunitySubchannelDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityAdminController_archiveSubchannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityAdminController_updateSubchannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCommunitySubchannelDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunitySubchannelDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityAdminController_restoreSubchannel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunitySubchannelDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
                 };

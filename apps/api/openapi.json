@@ -10459,12 +10459,20 @@
         ]
       }
     },
-    "/api/v1/community/channels/{slug}/posts": {
+    "/api/v1/community/channels/{channelSlug}/{subchannelSlug}/posts": {
       "get": {
         "operationId": "CommunityController_channelPosts",
         "parameters": [
           {
-            "name": "slug",
+            "name": "channelSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subchannelSlug",
             "required": true,
             "in": "path",
             "schema": {
@@ -10537,18 +10545,18 @@
             }
           }
         },
-        "summary": "Post pada sebuah channel",
+        "summary": "Post pada sebuah sub-channel",
         "tags": [
           "community"
         ]
       }
     },
-    "/api/v1/community/channels/{channelId}/posts": {
+    "/api/v1/community/subchannels/{subchannelId}/posts": {
       "post": {
         "operationId": "CommunityController_createPost",
         "parameters": [
           {
-            "name": "channelId",
+            "name": "subchannelId",
             "required": true,
             "in": "path",
             "schema": {
@@ -10635,12 +10643,20 @@
         ]
       }
     },
-    "/api/v1/community/channels/{slug}/pinned": {
+    "/api/v1/community/channels/{channelSlug}/{subchannelSlug}/pinned": {
       "get": {
         "operationId": "CommunityController_pinned",
         "parameters": [
           {
-            "name": "slug",
+            "name": "channelSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subchannelSlug",
             "required": true,
             "in": "path",
             "schema": {
@@ -10685,7 +10701,7 @@
             }
           }
         },
-        "summary": "Tulisan tersemat pada sebuah channel",
+        "summary": "Tulisan tersemat pada sebuah sub-channel",
         "tags": [
           "community"
         ]
@@ -11630,6 +11646,310 @@
           }
         },
         "summary": "Mengembalikan channel yang diarsipkan",
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/{id}/subchannels": {
+      "post": {
+        "operationId": "CommunityAdminController_createSubchannel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommunitySubchannelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunitySubchannelDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/subchannels/{id}": {
+      "patch": {
+        "operationId": "CommunityAdminController_updateSubchannel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommunitySubchannelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunitySubchannelDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      },
+      "delete": {
+        "operationId": "CommunityAdminController_archiveSubchannel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/subchannels/{id}/restore": {
+      "post": {
+        "operationId": "CommunityAdminController_restoreSubchannel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunitySubchannelDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
         "tags": [
           "admin-community"
         ]
@@ -18652,7 +18972,7 @@
           }
         }
       },
-      "CommunityChannelDto": {
+      "CommunitySubchannelDto": {
         "type": "object",
         "properties": {
           "id": {
@@ -18686,6 +19006,41 @@
           "position",
           "isReadOnly",
           "postCount"
+        ]
+      },
+      "CommunityChannelDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "subchannels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunitySubchannelDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "position",
+          "subchannels"
         ]
       },
       "CommunityPersonDto": {
@@ -18722,13 +19077,21 @@
           },
           "isReadOnly": {
             "type": "boolean"
+          },
+          "groupSlug": {
+            "type": "string"
+          },
+          "groupName": {
+            "type": "string"
           }
         },
         "required": [
           "id",
           "slug",
           "name",
-          "isReadOnly"
+          "isReadOnly",
+          "groupSlug",
+          "groupName"
         ]
       },
       "CommunityCommentDto": {
@@ -18906,11 +19269,11 @@
           "position": {
             "type": "number"
           },
-          "isReadOnly": {
-            "type": "boolean"
-          },
-          "postCount": {
-            "type": "number"
+          "subchannels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunitySubchannelDto"
+            }
           },
           "archivedAt": {
             "format": "date-time",
@@ -18928,13 +19291,51 @@
           "name",
           "description",
           "position",
-          "isReadOnly",
-          "postCount",
+          "subchannels",
           "archivedAt",
           "createdAt"
         ]
       },
       "CreateCommunityChannelDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Huruf kecil, angka, dan tanda hubung."
+          },
+          "description": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateCommunityChannelDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          }
+        }
+      },
+      "CreateCommunitySubchannelDto": {
         "type": "object",
         "properties": {
           "name": {
@@ -18960,23 +19361,26 @@
           "name"
         ]
       },
-      "UpdateCommunityChannelDto": {
+      "UpdateCommunitySubchannelDto": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string"
           },
           "slug": {
-            "type": "string"
+            "type": "string",
+            "description": "Huruf kecil, angka, dan tanda hubung."
           },
           "description": {
             "type": "string"
           },
           "position": {
-            "type": "number"
+            "type": "number",
+            "default": 0
           },
           "isReadOnly": {
-            "type": "boolean"
+            "type": "boolean",
+            "default": false
           }
         }
       },

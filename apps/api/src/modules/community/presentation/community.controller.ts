@@ -28,21 +28,21 @@ export class CommunityController {
     return new Paginated(result.posts, page, pageSize, result.total);
   }
 
-  @Get('channels/:slug/posts') @ApiOperation({ summary: 'Post pada sebuah channel' }) @ApiEnvelopeList(CommunityPostDto) @ApiErrors(401, 404)
-  async channelPosts(@Param('slug') slug: string, @Query() query: CommunityPageQueryDto, @CurrentUser() user: AuthenticatedUser) {
+  @Get('channels/:channelSlug/:subchannelSlug/posts') @ApiOperation({ summary: 'Post pada sebuah sub-channel' }) @ApiEnvelopeList(CommunityPostDto) @ApiErrors(401, 404)
+  async channelPosts(@Param('channelSlug') channelSlug: string, @Param('subchannelSlug') subchannelSlug: string, @Query() query: CommunityPageQueryDto, @CurrentUser() user: AuthenticatedUser) {
     const page = query.page ?? 1; const pageSize = query.pageSize ?? 20;
-    const result = await this.community.listPosts(user.id, page, pageSize, moderator(user), slug);
+    const result = await this.community.listPosts(user.id, page, pageSize, moderator(user), channelSlug, subchannelSlug);
     return new Paginated(result.posts, page, pageSize, result.total);
   }
 
-  @Post('channels/:channelId/posts') @HttpCode(201) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)
-  createPost(@Param('channelId', new ParseUUIDPipe()) channelId: string, @Body() dto: CommunityPostBodyDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.community.createPost(user.id, channelId, dto.body, moderator(user));
+  @Post('subchannels/:subchannelId/posts') @HttpCode(201) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)
+  createPost(@Param('subchannelId', new ParseUUIDPipe()) subchannelId: string, @Body() dto: CommunityPostBodyDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.createPost(user.id, subchannelId, dto.body, moderator(user));
   }
 
-  @Get('channels/:slug/pinned') @ApiOperation({ summary: 'Tulisan tersemat pada sebuah channel' }) @ApiEnvelopeArray(CommunityPostDto) @ApiErrors(401)
-  pinned(@Param('slug') slug: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.community.listPinned(user.id, slug, moderator(user));
+  @Get('channels/:channelSlug/:subchannelSlug/pinned') @ApiOperation({ summary: 'Tulisan tersemat pada sebuah sub-channel' }) @ApiEnvelopeArray(CommunityPostDto) @ApiErrors(401)
+  pinned(@Param('channelSlug') channelSlug: string, @Param('subchannelSlug') subchannelSlug: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.listPinned(user.id, channelSlug, subchannelSlug, moderator(user));
   }
 
   @Patch('posts/:postId') @ApiOperation({ summary: 'Mengubah tulisan sendiri' }) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)

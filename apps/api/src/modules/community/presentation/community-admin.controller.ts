@@ -5,7 +5,7 @@ import { ApiEnvelope, ApiEnvelopeArray, ApiErrors } from '../../../shared/http/a
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { CommunityService } from '../application/community.service';
-import { AdminCommunityChannelDto, CreateCommunityChannelDto, UpdateCommunityChannelDto } from './community.dto';
+import { AdminCommunityChannelDto, CommunitySubchannelDto, CreateCommunityChannelDto, CreateCommunitySubchannelDto, UpdateCommunityChannelDto, UpdateCommunitySubchannelDto } from './community.dto';
 
 @ApiTags('admin-community')
 @Controller('admin/community/channels')
@@ -24,6 +24,26 @@ export class CommunityAdminController {
 
   @Post(':id/restore') @ApiOperation({ summary: 'Mengembalikan channel yang diarsipkan' }) @ApiEnvelope(AdminCommunityChannelDto) @ApiErrors(401, 403, 404)
   restore(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.community.restoreChannel(user.id, id);
+    return this.community.restoreGroup(user.id, id);
+  }
+
+  @Post(':id/subchannels') @HttpCode(201) @ApiEnvelope(CommunitySubchannelDto) @ApiErrors(401, 403, 404, 422)
+  createSubchannel(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: CreateCommunitySubchannelDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.createSubchannel(user.id, id, dto);
+  }
+
+  @Patch('subchannels/:id') @ApiEnvelope(CommunitySubchannelDto) @ApiErrors(401, 403, 404, 422)
+  updateSubchannel(@Param('id', new ParseUUIDPipe()) id: string, @Body() dto: UpdateCommunitySubchannelDto) {
+    return this.community.updateSubchannel(id, dto);
+  }
+
+  @Delete('subchannels/:id') @HttpCode(204) @ApiErrors(401, 403, 404)
+  archiveSubchannel(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.archiveSubchannel(user.id, id);
+  }
+
+  @Post('subchannels/:id/restore') @ApiEnvelope(CommunitySubchannelDto) @ApiErrors(401, 403, 404)
+  restoreSubchannel(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.restoreSubchannel(user.id, id);
   }
 }

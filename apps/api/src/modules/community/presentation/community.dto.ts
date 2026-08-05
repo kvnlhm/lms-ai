@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 
@@ -17,7 +17,6 @@ export class CreateCommunityChannelDto {
   @IsOptional() @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @MaxLength(80) slug?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) description?: string;
   @ApiPropertyOptional({ default: 0 }) @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
-  @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() isReadOnly?: boolean;
 }
 
 export class UpdateCommunityChannelDto {
@@ -25,7 +24,27 @@ export class UpdateCommunityChannelDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @MaxLength(80) slug?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) description?: string;
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() isReadOnly?: boolean;
+}
+
+export class CreateCommunitySubchannelDto {
+  @ApiProperty() @IsString() @MinLength(2) @MaxLength(80) name!: string;
+  @ApiPropertyOptional({ description: 'Huruf kecil, angka, dan tanda hubung.' })
+  @IsOptional() @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @MaxLength(80) slug?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) description?: string;
+  @ApiPropertyOptional({ default: 0 }) @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
+  @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() isReadOnly?: boolean;
+}
+
+export class UpdateCommunitySubchannelDto extends PartialType(CreateCommunitySubchannelDto) {}
+
+export class CommunitySubchannelDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() slug!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty({ type: String, nullable: true }) description!: string | null;
+  @ApiProperty() position!: number;
+  @ApiProperty() isReadOnly!: boolean;
+  @ApiProperty() postCount!: number;
 }
 
 export class CommunityChannelDto {
@@ -34,8 +53,7 @@ export class CommunityChannelDto {
   @ApiProperty() name!: string;
   @ApiProperty({ type: String, nullable: true }) description!: string | null;
   @ApiProperty() position!: number;
-  @ApiProperty() isReadOnly!: boolean;
-  @ApiProperty() postCount!: number;
+  @ApiProperty({ type: [CommunitySubchannelDto] }) subchannels!: CommunitySubchannelDto[];
 }
 
 export class AdminCommunityChannelDto extends CommunityChannelDto {
@@ -54,6 +72,8 @@ export class CommunityPostChannelDto {
   @ApiProperty() slug!: string;
   @ApiProperty() name!: string;
   @ApiProperty() isReadOnly!: boolean;
+  @ApiProperty() groupSlug!: string;
+  @ApiProperty() groupName!: string;
 }
 
 export class CommunityCommentDto {
