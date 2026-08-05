@@ -2947,6 +2947,66 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 /* Ringkasan transaksi: empat angka besar di atas daftarnya. */
 .trxSummary{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px}.trxStat{padding:16px 18px;display:grid;gap:3px}.trxStat strong{font-size:22px;line-height:1.2}.trxStat small{color:var(--muted);font-size:12px}.trxWarn{color:var(--danger)}
 
+/* Transaksi mengikuti bahasa visual workspace Master: panel berlapis tenang,
+   metrik dengan penanda keadaan, dan daftar yang berubah menjadi kartu mobile. */
+.transactionPage{max-width:1380px}
+.transactionPage .pageHead{margin-bottom:26px}
+.transactionPage .pageTitle{font-size:30px}
+.trxSummary{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.trxStat{position:relative;min-height:132px;padding:20px;overflow:hidden;border-color:var(--line-soft);background:linear-gradient(145deg,var(--surface),color-mix(in srgb,var(--raised) 76%,var(--surface)))}
+.trxStat::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--muted)}
+.trxStatRevenue::before{background:var(--good)}
+.trxStatPending::before{background:var(--warn)}
+.trxStatFailed::before{background:var(--danger)}
+.trxStatTotal::before{background:var(--accent)}
+.trxStat strong{margin-top:8px;font-size:clamp(22px,2.2vw,30px);line-height:1.1;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.trxStat small{margin-top:auto;color:var(--muted);font-size:12px}
+.transactionFilterCard{margin:0 0 20px;padding:12px;border-color:var(--line-soft)}
+.transactionFilterBar{display:grid;grid-template-columns:minmax(260px,1fr) 190px auto;gap:10px;align-items:center}
+.transactionFilterBar label{min-width:0}
+.transactionFilterBar select{width:100%;height:42px;padding:0 36px 0 13px;border:1px solid var(--line);border-radius:9px;background:var(--raised);color:var(--text);font:inherit;font-size:13px}
+.transactionSearch{min-height:42px}
+.transactionSearch input{height:40px}
+.transactionFilterBar .btn{min-height:42px;padding-inline:22px}
+.transactionTableCard{overflow:hidden;border-color:var(--line-soft)}
+.transactionListHead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid var(--line-soft)}
+.transactionListHead h2{margin:4px 0 0;font-size:18px;letter-spacing:-.02em}
+.transactionListHead>span{color:var(--muted);font-size:12px}
+.transactionTableCard table.data th{background:color-mix(in srgb,var(--raised) 55%,var(--surface));padding-block:12px}
+.transactionTableCard table.data td{padding-block:15px;vertical-align:top}
+.transactionTableCard table.data tbody tr:hover{background:color-mix(in srgb,var(--accent) 5%,var(--surface))}
+.transactionTableCard .statusPill{margin-bottom:3px}
+.transactionPager{justify-content:center;margin-top:20px}
+
+@media(max-width:1050px){
+  .trxSummary{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:680px){
+  .transactionPage .pageHead{margin-bottom:20px}
+  .transactionPage .pageTitle{font-size:27px}
+  .trxSummary{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .trxStat{min-height:116px;padding:15px}
+  .trxStat strong{font-size:21px;overflow-wrap:anywhere}
+  .transactionFilterCard{padding:10px}
+  .transactionFilterBar{grid-template-columns:1fr 1fr}
+  .transactionSearch{grid-column:1/-1}
+  .transactionFilterBar .btn{width:100%}
+  .transactionListHead{padding:17px 15px}
+  .transactionTableCard{overflow:visible;border:0;background:transparent}
+  .transactionTableCard .tableWrap{overflow:visible}
+  .transactionTableCard table.data tbody{gap:12px}
+  .transactionTableCard table.data tr{padding:4px;background:var(--surface);box-shadow:var(--shadow)}
+  .transactionTableCard table.data td{align-items:flex-start;padding:11px 13px}
+  .transactionTableCard table.data td>*{max-width:68%;text-align:right}
+  .transactionTableCard table.data td .cellSub{max-width:none}
+  .transactionPager{display:grid;grid-template-columns:1fr 1fr}
+  .transactionPager .pill{grid-column:1/-1;grid-row:1;justify-content:center;text-align:center}
+}
+@media(max-width:390px){
+  .trxSummary{grid-template-columns:1fr}
+  .trxStat{min-height:104px}
+}
+
 /* Penanda MFA pada daftar pengguna: kecil, di samping status akun. */
 .mfaPill{margin-left:6px;padding:2px 7px;font-size:10px;letter-spacing:.06em;background:color-mix(in srgb,var(--primary) 16%,var(--surface-2));color:var(--primary)}
 

@@ -112,7 +112,7 @@ test('sematan punya tombolnya, dan tetap terlihat saat percakapan digulung', () 
 test('arsip channel punya jalan pulang, dan tidak lagi terjadi tanpa ditanya', () => {
   // Dulu satu tekan langsung menyembunyikan seluruh isi channel, tanpa
   // konfirmasi dan tanpa cara mengembalikannya.
-  assert.match(channelManager, /notifier\.confirm\(`Arsipkan #\$\{channel\.name\}\?`/);
+  assert.match(channelManager, /notifier\.confirm\(`Hapus #\$\{channel\.name\} dari daftar aktif\?`/);
   assert.match(channelManager, /POST\('\/api\/v1\/admin\/community\/channels\/\{id\}\/restore'/);
   assert.match(channelManager, /Pulihkan/);
   // Channel yang diarsipkan tetap ada di daftar, sebab kalau ia dibuang dari
@@ -120,6 +120,15 @@ test('arsip channel punya jalan pulang, dan tidak lagi terjadi tanpa ditanya', (
   assert.match(channelManager, /archivedAt: new Date\(\)\.toISOString\(\)/);
   assert.match(channelManager, /const arsip = channels\.filter\(\(item\) => item\.archivedAt\)/);
   assert.match(css, /\.channelArchive\{/);
+});
+
+test('aksi channel diringkas dalam satu menu dan penghapusan tetap dapat dipulihkan', () => {
+  assert.match(channelManager, /<ActionMenu label=\{`Aksi \$\{item\.name\}`\}>/);
+  assert.match(channelManager, />Buka channel<\/a>/);
+  assert.match(channelManager, />Edit channel<\/button>/);
+  assert.match(channelManager, /className="btnDanger"[\s\S]*?Hapus channel<\/button>/);
+  assert.match(channelManager, /confirmLabel: 'Hapus channel'/);
+  assert.match(channelManager, /Data tidak dihapus permanen dan channel dapat dipulihkan dari arsip/);
 });
 
 test('ruang chat dapat membalas, bukan hanya menampilkan balasan', () => {

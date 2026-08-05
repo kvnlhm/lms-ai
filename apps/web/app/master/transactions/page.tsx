@@ -11,7 +11,7 @@ export default async function TransactionsPage() {
 
   return (
     <AppShell user={user}>
-      <main className="wrap">
+      <main className="masterContent transactionPage">
         <div className="pageHead">
           <div className="pageHeadMain">
             <p className="eyebrow">Komersial</p>

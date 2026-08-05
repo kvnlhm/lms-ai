@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { Search } from '../../components/icons';
 import { StatusPill } from '../../components/status-pill';
 import { ApiError, browserClient, unwrap, unwrapList } from '../../lib/browser-api';
 
@@ -111,52 +112,59 @@ export function TransactionList() {
   return (
     <>
       {summary ? (
-        <div className="trxSummary">
-          <div className="card trxStat">
+        <section className="trxSummary" aria-label="Ringkasan transaksi">
+          <article className="card trxStat trxStatRevenue">
             <span className="eyebrow">Pendapatan lunas</span>
             <strong>{RUPIAH.format(summary.paidAmount)}</strong>
             <small>{summary.paid} pesanan</small>
-          </div>
-          <div className="card trxStat">
+          </article>
+          <article className="card trxStat trxStatPending">
             <span className="eyebrow">Menunggu bayar</span>
             <strong>{summary.pending}</strong>
             <small>belum lunas</small>
-          </div>
-          <div className="card trxStat">
+          </article>
+          <article className="card trxStat trxStatFailed">
             <span className="eyebrow">Tidak jadi</span>
             <strong>{summary.failed}</strong>
             <small>gagal, kedaluwarsa, dibatalkan</small>
-          </div>
-          <div className="card trxStat">
+          </article>
+          <article className="card trxStat trxStatTotal">
             <span className="eyebrow">Seluruh pesanan</span>
             <strong>{summary.total}</strong>
             <small>sejak awal</small>
-          </div>
-        </div>
+          </article>
+        </section>
       ) : null}
 
-      <div className="card userFilterCard">
+      <section className="card userFilterCard transactionFilterCard" aria-label="Cari dan saring transaksi">
         <form
-          className="userFilterBar"
+          className="transactionFilterBar"
           onSubmit={(event) => {
             event.preventDefault();
             void muat(1, status, cari);
           }}
         >
-          <input
-            aria-label="Cari transaksi"
-            placeholder="Kode pesanan, nama, email, atau nomor telepon"
-            value={cari}
-            onChange={(event) => setCari(event.target.value)}
-          />
-          <select aria-label="Saring status" value={status} onChange={(event) => setStatus(event.target.value)}>
-            {SARINGAN.map((item) => (
-              <option key={item.nilai} value={item.nilai}>{item.label}</option>
-            ))}
-          </select>
-          <button className="btnSecondary" type="submit" disabled={memuat}>Cari</button>
+          <label className="userSearch transactionSearch">
+            <span className="srOnly">Cari transaksi</span>
+            <span aria-hidden="true"><Search size={17} /></span>
+            <input
+              type="search"
+              placeholder="Kode pesanan, nama, email, atau telepon"
+              value={cari}
+              onChange={(event) => setCari(event.target.value)}
+            />
+          </label>
+          <label>
+            <span className="srOnly">Saring status transaksi</span>
+            <select value={status} onChange={(event) => setStatus(event.target.value)}>
+              {SARINGAN.map((item) => (
+                <option key={item.nilai} value={item.nilai}>{item.label}</option>
+              ))}
+            </select>
+          </label>
+          <button className="btn" type="submit" disabled={memuat}>{memuat ? 'Memuat…' : 'Cari'}</button>
         </form>
-      </div>
+      </section>
 
       {galat ? <p className="communityMessage" role="alert">{galat}</p> : null}
 
@@ -172,7 +180,14 @@ export function TransactionList() {
           </p>
         </div>
       ) : (
-        <section className="card userTableCard">
+        <section className="card userTableCard transactionTableCard">
+          <header className="transactionListHead">
+            <div>
+              <span className="eyebrow">Daftar pesanan</span>
+              <h2>{status ? SARINGAN.find((item) => item.nilai === status)?.label : 'Semua transaksi'}</h2>
+            </div>
+            <span>{total} pesanan</span>
+          </header>
           <div className="tableWrap">
           <table className="data">
             <thead>
@@ -220,7 +235,7 @@ export function TransactionList() {
       )}
 
       {totalHalaman > 1 ? (
-        <nav className="toolbar enrollmentPager" aria-label="Navigasi halaman transaksi">
+        <nav className="toolbar enrollmentPager transactionPager" aria-label="Navigasi halaman transaksi">
           <button
             className="btn btnGhost"
             type="button"

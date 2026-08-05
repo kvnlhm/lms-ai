@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { ActionMenu } from '../../components/action-menu';
 import { useNotifier } from '../../components/notifier';
 import { browserClient, unwrap } from '../../lib/browser-api';
 import type { CommunityChannel } from '../../community/community-feed';
@@ -97,11 +98,11 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
    */
   function archive(channel: ManagedChannel) {
     void (async () => {
-      const lanjut = await notifier.confirm(`Arsipkan #${channel.name}?`, {
+      const lanjut = await notifier.confirm(`Hapus #${channel.name} dari daftar aktif?`, {
         text: channel.postCount > 0
-          ? `${channel.postCount} post di dalamnya ikut hilang dari pandangan semua orang. Isinya tidak dihapus dan channel ini dapat dipulihkan dari daftar arsip.`
-          : 'Channel ini hilang dari pandangan semua orang, dan dapat dipulihkan dari daftar arsip.',
-        confirmLabel: 'Arsipkan',
+          ? `${channel.postCount} post di dalamnya ikut disembunyikan. Data tidak dihapus permanen dan channel dapat dipulihkan dari arsip.`
+          : 'Channel disembunyikan dari semua orang, tetapi tetap dapat dipulihkan dari arsip.',
+        confirmLabel: 'Hapus channel',
         danger: true,
       });
       if (!lanjut) return;
@@ -114,7 +115,7 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
             item.id === channel.id ? { ...item, archivedAt: new Date().toISOString() } : item
           )));
           if (editingId === channel.id) cancelEdit();
-          setMessage(`#${channel.name} diarsipkan. Ada di daftar arsip di bawah.`);
+          setMessage(`#${channel.name} dihapus dari daftar aktif dan dipindahkan ke arsip.`);
         } catch (error) {
           setMessage(error instanceof Error ? error.message : 'Channel gagal diarsipkan.');
         }
@@ -169,7 +170,13 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
         <article className="card channelAdminItem" key={item.id}>
           <span className="channelHash">#</span>
           <div><strong>{item.name}</strong><small>{item.description ?? 'Tanpa keterangan'}</small><span className="channelAccessBadge">{item.isReadOnly ? 'Hanya Master dapat mengirim' : 'Master dan Pelajar dapat mengirim'} · {item.postCount} post</span></div>
-          <div className="channelAdminActions"><a className="btn secondary" href={`/community/${item.slug}`}>Buka</a><button className="btn secondary" type="button" disabled={pending} onClick={() => beginEdit(item)}>Edit</button><button className="dangerButton" type="button" disabled={pending} onClick={() => archive(item)}>Arsipkan</button></div>
+          <div className="channelAdminActions">
+            <ActionMenu label={`Aksi ${item.name}`}>
+              <a href={`/community/${item.slug}`}>Buka channel</a>
+              <button type="button" disabled={pending} onClick={() => beginEdit(item)}>Edit channel</button>
+              <button className="btnDanger" type="button" disabled={pending} onClick={() => archive(item)}>Hapus channel</button>
+            </ActionMenu>
+          </div>
         </article>)}
 
       {/* Daftar arsip. Tanpa ini, channel yang diarsipkan lenyap dari seluruh
@@ -182,7 +189,11 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
             <article className="card channelAdminItem channelArchived" key={item.id}>
               <span className="channelHash">#</span>
               <div><strong>{item.name}</strong><small>{item.description ?? 'Tanpa keterangan'}</small><span className="channelAccessBadge">{item.postCount} post tersimpan</span></div>
-              <div className="channelAdminActions"><button className="btn secondary" type="button" disabled={pending} onClick={() => restore(item)}>Pulihkan</button></div>
+              <div className="channelAdminActions">
+                <ActionMenu label={`Aksi ${item.name}`}>
+                  <button type="button" disabled={pending} onClick={() => restore(item)}>Pulihkan channel</button>
+                </ActionMenu>
+              </div>
             </article>
           ))}
         </div>
