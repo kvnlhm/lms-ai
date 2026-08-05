@@ -253,6 +253,7 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
     if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'l') skip(10);
     if (event.key.toLowerCase() === 'm') toggleMute();
     if (event.key.toLowerCase() === 'f') fullscreen();
+    if (event.key === 'Escape') setSettingsOpen(false);
   }
 
   return (
@@ -268,14 +269,14 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
         </div>
         <div className="courseVideoControlRow">
           <button type="button" onClick={togglePlay} aria-label={playing ? 'Jeda video' : 'Putar video'}>{playing ? <Pause size={20} /> : <Play size={20} />}</button>
-          <button type="button" onClick={() => skip(-10)} aria-label="Mundur 10 detik"><Rewind size={20} /></button>
-          <button type="button" onClick={() => skip(10)} aria-label="Maju 10 detik"><FastForward size={20} /></button>
+          <button className="courseVideoSkip" type="button" onClick={() => skip(-10)} aria-label="Mundur 10 detik"><Rewind size={20} /><span aria-hidden="true">10</span></button>
+          <button className="courseVideoSkip" type="button" onClick={() => skip(10)} aria-label="Maju 10 detik"><FastForward size={20} /><span aria-hidden="true">10</span></button>
           <span className="courseVideoTime">{formatTime(currentTime)} / {formatTime(duration)}</span>
           <div className="courseVideoVolume"><button type="button" onClick={toggleMute} aria-label={muted ? 'Aktifkan suara' : 'Bisukan'}>{muted ? <VolumeOff size={18} /> : <Volume size={18} />}</button><label><span className="srOnly">Volume</span><input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={(event) => changeVolume(Number(event.target.value))} /></label></div>
           <span className="courseVideoProtected">Konten terlindungi</span>
           <div className="courseVideoSettings">
             <button type="button" aria-label="Pengaturan video" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((value) => !value)}><Settings size={20} /></button>
-            {settingsOpen ? <div className="courseVideoSettingsPanel"><div><strong>Kecepatan</strong>{[0.5, 0.75, 1, 1.25, 1.5, 2].map((value) => <button className={speed === value ? 'active' : ''} type="button" key={value} onClick={() => changeSpeed(value)}>{value === 1 ? 'Normal' : `${value}×`}</button>)}</div>{qualities.length ? <div><strong>Kualitas</strong><button className={quality === -1 ? 'active' : ''} type="button" onClick={() => changeQuality(-1)}>Otomatis</button>{qualities.map((item) => <button className={quality === item.index ? 'active' : ''} type="button" key={item.index} onClick={() => changeQuality(item.index)}>{item.height}p</button>)}</div> : null}</div> : null}
+            {settingsOpen ? <div className="courseVideoSettingsPanel"><label><span>Kecepatan</span><select value={speed} onChange={(event) => changeSpeed(Number(event.target.value))}>{[0.5, 0.75, 1, 1.25, 1.5, 2].map((value) => <option key={value} value={value}>{value === 1 ? 'Normal' : `${value}×`}</option>)}</select></label>{qualities.length ? <label><span>Kualitas</span><select value={quality} onChange={(event) => changeQuality(Number(event.target.value))}><option value={-1}>Otomatis</option>{qualities.map((item) => <option key={item.index} value={item.index}>{item.height}p</option>)}</select></label> : <p>Kualitas menyesuaikan koneksi secara otomatis.</p>}</div> : null}
           </div>
           <button type="button" onClick={fullscreen} aria-label="Layar penuh"><Maximize size={20} /></button>
         </div>

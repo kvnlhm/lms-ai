@@ -323,7 +323,7 @@ function LessonStage({ lesson }: { lesson: LearnLesson }) {
 
   if (lesson.contentType === 'VIDEO') {
     return (
-      <div className="stage">
+      <div className="stage videoStage">
         <div className="stageLabel">
           <h2>{label}</h2>
         </div>
