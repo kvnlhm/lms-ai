@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { BrandMark } from './brand-mark';
@@ -8,9 +9,11 @@ import { BrandMark } from './brand-mark';
 export function MobileNavigation({
   title,
   children,
+  variant = 'default',
 }: {
   title: string;
   children: ReactNode;
+  variant?: 'default' | 'learner';
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -32,6 +35,35 @@ export function MobileNavigation({
     };
   }, [open]);
 
+  const drawer = open && typeof document !== 'undefined' ? createPortal(
+    <>
+      <button
+        type="button"
+        className="mobileDrawerOverlay"
+        aria-label="Tutup menu navigasi"
+        onClick={() => setOpen(false)}
+      />
+      <aside id={panelId} className={`mobileDrawer${variant === 'learner' ? ' learnerMobileDrawer' : ''}`} aria-label={title}>
+        <div className="mobileDrawerHead">
+          <div>
+            <BrandMark />
+            <strong>{title}</strong>
+          </div>
+          <button type="button" className="mobileDrawerClose" onClick={() => setOpen(false)}>
+            <span aria-hidden="true">×</span>
+            <span className="srOnly">Tutup menu</span>
+          </button>
+        </div>
+        <div className="mobileDrawerBody" onClick={(event) => {
+          if ((event.target as HTMLElement).closest('a')) setOpen(false);
+        }}>
+          {children}
+        </div>
+      </aside>
+    </>,
+    document.body,
+  ) : null;
+
   return (
     <div className="mobileNavigation">
       <button
@@ -49,33 +81,7 @@ export function MobileNavigation({
         </span>
       </button>
 
-      {open ? (
-        <>
-          <button
-            type="button"
-            className="mobileDrawerOverlay"
-            aria-label="Tutup menu navigasi"
-            onClick={() => setOpen(false)}
-          />
-          <aside id={panelId} className="mobileDrawer" aria-label={title}>
-            <div className="mobileDrawerHead">
-              <div>
-                <BrandMark />
-                <strong>{title}</strong>
-              </div>
-              <button type="button" className="mobileDrawerClose" onClick={() => setOpen(false)}>
-                <span aria-hidden="true">×</span>
-                <span className="srOnly">Tutup menu</span>
-              </button>
-            </div>
-            <div className="mobileDrawerBody" onClick={(event) => {
-              if ((event.target as HTMLElement).closest('a')) setOpen(false);
-            }}>
-              {children}
-            </div>
-          </aside>
-        </>
-      ) : null}
+      {drawer}
     </div>
   );
 }

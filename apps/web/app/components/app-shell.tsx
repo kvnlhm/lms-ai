@@ -242,7 +242,7 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
     <>
       {user.isImpersonating ? <ImpersonationBanner /> : null}
       <header className="topbar">
-        <MobileNavigation title="Academy AIPreneur">
+        <MobileNavigation title="Academy AIPreneur" variant="learner">
           <LearnerChannelSidebar placement="drawer" />
           {MASTER_NAV.some((item) => can(user, item.permission)) ? <nav className="mobileDrawerNav learnerDrawerMasterLinks" aria-label="Workspace Master">{MASTER_NAV.filter((item) => can(user, item.permission)).map((item) => <NavLink key={`drawer-${item.href}`} href={item.href}>{item.label}</NavLink>)}</nav> : null}
           <div className="mobileDrawerActions">

@@ -5,6 +5,7 @@ import test from 'node:test';
 const css = await readFile(new URL('../app/styles.css', import.meta.url), 'utf8');
 const shell = await readFile(new URL('../app/components/app-shell.tsx', import.meta.url), 'utf8');
 const mobileNav = await readFile(new URL('../app/components/learner-mobile-nav.tsx', import.meta.url), 'utf8');
+const drawer = await readFile(new URL('../app/components/mobile-navigation.tsx', import.meta.url), 'utf8');
 const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const lesson = await readFile(new URL('../app/learn/[courseId]/[lessonId]/page.tsx', import.meta.url), 'utf8');
 
@@ -24,8 +25,11 @@ test('seluruh tujuan Pelajar tetap dapat dijangkau dan pintasan lengkap berada d
   assert.match(css, /\.topbar>\.mobileNavigation\{display:block;order:0\}/);
   assert.match(css, /\.learnerShellBody>\.learnerChannelSidebarDesktop\{display:none\}/);
   assert.match(css, /\.mobileDrawerBody \.learnerChannelSidebarDrawer\{position:static[^}]*flex-direction:column/);
-  assert.match(css, /\.topbar \.mobileDrawer\{width:100vw/);
+  assert.match(css, /\.learnerMobileDrawer\{width:100vw/);
   assert.match(css, /\.learnerChannelSidebarDrawer \.channelLink\.active strong\{font-weight:800\}/);
+  assert.match(drawer, /createPortal\(/);
+  assert.match(drawer, /document\.body/);
+  assert.match(shell, /variant="learner"/);
 });
 
 test('pencarian mobile dapat ditutup dan memakai id aksesibilitas yang unik', () => {
