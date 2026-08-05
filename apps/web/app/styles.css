@@ -3100,27 +3100,33 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 
 /* ── Urutan katalog ──────────────────────────────────────────────────────
-   Master menyusun urutan kartu yang dilihat pelajar di /courses. Barisnya
-   sengaja tidak memakai `table`: yang diseret harus berpindah utuh, sementara
-   sel tabel tidak dapat diangkat dari barisnya tanpa merusak tata letaknya. */
+   Master menyusun urutan kartu yang dilihat pelajar di /courses, dan menyusunnya
+   pada kartu yang bentuknya sama — `.courseGrid`, `.cover`, dan `.courseName`
+   dipakai bersama katalog pelajar, bukan disalin. Yang berbeda hanya bagian
+   bawah kartunya: bilah kemajuan belajar tidak punya arti di sini. */
 .pageHeadActions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .orderCard{padding:16px}
 .orderHead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
 .orderLead{margin:0;max-width:56ch;font-size:13px;color:var(--muted)}
 .orderWarn{margin:8px 0 0;max-width:56ch;font-size:12.5px;color:var(--danger)}
 .orderActions{display:flex;gap:10px;flex-wrap:wrap}
-.orderList{display:grid;gap:8px;margin:0;padding:0;list-style:none}
-.orderRow{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid var(--border);border-radius:11px;background:var(--surface-2)}
-/* Baris yang sedang diseret dibuat tembus terhadap penunjuk, supaya
-   `elementFromPoint` mengembalikan baris di bawahnya, bukan dirinya sendiri.
+.orderGrid{margin:0;padding:0;list-style:none}
+.orderCardItem{overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s}
+.orderCardItem .cover{position:relative}
+/* Kartu yang sedang diseret dibuat tembus terhadap penunjuk, supaya
+   `elementFromPoint` mengembalikan kartu di bawahnya, bukan dirinya sendiri.
    Tanpa itu tujuan perpindahan tidak pernah dapat dihitung. */
-.orderRowDragging{pointer-events:none;border-color:var(--primary);box-shadow:0 10px 26px rgba(0,0,0,.24);opacity:.92}
-.orderGrip{display:grid;place-items:center;flex:0 0 auto;width:30px;height:32px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted);cursor:grab;touch-action:none}
-.orderGrip:hover{color:var(--text);border-color:var(--border)}
+.orderCardDragging{pointer-events:none;border-color:var(--primary);box-shadow:0 14px 34px rgba(0,0,0,.3);opacity:.9}
+/* Pegangan dan nomor mengambang di atas sampul, bukan di bawah judul: keduanya
+   harus dapat dijangkau tanpa mata meninggalkan gambar yang sedang ditata. */
+.orderBadge{position:absolute;top:9px;left:9px;right:9px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.orderGrip{display:grid;place-items:center;width:32px;height:32px;padding:0;border:1px solid var(--border);border-radius:9px;background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(6px);color:var(--text);cursor:grab;touch-action:none}
+.orderGrip:hover{border-color:var(--primary)}
 .orderGrip:active{cursor:grabbing}
-.orderNumber input{width:52px;padding:6px 7px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:inherit;font-size:12.5px;text-align:center}
-.orderTitle{flex:1;min-width:0;display:block}
-.orderTitle .cellTitle{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.orderNumber input{width:46px;height:32px;padding:0 6px;border:1px solid var(--border);border-radius:9px;background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(6px);color:var(--text);font:inherit;font-size:12.5px;font-weight:650;text-align:center;font-variant-numeric:tabular-nums}
+.orderCardBody{display:flex;flex-direction:column;gap:3px;flex:1;padding:13px 15px 14px}
+.orderCardBody .courseName{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical}
+.orderCardFoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:12px}
 .orderNudge{display:flex;gap:6px;flex:0 0 auto}
 .orderNudge .btnTiny{min-width:30px;padding:5px 6px;display:grid;place-items:center}
 
@@ -3128,11 +3134,12 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .orderHead{flex-direction:column}
   .orderActions{width:100%}
   .orderActions .btn{flex:1}
-  /* Angka dan panah tetap ada di ponsel; menyeret sudah bekerja lewat sentuh,
-     tetapi memindahkan satu langkah lebih mudah ditekan daripada dibidik. */
-  .orderRow{flex-wrap:wrap;row-gap:9px}
-  .orderTitle{flex:1 1 100%;order:5}
-  .orderNudge{margin-left:auto}
+  /* Dua kolom, bukan satu. Menyeret hanya menjangkau apa yang tampak sekaligus,
+     jadi kartu selebar layar berarti hampir tidak ada tujuan yang terlihat
+     bersamaan dengan asalnya. */
+  .orderGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .orderCardBody{padding:11px 12px 12px}
+  .orderCardFoot{flex-direction:column;align-items:flex-start;gap:8px}
 }
 
 

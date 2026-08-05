@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { useNotifier } from '../../components/notifier';
 import { StatusPill } from '../../components/status-pill';
-import { ChevronDown, ChevronUp, GripVertical } from '../../components/icons';
+import { ArrowLeft, ArrowRight, GripVertical } from '../../components/icons';
 import { ApiError, browserClient, unwrap } from '../../lib/browser-api';
 
 type AdminCourse = Schemas['AdminCourseListItemDto'];
@@ -122,19 +122,19 @@ export function CourseOrder({ courses, lengkap }: Props) {
       }
 
       const bawah = document.elementFromPoint(event.clientX, event.clientY);
-      const baris = bawah?.closest<HTMLElement>('[data-indeks]');
-      if (!baris || !daftarRef.current?.contains(baris)) return;
+      const kartu = bawah?.closest<HTMLElement>('[data-indeks]');
+      if (!kartu || !daftarRef.current?.contains(kartu)) return;
 
-      const tujuan = Number.parseInt(baris.dataset.indeks ?? '', 10);
+      const tujuan = Number.parseInt(kartu.dataset.indeks ?? '', 10);
       if (Number.isNaN(tujuan) || tujuan === seret) return;
 
-      // Ambang titik tengah. Tanpa ini, dua baris yang tingginya berbeda dapat
-      // saling tukar bolak-balik saat penunjuk berhenti tepat di perbatasannya.
-      const kotak = baris.getBoundingClientRect();
-      const tengah = kotak.top + kotak.height / 2;
-      if (tujuan > seret && event.clientY < tengah) return;
-      if (tujuan < seret && event.clientY > tengah) return;
-
+      // Tidak ada ambang titik tengah di sini, tidak seperti pada daftar
+      // menurun. Kartunya tersusun sebagai kisi, jadi tetangga sebuah kartu bisa
+      // berada di kanan atau di bawahnya — dan ambang satu sumbu justru salah
+      // pada separuh arah. Yang menjaganya tetap tenang adalah kartu yang sedang
+      // diseret dibuat tembus terhadap penunjuk: begitu ia menempati posisi
+      // tujuan, penunjuk berada di atas dirinya sendiri dan tidak menemukan
+      // kartu lain sampai benar-benar digerakkan ke kartu berikutnya.
       pindahKe(seret, tujuan);
       setSeret(tujuan);
     };
@@ -244,93 +244,112 @@ export function CourseOrder({ courses, lengkap }: Props) {
         {kabar}
       </p>
 
-      <ol className="orderList" ref={daftarRef}>
+      {/* Kartunya sengaja meniru katalog pelajar: sampul di atas, judul dan
+          kategori di bawahnya. Yang ditata Master adalah benda yang sama dengan
+          yang dilihat pelajar, jadi menatanya dalam bentuk yang sama pula
+          menghapus satu langkah penerjemahan di kepala — "baris ketiga dari
+          atas" tidak lagi perlu dibayangkan sebagai "kartu di baris dua kolom
+          satu". Bilah kemajuan belajar tidak ikut; ia milik pelajar, dan di
+          sini hanya akan menambah tinggi kartu tanpa menambah keterangan. */}
+      <ol className="courseGrid orderGrid" ref={daftarRef}>
         {urutan.map((course, index) => (
           <li
             key={course.id}
             data-indeks={index}
-            className={`orderRow${seret === index ? ' orderRowDragging' : ''}`}
+            className={`card orderCardItem${seret === index ? ' orderCardDragging' : ''}`}
           >
-            <button
-              type="button"
-              className="orderGrip"
-              aria-label={`Pindahkan ${course.title}. Urutan sekarang ${index + 1} dari ${urutan.length}. Pakai panah atas dan bawah.`}
-              onPointerDown={(event) => {
-                // Hanya tombol kiri tetikus atau sentuhan; klik kanan tidak
-                // boleh memulai perpindahan yang tak bisa dibatalkan.
-                if (event.button !== 0) return;
-                setSeret(index);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'ArrowUp') {
-                  event.preventDefault();
-                  pindahKe(index, index - 1);
-                } else if (event.key === 'ArrowDown') {
-                  event.preventDefault();
-                  pindahKe(index, index + 1);
-                }
-              }}
-            >
-              <GripVertical size={17} />
-            </button>
+            <span className={`cover${course.thumbnailUrl ? ' hasImage' : ''}`}>
+              {course.thumbnailUrl ? (
+                <img src={course.thumbnailUrl} alt="" />
+              ) : (
+                <span className="coverText">{course.title}</span>
+              )}
 
-            <label className="orderNumber">
-              <span className="srOnly">Nomor urut {course.title}</span>
-              <input
-                type="number"
-                min={1}
-                max={urutan.length}
-                inputMode="numeric"
-                value={nomor?.id === course.id ? nomor.nilai : index + 1}
-                onChange={(event) => setNomor({ id: course.id, nilai: event.target.value })}
-                onBlur={() => terapkanNomor(index)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    event.currentTarget.blur();
-                  } else if (event.key === 'Escape') {
-                    setNomor(null);
-                  }
-                }}
-              />
-            </label>
+              <span className="orderBadge">
+                <button
+                  type="button"
+                  className="orderGrip"
+                  aria-label={`Pindahkan ${course.title}. Urutan sekarang ${index + 1} dari ${urutan.length}. Pakai tombol panah untuk menggeser satu langkah.`}
+                  onPointerDown={(event) => {
+                    // Hanya tombol kiri tetikus atau sentuhan; klik kanan tidak
+                    // boleh memulai perpindahan yang tak bisa dibatalkan.
+                    if (event.button !== 0) return;
+                    setSeret(index);
+                  }}
+                  onKeyDown={(event) => {
+                    // Kiri dan atas sama-sama mundur satu, kanan dan bawah maju
+                    // satu. Pada kisi, "atas" sesungguhnya berarti satu baris
+                    // penuh, tetapi jumlah kolomnya ditentukan lebar layar dan
+                    // tidak diketahui di sini — memindahkan satu langkah adalah
+                    // satu-satunya tafsir yang selalu benar.
+                    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                      event.preventDefault();
+                      pindahKe(index, index - 1);
+                    } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                      event.preventDefault();
+                      pindahKe(index, index + 1);
+                    }
+                  }}
+                >
+                  <GripVertical size={16} />
+                </button>
 
-            <span className={`courseThumb${course.thumbnailUrl ? ' hasImage' : ''}`} aria-hidden="true">
-              {course.thumbnailUrl ? <img src={course.thumbnailUrl} alt="" /> : course.title.slice(0, 1)}
-            </span>
-
-            <span className="orderTitle">
-              <span className="cellTitle">{course.title}</span>
-              <span className="cellSub">
-                {course.category?.name ?? 'Tanpa kategori'} · {course.moduleCount} bagian
+                <label className="orderNumber">
+                  <span className="srOnly">Nomor urut {course.title}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={urutan.length}
+                    inputMode="numeric"
+                    value={nomor?.id === course.id ? nomor.nilai : index + 1}
+                    onChange={(event) => setNomor({ id: course.id, nilai: event.target.value })}
+                    onBlur={() => terapkanNomor(index)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        event.currentTarget.blur();
+                      } else if (event.key === 'Escape') {
+                        setNomor(null);
+                      }
+                    }}
+                  />
+                </label>
               </span>
             </span>
 
-            <StatusPill status={course.status} />
+            <div className="orderCardBody">
+              <span className="courseName">{course.title}</span>
+              <span className="eyebrow courseCategory">
+                {course.category?.name ?? 'Tanpa kategori'} · {course.moduleCount} bagian
+              </span>
 
-            {/* Panah tetap ada di samping pegangan. Menyeret sudah bekerja di
-                sentuhan, tetapi memindahkan satu langkah dengan tepat lebih
-                mudah ditekan daripada dibidik. */}
-            <span className="orderNudge">
-              <button
-                type="button"
-                className="btnTiny"
-                onClick={() => pindahKe(index, index - 1)}
-                disabled={index === 0}
-                aria-label={`Naikkan ${course.title}`}
-              >
-                <ChevronUp size={15} />
-              </button>
-              <button
-                type="button"
-                className="btnTiny"
-                onClick={() => pindahKe(index, index + 1)}
-                disabled={index === urutan.length - 1}
-                aria-label={`Turunkan ${course.title}`}
-              >
-                <ChevronDown size={15} />
-              </button>
-            </span>
+              <div className="orderCardFoot">
+                <StatusPill status={course.status} />
+                {/* Panah tetap ada di samping pegangan. Menyeret sudah bekerja
+                    di sentuhan, tetapi memindahkan satu langkah dengan tepat
+                    lebih mudah ditekan daripada dibidik. */}
+                <span className="orderNudge">
+                  <button
+                    type="button"
+                    className="btnTiny"
+                    onClick={() => pindahKe(index, index - 1)}
+                    disabled={index === 0}
+                    aria-label={`Majukan ${course.title}`}
+                  >
+                    <ArrowLeft size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btnTiny"
+                    onClick={() => pindahKe(index, index + 1)}
+                    disabled={index === urutan.length - 1}
+                    aria-label={`Mundurkan ${course.title}`}
+                  >
+                    <ArrowRight size={15} />
+                  </button>
+                </span>
+              </div>
+            </div>
           </li>
         ))}
       </ol>
