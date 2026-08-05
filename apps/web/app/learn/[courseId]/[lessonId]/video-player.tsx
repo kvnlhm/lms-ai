@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { CSSProperties, KeyboardEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { Maximize, Pause, Play, Volume } from '../../../components/icons';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 import { catatKemajuan } from './watch-progress';
 
@@ -71,15 +73,14 @@ await browserClient().POST('/api/v1/learn/lessons/{lessonId}/playback-sessions',
       );
     }
     return (
-      <div className="protectedVideoFrame" onContextMenu={(event) => event.preventDefault()}>
+      <div className="protectedVideoFrame embeddedVideoFrame" onContextMenu={(event) => event.preventDefault()}>
         <iframe
           src={session.embedUrl}
           title="Video pelajaran"
-          allow="accelerometer; autoplay; encrypted-media; gyroscope; fullscreen; picture-in-picture"
+          allow="autoplay; encrypted-media; fullscreen"
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
         />
-        <span className="videoViewerWatermark" aria-hidden="true">{session.watermark.text}</span>
       </div>
     );
   }
@@ -88,23 +89,7 @@ await browserClient().POST('/api/v1/learn/lessons/{lessonId}/playback-sessions',
 
   return (
     <div className="protectedVideoFrame" onContextMenu={(event) => event.preventDefault()}>
-      {session.kind === 'HLS' ? (
-        <HlsVideo src={session.playbackUrl} lessonId={lessonId} onFailure={gagalDiputar} />
-      ) : (
-        <video
-          controls
-          controlsList="nodownload noremoteplayback"
-          disablePictureInPicture
-          disableRemotePlayback
-          preload="metadata"
-          src={session.playbackUrl}
-          onError={gagalDiputar}
-          onTimeUpdate={(event) => lacak(lessonId, event.currentTarget)}
-        >
-          Browser kamu tidak mendukung pemutar video HTML5.
-        </video>
-      )}
-      <span className="videoViewerWatermark" aria-hidden="true">{session.watermark.text}</span>
+      <CourseVideo src={session.playbackUrl} hls={session.kind === 'HLS'} lessonId={lessonId} onFailure={gagalDiputar} />
     </div>
   );
 }
@@ -135,12 +120,22 @@ function lacak(lessonId: string, video: HTMLVideoElement): void {
  * dipakai karena pemutar bawaannya lebih hemat baterai dan mendukung
  * pemutaran layar penuh milik sistem.
  */
-function HlsVideo({ src, lessonId, onFailure }: { src: string; lessonId: string; onFailure: () => void }) {
+function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; hls: boolean; lessonId: string; onFailure: () => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
+    if (!useHls) {
+      video.src = src;
+      return;
+    }
 
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = src;
@@ -169,19 +164,69 @@ function HlsVideo({ src, lessonId, onFailure }: { src: string; lessonId: string;
       dibatalkan = true;
       hls?.destroy();
     };
-  }, [src, onFailure]);
+  }, [src, useHls, onFailure]);
+
+  useEffect(() => {
+    const hentikanSaatTersembunyi = () => {
+      if (document.visibilityState === 'hidden') videoRef.current?.pause();
+    };
+    document.addEventListener('visibilitychange', hentikanSaatTersembunyi);
+    return () => document.removeEventListener('visibilitychange', hentikanSaatTersembunyi);
+  }, []);
+
+  function togglePlay() {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) void video.play(); else video.pause();
+  }
+
+  function seek(value: number) {
+    const video = videoRef.current;
+    if (!video || !Number.isFinite(value)) return;
+    video.currentTime = value;
+    setCurrentTime(value);
+  }
+
+  function changeVolume(value: number) {
+    const video = videoRef.current;
+    if (!video) return;
+    video.volume = value;
+    setVolume(value);
+  }
+
+  function fullscreen() {
+    if (frameRef.current?.requestFullscreen) void frameRef.current.requestFullscreen();
+  }
+
+  function keyboard(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === ' ' || event.key === 'k') { event.preventDefault(); togglePlay(); }
+    if (event.key === 'ArrowLeft') seek(Math.max(0, currentTime - 5));
+    if (event.key === 'ArrowRight') seek(Math.min(duration, currentTime + 5));
+    if (event.key.toLowerCase() === 'f') fullscreen();
+  }
 
   return (
-    <video
-      ref={videoRef}
-      controls
-      controlsList="nodownload noremoteplayback"
-      disablePictureInPicture
-      disableRemotePlayback
-      preload="metadata"
-      onTimeUpdate={(event) => lacak(lessonId, event.currentTarget)}
-    >
-      Browser kamu tidak mendukung pemutar video HTML5.
-    </video>
+    <div ref={frameRef} className={`courseVideoPlayer${playing ? ' isPlaying' : ''}`} tabIndex={0} onKeyDown={keyboard} aria-label="Pemutar video pelajaran">
+      <video ref={videoRef} controlsList="nodownload noremoteplayback" disablePictureInPicture disableRemotePlayback playsInline preload="metadata" onClick={togglePlay} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)} onDurationChange={(event) => setDuration(event.currentTarget.duration)} onError={onFailure} onTimeUpdate={(event) => { setCurrentTime(event.currentTarget.currentTime); lacak(lessonId, event.currentTarget); }}>
+        Browser kamu tidak mendukung pemutar video HTML5.
+      </video>
+      {!playing ? <button className="courseVideoCenterPlay" type="button" onClick={togglePlay} aria-label="Putar video"><Play size={30} /></button> : null}
+      <div className="courseVideoControls">
+        <input className="courseVideoSeek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} onChange={(event) => seek(Number(event.target.value))} aria-label="Posisi video" style={{ '--video-progress': `${duration ? currentTime / duration * 100 : 0}%` } as CSSProperties} />
+        <div className="courseVideoControlRow">
+          <button type="button" onClick={togglePlay} aria-label={playing ? 'Jeda video' : 'Putar video'}>{playing ? <Pause size={20} /> : <Play size={20} />}</button>
+          <span className="courseVideoTime">{formatTime(currentTime)} / {formatTime(duration)}</span>
+          <label className="courseVideoVolume"><Volume size={18} /><span className="srOnly">Volume</span><input type="range" min="0" max="1" step="0.05" value={volume} onChange={(event) => changeVolume(Number(event.target.value))} /></label>
+          <span className="courseVideoProtected">Konten terlindungi</span>
+          <button type="button" onClick={fullscreen} aria-label="Layar penuh"><Maximize size={20} /></button>
+        </div>
+      </div>
+    </div>
   );
+}
+
+function formatTime(value: number): string {
+  if (!Number.isFinite(value) || value < 0) return '0:00';
+  const seconds = Math.floor(value % 60).toString().padStart(2, '0');
+  return `${Math.floor(value / 60)}:${seconds}`;
 }

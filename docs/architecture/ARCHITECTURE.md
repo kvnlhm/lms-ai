@@ -1377,7 +1377,7 @@ VideoProviderPort
 
 Bunny Stream menangani penyimpanan, direct upload, transcoding, adaptive streaming, CDN, Token Authentication, Allowed Domains, MediaCage Basic DRM, serta processing webhook.
 
-NestJS tetap menangani permission upload, validasi sesi dan status publikasi, lesson access, playback session, token generation, watermark payload, webhook verification, metadata, audit, dan security event.
+NestJS tetap menangani permission upload, validasi sesi dan status publikasi, lesson access, playback session, token generation, webhook verification, metadata, audit, dan security event.
 
 ### Upload Flow
 
@@ -1407,7 +1407,7 @@ Student meminta playback session
 - Tidak ada permanent public playback URL.
 - API key dan token key hanya tersedia di backend.
 - Playback token tidak dicatat pada log.
-- Dynamic user watermark tampil selama playback.
+- Sesuai ADR-027, player tidak menampilkan watermark identitas; signed playback dan session access tetap diwajibkan.
 - Concurrent playback dapat dibatasi.
 - Video tidak di-stream melalui NestJS.
 - DRM mengurangi download tidak sah, tetapi tidak dapat mencegah kamera atau screen recording sepenuhnya.

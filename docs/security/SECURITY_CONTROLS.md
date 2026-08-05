@@ -237,10 +237,10 @@ Saat `VIDEO_PROVIDER=SELF_HOSTED` sesuai ADR-014:
 - Backup video terenkripsi disimpan di luar failure domain VPS.
 - Playback token tidak dicatat pada log.
 - Webhook diverifikasi dan replay-protected.
-- Dynamic user watermark berisi identitas tersamar dan kode playback session ditampilkan bergerak.
+- Sesuai ADR-027, player tidak menampilkan nama, email, atau kode sesi sebagai watermark.
 - Pemutar menyembunyikan kontrol unduh, picture-in-picture, dan remote playback yang didukung browser.
 - Concurrent playback dapat dibatasi melalui playback session.
 - Account suspension dan enrollment expiry memblokir session baru.
 - Video tidak melewati bandwidth NestJS.
-- Kontrol browser dan watermark mengurangi pengunduhan kasual serta membuat rekaman dapat ditelusuri,
-  tetapi tidak dapat mencegah pengguna terautentikasi menangkap traffic atau merekam layar sepenuhnya.
+- Signed playback dan kontrol browser mengurangi pengunduhan kasual, tetapi tidak dapat mencegah
+  pengguna terautentikasi menangkap traffic, memakai screen recorder OS, atau merekam dengan perangkat eksternal.

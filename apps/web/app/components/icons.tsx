@@ -96,6 +96,24 @@ export const Play = (props: IconProps) => (
   </Base>
 );
 
+export const Pause = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M8 5v14M16 5v14" />
+  </Base>
+);
+
+export const Volume = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M5 9H2v6h3l5 4V5L5 9zM15 9a4 4 0 010 6M18 6a8 8 0 010 12" />
+  </Base>
+);
+
+export const Maximize = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
+  </Base>
+);
+
 export const LogOut = (props: IconProps) => (
   <Base {...props}>
     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />

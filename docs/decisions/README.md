@@ -33,6 +33,7 @@
 | ADR-011 | Accepted | Prisma |
 | ADR-012 | Accepted | BullMQ |
 | ADR-013 | Accepted | Video provider adapter |
+| ADR-027 | Accepted | Player video kustom tanpa watermark identitas |
 | ADR-014 | Accepted | Validasi biaya video self-hosted |
 | ADR-015 | Accepted | Gambar publik self-hosted |
 | ADR-016 | Accepted | Registration commerce dan access tier |
