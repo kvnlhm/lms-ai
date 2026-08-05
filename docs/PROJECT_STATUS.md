@@ -7,7 +7,7 @@ tersimpan di mana pun kecuali di kepala orang yang baru saja mengerjakannya:
 keadaan produksi hari ini, apa yang sudah ditutup, dan apa yang sengaja
 dibiarkan terbuka beserta alasannya.
 
-Terakhir diperbarui: **5 Agustus 2026**, setelah deploy 165 (`f6a4522`).
+Terakhir diperbarui: **5 Agustus 2026**, setelah deploy 167 (`91ee1cb`).
 
 ---
 
@@ -22,7 +22,7 @@ sedang dibangun menuju rilis; ini proyek yang sedang berjalan.
 | Repo | `kvnlhm/lms-ai`, cabang `feat/walking-skeleton-and-master` — **publik** |
 | VPS | Hostinger `31.97.105.104`, 7 GB RAM, sisa disk ±45 G dari 96 G |
 | Orkestrasi | Coolify 4.1.2, aplikasi UUID `e1b4fo52n9tnzjpm5m2i5k8l` |
-| Deploy terakhir | 165 — `f6a4522`, selesai 5 Agustus 2026 08:59 UTC |
+| Deploy terakhir | 167 — `91ee1cb`, selesai 5 Agustus 2026 09:44 UTC |
 | Pembayaran | Midtrans **Production** (bukan sandbox) |
 | Email | Resend, domain pengirim `send.aipreneur.co.id` |
 | Pemantauan | UptimeRobot, `HEAD /api/v1/health/ready` tiap 5 menit |
@@ -192,6 +192,32 @@ pemiliknya.
    ("27. Claude AI", "26. Heygen", …), tetapi urutan hasil isi-mundur justru
    menaruh nomor besar di depan. Pemiliknya kemungkinan akan membalikkannya lewat
    antarmuka; itu keputusan isi, bukan cacat.
+
+   Layar penataannya kemudian diubah menjadi kisi kartu (`91ee1cb`, deploy 167),
+   memakai `.courseGrid`, `.cover`, dan `.courseName` yang sama dengan katalog
+   pelajar — dipakai bersama, bukan disalin, supaya keduanya tidak dapat berbeda
+   tanpa sengaja. Ambang titik tengah pada logika seret dihapus di sana: ia benar
+   untuk daftar menurun, tetapi pada kisi tetangga sebuah kartu bisa berada di
+   kanan atau di bawah, sehingga ambang satu sumbu salah pada separuh arah.
+7. **Daftar kursus Master dapat disortir** — `5cfcc67`, deploy 166. Juga di luar
+   daftar sembilan butir.
+
+   Tujuh kolom: urutan, judul, status, bagian, terdaftar, diperbarui, terbit.
+   Daftarnya tertutup karena nilainya berakhir di `orderBy` Prisma; `?sort=`
+   sembarang ditolak 422.
+
+   - `id` selalu menjadi pemutus seri terakhir. Menyortir menurut status
+     meninggalkan puluhan baris bernilai sama, dan tanpa pemutus unik paginasi
+     `skip`/`take` dapat memunculkan satu kursus di dua halaman sekaligus
+     sementara kursus lain hilang — tanpa satu pun galat. Ada test untuk ini.
+   - `publishedAt` disortir dengan `nulls: 'last'`; draf dan arsip ber-NULL dan
+     pada DESC PostgreSQL menaruhnya paling depan.
+   - Kendalinya ada di dua tempat yang keduanya tautan biasa: pil di atas tabel
+     dan kepala kolom yang dapat diklik. Pilnya wajib — di lebar ponsel `thead`
+     disembunyikan, jadi kepala kolom saja membuat penyortiran tidak terjangkau.
+   - `lessonCount` tidak dapat disortir; angkanya berjarak dua relasi dari kursus
+     sehingga `_count` Prisma tidak menjangkaunya. Kolomnya dibiarkan polos, bukan
+     diberi tautan yang tidak melakukan apa-apa.
 
 Dua koreksi yang perlu diingat supaya tidak diulang sebagai "temuan":
 
