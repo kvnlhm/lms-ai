@@ -73,6 +73,13 @@ test('Channel wajib lahir bersama sub-channel dan daftar Master dapat dibuka-tut
   assert.match(channelManager, /open \? <div className="channelAccordionPanel"/);
 });
 
+test('form Channel dibuka dari tombol tambah dan penambahan sub-channel berada di menu Aksi', () => {
+  assert.match(channelManager, /<Modal title="Tambah channel"/);
+  assert.match(channelManager, />Tambah channel<\/button>/);
+  assert.match(channelManager, /<ActionMenu>[\s\S]*?>Tambah sub-channel<\/button>/);
+  assert.doesNotMatch(channelManager, /channelSubHead[\s\S]{0,300}<button[^>]*>Tambah sub-channel<\/button>/);
+});
+
 test('sidebar Pelajar hanya memakai pintasan pilihan Master dan menampilkan sub-channel secara accordion', () => {
   assert.match(learnerSidebar, /GET\('\/api\/v1\/community\/sidebar-channels'/);
   assert.match(learnerSidebar, /aria-expanded=\{open\}/);

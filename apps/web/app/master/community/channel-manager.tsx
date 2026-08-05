@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import { ActionMenu } from '../../components/action-menu';
+import { Plus } from '../../components/icons';
+import { Modal } from '../../components/modal';
 import { useNotifier } from '../../components/notifier';
 import { browserClient, unwrap } from '../../lib/browser-api';
 import type { CommunityChannel, CommunitySubchannel } from '../../community/community-feed';
@@ -14,6 +16,7 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
   const notifier = useNotifier();
   const [channels, setChannels] = useState(initialChannels);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [firstSub, setFirstSub] = useState<SubDraft>(EMPTY_SUB);
@@ -35,7 +38,7 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
           isReadOnly: firstSub.isReadOnly, showInSidebar: firstSub.showInSidebar,
         } }));
         setChannels((items) => [...items, created]); setExpanded((items) => new Set(items).add(created.id));
-        setName(''); setDescription(''); setFirstSub(EMPTY_SUB); setMessage('Channel beserta sub-channel pertamanya berhasil dibuat.');
+        setName(''); setDescription(''); setFirstSub(EMPTY_SUB); setShowCreate(false); setMessage('Channel beserta sub-channel pertamanya berhasil dibuat.');
       } catch (error) { setMessage(error instanceof Error ? error.message : 'Channel gagal dibuat.'); }
     });
   }
@@ -85,29 +88,22 @@ export function ChannelManager({ initialChannels }: { initialChannels: ManagedCh
 
   const active = channels.filter((item) => !item.archivedAt);
   const archived = channels.filter((item) => item.archivedAt);
+  const addingGroup = channels.find((item) => item.id === addingTo);
   return <div className="channelManager">
-    <section className="card channelForm">
-      <div><span className="eyebrow">CHANNEL BARU</span><h2>Buat channel dan ruang chat</h2><p className="communityMuted">Setiap Channel wajib memiliki minimal satu sub-channel. Sub-channel inilah yang menjadi ruang chat.</p></div>
-      <div className="field"><label htmlFor="channel-name">Nama channel</label><input id="channel-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Contoh: Komunitas" /></div>
-      <div className="field"><label htmlFor="channel-desc">Keterangan channel</label><textarea id="channel-desc" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Jelaskan isi kelompok ini" /></div>
-      <div className="channelFormDivider"><strong>Sub-channel pertama</strong><small>Anda dapat menambah sub-channel lain setelah Channel dibuat.</small></div>
-      <SubchannelFields id="first" value={firstSub} onChange={setFirstSub} />
-      <button className="btn" type="button" disabled={pending || name.trim().length < 2 || firstSub.name.trim().length < 2} onClick={createChannel}>Buat channel</button>
-    </section>
-
-    <section className="channelAdminList"><div className="channelListHeading"><div><span className="eyebrow">KOMUNITAS</span><h2>Channel dan sub-channel</h2></div><span>{active.length} channel</span></div>{message ? <p role="status" className="communityMessage">{message}</p> : null}
+    <section className="channelAdminList"><div className="channelManagerHead"><div><span className="eyebrow">KOMUNITAS</span><h2>Channel dan sub-channel</h2><p className="communityMuted">Buka Channel untuk melihat ruang chat di dalamnya.</p></div><div><span>{active.length} channel</span><button className="btn" type="button" aria-expanded={showCreate} onClick={() => setShowCreate(true)}><Plus size={16} />Tambah channel</button></div></div>{message ? <p role="status" className="communityMessage">{message}</p> : null}
       <div className="channelAccordion">{active.map((group) => {
         const open = expanded.has(group.id); const activeSubs = group.subchannels.filter((item) => !item.archivedAt);
         return <article className={`channelAccordionItem${open ? ' open' : ''}`} key={group.id}>
-          <div className="channelAccordionHead"><button type="button" className="channelExpand" aria-expanded={open} onClick={() => toggle(group.id)}><span className="channelChevron" aria-hidden="true">›</span><span className="channelHash">#</span><span><strong>{group.name}</strong><small>{group.description ?? `${activeSubs.length} ruang chat`}</small></span></button><span className="channelShortcutState">{group.showInSidebar ? 'Tampil di sidebar' : 'Tidak di sidebar'}</span><ActionMenu><a href={`/community/${group.slug}`}>Buka channel</a><button type="button" onClick={() => void renameChannel(group)}>Edit channel</button><button type="button" onClick={() => setGroupShortcut(group, !group.showInSidebar)}>{group.showInSidebar ? 'Sembunyikan dari sidebar' : 'Tampilkan di sidebar'}</button><button className="btnDanger" type="button" onClick={() => void archiveChannel(group)}>Hapus channel</button></ActionMenu></div>
-          {open ? <div className="channelAccordionPanel"><div className="channelSubHead"><div><strong>Sub-channel</strong><small>{activeSubs.length} ruang chat di dalam {group.name}</small></div><button className="btn secondary" type="button" onClick={() => { setAddingTo(group.id); setDraft(EMPTY_SUB); }}>Tambah sub-channel</button></div>
+          <div className="channelAccordionHead"><button type="button" className="channelExpand" aria-expanded={open} onClick={() => toggle(group.id)}><span className="channelChevron" aria-hidden="true">›</span><span className="channelHash">#</span><span><strong>{group.name}</strong><small>{group.description ?? `${activeSubs.length} ruang chat`}</small></span></button><span className="channelShortcutState">{group.showInSidebar ? 'Tampil di sidebar' : 'Tidak di sidebar'}</span><ActionMenu><a href={`/community/${group.slug}`}>Buka channel</a><button type="button" onClick={() => { setAddingTo(group.id); setDraft(EMPTY_SUB); setExpanded((items) => new Set(items).add(group.id)); }}>Tambah sub-channel</button><button type="button" onClick={() => void renameChannel(group)}>Edit channel</button><button type="button" onClick={() => setGroupShortcut(group, !group.showInSidebar)}>{group.showInSidebar ? 'Sembunyikan dari sidebar' : 'Tampilkan di sidebar'}</button><button className="btnDanger" type="button" onClick={() => void archiveChannel(group)}>Hapus channel</button></ActionMenu></div>
+          {open ? <div className="channelAccordionPanel"><div className="channelSubHead"><div><strong>Sub-channel</strong><small>{activeSubs.length} ruang chat di dalam {group.name}</small></div></div>
             {group.subchannels.map((sub) => <div className={`channelSubRow${sub.archivedAt ? ' channelArchived' : ''}`} key={sub.id}><span className="channelHash">#</span><div><strong>{sub.name}</strong><small>{sub.description ?? 'Ruang chat'} · {sub.postCount} post</small></div><span className="channelShortcutState">{sub.showInSidebar ? 'Pintasan aktif' : 'Pintasan nonaktif'}</span><ActionMenu>{sub.archivedAt ? <button type="button" onClick={() => restoreSubchannel(group, sub)}>Pulihkan</button> : <><a href={`/community/${group.slug}/${sub.slug}`}>Buka chat</a><button type="button" onClick={() => void renameSubchannel(group, sub)}>Edit sub-channel</button><button type="button" onClick={() => setSubShortcut(group, sub, !sub.showInSidebar)}>{sub.showInSidebar ? 'Sembunyikan pintasan' : 'Tampilkan pintasan'}</button><button className="btnDanger" type="button" onClick={() => void archiveSubchannel(group, sub)}>Hapus</button></>}</ActionMenu></div>)}
-            {addingTo === group.id ? <div className="channelSubCreate"><SubchannelFields id={group.id} value={draft} onChange={setDraft} /><div className="channelAdminActions"><button className="btn secondary" type="button" onClick={() => setAddingTo(null)}>Batal</button><button className="btn" type="button" disabled={pending || draft.name.trim().length < 2} onClick={() => createSubchannel(group)}>Tambah</button></div></div> : null}
           </div> : null}
         </article>;
       })}</div>
       {archived.length ? <div className="channelArchive"><div className="channelListHeading"><h2>Channel terarsip</h2><span>{archived.length}</span></div>{archived.map((group) => <div className="card channelAdminItem channelArchived" key={group.id}><span className="channelHash">#</span><div><strong>{group.name}</strong><small>Seluruh isinya tersembunyi</small></div><ActionMenu><button type="button" onClick={() => restoreChannel(group)}>Pulihkan channel</button></ActionMenu></div>)}</div> : null}
     </section>
+    {showCreate ? <Modal title="Tambah channel" description="Buat Channel bersama sub-channel pertamanya." busy={pending} onClose={() => setShowCreate(false)}><div className="channelForm"><div className="field"><label htmlFor="channel-name">Nama channel</label><input id="channel-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Contoh: Komunitas" /></div><div className="field"><label htmlFor="channel-desc">Keterangan channel</label><textarea id="channel-desc" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Jelaskan isi kelompok ini" /></div><div className="channelFormDivider"><strong>Sub-channel pertama</strong><small>Setiap Channel wajib memiliki minimal satu ruang chat.</small></div><SubchannelFields id="first" value={firstSub} onChange={setFirstSub} /><div className="channelAdminActions"><button className="btn secondary" type="button" disabled={pending} onClick={() => setShowCreate(false)}>Batal</button><button className="btn" type="button" disabled={pending || name.trim().length < 2 || firstSub.name.trim().length < 2} onClick={createChannel}>Buat channel</button></div></div></Modal> : null}
+    {addingGroup ? <Modal title={`Tambah sub-channel ke ${addingGroup.name}`} description="Sub-channel menjadi ruang chat di dalam Channel ini." busy={pending} onClose={() => setAddingTo(null)}><div className="channelForm"><SubchannelFields id={addingGroup.id} value={draft} onChange={setDraft} /><div className="channelAdminActions"><button className="btn secondary" type="button" disabled={pending} onClick={() => setAddingTo(null)}>Batal</button><button className="btn" type="button" disabled={pending || draft.name.trim().length < 2} onClick={() => createSubchannel(addingGroup)}>Tambah sub-channel</button></div></div></Modal> : null}
   </div>;
 }
 
