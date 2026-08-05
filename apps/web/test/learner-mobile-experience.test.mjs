@@ -24,6 +24,8 @@ test('seluruh tujuan Pelajar tetap dapat dijangkau dan pintasan lengkap berada d
   assert.match(css, /\.topbar>\.mobileNavigation\{display:block;order:0\}/);
   assert.match(css, /\.learnerShellBody>\.learnerChannelSidebarDesktop\{display:none\}/);
   assert.match(css, /\.mobileDrawerBody \.learnerChannelSidebarDrawer\{position:static[^}]*flex-direction:column/);
+  assert.match(css, /\.topbar \.mobileDrawer\{width:100vw/);
+  assert.match(css, /\.learnerChannelSidebarDrawer \.channelLink\.active strong\{font-weight:800\}/);
 });
 
 test('pencarian mobile dapat ditutup dan memakai id aksesibilitas yang unik', () => {
