@@ -2,6 +2,11 @@
 
 Read `AGENTS.md` and `docs/DOCUMENTATION_INDEX.md` before working.
 
+Read `docs/PROJECT_STATUS.md` first in a new session. It carries what the other
+documents cannot: the live state of production, what the last pass closed, what
+was left open on purpose, and the constraints that must not be violated on this
+VPS.
+
 ## Baseline
 
 - Next.js web.
