@@ -70,6 +70,7 @@ test('sortir kursus memakai dropdown dan label kartu mobile tetap terbaca', asyn
   assert.match(css, /@media\(max-width:680px\)[\s\S]*\.sortBar\{[^}]*flex-direction:column[^}]*overflow:visible/);
   assert.match(css, /@media\(max-width:680px\)[\s\S]*\.sortField[^}]*width:100%/);
   assert.match(css, /@media \(max-width: 680px\)[\s\S]*\.courseTableTitle\s*\{[^}]*min-width:\s*0[^}]*flex:\s*1/);
+  assert.match(css, /\.cellPosition\{[^}]*overflow-wrap:normal[^}]*white-space:nowrap[^}]*word-break:keep-all/);
 });
 
 test('penyusun kursus memberi pratinjau seret dan menggeser kartu dengan halus', async () => {

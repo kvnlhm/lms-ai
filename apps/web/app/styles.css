@@ -3318,7 +3318,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
    panah bersaing dengan judul kolomnya sendiri di setiap tampilan. */
 .sortHeadArrow{font-size:11px;opacity:.32}
 .sortHead:hover .sortHeadArrow,.sortHeadActive .sortHeadArrow{opacity:1}
-.cellPosition{width:1%;color:var(--muted);font-variant-numeric:tabular-nums}
+.cellPosition{width:1%;color:var(--muted);font-variant-numeric:tabular-nums;overflow-wrap:normal;white-space:nowrap;word-break:keep-all}
 @media(max-width:680px){
   .courseStatusBar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px;scrollbar-width:none}
   .courseStatusBar::-webkit-scrollbar{display:none}
