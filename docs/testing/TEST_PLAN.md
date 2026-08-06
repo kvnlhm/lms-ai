@@ -397,6 +397,8 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
   dicegah selama mutation masih berjalan.
 - Sidebar, feed, serta rail event/pengumuman berubah menjadi satu kolom pada
   layar sempit tanpa overflow horizontal.
+- Navbar Pelajar tidak menampilkan tautan Beranda yang berulang, dan sidebar
+  hanya menampilkan Monitoring harian serta channel pilihan Master.
 - Beranda Pelajar tetap menampilkan ringkasan progres dan pintasan ke halaman
   Community yang terpisah.
 - Master dapat mengubah nama, slug, keterangan, urutan, dan akses menulis

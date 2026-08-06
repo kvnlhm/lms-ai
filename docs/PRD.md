@@ -2264,6 +2264,9 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
   utama dan halaman channel menampilkan percakapan. Sidebar channel merupakan
   bagian persisten dari shell Pelajar sehingga tetap tersedia saat Pelajar
   membuka Beranda, Kursus, Histori, dan halaman Pelajar lainnya.
+- Navigasi Pelajar tidak mengulang tautan Beranda karena logo sudah menuju
+  Beranda. Sidebar hanya memuat Monitoring harian dan Channel/Sub-channel yang
+  dipilih Master sebagai pintasan.
 - Rail pendamping menampilkan sesi mendatang dan pengumuman terbaru.
 - Pelajar aktif dapat membuat post, komentar, dan reaksi pada channel biasa.
 - Pelajar dapat mengubah dan menghapus tulisannya sendiri. Tulisan yang pernah

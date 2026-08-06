@@ -17,7 +17,6 @@ import { LearnerMobileNav } from './learner-mobile-nav';
 import { MasterCommunityShortcuts } from './master-community-shortcuts';
 
 const LEARNER_NAV = [
-  { href: '/', label: 'Beranda' },
   { href: '/community', label: 'Komunitas' },
   { href: '/courses', label: 'Kursus' },
   { href: '/announcements', label: 'Pengumuman' },
@@ -290,7 +289,7 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
       <nav className="learnerMobileTabs" aria-label="Menu Pelajar">
         {LEARNER_NAV.map((item) => (
           <NavLink key={`mobile-tab-${item.href}`} href={item.href}>
-            {item.label === 'Beranda' ? 'Feed' : item.label}
+            {item.label}
             {item.href === '/announcements' ? (
               <LencanaBelumDibaca jumlah={pengumumanBelumDibaca} />
             ) : null}

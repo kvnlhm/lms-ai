@@ -3151,7 +3151,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .mobileDrawerBody .learnerChannelSidebarDrawer .communityMuted{margin:8px 2px 0}
   .learnerDrawerMasterLinks{margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
 
-  .learnerBottomNav{position:fixed;z-index:50;right:0;bottom:0;left:0;display:grid;grid-template-columns:repeat(4,1fr);height:calc(70px + env(safe-area-inset-bottom));padding:7px 8px env(safe-area-inset-bottom);background:color-mix(in srgb,var(--surface) 96%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(20px)}
+  .learnerBottomNav{position:fixed;z-index:50;right:0;bottom:0;left:0;display:grid;grid-template-columns:repeat(3,1fr);height:calc(70px + env(safe-area-inset-bottom));padding:7px 8px env(safe-area-inset-bottom);background:color-mix(in srgb,var(--surface) 96%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(20px)}
   .learnerBottomLink{display:flex;min-width:0;align-items:center;justify-content:center;flex-direction:column;gap:3px;border-radius:12px;color:var(--muted);font-size:10px;font-weight:600;line-height:1.1}
   button.learnerBottomLink{width:100%}
   .learnerBottomLink[aria-current=page]{color:var(--accent)}

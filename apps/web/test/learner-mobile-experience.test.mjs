@@ -11,12 +11,14 @@ const lesson = await readFile(new URL('../app/learn/[courseId]/[lessonId]/page.t
 const announcementsPage = await readFile(new URL('../app/announcements/page.tsx', import.meta.url), 'utf8');
 const announcementsFeed = await readFile(new URL('../app/announcements/announcement-feed.tsx', import.meta.url), 'utf8');
 
-test('Pelajar memiliki navigasi bawah mobile dengan empat tujuan utama', () => {
+test('navigasi Pelajar tidak mengulang tautan Beranda', () => {
   assert.match(shell, /LearnerMobileNav unread=\{notifikasiBelumDibaca\}/);
+  assert.doesNotMatch(shell, /href: '\/', label: 'Beranda'/);
+  assert.doesNotMatch(mobileNav, /href: '\/', label: 'Beranda'/);
   assert.match(mobileNav, /href: '\/notifications'/);
   assert.match(mobileNav, /href: '\/community'/);
   assert.match(mobileNav, /<span>Cari<\/span>/);
-  assert.match(css, /\.learnerBottomNav\{position:fixed[^}]*grid-template-columns:repeat\(4,1fr\)/);
+  assert.match(css, /\.learnerBottomNav\{position:fixed[^}]*grid-template-columns:repeat\(3,1fr\)/);
 });
 
 test('seluruh tujuan Pelajar tetap dapat dijangkau dan pintasan lengkap berada di drawer burger', () => {

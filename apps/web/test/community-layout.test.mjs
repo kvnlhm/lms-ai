@@ -90,13 +90,11 @@ test('sidebar Pelajar hanya memakai pintasan pilihan Master dan menampilkan sub-
   assert.match(channelManager, /Sembunyikan dari sidebar/);
 });
 
-test('sidebar Pelajar menyediakan pusat pintasan belajar tanpa tautan kosong', () => {
-  for (const label of ['Monitoring harian', 'Kursus', 'Tanya jawab', 'Event', 'Pengumuman', 'Feed komunitas', 'Notifikasi', 'Profil']) {
-    assert.match(learnerSidebar, new RegExp(`label: '${label}'`));
+test('sidebar Pelajar hanya berisi monitoring harian dan channel pilihan Master', () => {
+  assert.match(learnerSidebar, /label: 'Monitoring harian'/);
+  for (const label of ['Kursus', 'Tanya jawab', 'Event', 'Pengumuman', 'Feed komunitas', 'Notifikasi', 'Profil']) {
+    assert.doesNotMatch(learnerSidebar, new RegExp(`label: '${label}'`));
   }
-  for (const group of ['Mulai', 'Materi utama', 'Komunitas', 'Lainnya']) assert.match(learnerSidebar, new RegExp(`label: '${group}'`));
-  assert.match(learnerSidebar, /href: '\/questions'/);
-  assert.match(learnerSidebar, /href: '\/events'/);
   assert.match(home, /id="monitoring-harian"/);
 });
 

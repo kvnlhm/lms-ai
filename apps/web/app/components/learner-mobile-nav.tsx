@@ -3,11 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Bell, Home, MessageCircle, Search, X } from './icons';
+import { Bell, MessageCircle, Search, X } from './icons';
 import { GlobalSearch } from './global-search';
 
 const items = [
-  { href: '/', label: 'Beranda', icon: Home },
   { href: '/notifications', label: 'Notifikasi', icon: Bell },
   { href: '/community', label: 'Komunitas', icon: MessageCircle },
 ] as const;
@@ -35,7 +34,7 @@ export function LearnerMobileNav({ unread }: { unread: number }) {
     <>
       <nav className="learnerBottomNav" aria-label="Navigasi utama Pelajar">
         {items.map(({ href, label, icon: Icon }) => {
-          const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          const active = pathname.startsWith(href);
           return (
             <Link key={href} href={href} className="learnerBottomLink" aria-current={active ? 'page' : undefined}>
               <span className="learnerBottomIcon">
