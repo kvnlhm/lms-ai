@@ -196,7 +196,10 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
                 <LogoutButton />
               </div>
             </MobileNavigation>
-            <span className="mobileBrand">Academy AIPreneur</span>
+            <Link href="/master" className="mobileBrand" aria-label="Dashboard Academy AIPreneur">
+              <BrandMark size={28} />
+              <span>Academy AIPreneur</span>
+            </Link>
             <span className="masterTopTitle">Workspace Master</span>
             <GlobalSearch />
           </header>

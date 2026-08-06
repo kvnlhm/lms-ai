@@ -1297,9 +1297,9 @@ table.data tbody tr:hover { background: var(--raised); }
 }
 .analyticsRankRow:hover { background: var(--raised); }
 .rankNumber { color: var(--muted); font-size: 12px; font-weight: 700; text-align: center; }
-.analyticsRankMain { display: grid; gap: 8px; min-width: 0; }
+.analyticsRankMain { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
 .analyticsRankTitle { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.analyticsRankTitle strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.analyticsRankTitle strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .analyticsRankTitle small { flex: none; color: var(--text-2); font-size: 11px; }
 .analyticsBar, .dailyTrack {
   display: block; height: 6px; overflow: hidden; border-radius: var(--r-pill); background: var(--raised-2);
@@ -1621,7 +1621,9 @@ table.data tbody tr:hover { background: var(--raised); }
   .mobileNavigation { display: block; flex: none; }
   .masterTopbar { justify-content: space-between; gap: 10px; padding: 0 14px; }
   .masterTopTitle { display: none; }
-  .mobileBrand { display: inline; font-weight: 600; color: var(--text); }
+  .mobileBrand { min-width: 0; display: flex; align-items: center; gap: 9px; font-weight: 600; color: var(--text); }
+  .mobileBrand .brandMark { flex: none; }
+  .mobileBrand > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .masterContent {
     width: min(100% - 28px, 1380px); padding-top: 24px;
     padding-bottom: calc(48px + env(safe-area-inset-bottom));
@@ -2075,7 +2077,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 @media (max-width: 340px) {
   .topbar .brand > span:last-child { display: none; }
-  .mobileBrand { display: none; }
+  .mobileBrand > span:last-child { display: none; }
   .masterTopbar .globalSearchInput { width: 92px; }
   .masterTopbar .globalSearchInput:focus { width: 110px; }
   .courseBody { padding-inline: 13px; }

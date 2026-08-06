@@ -36,6 +36,14 @@ test('sidebar Master ringkas hanya menampilkan ikon tanpa label yang terjepit', 
   assert.match(compactRule, /\.sideProfileLink\s*\{[^}]*flex:\s*none;/);
 });
 
+test('Dashboard Master mobile menampilkan logo dan ranking tidak melebarkan viewport', () => {
+  assert.match(shell, /className="mobileBrand"[\s\S]{0,120}<BrandMark size=\{28\}/);
+  assert.match(css, /\.analyticsRankMain\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(css, /\.analyticsRankTitle strong\s*\{[^}]*flex:\s*1;[^}]*min-width:\s*0;/);
+  assert.match(css, /@media \(max-width: 340px\)[\s\S]*\.mobileBrand > span:last-child\s*\{\s*display:\s*none;/);
+  assert.doesNotMatch(css, /@media \(max-width: 340px\)[\s\S]*\.mobileBrand\s*\{\s*display:\s*none;/);
+});
+
 test('menu Master memakai ikon yang sesuai dengan fungsi setiap halaman', () => {
   const mappings = [
     ['Paket akses', 'Package'], ['Transaksi', 'CreditCard'], ['Forum', 'MessageCircle'],
