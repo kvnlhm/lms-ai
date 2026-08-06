@@ -9,6 +9,7 @@ const channel = await readFile(new URL('../app/community/community-feed.tsx', im
 const channelManager = await readFile(new URL('../app/master/community/channel-manager.tsx', import.meta.url), 'utf8');
 const learnerSidebar = await readFile(new URL('../app/components/learner-channel-sidebar.tsx', import.meta.url), 'utf8');
 const channelPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/page.tsx', import.meta.url), 'utf8');
+const masterShortcuts = await readFile(new URL('../app/components/master-community-shortcuts.tsx', import.meta.url), 'utf8');
 
 test('shell Pelajar menyediakan sidebar desktop dan memindahkannya ke drawer pada mobile', () => {
   assert.match(css, /\.learnerShellBody\{[^}]*grid-template-columns:220px minmax\(0,1fr\)/);
@@ -97,6 +98,17 @@ test('sidebar Pelajar menyediakan pusat pintasan belajar tanpa tautan kosong', (
   assert.match(learnerSidebar, /href: '\/questions'/);
   assert.match(learnerSidebar, /href: '\/events'/);
   assert.match(home, /id="monitoring-harian"/);
+});
+
+test('sidebar Master menampilkan pintasan channel dan indikator pesan baru di bawah Katalog Pelajar', () => {
+  assert.match(shell, /Katalog Pelajar[\s\S]*MasterCommunityShortcuts userId=\{user\.id\}/);
+  assert.match(masterShortcuts, /GET\('\/api\/v1\/community\/sidebar-channels'/);
+  assert.match(masterShortcuts, /setInterval\([\s\S]*INTERVAL_SEGARKAN/);
+  assert.match(masterShortcuts, /document\.visibilityState === 'visible'/);
+  assert.match(masterShortcuts, /master-community-seen:\$\{userId\}/);
+  assert.match(masterShortcuts, /aria-label=\{`\$\{totalUnread\} pesan komunitas baru`\}/);
+  assert.match(masterShortcuts, /href=\{`\/community\/\$\{group\.slug\}\/\$\{sub\.slug\}`\}/);
+  assert.match(css, /\.masterCommunityShortcuts\{display:grid/);
 });
 
 test('sunting dan hapus pesan bersandar pada kewenangan dari server, bukan tebakan browser', () => {

@@ -14,6 +14,7 @@ import { GlobalSearch } from './global-search';
 import { MobileNavigation } from './mobile-navigation';
 import { LearnerChannelSidebar } from './learner-channel-sidebar';
 import { LearnerMobileNav } from './learner-mobile-nav';
+import { MasterCommunityShortcuts } from './master-community-shortcuts';
 
 const LEARNER_NAV = [
   { href: '/', label: 'Beranda' },
@@ -150,6 +151,7 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
               <span className="sideIcon"><ExternalLink size={18} /></span>
               Katalog Pelajar
             </Link>
+            <MasterCommunityShortcuts userId={user.id} />
           </nav>
 
           <div className="sideProfile">
