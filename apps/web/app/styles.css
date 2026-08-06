@@ -3094,6 +3094,25 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .communityRail{grid-column:auto;position:static;grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+/* Hamburger mulai menggantikan navbar pada 1120px. Sidebar desktop harus ikut
+   hilang di breakpoint yang sama agar setengah layar desktop tidak memiliki
+   dua navigasi channel sekaligus. Drawer tablet dibuat ringkas; layar ponsel
+   tetap memakai drawer penuh pada aturan di bawah. */
+@media(min-width:761px) and (max-width:1120px){
+  .learnerShellBody{display:block}
+  .learnerShellBody>.learnerChannelSidebarDesktop{display:none}
+  .learnerMobileDrawer{width:min(360px,92vw);background:var(--bg)}
+  .learnerMobileDrawer .mobileDrawerHead{min-height:72px;padding:14px 18px}
+  .learnerMobileDrawer .mobileDrawerBody{padding:10px 20px 28px}
+  .mobileDrawerBody .learnerChannelSidebarDrawer{position:static;display:flex;width:100%;height:auto;overflow:visible;padding:0;border:0;background:transparent;flex-direction:column;gap:3px}
+  .mobileDrawerBody .learnerChannelSidebarDrawer .channelGroup{display:block;margin:22px 4px 8px;font-size:11px;font-weight:750;letter-spacing:.13em}
+  .mobileDrawerBody .learnerChannelSidebarDrawer .learnerMenuLabel{margin-top:8px}
+  .mobileDrawerBody .learnerChannelSidebarDrawer .channelLink{width:100%;min-height:50px;padding:9px 10px;border:0;border-radius:10px}
+  .mobileDrawerBody .learnerChannelSidebarDrawer .channelLink:hover{background:var(--surface-2)}
+  .mobileDrawerBody .learnerChannelSidebarDrawer .channelLink.active{background:color-mix(in srgb,var(--primary) 12%,var(--surface-2));box-shadow:inset 3px 0 0 var(--primary)}
+  .mobileDrawerBody .learnerChannelSidebarDrawer .learnerShortcutChildren{display:grid;overflow:visible;margin:2px 0 4px 18px;padding-left:12px;border-left:1px solid var(--border)}
+}
+
 @media(max-width:760px){
   .learnerShellBody{display:block}
   /* Harus berada di bawah stacking context `.topbar` (z-index:20).

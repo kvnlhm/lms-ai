@@ -36,6 +36,12 @@ test('seluruh tujuan Pelajar tetap dapat dijangkau dan pintasan lengkap berada d
   assert.match(shell, /variant="learner"/);
 });
 
+test('lebar setengah desktop memakai satu navigasi channel melalui drawer', () => {
+  assert.match(css, /@media\(min-width:761px\) and \(max-width:1120px\)[\s\S]*\.learnerShellBody>\.learnerChannelSidebarDesktop\{display:none\}/);
+  assert.match(css, /@media\(min-width:761px\) and \(max-width:1120px\)[\s\S]*\.learnerMobileDrawer\{width:min\(360px,92vw\)/);
+  assert.match(css, /@media\(min-width:761px\) and \(max-width:1120px\)[\s\S]*\.learnerChannelSidebarDrawer\{position:static/);
+});
+
 test('pencarian mobile dapat ditutup dan memakai id aksesibilitas yang unik', () => {
   assert.match(mobileNav, /role="dialog" aria-modal="true"/);
   assert.match(mobileNav, /event\.key === 'Escape'/);
