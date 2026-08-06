@@ -203,6 +203,15 @@ test('Master dapat menyunting topik checklist secara inline dan form tambah meng
   assert.match(channel, /'Menyimpan…' : 'Simpan'/);
   assert.match(channel, />Batal<\/button>/);
   assert.match(channel, /simpanTopik/);
-  assert.match(css, /\.checklistComposer input\{[^}]*background:var\(--surface-2\)[^}]*color:var\(--text\)/);
+  assert.match(css, /\.checklistComposer textarea\{[^}]*background:var\(--surface-2\)[^}]*color:var\(--text\)/);
   assert.match(css, /\.checklistTopicEditor\{[^}]*grid-template-columns:minmax\(0,1fr\) auto auto/);
+});
+
+test('isi checklist dapat ditulis multiline seperti postingan', () => {
+  assert.match(channel, /<textarea id="checklist-new-topic"/);
+  assert.match(channel, /className="checklistTopicEditor"><textarea/);
+  assert.match(channel, /className="checklistComposerCount">\{body\.length\}\/5000/);
+  assert.match(channel, /className="checklistTopicText"/);
+  assert.match(css, /\.checklistTopicText\{[^}]*white-space:pre-wrap/);
+  assert.match(css, /\.checklistComposer textarea\{[^}]*resize:vertical/);
 });

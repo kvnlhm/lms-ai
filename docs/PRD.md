@@ -2329,3 +2329,16 @@ Disetujui langsung oleh Product Owner pada 6 Agustus 2026.
   menghapus post yang sudah ada.
 
 Detail keputusan terdapat pada ADR-028.
+
+### 30.5 Checklist Komunitas
+
+Disetujui langsung oleh Product Owner pada 6 Agustus 2026.
+
+- Sub-channel checklist menyajikan setiap post sebagai satu item yang dapat
+  dicentang secara terpisah oleh setiap pelajar.
+- Master dapat menulis dan menyunting isi item sebagai teks multiline hingga
+  5.000 karakter, seperti composer postingan, dan jeda baris tetap terlihat.
+- Checklist tidak mendukung lampiran dan tidak menentukan progres kursus atau
+  kelulusan.
+
+Detail keputusan terdapat pada ADR-031.
