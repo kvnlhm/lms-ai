@@ -220,6 +220,7 @@ enum CommunityChannelType {
   CHAT
   POSTS
   ANNOUNCEMENTS
+  CHECKLIST
 }
 
 model CommunityChannel {
@@ -231,6 +232,7 @@ model CommunityChannel {
   position    Int       @default(0)
   type        CommunityChannelType @default(CHAT)
   isReadOnly  Boolean   @default(false) @map("is_read_only")
+  allowReplies Boolean  @default(true) @map("allow_replies")
   showInSidebar Boolean @default(true) @map("show_in_sidebar")
   createdBy   String    @map("created_by") @db.Uuid
   archivedAt  DateTime? @map("archived_at") @db.Timestamptz(6)

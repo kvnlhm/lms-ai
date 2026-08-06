@@ -23,6 +23,7 @@ export class CreateCommunityChannelDto {
   @ApiPropertyOptional({ enum: CommunityChannelType, default: CommunityChannelType.CHAT })
   @IsOptional() @IsEnum(CommunityChannelType) subchannelType?: CommunityChannelType;
   @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() isReadOnly?: boolean;
+  @ApiPropertyOptional({ default: true }) @IsOptional() @IsBoolean() allowReplies?: boolean;
   @ApiPropertyOptional({ default: true }) @IsOptional() @IsBoolean() showInSidebar?: boolean;
 }
 
@@ -43,6 +44,7 @@ export class CreateCommunitySubchannelDto {
   @ApiPropertyOptional({ enum: CommunityChannelType, default: CommunityChannelType.CHAT })
   @IsOptional() @IsEnum(CommunityChannelType) type?: CommunityChannelType;
   @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() isReadOnly?: boolean;
+  @ApiPropertyOptional({ default: true }) @IsOptional() @IsBoolean() allowReplies?: boolean;
   @ApiPropertyOptional({ default: true }) @IsOptional() @IsBoolean() showInSidebar?: boolean;
 }
 
@@ -56,6 +58,7 @@ export class CommunitySubchannelDto {
   @ApiProperty() position!: number;
   @ApiProperty({ enum: CommunityChannelType }) type!: CommunityChannelType;
   @ApiProperty() isReadOnly!: boolean;
+  @ApiProperty() allowReplies!: boolean;
   @ApiProperty() postCount!: number;
   @ApiProperty() showInSidebar!: boolean;
 }
@@ -87,6 +90,7 @@ export class CommunityPostChannelDto {
   @ApiProperty() name!: string;
   @ApiProperty({ enum: CommunityChannelType }) type!: CommunityChannelType;
   @ApiProperty() isReadOnly!: boolean;
+  @ApiProperty() allowReplies!: boolean;
   @ApiProperty() groupSlug!: string;
   @ApiProperty() groupName!: string;
 }

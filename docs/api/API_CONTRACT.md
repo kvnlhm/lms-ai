@@ -2527,7 +2527,8 @@ Memenuhi perluasan produk yang disetujui pada ADR-024. Seluruh endpoint learner
 memerlukan sesi aktif.
 
 - `GET /community/channels` — channel aktif untuk sidebar. Setiap sub-channel
-  membawa `type`: `CHAT`, `POSTS`, atau `ANNOUNCEMENTS`.
+  membawa `type`: `CHAT`, `POSTS`, `ANNOUNCEMENTS`, atau `CHECKLIST`, serta
+  `allowReplies` sebagai aturan balasan.
 - `GET /community/sidebar-channels` — subset Channel dan Sub-channel aktif yang
   dipilih Master sebagai pintasan sidebar Pelajar.
 - `GET /community/feed` — feed lintas channel, terurut pin dan aktivitas terbaru.
@@ -2553,8 +2554,8 @@ memerlukan sesi aktif.
   sebagai pratinjau, sehingga sisanya harus diambil dari sini.
 - `POST /community/subchannels/{subchannelId}/posts` — membuat post; sub-channel
   baca-saja dan tipe `ANNOUNCEMENTS` menuntut `discussions.moderate`.
-- `POST /community/posts/{postId}/comments` — membalas post; ditolak untuk
-  tulisan dalam sub-channel `ANNOUNCEMENTS`.
+- `POST /community/posts/{postId}/comments` — membalas post; ditolak bila
+  `allowReplies=false` (termasuk seluruh sub-channel `ANNOUNCEMENTS`).
 - `POST /community/posts/{postId}/reaction` — menyalakan/mematikan reaksi
   pengguna; ditolak untuk tulisan dalam sub-channel `ANNOUNCEMENTS`.
 - `PATCH /community/posts/{postId}` dan `PATCH /community/comments/{commentId}` —
@@ -2569,12 +2570,14 @@ memerlukan sesi aktif.
 - `GET|POST|PATCH|DELETE /admin/community/channels` — pengelolaan Channel induk
   oleh Master dengan `discussions.moderate`. POST wajib menyertakan
   `subchannelName` agar Channel lahir bersama minimal satu sub-channel. Body
-  dapat membawa `subchannelType`; tipe pengumuman selalu dibuat baca-saja. PATCH
+  dapat membawa `subchannelType` dan `allowReplies`; tipe pengumuman selalu
+  dibuat baca-saja dan tanpa balasan. PATCH
   dapat mengatur `showInSidebar`; DELETE mengarsipkan, bukan menghapus isi.
 - `POST /admin/community/channels/{id}/subchannels` dan
   `PATCH|DELETE /admin/community/channels/subchannels/{id}` — mengelola
   Sub-channel. POST/PATCH dapat mengatur `type`, dan PATCH dapat mengatur
-  `showInSidebar`. Pengumuman selalu baca-saja. Sub-channel aktif terakhir tidak
+  `showInSidebar` dan `allowReplies`. Pengumuman selalu baca-saja dan tanpa
+  balasan. Sub-channel aktif terakhir tidak
   dapat diarsipkan.
 - `POST /admin/community/channels/{id}/restore` — mengembalikan channel yang
   diarsipkan beserta seluruh postnya. Slug tidak pernah dilepas selama

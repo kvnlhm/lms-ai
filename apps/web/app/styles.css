@@ -3131,6 +3131,9 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .communityLayout{grid-template-columns:minmax(0,1fr) 310px;max-width:1280px}
 .homeCommunitySection{margin-top:34px}
 .homeCommunityGrid{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:24px;align-items:start}
+.channelRuleGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.chatRepliesClosed{color:var(--muted);font-size:12px}
+@media(max-width:560px){.channelRuleGrid{grid-template-columns:1fr}}
 .composerChannelPicker{display:flex;gap:8px;overflow-x:auto;padding:1px 1px 12px;margin-bottom:8px;scrollbar-width:thin}
 .composerChannelPicker button{flex:0 0 auto;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--muted);padding:7px 11px;font:inherit;font-size:12px;cursor:pointer}
 .composerChannelPicker button:hover,.composerChannelPicker button.active{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 18%,var(--surface-2));color:var(--text)}

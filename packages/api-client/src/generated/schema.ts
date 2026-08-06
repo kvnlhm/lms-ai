@@ -4358,8 +4358,9 @@ export interface components {
             description: string | null;
             position: number;
             /** @enum {string} */
-            type: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
+            type: "CHAT" | "POSTS" | "ANNOUNCEMENTS" | "CHECKLIST";
             isReadOnly: boolean;
+            allowReplies: boolean;
             postCount: number;
             showInSidebar: boolean;
         };
@@ -4382,8 +4383,9 @@ export interface components {
             slug: string;
             name: string;
             /** @enum {string} */
-            type: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
+            type: "CHAT" | "POSTS" | "ANNOUNCEMENTS" | "CHECKLIST";
             isReadOnly: boolean;
+            allowReplies: boolean;
             groupSlug: string;
             groupName: string;
         };
@@ -4466,9 +4468,11 @@ export interface components {
              * @default CHAT
              * @enum {string}
              */
-            subchannelType?: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
+            subchannelType?: "CHAT" | "POSTS" | "ANNOUNCEMENTS" | "CHECKLIST";
             /** @default false */
             isReadOnly?: boolean;
+            /** @default true */
+            allowReplies?: boolean;
             /** @default true */
             showInSidebar?: boolean;
         };
@@ -4490,9 +4494,11 @@ export interface components {
              * @default CHAT
              * @enum {string}
              */
-            type?: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
+            type?: "CHAT" | "POSTS" | "ANNOUNCEMENTS" | "CHECKLIST";
             /** @default false */
             isReadOnly?: boolean;
+            /** @default true */
+            allowReplies?: boolean;
             /** @default true */
             showInSidebar?: boolean;
         };
@@ -4507,9 +4513,11 @@ export interface components {
              * @default CHAT
              * @enum {string}
              */
-            type?: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
+            type?: "CHAT" | "POSTS" | "ANNOUNCEMENTS" | "CHECKLIST";
             /** @default false */
             isReadOnly?: boolean;
+            /** @default true */
+            allowReplies?: boolean;
             /** @default true */
             showInSidebar?: boolean;
         };

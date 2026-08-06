@@ -93,4 +93,36 @@ describe('CommunityService hierarchy invariants', () => {
       .rejects.toMatchObject({ status: 403 });
     expect(transaction).not.toHaveBeenCalled();
   });
+
+  test('sub-channel yang menonaktifkan balasan menolak komentar baru', async () => {
+    const transaction = jest.fn();
+    const service = new CommunityService({
+      communityPost: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'post-1', channel: { type: 'POSTS', allowReplies: false },
+        }),
+      },
+      $transaction: transaction,
+    } as never, {} as never);
+
+    await expect(service.addComment('student-1', 'post-1', 'Balasan'))
+      .rejects.toMatchObject({ status: 403 });
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  test('pengumuman tetap mematikan balasan meskipun client mengaktifkannya', async () => {
+    const create = jest.fn().mockResolvedValue({ id: 'sub-1' });
+    const service = new CommunityService({
+      communityChannelGroup: { findFirst: jest.fn().mockResolvedValue({ id: 'group-1' }) },
+      communityChannel: { create },
+    } as never, {} as never);
+
+    await service.createSubchannel('master-1', 'group-1', {
+      name: 'Pengumuman', type: 'ANNOUNCEMENTS', allowReplies: true,
+    } as never);
+
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ allowReplies: false }),
+    }));
+  });
 });

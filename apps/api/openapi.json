@@ -19066,10 +19066,14 @@
             "enum": [
               "CHAT",
               "POSTS",
-              "ANNOUNCEMENTS"
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
             ]
           },
           "isReadOnly": {
+            "type": "boolean"
+          },
+          "allowReplies": {
             "type": "boolean"
           },
           "postCount": {
@@ -19087,6 +19091,7 @@
           "position",
           "type",
           "isReadOnly",
+          "allowReplies",
           "postCount",
           "showInSidebar"
         ]
@@ -19167,10 +19172,14 @@
             "enum": [
               "CHAT",
               "POSTS",
-              "ANNOUNCEMENTS"
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
             ]
           },
           "isReadOnly": {
+            "type": "boolean"
+          },
+          "allowReplies": {
             "type": "boolean"
           },
           "groupSlug": {
@@ -19186,6 +19195,7 @@
           "name",
           "type",
           "isReadOnly",
+          "allowReplies",
           "groupSlug",
           "groupName"
         ]
@@ -19425,13 +19435,18 @@
             "enum": [
               "CHAT",
               "POSTS",
-              "ANNOUNCEMENTS"
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
             ],
             "default": "CHAT"
           },
           "isReadOnly": {
             "type": "boolean",
             "default": false
+          },
+          "allowReplies": {
+            "type": "boolean",
+            "default": true
           },
           "showInSidebar": {
             "type": "boolean",
@@ -19485,13 +19500,18 @@
             "enum": [
               "CHAT",
               "POSTS",
-              "ANNOUNCEMENTS"
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
             ],
             "default": "CHAT"
           },
           "isReadOnly": {
             "type": "boolean",
             "default": false
+          },
+          "allowReplies": {
+            "type": "boolean",
+            "default": true
           },
           "showInSidebar": {
             "type": "boolean",
@@ -19524,13 +19544,18 @@
             "enum": [
               "CHAT",
               "POSTS",
-              "ANNOUNCEMENTS"
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
             ],
             "default": "CHAT"
           },
           "isReadOnly": {
             "type": "boolean",
             "default": false
+          },
+          "allowReplies": {
+            "type": "boolean",
+            "default": true
           },
           "showInSidebar": {
             "type": "boolean",
