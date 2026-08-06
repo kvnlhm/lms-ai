@@ -2558,6 +2558,10 @@ memerlukan sesi aktif.
   `allowReplies=false` (termasuk seluruh sub-channel `ANNOUNCEMENTS`).
 - `POST /community/posts/{postId}/reaction` — menyalakan/mematikan reaksi
   pengguna; ditolak untuk tulisan dalam sub-channel `ANNOUNCEMENTS`.
+- `PATCH /community/posts/{postId}/checklist` — menyimpan body
+  `{ "completed": boolean }` untuk user dari session. Hanya post dalam
+  sub-channel `CHECKLIST` yang diterima; response post membawa
+  `completedByMe` agar status antar pelajar tidak tercampur.
 - `PATCH /community/posts/{postId}` dan `PATCH /community/comments/{commentId}` —
   mengubah tulisan sendiri. Hanya penulisnya, termasuk terhadap pemegang
   `discussions.moderate`: kewenangan moderasi adalah kuasa menghapus, bukan
@@ -2586,6 +2590,10 @@ memerlukan sesi aktif.
   tercatat di audit log (`community.channel.archive`,
   `community.channel.restore`); permintaan yang tidak mengubah keadaan tidak
   menghasilkan entri.
+- `DELETE /admin/community/channels/{id}/permanent` — menghapus permanen
+  channel yang sudah diarsipkan beserta sub-channel dan seluruh kontennya.
+  Channel aktif ditolak. Tindakan membutuhkan `discussions.moderate` dan
+  dicatat sebagai `community.channel.delete_permanently` sebelum penghapusan.
 
 Semua author ID berasal dari session. Client tidak boleh mengirim identitas,
 jumlah komentar, jumlah reaksi, status pin, atau permission. Sebaliknya, setiap

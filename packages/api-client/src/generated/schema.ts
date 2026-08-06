@@ -2160,6 +2160,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/community/posts/{postId}/checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Menyimpan status checklist pengguna dari session */
+        patch: operations["CommunityController_checklist"];
+        trace?: never;
+    };
     "/api/v1/admin/community/channels": {
         parameters: {
             query?: never;
@@ -2191,6 +2208,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["CommunityAdminController_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/community/channels/{id}/permanent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Menghapus permanen channel yang sudah diarsipkan beserta seluruh isinya */
+        delete: operations["CommunityAdminController_deletePermanently"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/admin/community/channels/{id}/restore": {
@@ -4412,6 +4446,8 @@ export interface components {
             commentCount: number;
             reactionCount: number;
             reactedByMe: boolean;
+            /** @description Status item checklist untuk pengguna dari session. */
+            completedByMe: boolean;
             /**
              * Format: date-time
              * @description Terisi bila tulisannya pernah diubah.
@@ -4440,6 +4476,12 @@ export interface components {
         CommunityReactionResultDto: {
             reacted: boolean;
             reactionCount: number;
+        };
+        CommunityChecklistResultDto: {
+            completed: boolean;
+        };
+        SetCommunityChecklistDto: {
+            completed: boolean;
         };
         AdminCommunityChannelDto: {
             id: string;
@@ -11903,6 +11945,58 @@ export interface operations {
             };
         };
     };
+    CommunityController_checklist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCommunityChecklistDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunityChecklistResultDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
     CommunityAdminController_list: {
         parameters: {
             query?: never;
@@ -12054,6 +12148,51 @@ export interface operations {
                     };
                 };
             };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityAdminController_deletePermanently: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
             401: {
                 headers: {
                     [name: string]: unknown;

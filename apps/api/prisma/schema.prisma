@@ -185,6 +185,7 @@ model User {
   communityPosts         CommunityPost[]         @relation("CommunityPostAuthor")
   communityComments      CommunityComment[]      @relation("CommunityCommentAuthor")
   communityReactions     CommunityReaction[]     @relation("CommunityReactionUser")
+  communityChecklistCompletions CommunityChecklistCompletion[] @relation("CommunityChecklistCompletionUser")
 
   @@index([status])
   @@map("users")
@@ -240,7 +241,7 @@ model CommunityChannel {
   updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   creator User            @relation("CommunityChannelCreator", fields: [createdBy], references: [id], onDelete: Restrict)
-  group   CommunityChannelGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  group   CommunityChannelGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   posts   CommunityPost[]
 
   @@unique([groupId, slug])
@@ -266,6 +267,7 @@ model CommunityPost {
   author    User                @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Restrict)
   comments  CommunityComment[]
   reactions CommunityReaction[]
+  checklistCompletions CommunityChecklistCompletion[]
 
   @@index([channelId, deletedAt, isPinned, lastActivityAt])
   @@index([authorId, createdAt])
@@ -302,6 +304,19 @@ model CommunityReaction {
   @@id([postId, userId])
   @@index([userId])
   @@map("community_reactions")
+}
+
+model CommunityChecklistCompletion {
+  postId      String   @map("post_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  completedAt DateTime @default(now()) @map("completed_at") @db.Timestamptz(6)
+
+  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User          @relation("CommunityChecklistCompletionUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@index([userId])
+  @@map("community_checklist_completions")
 }
 
 model NotificationPreference {

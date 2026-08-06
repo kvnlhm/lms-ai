@@ -113,6 +113,7 @@ export class CommunityPostDto {
   @ApiProperty() commentCount!: number;
   @ApiProperty() reactionCount!: number;
   @ApiProperty() reactedByMe!: boolean;
+  @ApiProperty({ description: 'Status item checklist untuk pengguna dari session.' }) completedByMe!: boolean;
   @ApiProperty({ type: Date, nullable: true, description: 'Terisi bila tulisannya pernah diubah.' })
   editedAt!: Date | null;
   @ApiProperty() createdAt!: Date;
@@ -133,4 +134,12 @@ export class SetCommunityPinnedDto {
 export class CommunityReactionResultDto {
   @ApiProperty() reacted!: boolean;
   @ApiProperty() reactionCount!: number;
+}
+
+export class SetCommunityChecklistDto {
+  @ApiProperty() @IsBoolean() completed!: boolean;
+}
+
+export class CommunityChecklistResultDto {
+  @ApiProperty() completed!: boolean;
 }

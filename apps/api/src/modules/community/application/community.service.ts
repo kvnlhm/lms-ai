@@ -78,6 +78,7 @@ export class CommunityService {
       } },
       author: { select: authorSelect },
       reactions: { where: { userId }, select: { userId: true } },
+      checklistCompletions: { where: { userId }, select: { userId: true } },
       comments: {
         // `take` negatif: enam balasan *terakhir*, tetap dalam urutan baca.
         // Dulu enam yang pertama, sehingga pada tulisan yang ramai percakapan
@@ -104,12 +105,12 @@ export class CommunityService {
     return { ...this.hak(authorId, userId, canModerate), canPin: canModerate };
   }
 
-  private sajikanPost<T extends { author: { id: string }; comments: { author: { id: string } }[]; reactions: unknown[] }>(
+  private sajikanPost<T extends { author: { id: string }; comments: { author: { id: string } }[]; reactions: unknown[]; checklistCompletions: unknown[] }>(
     row: T,
     userId: string,
     canModerate: boolean,
   ) {
-    const { reactions, comments, channel, ...post } = row as T & { channel?: { group?: { slug: string; name: string } } };
+    const { reactions, checklistCompletions, comments, channel, ...post } = row as T & { channel?: { group?: { slug: string; name: string } } };
     return {
       ...post,
       ...(channel ? { channel: {
@@ -119,6 +120,7 @@ export class CommunityService {
         group: undefined,
       } } : {}),
       reactedByMe: reactions.length > 0,
+      completedByMe: checklistCompletions.length > 0,
       comments: comments.map((comment) => ({ ...comment, ...this.hak(comment.author.id, userId, canModerate) })),
       ...this.hakTulisan(row.author.id, userId, canModerate),
     };
@@ -388,6 +390,23 @@ export class CommunityService {
     });
   }
 
+  async setChecklistCompleted(userId: string, postId: string, completed: boolean) {
+    const post = await this.prisma.communityPost.findFirst({
+      where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } },
+      select: { id: true, channel: { select: { type: true } } },
+    });
+    if (!post) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Item checklist tidak ditemukan.');
+    if (post.channel.type !== CommunityChannelType.CHECKLIST) throw new AppError('VALIDATION_ERROR', 422, 'Tulisan ini bukan item checklist.');
+    if (completed) {
+      await this.prisma.communityChecklistCompletion.upsert({
+        where: { postId_userId: { postId, userId } }, create: { postId, userId }, update: {},
+      });
+    } else {
+      await this.prisma.communityChecklistCompletion.deleteMany({ where: { postId, userId } });
+    }
+    return { completed };
+  }
+
   async createChannel(userId: string, input: { name: string; slug?: string; description?: string; position?: number; subchannelName: string; subchannelDescription?: string; subchannelType?: CommunityChannelType; isReadOnly?: boolean; allowReplies?: boolean; showInSidebar?: boolean }) {
     const slug = input.slug ?? input.name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (!slug) throw new AppError('VALIDATION_ERROR', 422, 'Nama channel tidak menghasilkan slug yang valid.');
@@ -464,6 +483,20 @@ export class CommunityService {
       });
     }
     return (await this.listChannels(true)).find((item) => item.id === id)!;
+  }
+
+  async deleteChannelPermanently(userId: string, id: string) {
+    const channel = await this.prisma.communityChannelGroup.findUnique({
+      where: { id }, select: { id: true, name: true, slug: true, archivedAt: true },
+    });
+    if (!channel) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
+    if (!channel.archivedAt) throw new AppError('VALIDATION_ERROR', 422, 'Arsipkan channel sebelum menghapusnya permanen.');
+    await this.audit.record({
+      actorUserId: userId, action: 'community.channel.delete_permanently',
+      targetType: 'CommunityChannelGroup', targetId: id,
+      before: { name: channel.name, slug: channel.slug, archivedAt: channel.archivedAt },
+    });
+    await this.prisma.communityChannelGroup.delete({ where: { id } });
   }
 
   async createSubchannel(userId: string, groupId: string, input: { name: string; slug?: string; description?: string; position?: number; type?: CommunityChannelType; isReadOnly?: boolean; allowReplies?: boolean; showInSidebar?: boolean }) {

@@ -24,7 +24,7 @@ export type CommunityComment = {
 };
 export type CommunityPost = {
   id: string; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
-  reactedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
+  reactedByMe: boolean; completedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
   canEdit: boolean; canDelete: boolean; canPin: boolean;
   channel: Pick<CommunitySubchannel, 'id' | 'slug' | 'name' | 'type' | 'isReadOnly' | 'allowReplies'> & { groupSlug: string; groupName: string };
   comments: CommunityComment[];
@@ -226,6 +226,20 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
         const value = unwrap<{ reacted: boolean; reactionCount: number }>(result);
         setPosts((current) => current.map((post) => post.id === postId ? { ...post, ...value } : post));
       } catch (error) { setMessage(error instanceof Error ? error.message : 'Reaksi gagal disimpan.'); }
+    });
+  }
+
+  function checklist(post: CommunityPost) {
+    startTransition(async () => {
+      try {
+        const result = await browserClient().PATCH('/api/v1/community/posts/{postId}/checklist', {
+          params: { path: { postId: post.id } }, body: { completed: !post.completedByMe },
+        });
+        const value = unwrap<{ completed: boolean }>(result);
+        gantiPost(post.id, (item) => ({ ...item, completedByMe: value.completed }));
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Checklist gagal disimpan.');
+      }
     });
   }
 
@@ -432,7 +446,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
           {posts.map((post) => (
             <article className="communityPost card" key={post.id}>
               <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.groupSlug}/${post.channel.slug}`}>{post.channel.groupName} / {COMMUNITY_CHANNEL_TYPES[post.channel.type].icon} {post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
-              <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
+              {post.channel.type === 'CHECKLIST' ? <label className={post.completedByMe ? 'checklistItem completed' : 'checklistItem'}><input type="checkbox" checked={post.completedByMe} disabled={pending} onChange={() => checklist(post)} /><span>{post.body}<Diedit at={post.editedAt} /></span></label> : <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>}
               <div className="postActions">{post.channel.type === 'ANNOUNCEMENTS' ? <span>Pengumuman resmi</span> : <button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button>}{post.channel.allowReplies ? <span>◯ {post.commentCount} balasan</span> : <span>Balasan ditutup</span>}<PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
               {post.channel.allowReplies ? <><MuatBalasan post={post} aksi={aksi} />{balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}<div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div></> : null}
             </article>

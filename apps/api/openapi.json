@@ -11357,6 +11357,89 @@
         ]
       }
     },
+    "/api/v1/community/posts/{postId}/checklist": {
+      "patch": {
+        "operationId": "CommunityController_checklist",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCommunityChecklistDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityChecklistResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menyimpan status checklist pengguna dari session",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/v1/admin/community/channels": {
       "get": {
         "operationId": "CommunityAdminController_list",
@@ -11620,6 +11703,67 @@
           }
         },
         "summary": "Mengarsipkan channel; isinya disembunyikan, bukan dihapus",
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/{id}/permanent": {
+      "delete": {
+        "operationId": "CommunityAdminController_deletePermanently",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus permanen channel yang sudah diarsipkan beserta seluruh isinya",
         "tags": [
           "admin-community"
         ]
@@ -19262,6 +19406,10 @@
           "reactedByMe": {
             "type": "boolean"
           },
+          "completedByMe": {
+            "type": "boolean",
+            "description": "Status item checklist untuk pengguna dari session."
+          },
           "editedAt": {
             "format": "date-time",
             "type": "string",
@@ -19308,6 +19456,7 @@
           "commentCount",
           "reactionCount",
           "reactedByMe",
+          "completedByMe",
           "editedAt",
           "createdAt",
           "lastActivityAt",
@@ -19354,6 +19503,28 @@
         "required": [
           "reacted",
           "reactionCount"
+        ]
+      },
+      "CommunityChecklistResultDto": {
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "completed"
+        ]
+      },
+      "SetCommunityChecklistDto": {
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "completed"
         ]
       },
       "AdminCommunityChannelDto": {

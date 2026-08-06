@@ -967,7 +967,8 @@ community_channels 1 ── * community_posts
 users 1 ── * community_posts (author_id)
 community_posts 1 ── * community_comments
 community_posts 1 ── * community_reactions
-users 1 ── * community_comments / community_reactions
+community_posts 1 ── * community_checklist_completions
+users 1 ── * community_comments / community_reactions / community_checklist_completions
 ```
 
 Channel dan post memakai pengarsipan lunak. Komentar serta reaksi mengikuti
@@ -975,9 +976,13 @@ post dengan `ON DELETE CASCADE`; author dan pembuat channel memakai `RESTRICT`
 agar riwayat komunitas tidak kehilangan pemilik secara diam-diam. Counter pada
 post diperbarui dalam transaksi yang sama dengan mutasinya.
 
-`community_channels.type` adalah enum `CHAT | POSTS | ANNOUNCEMENTS` dengan
+`community_channels.type` adalah enum `CHAT | POSTS | ANNOUNCEMENTS | CHECKLIST` dengan
 default `CHAT`. Tipe tidak membuat tabel konten terpisah; semua isi tetap berada
 di `community_posts`, sedangkan service menerapkan aturan interaksinya.
+
+Untuk tipe `CHECKLIST`, satu post adalah satu item dan pasangan unik
+`community_checklist_completions(post_id, user_id)` menyimpan centang setiap
+pengguna secara terpisah. Tabel ini tidak mengubah progres atau kelulusan kursus.
 
 `community_posts.edited_at` dan `community_comments.edited_at` berdiri sendiri,
 tidak diturunkan dari `updated_at`. Pada post, `updated_at` ikut berubah setiap

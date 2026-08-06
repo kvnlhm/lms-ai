@@ -22,6 +22,11 @@ export class CommunityAdminController {
     return this.community.archiveChannel(user.id, id);
   }
 
+  @Delete(':id/permanent') @HttpCode(204) @ApiOperation({ summary: 'Menghapus permanen channel yang sudah diarsipkan beserta seluruh isinya' }) @ApiErrors(401, 403, 404, 422)
+  deletePermanently(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.deleteChannelPermanently(user.id, id);
+  }
+
   @Post(':id/restore') @ApiOperation({ summary: 'Mengembalikan channel yang diarsipkan' }) @ApiEnvelope(AdminCommunityChannelDto) @ApiErrors(401, 403, 404)
   restore(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.community.restoreGroup(user.id, id);

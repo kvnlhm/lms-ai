@@ -125,4 +125,50 @@ describe('CommunityService hierarchy invariants', () => {
       data: expect.objectContaining({ allowReplies: false }),
     }));
   });
+
+  test('centang checklist disimpan hanya untuk pengguna yang sedang login', async () => {
+    const upsert = jest.fn().mockResolvedValue({ postId: 'post-1', userId: 'student-1' });
+    const service = new CommunityService({
+      communityPost: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'post-1', channel: { type: 'CHECKLIST' } }),
+      },
+      communityChecklistCompletion: { upsert },
+    } as never, {} as never);
+
+    await expect(service.setChecklistCompleted('student-1', 'post-1', true))
+      .resolves.toEqual({ completed: true });
+    expect(upsert).toHaveBeenCalledWith({
+      where: { postId_userId: { postId: 'post-1', userId: 'student-1' } },
+      create: { postId: 'post-1', userId: 'student-1' },
+      update: {},
+    });
+  });
+
+  test('post biasa tidak dapat dicentang sebagai checklist', async () => {
+    const upsert = jest.fn();
+    const service = new CommunityService({
+      communityPost: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'post-1', channel: { type: 'POSTS' } }),
+      },
+      communityChecklistCompletion: { upsert },
+    } as never, {} as never);
+
+    await expect(service.setChecklistCompleted('student-1', 'post-1', true))
+      .rejects.toMatchObject({ status: 422 });
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  test('channel aktif tidak dapat dihapus permanen', async () => {
+    const remove = jest.fn();
+    const service = new CommunityService({
+      communityChannelGroup: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'group-1', name: 'Welcome', archivedAt: null }),
+        delete: remove,
+      },
+    } as never, { record: jest.fn() } as never);
+
+    await expect(service.deleteChannelPermanently('master-1', 'group-1'))
+      .rejects.toMatchObject({ status: 422 });
+    expect(remove).not.toHaveBeenCalled();
+  });
 });

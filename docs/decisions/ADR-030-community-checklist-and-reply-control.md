@@ -1,6 +1,6 @@
 # ADR-030 — Checklist dan Kontrol Balasan Sub-channel
 
-- Status: Accepted
+- Status: Superseded oleh ADR-031
 - Tanggal: 6 Agustus 2026
 - Pemilik keputusan: Product Owner
 - Terkait: ADR-024, ADR-025, ADR-028

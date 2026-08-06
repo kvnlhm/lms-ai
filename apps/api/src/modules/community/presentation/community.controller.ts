@@ -6,7 +6,7 @@ import { Paginated } from '../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { CommunityService } from '../application/community.service';
-import { CommunityChannelDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityPinnedDto } from './community.dto';
+import { CommunityChannelDto, CommunityChecklistResultDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityChecklistDto, SetCommunityPinnedDto } from './community.dto';
 
 /** Pemegang izin moderasi diskusi; dipakai berulang di controller ini. */
 function moderator(user: AuthenticatedUser): boolean {
@@ -94,4 +94,10 @@ export class CommunityController {
   // padanannya di forum. Tanpa ini NestJS memakai 201 bawaan POST.
   @Post('posts/:postId/reaction') @HttpCode(200) @ApiEnvelope(CommunityReactionResultDto) @ApiErrors(401, 404)
   react(@Param('postId', new ParseUUIDPipe()) postId: string, @CurrentUser() user: AuthenticatedUser) { return this.community.toggleReaction(user.id, postId); }
+
+  @Patch('posts/:postId/checklist') @ApiOperation({ summary: 'Menyimpan status checklist pengguna dari session' })
+  @ApiEnvelope(CommunityChecklistResultDto) @ApiErrors(401, 404, 422)
+  checklist(@Param('postId', new ParseUUIDPipe()) postId: string, @Body() dto: SetCommunityChecklistDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.setChecklistCompleted(user.id, postId, dto.completed);
+  }
 }
