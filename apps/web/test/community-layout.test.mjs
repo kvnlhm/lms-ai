@@ -186,3 +186,14 @@ test('ruang chat dapat membalas, bukan hanya menampilkan balasan', () => {
   assert.match(channel, /event\.key === 'Escape'\) setBalasKe\(null\)/);
   assert.match(css, /\.chatReplyComposer\{/);
 });
+
+test('sub-channel checklist memakai halaman progres terstruktur seperti referensi', () => {
+  assert.match(channelPage, /subchannel\.type === 'CHECKLIST' \? ' communityChecklistLayout'/);
+  assert.match(channel, /className="checklistProgressCard"/);
+  assert.match(channel, /Selesai \{selesai\} dari \{posts\.length\} topik/);
+  assert.match(channel, /aria-valuenow=\{persentase\}/);
+  assert.match(channel, /className="checklistSection" open/);
+  assert.match(channel, /className="checklistTopicNumber"/);
+  assert.match(css, /\.checklistProgressBar>span\{[^}]*transition:width/);
+  assert.match(css, /@media\(max-width:760px\)[\s\S]*\.checklistHero\{[^}]*grid-template-columns:1fr/);
+});
