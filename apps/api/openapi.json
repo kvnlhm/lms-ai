@@ -19038,6 +19038,14 @@
           "position": {
             "type": "number"
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS"
+            ]
+          },
           "isReadOnly": {
             "type": "boolean"
           },
@@ -19054,6 +19062,7 @@
           "name",
           "description",
           "position",
+          "type",
           "isReadOnly",
           "postCount",
           "showInSidebar"
@@ -19130,6 +19139,14 @@
           "name": {
             "type": "string"
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS"
+            ]
+          },
           "isReadOnly": {
             "type": "boolean"
           },
@@ -19144,6 +19161,7 @@
           "id",
           "slug",
           "name",
+          "type",
           "isReadOnly",
           "groupSlug",
           "groupName"
@@ -19374,10 +19392,19 @@
           },
           "subchannelName": {
             "type": "string",
-            "description": "Nama sub-channel pertama yang menjadi ruang chat."
+            "description": "Nama sub-channel pertama."
           },
           "subchannelDescription": {
             "type": "string"
+          },
+          "subchannelType": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS"
+            ],
+            "default": "CHAT"
           },
           "isReadOnly": {
             "type": "boolean",
@@ -19430,6 +19457,15 @@
             "type": "number",
             "default": 0
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS"
+            ],
+            "default": "CHAT"
+          },
           "isReadOnly": {
             "type": "boolean",
             "default": false
@@ -19459,6 +19495,15 @@
           "position": {
             "type": "number",
             "default": 0
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS"
+            ],
+            "default": "CHAT"
           },
           "isReadOnly": {
             "type": "boolean",

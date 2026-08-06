@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { CommunityChannelType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AuditService } from '../../../shared/audit/audit.service';
 import { AppError } from '../../../shared/errors/app-error';
@@ -31,7 +31,7 @@ export class CommunityService {
           where: includeArchived ? {} : { archivedAt: null },
           orderBy: [{ position: 'asc' }, { name: 'asc' }],
           select: {
-            id: true, slug: true, name: true, description: true, position: true,
+            id: true, slug: true, name: true, description: true, position: true, type: true,
             isReadOnly: true, showInSidebar: true, archivedAt: true, createdAt: true,
             _count: { select: { posts: { where: { deletedAt: null } } } },
           },
@@ -56,7 +56,7 @@ export class CommunityService {
           where: { archivedAt: null, showInSidebar: true },
           orderBy: [{ position: 'asc' }, { name: 'asc' }],
           select: {
-            id: true, slug: true, name: true, description: true, position: true,
+            id: true, slug: true, name: true, description: true, position: true, type: true,
             isReadOnly: true, showInSidebar: true,
             _count: { select: { posts: { where: { deletedAt: null } } } },
           },
@@ -73,7 +73,7 @@ export class CommunityService {
       id: true, body: true, isPinned: true, commentCount: true, reactionCount: true,
       lastActivityAt: true, editedAt: true, createdAt: true,
       channel: { select: {
-        id: true, slug: true, name: true, isReadOnly: true,
+        id: true, slug: true, name: true, type: true, isReadOnly: true,
         group: { select: { slug: true, name: true } },
       } },
       author: { select: authorSelect },
@@ -186,7 +186,7 @@ export class CommunityService {
   async createPost(userId: string, channelId: string, body: string, canModerate: boolean) {
     const channel = await this.prisma.communityChannel.findFirst({ where: { id: channelId, archivedAt: null, group: { archivedAt: null } } });
     if (!channel) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
-    if (channel.isReadOnly && !canModerate) throw new AppError('PERMISSION_DENIED', 403, 'Channel ini hanya dapat ditulis oleh Master.');
+    if ((channel.isReadOnly || channel.type === CommunityChannelType.ANNOUNCEMENTS) && !canModerate) throw new AppError('PERMISSION_DENIED', 403, 'Channel ini hanya dapat ditulis oleh Master.');
     const row = await this.prisma.communityPost.create({
       data: { channelId, authorId: userId, body: body.trim() }, select: this.postSelect(userId),
     });
@@ -194,8 +194,12 @@ export class CommunityService {
   }
 
   async addComment(userId: string, postId: string, body: string) {
-    const post = await this.prisma.communityPost.findFirst({ where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } } });
+    const post = await this.prisma.communityPost.findFirst({
+      where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } },
+      select: { id: true, channel: { select: { type: true } } },
+    });
     if (!post) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Post tidak ditemukan.');
+    if (post.channel.type === CommunityChannelType.ANNOUNCEMENTS) throw new AppError('PERMISSION_DENIED', 403, 'Pengumuman tidak menerima balasan.');
     const comment = await this.prisma.$transaction(async (tx) => {
       const created = await tx.communityComment.create({
         data: { postId, authorId: userId, body: body.trim() },
@@ -368,8 +372,12 @@ export class CommunityService {
   }
 
   async toggleReaction(userId: string, postId: string) {
-    const post = await this.prisma.communityPost.findFirst({ where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } }, select: { id: true } });
+    const post = await this.prisma.communityPost.findFirst({
+      where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } },
+      select: { id: true, channel: { select: { type: true } } },
+    });
     if (!post) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Post tidak ditemukan.');
+    if (post.channel.type === CommunityChannelType.ANNOUNCEMENTS) throw new AppError('PERMISSION_DENIED', 403, 'Pengumuman tidak menerima reaksi.');
     return this.prisma.$transaction(async (tx) => {
       const existing = await tx.communityReaction.findUnique({ where: { postId_userId: { postId, userId } } });
       if (existing) await tx.communityReaction.delete({ where: { postId_userId: { postId, userId } } });
@@ -380,7 +388,7 @@ export class CommunityService {
     });
   }
 
-  async createChannel(userId: string, input: { name: string; slug?: string; description?: string; position?: number; subchannelName: string; subchannelDescription?: string; isReadOnly?: boolean; showInSidebar?: boolean }) {
+  async createChannel(userId: string, input: { name: string; slug?: string; description?: string; position?: number; subchannelName: string; subchannelDescription?: string; subchannelType?: CommunityChannelType; isReadOnly?: boolean; showInSidebar?: boolean }) {
     const slug = input.slug ?? input.name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (!slug) throw new AppError('VALIDATION_ERROR', 422, 'Nama channel tidak menghasilkan slug yang valid.');
     const subchannelSlug = input.subchannelName.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -390,8 +398,9 @@ export class CommunityService {
         const channel = await tx.communityChannelGroup.create({
           data: { name: input.name.trim(), slug, description: input.description, position: input.position, showInSidebar: input.showInSidebar, createdBy: userId },
         });
+        const type = input.subchannelType ?? CommunityChannelType.CHAT;
         const subchannel = await tx.communityChannel.create({
-          data: { groupId: channel.id, name: input.subchannelName.trim(), slug: subchannelSlug, description: input.subchannelDescription, isReadOnly: input.isReadOnly, showInSidebar: input.showInSidebar, createdBy: userId },
+          data: { groupId: channel.id, name: input.subchannelName.trim(), slug: subchannelSlug, description: input.subchannelDescription, type, isReadOnly: type === CommunityChannelType.ANNOUNCEMENTS ? true : input.isReadOnly, showInSidebar: input.showInSidebar, createdBy: userId },
         });
         return { ...channel, subchannels: [{ ...subchannel, postCount: 0 }] };
       });
@@ -457,13 +466,14 @@ export class CommunityService {
     return (await this.listChannels(true)).find((item) => item.id === id)!;
   }
 
-  async createSubchannel(userId: string, groupId: string, input: { name: string; slug?: string; description?: string; position?: number; isReadOnly?: boolean; showInSidebar?: boolean }) {
+  async createSubchannel(userId: string, groupId: string, input: { name: string; slug?: string; description?: string; position?: number; type?: CommunityChannelType; isReadOnly?: boolean; showInSidebar?: boolean }) {
     const group = await this.prisma.communityChannelGroup.findFirst({ where: { id: groupId, archivedAt: null } });
     if (!group) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
     const slug = input.slug ?? input.name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (!slug) throw new AppError('VALIDATION_ERROR', 422, 'Nama sub-channel tidak menghasilkan slug yang valid.');
     try {
-      const subchannel = await this.prisma.communityChannel.create({ data: { ...input, groupId, slug, name: input.name.trim(), createdBy: userId } });
+      const type = input.type ?? CommunityChannelType.CHAT;
+      const subchannel = await this.prisma.communityChannel.create({ data: { ...input, type, isReadOnly: type === CommunityChannelType.ANNOUNCEMENTS ? true : input.isReadOnly, groupId, slug, name: input.name.trim(), createdBy: userId } });
       return { ...subchannel, postCount: 0 };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw new AppError('VALIDATION_ERROR', 422, 'Slug sub-channel sudah digunakan dalam channel ini.');
@@ -471,11 +481,11 @@ export class CommunityService {
     }
   }
 
-  async updateSubchannel(id: string, input: { name?: string; slug?: string; description?: string; position?: number; isReadOnly?: boolean; showInSidebar?: boolean }) {
+  async updateSubchannel(id: string, input: { name?: string; slug?: string; description?: string; position?: number; type?: CommunityChannelType; isReadOnly?: boolean; showInSidebar?: boolean }) {
     const exists = await this.prisma.communityChannel.findUnique({ where: { id } });
     if (!exists) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Sub-channel tidak ditemukan.');
     const [subchannel, postCount] = await this.prisma.$transaction([
-      this.prisma.communityChannel.update({ where: { id }, data: input }),
+      this.prisma.communityChannel.update({ where: { id }, data: { ...input, ...(input.type === CommunityChannelType.ANNOUNCEMENTS ? { isReadOnly: true } : {}) } }),
       this.prisma.communityPost.count({ where: { channelId: id, deletedAt: null } }),
     ]);
     return { ...subchannel, postCount };

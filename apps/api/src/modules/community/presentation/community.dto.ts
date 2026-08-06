@@ -1,6 +1,7 @@
+import { CommunityChannelType } from '@prisma/client';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CommunityPageQueryDto {
   @ApiPropertyOptional({ default: 1 }) @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
@@ -17,8 +18,10 @@ export class CreateCommunityChannelDto {
   @IsOptional() @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @MaxLength(80) slug?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) description?: string;
   @ApiPropertyOptional({ default: 0 }) @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
-  @ApiProperty({ description: 'Nama sub-channel pertama yang menjadi ruang chat.' }) @IsString() @MinLength(2) @MaxLength(80) subchannelName!: string;
+  @ApiProperty({ description: 'Nama sub-channel pertama.' }) @IsString() @MinLength(2) @MaxLength(80) subchannelName!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) subchannelDescription?: string;
+  @ApiPropertyOptional({ enum: CommunityChannelType, default: CommunityChannelType.CHAT })
+  @IsOptional() @IsEnum(CommunityChannelType) subchannelType?: CommunityChannelType;
   @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() isReadOnly?: boolean;
   @ApiPropertyOptional({ default: true }) @IsOptional() @IsBoolean() showInSidebar?: boolean;
 }
@@ -37,6 +40,8 @@ export class CreateCommunitySubchannelDto {
   @IsOptional() @IsString() @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) @MaxLength(80) slug?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(240) description?: string;
   @ApiPropertyOptional({ default: 0 }) @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
+  @ApiPropertyOptional({ enum: CommunityChannelType, default: CommunityChannelType.CHAT })
+  @IsOptional() @IsEnum(CommunityChannelType) type?: CommunityChannelType;
   @ApiPropertyOptional({ default: false }) @IsOptional() @IsBoolean() isReadOnly?: boolean;
   @ApiPropertyOptional({ default: true }) @IsOptional() @IsBoolean() showInSidebar?: boolean;
 }
@@ -49,6 +54,7 @@ export class CommunitySubchannelDto {
   @ApiProperty() name!: string;
   @ApiProperty({ type: String, nullable: true }) description!: string | null;
   @ApiProperty() position!: number;
+  @ApiProperty({ enum: CommunityChannelType }) type!: CommunityChannelType;
   @ApiProperty() isReadOnly!: boolean;
   @ApiProperty() postCount!: number;
   @ApiProperty() showInSidebar!: boolean;
@@ -79,6 +85,7 @@ export class CommunityPostChannelDto {
   @ApiProperty() id!: string;
   @ApiProperty() slug!: string;
   @ApiProperty() name!: string;
+  @ApiProperty({ enum: CommunityChannelType }) type!: CommunityChannelType;
   @ApiProperty() isReadOnly!: boolean;
   @ApiProperty() groupSlug!: string;
   @ApiProperty() groupName!: string;

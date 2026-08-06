@@ -47,7 +47,7 @@ Role bukan satu-satunya kontrol. Backend tetap memeriksa resource ownership, enr
 | Start public checkout | Public | Public | Active tier, server-side price |
 | Process payment webhook | Provider only | No | Valid signature + provider status verification |
 | Read community feed/channels | Yes | Yes | Active authenticated session |
-| Post/comment/react in community channel | Yes | Yes | Active session; read-only channel needs `discussions.moderate` |
+| Post/comment/react in community channel | Yes | Yes | Active session; read-only channel needs `discussions.moderate`; announcement rejects comments/reactions |
 | Create/update/archive/restore community channel | Yes | No | `discussions.moderate`; arsip dan pemulihan tercatat di audit log |
 | Edit own community post/comment | Yes | Yes | Author only; `discussions.moderate` tidak memberi hak ini |
 | Delete community post/comment | Yes | Yes | Author, atau `discussions.moderate` atas tulisan siapa pun (tercatat di audit log) |
@@ -83,6 +83,10 @@ mengarsipkan, atau memulihkan channel. Mengarsipkan menyembunyikan channel
 beserta seluruh isinya dari semua orang tanpa menghapusnya; karena itu daftar
 admin tetap menampilkan channel terarsip, dan pemulihannya tersedia sebagai
 endpoint tersendiri. Kedua tindakan itu tercatat di audit log.
+
+Sub-channel bertipe `ANNOUNCEMENTS` selalu diperlakukan baca-saja oleh server.
+Hanya pemegang `discussions.moderate` dapat membuat post di dalamnya; semua
+akun, termasuk moderator, ditolak menambah komentar atau reaksi.
 
 Menyunting dan menghapus dipisahkan dengan sengaja. Menyunting hanya milik
 penulisnya — pemegang `discussions.moderate` pun ditolak, karena kuasa moderasi

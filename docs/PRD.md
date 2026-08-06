@@ -2308,3 +2308,19 @@ Disetujui langsung oleh Product Owner pada 3 Agustus 2026.
 - Thread bertingkat lebih dari satu tingkat komentar.
 
 Detail desain dan konsekuensi arsitektur terdapat pada ADR-024.
+
+### 30.4 Tipe Sub-channel
+
+Disetujui langsung oleh Product Owner pada 6 Agustus 2026.
+
+- Master dapat memilih dan mengubah tipe sub-channel menjadi ruang chat,
+  postingan, atau pengumuman.
+- Ruang chat memakai pola percakapan; postingan memakai kartu feed dengan
+  komentar dan reaksi; pengumuman hanya dapat diterbitkan Master dan tidak
+  menerima komentar atau reaksi.
+- Tipe dan aturan interaksi harus ditegakkan API. Client tidak boleh menentukan
+  permission atau melemahkan sifat hanya-baca pengumuman.
+- Data sub-channel lama tetap bertipe ruang chat dan perubahan tipe tidak
+  menghapus post yang sudah ada.
+
+Detail keputusan terdapat pada ADR-028.

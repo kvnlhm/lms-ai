@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { browserClient, unwrap } from '../lib/browser-api';
-import type { CommunityChannel } from '../community/community-feed';
+import { COMMUNITY_CHANNEL_TYPES, type CommunityChannel } from '../community/community-feed';
 import { Bell, Courses, Dashboard, Home, MessageCircle, Users } from './icons';
 
 const LEARNER_SHORTCUT_GROUPS = [
@@ -65,7 +65,7 @@ export function LearnerChannelSidebar({ placement = 'desktop' }: { placement?: '
     {LEARNER_SHORTCUT_GROUPS[2].items.map(shortcut)}
     {channels.map((channel) => {
       const open = expanded.has(channel.id); const active = pathname.startsWith(`/community/${channel.slug}`);
-      return <div className="learnerShortcutGroup" key={channel.id}><button type="button" className={active ? 'channelLink active' : 'channelLink'} aria-expanded={open} onClick={() => toggle(channel.id)}><span className="shortcutChevron">›</span><span><strong>{channel.name}</strong><small>{channel.subchannels.length} sub-channel</small></span></button>{open ? <div className="learnerShortcutChildren">{channel.subchannels.map((sub) => <Link key={sub.id} className={pathname === `/community/${channel.slug}/${sub.slug}` ? 'channelLink active' : 'channelLink'} href={`/community/${channel.slug}/${sub.slug}`}><span>#</span><span><strong>{sub.name}</strong><small>{sub.description ?? `${sub.postCount} post`}</small></span></Link>)}</div> : null}</div>;
+      return <div className="learnerShortcutGroup" key={channel.id}><button type="button" className={active ? 'channelLink active' : 'channelLink'} aria-expanded={open} onClick={() => toggle(channel.id)}><span className="shortcutChevron">›</span><span><strong>{channel.name}</strong><small>{channel.subchannels.length} sub-channel</small></span></button>{open ? <div className="learnerShortcutChildren">{channel.subchannels.map((sub) => <Link key={sub.id} className={pathname === `/community/${channel.slug}/${sub.slug}` ? 'channelLink active' : 'channelLink'} href={`/community/${channel.slug}/${sub.slug}`}><span>{COMMUNITY_CHANNEL_TYPES[sub.type].icon}</span><span><strong>{sub.name}</strong><small>{sub.description ?? COMMUNITY_CHANNEL_TYPES[sub.type].label}</small></span></Link>)}</div> : null}</div>;
     })}
     {channels.length === 0 ? <p className="communityMuted">Belum ada channel yang dipilih Master.</p> : null}
     <span className="channelGroup">{LEARNER_SHORTCUT_GROUPS[3].label}</span>

@@ -382,6 +382,12 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
 - Master dengan `discussions.moderate` dapat mengelola channel.
 - Pelajar dapat post, komentar, dan bereaksi pada channel biasa.
 - Pelajar ditolak menulis channel baca-saja; Master diizinkan.
+- Sub-channel lama tetap bertipe `CHAT`; Master dapat membuat dan mengubah tipe
+  menjadi `CHAT`, `POSTS`, atau `ANNOUNCEMENTS`.
+- Pengumuman selalu baca-saja meski client mengirim `isReadOnly=false`; Pelajar
+  ditolak menerbitkan dan semua akun ditolak memberi komentar atau reaksi.
+- Halaman `CHAT` memakai timeline, sedangkan `POSTS` dan `ANNOUNCEMENTS` memakai
+  kartu feed serta ikon tipe yang konsisten di sidebar.
 - Author selalu berasal dari session dan counter komentar/reaksi konsisten.
 - Channel membedakan pesan pengguna aktif di kanan dan pengguna lain di kiri
   berdasarkan user ID dari session, bukan nilai yang dikirim browser.

@@ -975,6 +975,10 @@ post dengan `ON DELETE CASCADE`; author dan pembuat channel memakai `RESTRICT`
 agar riwayat komunitas tidak kehilangan pemilik secara diam-diam. Counter pada
 post diperbarui dalam transaksi yang sama dengan mutasinya.
 
+`community_channels.type` adalah enum `CHAT | POSTS | ANNOUNCEMENTS` dengan
+default `CHAT`. Tipe tidak membuat tabel konten terpisah; semua isi tetap berada
+di `community_posts`, sedangkan service menerapkan aturan interaksinya.
+
 `community_posts.edited_at` dan `community_comments.edited_at` berdiri sendiri,
 tidak diturunkan dari `updated_at`. Pada post, `updated_at` ikut berubah setiap
 kali reaksi atau jumlah balasan dihitung ulang, sehingga tidak dapat menjawab

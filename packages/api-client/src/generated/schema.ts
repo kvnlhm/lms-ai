@@ -4347,6 +4347,8 @@ export interface components {
             name: string;
             description: string | null;
             position: number;
+            /** @enum {string} */
+            type: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
             isReadOnly: boolean;
             postCount: number;
             showInSidebar: boolean;
@@ -4369,6 +4371,8 @@ export interface components {
             id: string;
             slug: string;
             name: string;
+            /** @enum {string} */
+            type: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
             isReadOnly: boolean;
             groupSlug: string;
             groupName: string;
@@ -4445,9 +4449,14 @@ export interface components {
             description?: string;
             /** @default 0 */
             position?: number;
-            /** @description Nama sub-channel pertama yang menjadi ruang chat. */
+            /** @description Nama sub-channel pertama. */
             subchannelName: string;
             subchannelDescription?: string;
+            /**
+             * @default CHAT
+             * @enum {string}
+             */
+            subchannelType?: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
             /** @default false */
             isReadOnly?: boolean;
             /** @default true */
@@ -4467,6 +4476,11 @@ export interface components {
             description?: string;
             /** @default 0 */
             position?: number;
+            /**
+             * @default CHAT
+             * @enum {string}
+             */
+            type?: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
             /** @default false */
             isReadOnly?: boolean;
             /** @default true */
@@ -4479,6 +4493,11 @@ export interface components {
             description?: string;
             /** @default 0 */
             position?: number;
+            /**
+             * @default CHAT
+             * @enum {string}
+             */
+            type?: "CHAT" | "POSTS" | "ANNOUNCEMENTS";
             /** @default false */
             isReadOnly?: boolean;
             /** @default true */

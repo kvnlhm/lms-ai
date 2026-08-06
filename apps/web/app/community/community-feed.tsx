@@ -8,7 +8,13 @@ import { browserClient, unwrap, unwrapList } from '../lib/browser-api';
 /** Satu tarikan pesan atau balasan; dipakai baik saat memuat lama maupun menyegarkan. */
 const UKURAN_HALAMAN = 30;
 
-export type CommunitySubchannel = { id: string; slug: string; name: string; description: string | null; isReadOnly: boolean; postCount: number; showInSidebar: boolean; archivedAt?: string | null; position?: number };
+export type CommunityChannelType = 'CHAT' | 'POSTS' | 'ANNOUNCEMENTS';
+export const COMMUNITY_CHANNEL_TYPES: Record<CommunityChannelType, { label: string; icon: string; description: string }> = {
+  CHAT: { label: 'Ruang chat', icon: '#', description: 'Percakapan cepat dengan balasan.' },
+  POSTS: { label: 'Postingan', icon: '▤', description: 'Feed tulisan dengan komentar dan reaksi.' },
+  ANNOUNCEMENTS: { label: 'Pengumuman', icon: '!', description: 'Kabar satu arah yang hanya diterbitkan Master.' },
+};
+export type CommunitySubchannel = { id: string; slug: string; name: string; description: string | null; type: CommunityChannelType; isReadOnly: boolean; postCount: number; showInSidebar: boolean; archivedAt?: string | null; position?: number };
 export type CommunityChannel = { id: string; slug: string; name: string; description: string | null; showInSidebar: boolean; position?: number; archivedAt?: string | null; subchannels: CommunitySubchannel[] };
 type Person = { id: string; fullName: string; avatarUrl: string | null };
 export type CommunityComment = {
@@ -19,7 +25,7 @@ export type CommunityPost = {
   id: string; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
   reactedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
   canEdit: boolean; canDelete: boolean; canPin: boolean;
-  channel: Pick<CommunitySubchannel, 'id' | 'slug' | 'name' | 'isReadOnly'> & { groupSlug: string; groupName: string };
+  channel: Pick<CommunitySubchannel, 'id' | 'slug' | 'name' | 'type' | 'isReadOnly'> & { groupSlug: string; groupName: string };
   comments: CommunityComment[];
 };
 
@@ -87,7 +93,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   const [komentarPenuh, setKomentarPenuh] = useState<Record<string, { items: CommunityComment[]; total: number; page: number }>>({});
   const [memuatKomentar, setMemuatKomentar] = useState<string | null>(null);
   const subchannels = useMemo(() => channels.flatMap((group) => group.subchannels.map((item) => ({ ...item, groupSlug: group.slug, groupName: group.name }))), [channels]);
-  const [channelId, setChannelId] = useState(() => subchannels.find((item) => item.slug === activeSubchannelSlug && item.groupSlug === activeChannelSlug)?.id ?? subchannels.find((item) => !item.isReadOnly)?.id ?? subchannels[0]?.id ?? '');
+  const [channelId, setChannelId] = useState(() => subchannels.find((item) => item.slug === activeSubchannelSlug && item.groupSlug === activeChannelSlug)?.id ?? subchannels.find((item) => item.type !== 'ANNOUNCEMENTS' && !item.isReadOnly)?.id ?? subchannels.find((item) => item.type !== 'ANNOUNCEMENTS')?.id ?? subchannels[0]?.id ?? '');
   const [body, setBody] = useState('');
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
@@ -95,6 +101,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   const refreshing = useRef(false);
   const selected = useMemo(() => subchannels.find((item) => item.id === channelId), [subchannels, channelId]);
   const canPost = selected && (!selected.isReadOnly || canModerate);
+  const announcementPage = selected?.type === 'ANNOUNCEMENTS';
 
   useEffect(() => {
     if (!activeChannelSlug || !activeSubchannelSlug) return;
@@ -390,7 +397,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
     balasan, sisaBalasan, muatKomentar, memuatKomentar,
   };
 
-  if (activeChannelSlug && activeSubchannelSlug) {
+  if (activeChannelSlug && activeSubchannelSlug && selected?.type === 'CHAT') {
     return <ChannelChat
       posts={posts}
       selected={selected}
@@ -412,26 +419,23 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   return (
     <>
       <section className="communityFeed">
-        <div className="communityHeading"><div><span className="eyebrow">Komunitas</span><h1>Feed terbaru</h1></div></div>
+        <div className="communityHeading"><div><span className="eyebrow">{activeSubchannelSlug ? COMMUNITY_CHANNEL_TYPES[selected?.type ?? 'POSTS'].label : 'Komunitas'}</span><h1>{activeSubchannelSlug ? selected?.name : 'Feed terbaru'}</h1>{activeSubchannelSlug && selected?.description ? <p className="communityMuted">{selected.description}</p> : null}</div></div>
         {subchannels.length > 0 ? (
           <div className="postComposer card">
-            <div className="composerChannelPicker" role="group" aria-label="Pilih sub-channel tujuan">{subchannels.map((channel) => <button key={channel.id} className={channel.id === channelId ? 'active' : ''} type="button" onClick={() => setChannelId(channel.id)}>{channel.groupName} / # {channel.name}</button>)}</div>
-            {canPost ? <><textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={`Bagikan sesuatu ke #${selected?.name ?? 'channel'}...`} maxLength={5000} /><div className="composerFoot"><span>{body.length}/5000</span><button className="btn" type="button" disabled={pending || !body.trim()} onClick={publish}>Terbitkan</button></div></> : <p className="communityMuted">Channel ini hanya dapat ditulis oleh Master.</p>}
+            {!activeSubchannelSlug ? <div className="composerChannelPicker" role="group" aria-label="Pilih sub-channel tujuan">{subchannels.filter((channel) => channel.type !== 'ANNOUNCEMENTS').map((channel) => <button key={channel.id} className={channel.id === channelId ? 'active' : ''} type="button" onClick={() => setChannelId(channel.id)}>{channel.groupName} / {COMMUNITY_CHANNEL_TYPES[channel.type].icon} {channel.name}</button>)}</div> : null}
+            {canPost ? <><textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={announcementPage ? `Tulis pengumuman untuk ${selected?.name}...` : `Bagikan sesuatu ke ${selected?.name ?? 'channel'}...`} maxLength={5000} /><div className="composerFoot"><span>{body.length}/5000</span><button className="btn" type="button" disabled={pending || !body.trim()} onClick={publish}>{announcementPage ? 'Terbitkan pengumuman' : 'Terbitkan'}</button></div></> : <p className="communityMuted">{announcementPage ? 'Hanya Master yang dapat menerbitkan pengumuman.' : 'Channel ini hanya dapat ditulis oleh Master.'}</p>}
           </div>
         ) : null}
         {message ? <p className="communityMessage" role="status">{message}</p> : null}
         <div className="postList">
           {posts.map((post) => (
             <article className="communityPost card" key={post.id}>
-              <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.groupSlug}/${post.channel.slug}`}>{post.channel.groupName} / #{post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
+              <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.groupSlug}/${post.channel.slug}`}>{post.channel.groupName} / {COMMUNITY_CHANNEL_TYPES[post.channel.type].icon} {post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
               <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
-              <div className="postActions"><button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button><span>◯ {post.commentCount} balasan</span><PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
-              <MuatBalasan post={post} aksi={aksi} />
-              {balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}
-              <div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div>
+              {post.channel.type === 'ANNOUNCEMENTS' ? <div className="postActions"><span>Pengumuman resmi</span><PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div> : <><div className="postActions"><button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button><span>◯ {post.commentCount} balasan</span><PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div><MuatBalasan post={post} aksi={aksi} />{balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}<div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div></>}
             </article>
           ))}
-          {posts.length === 0 ? <div className="card empty"><p>Belum ada post. Jadilah yang pertama memulai percakapan.</p></div> : null}
+          {posts.length === 0 ? <div className="card empty"><p>{announcementPage ? 'Belum ada pengumuman.' : 'Belum ada post. Jadilah yang pertama memulai percakapan.'}</p></div> : null}
         </div>
         {posts.length < total ? (
           <div className="muatLagi">

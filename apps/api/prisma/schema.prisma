@@ -216,6 +216,12 @@ model CommunityChannelGroup {
   @@map("community_channel_groups")
 }
 
+enum CommunityChannelType {
+  CHAT
+  POSTS
+  ANNOUNCEMENTS
+}
+
 model CommunityChannel {
   id          String    @id @default(uuid()) @db.Uuid
   groupId     String    @map("group_id") @db.Uuid
@@ -223,6 +229,7 @@ model CommunityChannel {
   name        String
   description String?
   position    Int       @default(0)
+  type        CommunityChannelType @default(CHAT)
   isReadOnly  Boolean   @default(false) @map("is_read_only")
   showInSidebar Boolean @default(true) @map("show_in_sidebar")
   createdBy   String    @map("created_by") @db.Uuid

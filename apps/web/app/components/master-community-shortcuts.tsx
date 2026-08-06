@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { browserClient, unwrap } from '../lib/browser-api';
-import type { CommunityChannel } from '../community/community-feed';
+import { COMMUNITY_CHANNEL_TYPES, type CommunityChannel } from '../community/community-feed';
 
 const INTERVAL_SEGARKAN = 30_000;
 
@@ -118,7 +118,7 @@ export function MasterCommunityShortcuts({ userId }: { userId: string }) {
                       key={sub.id}
                       onClick={() => markSeen(sub.id, sub.postCount)}
                     >
-                      <span className="masterCommunityHash">#</span>
+                      <span className="masterCommunityHash">{COMMUNITY_CHANNEL_TYPES[sub.type].icon}</span>
                       <span>{sub.name}</span>
                       {subUnread > 0 ? <span className="navBadge">{subUnread > 99 ? '99+' : subUnread}</span> : null}
                     </Link>
