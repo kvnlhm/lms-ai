@@ -35,6 +35,7 @@
 | ADR-013 | Accepted | Video provider adapter |
 | ADR-027 | Accepted | Player video kustom tanpa watermark identitas |
 | ADR-028 | Accepted | Tipe sub-channel komunitas: chat, postingan, dan pengumuman |
+| ADR-029 | Accepted | Balasan forum satu tingkat dengan garis percakapan |
 | ADR-014 | Accepted | Validasi biaya video self-hosted |
 | ADR-015 | Accepted | Gambar publik self-hosted |
 | ADR-016 | Accepted | Registration commerce dan access tier |

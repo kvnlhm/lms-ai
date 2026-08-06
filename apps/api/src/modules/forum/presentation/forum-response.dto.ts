@@ -43,6 +43,8 @@ export class ForumReplyDto {
   @ApiProperty({ format: 'date-time' }) createdAt!: Date;
   @ApiProperty({ format: 'date-time' }) updatedAt!: Date;
   @ApiProperty({ type: ForumAuthorDto }) author!: ForumAuthorDto;
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'uuid' }) parentReplyId!: string | null;
+  @ApiPropertyOptional({ type: ForumAuthorDto, nullable: true }) parentAuthor!: ForumAuthorDto | null;
   @ApiProperty({ type: ForumReactionCountDto }) _count!: ForumReactionCountDto;
 
   @ApiProperty({ description: 'Benar bila pengguna ini sedang menyukainya.' })
@@ -105,6 +107,7 @@ export class ForumTopicUpdatedDto {
 export class ForumReplyCreatedDto {
   @ApiProperty({ format: 'uuid' }) id!: string;
   @ApiProperty() body!: string;
+  @ApiPropertyOptional({ type: String, nullable: true, format: 'uuid' }) parentReplyId!: string | null;
   @ApiProperty({ format: 'date-time' }) createdAt!: Date;
 }
 

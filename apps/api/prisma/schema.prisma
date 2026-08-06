@@ -1044,6 +1044,7 @@ model ForumReply {
   id               String    @id @default(uuid()) @db.Uuid
   topicId          String    @map("topic_id") @db.Uuid
   authorId         String    @map("author_id") @db.Uuid
+  parentReplyId    String?   @map("parent_reply_id") @db.Uuid
   body             String
   isHidden         Boolean   @default(false) @map("is_hidden")
   moderatedBy      String?   @map("moderated_by") @db.Uuid
@@ -1056,10 +1057,13 @@ model ForumReply {
   topic        ForumTopic      @relation("ForumTopicReplies", fields: [topicId], references: [id], onDelete: Cascade)
   bestForTopic ForumTopic?     @relation("ForumTopicBestReply")
   author       User            @relation("ForumReplyAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  parent       ForumReply?      @relation("ForumReplyChildren", fields: [parentReplyId], references: [id], onDelete: SetNull)
+  children     ForumReply[]     @relation("ForumReplyChildren")
   reactions    ForumReaction[]
   reports      ForumReport[]
 
   @@index([topicId, createdAt])
+  @@index([parentReplyId, createdAt])
   @@index([authorId])
   @@map("forum_replies")
 }

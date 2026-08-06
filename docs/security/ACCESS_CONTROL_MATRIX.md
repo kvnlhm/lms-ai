@@ -52,6 +52,7 @@ Role bukan satu-satunya kontrol. Backend tetap memeriksa resource ownership, enr
 | Edit own community post/comment | Yes | Yes | Author only; `discussions.moderate` tidak memberi hak ini |
 | Delete community post/comment | Yes | Yes | Author, atau `discussions.moderate` atas tulisan siapa pun (tercatat di audit log) |
 | Pin/unpin community post | Yes | No | `discussions.moderate`, termasuk atas tulisan sendiri (tercatat di audit log) |
+| Reply in course forum | Yes | Yes | Active course access; write permission active; parent reply must belong to the same topic |
 
 ## Resource Rules
 

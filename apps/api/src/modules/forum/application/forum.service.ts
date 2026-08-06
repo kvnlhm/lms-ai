@@ -155,9 +155,11 @@ export class ForumService {
       select: {
         id: true,
         body: true,
+        parentReplyId: true,
         createdAt: true,
         updatedAt: true,
         author: { select: authorSelect },
+        parent: { select: { author: { select: authorSelect } } },
         _count: { select: { reactions: true } },
       },
     });
@@ -182,6 +184,8 @@ export class ForumService {
       ...topic,
       replies: replies.map((reply) => ({
         ...reply,
+        parentAuthor: reply.parent?.author ?? null,
+        parent: undefined,
         reactedByMe: balasanDisukai.has(reply.id),
       })),
       reactedByMe: reaksiSaya.some((reaksi) => reaksi.topicId === topicId),
@@ -251,7 +255,7 @@ export class ForumService {
     });
   }
 
-  async createReply(userId: string, topicId: string, body: string) {
+  async createReply(userId: string, topicId: string, body: string, parentReplyId?: string) {
     const topic = await this.prisma.forumTopic.findFirst({
       where: { id: topicId, deletedAt: null, status: { not: ForumTopicStatus.HIDDEN } },
       select: { id: true, courseId: true, status: true },
@@ -262,10 +266,21 @@ export class ForumService {
     }
     await this.assertCanWrite(userId, topic.courseId);
 
+    if (parentReplyId) {
+      const parent = await this.prisma.forumReply.findFirst({
+        where: { id: parentReplyId, deletedAt: null, isHidden: false },
+        select: { id: true, topicId: true, parentReplyId: true },
+      });
+      if (!parent || parent.topicId !== topicId) throw AppError.notFound();
+      if (parent.parentReplyId) {
+        throw new AppError('VALIDATION_ERROR', 422, 'Balasan hanya dapat dibuat satu tingkat di bawah balasan utama.');
+      }
+    }
+
     const [reply] = await this.prisma.$transaction([
       this.prisma.forumReply.create({
-        data: { topicId, authorId: userId, body },
-        select: { id: true, body: true, createdAt: true },
+        data: { topicId, authorId: userId, body, parentReplyId: parentReplyId ?? null },
+        select: { id: true, body: true, parentReplyId: true, createdAt: true },
       }),
       this.prisma.forumTopic.update({
         where: { id: topicId },
@@ -327,6 +342,10 @@ export class ForumService {
       throw new AppError('DISCUSSION_LOCKED', 409, 'Diskusi ini sudah dikunci Master.');
     }
     await this.prisma.$transaction([
+      this.prisma.forumReply.updateMany({
+        where: { parentReplyId: replyId },
+        data: { parentReplyId: null },
+      }),
       this.prisma.forumReply.update({
         where: { id: replyId },
         data: { deletedAt: new Date() },

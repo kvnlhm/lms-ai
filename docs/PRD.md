@@ -325,6 +325,8 @@ Pelajar adalah pengguna yang mengikuti proses pembelajaran.
 - Melihat histori belajar.
 - Membuat topik diskusi.
 - Membalas diskusi.
+- Membalas satu balasan utama dan membuka/menutup balasan anak sebagai thread
+  satu tingkat.
 - Mengubah postingan milik sendiri.
 - Menghapus postingan milik sendiri.
 - Memberikan reaksi.

@@ -3900,6 +3900,9 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             author: components["schemas"]["ForumAuthorDto"];
+            /** Format: uuid */
+            parentReplyId?: string | null;
+            parentAuthor?: components["schemas"]["ForumAuthorDto"] | null;
             _count: components["schemas"]["ForumReactionCountDto"];
             /** @description Benar bila pengguna ini sedang menyukainya. */
             reactedByMe: boolean;
@@ -3952,11 +3955,18 @@ export interface components {
             /** Format: uuid */
             id: string;
             body: string;
+            /** Format: uuid */
+            parentReplyId?: string | null;
             /** Format: date-time */
             createdAt: string;
         };
         ReplyBodyDto: {
             body: string;
+            /**
+             * Format: uuid
+             * @description Balasan utama yang sedang ditanggapi.
+             */
+            parentReplyId?: string;
         };
         ForumReplyUpdatedDto: {
             /** Format: uuid */

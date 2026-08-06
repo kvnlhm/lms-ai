@@ -996,3 +996,9 @@ Dua jenis drift pernah ditemukan di sini, dan keduanya layak diwaspadai:
 
 Perubahan siluman ikut terbawa: `migrate diff` berikutnya akan menyisipkan
 pembetulan drift lama ke dalam migrasi fitur yang tidak ada hubungannya.
+
+## 16. Forum Reply Thread
+
+`forum_replies.parent_reply_id` adalah self-reference opsional dengan
+`ON DELETE SET NULL`. Nilai null berarti balasan utama; service membatasi anak
+ke satu tingkat dan memastikan parent berasal dari topik yang sama.

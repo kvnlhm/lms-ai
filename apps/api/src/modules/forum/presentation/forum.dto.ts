@@ -51,6 +51,8 @@ export class UpdateTopicDto {
 
 export class ReplyBodyDto {
   @ApiProperty() @IsString() @MinLength(1) @MaxLength(5000) body!: string;
+  @ApiPropertyOptional({ format: 'uuid', description: 'Balasan utama yang sedang ditanggapi.' })
+  @IsOptional() @IsUUID() parentReplyId?: string;
 }
 
 export class ReportContentDto {

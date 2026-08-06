@@ -41,6 +41,8 @@ export function TopicThread({
   const [editingTopic, setEditingTopic] = useState(false);
   const [topicTitleDraft, setTopicTitleDraft] = useState('');
   const [topicBodyDraft, setTopicBodyDraft] = useState('');
+  const [replyTarget, setReplyTarget] = useState<{ id: string; name: string } | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(() => new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -106,6 +108,17 @@ export function TopicThread({
       'Laporan terkirim ke Master.',
     );
   };
+
+  const visibleReplyIds = new Set(topic.replies.map((reply) => reply.id));
+  const rootReplies = topic.replies.filter((reply) => !reply.parentReplyId || !visibleReplyIds.has(reply.parentReplyId));
+  const childReplies = new Map(rootReplies.map((reply) => [
+    reply.id,
+    topic.replies.filter((child) => child.parentReplyId === reply.id),
+  ]));
+  const visibleReplies = rootReplies.flatMap((reply) => [
+    reply,
+    ...(expandedReplies.has(reply.id) ? childReplies.get(reply.id) ?? [] : []),
+  ]);
 
   return (
     <section className="stack forumThread">
@@ -273,13 +286,13 @@ export function TopicThread({
       </div>
 
       <ul className="stack forumReplyList">
-        {topic.replies.map((reply) => (
+        {visibleReplies.map((reply) => (
           <li
             key={reply.id}
             className={
               reply.id === topic.bestReplyId
-                ? 'card cardAccent forumReplyCard'
-                : 'card forumReplyCard'
+                ? `card cardAccent forumReplyCard${reply.parentReplyId ? ' forumReplyNested' : ''}`
+                : `card forumReplyCard${reply.parentReplyId ? ' forumReplyNested' : ''}`
             }
           >
             <div className="rowBetween">
@@ -294,6 +307,7 @@ export function TopicThread({
                 <span>
                   <strong>{reply.author.fullName}</strong>
                   <small>{formatDate(reply.createdAt)}</small>
+                  {reply.parentAuthor ? <small className="forumReplyingTo">Membalas @{reply.parentAuthor.fullName}</small> : null}
                 </span>
               </div>
               {reply.id === topic.bestReplyId ? (
@@ -358,6 +372,19 @@ export function TopicThread({
                   )
                 }
               />
+              {!reply.parentReplyId && topic.canParticipate ? (
+                <button
+                  className="btnTiny"
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => {
+                    setReplyTarget({ id: reply.id, name: reply.author.fullName });
+                    document.getElementById('forum-reply-composer')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                >
+                  Balas
+                </button>
+              ) : null}
               {reply.author.id === currentUserId && editingId !== reply.id ? (
                 <>
                   <button
@@ -412,12 +439,27 @@ export function TopicThread({
                 </button>
               ) : null}
             </div>
+            {!reply.parentReplyId && (childReplies.get(reply.id)?.length ?? 0) > 0 ? (
+              <button
+                className="forumChildrenToggle"
+                type="button"
+                aria-expanded={expandedReplies.has(reply.id)}
+                onClick={() => setExpandedReplies((current) => {
+                  const next = new Set(current);
+                  if (next.has(reply.id)) next.delete(reply.id); else next.add(reply.id);
+                  return next;
+                })}
+              >
+                {expandedReplies.has(reply.id) ? 'Sembunyikan balasan' : `Lihat ${childReplies.get(reply.id)!.length} balasan`}
+              </button>
+            ) : null}
           </li>
         ))}
       </ul>
 
       {topic.canParticipate ? (
         <form
+          id="forum-reply-composer"
           className="card stack forumReplyComposer"
           onSubmit={(event) => {
             event.preventDefault();
@@ -426,9 +468,10 @@ export function TopicThread({
               async () => {
                 await browserClient().POST('/api/v1/learn/forum/topics/{topicId}/replies', {
                   params: { path: { topicId } },
-                  body: { body: draft.trim() },
+                  body: { body: draft.trim(), ...(replyTarget ? { parentReplyId: replyTarget.id } : {}) },
                 });
                 setDraft('');
+                setReplyTarget(null);
               },
               'Balasan terkirim.',
             );
@@ -437,6 +480,7 @@ export function TopicThread({
           <div>
             <span className="eyebrow">Ikut berdiskusi</span>
             <h2 className="forumComposerTitle">Tulis balasan</h2>
+            {replyTarget ? <p className="forumReplyTarget">Membalas @{replyTarget.name} <button type="button" onClick={() => setReplyTarget(null)}>Batal</button></p> : null}
           </div>
           <label className="field forumReplyField">
             <span className="srOnly">Isi balasan</span>

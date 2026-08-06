@@ -118,7 +118,7 @@ export class ForumController {
     @Body() dto: ReplyBodyDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.forum.createReply(user.id, topicId, dto.body);
+    return this.forum.createReply(user.id, topicId, dto.body, dto.parentReplyId);
   }
 
   @Patch('learn/forum/replies/:replyId')

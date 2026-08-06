@@ -1887,7 +1887,7 @@ endpoint Pelajar, termasuk bagi penulisnya sendiri.
 | GET | `/learn/forum/topics/{topicId}` | Detail topik beserta balasan |
 | PATCH | `/learn/forum/topics/{topicId}` | Mengubah topik milik sendiri |
 | DELETE | `/learn/forum/topics/{topicId}` | Menghapus topik milik sendiri |
-| POST | `/learn/forum/topics/{topicId}/replies` | Membalas |
+| POST | `/learn/forum/topics/{topicId}/replies` | Membalas; `parentReplyId` opsional menunjuk balasan utama dalam topik yang sama |
 | PATCH | `/learn/forum/replies/{replyId}` | Mengubah balasan milik sendiri |
 | DELETE | `/learn/forum/replies/{replyId}` | Menghapus balasan milik sendiri |
 | POST | `/learn/forum/topics/{topicId}/reactions` | Menyalakan atau mematikan reaksi |
@@ -1896,6 +1896,7 @@ endpoint Pelajar, termasuk bagi penulisnya sendiri.
 
 Mengubah atau menghapus milik orang lain dijawab `403`. Menulis pada topik
 berstatus `LOCKED` dijawab `409` dengan kode `DISCUSSION_LOCKED`.
+Balasan anak dibatasi satu tingkat; menunjuk balasan anak lain ditolak `422`.
 
 Detail topik menyertakan dua medan bantu antarmuka:
 

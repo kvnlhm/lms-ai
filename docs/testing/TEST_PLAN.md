@@ -433,3 +433,5 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
 - Mengarsipkan dan memulihkan masing-masing meninggalkan satu entri audit.
 - Ruang chat menyediakan kolom balasan pada tiap pesan, bukan hanya
   menampilkan balasan yang sudah ada; Enter mengirim dan Escape menutup.
+- Forum menolak parent reply dari topik lain dan menolak kedalaman lebih dari
+  satu tingkat; UI menampilkan garis thread serta kontrol buka/tutup anak.

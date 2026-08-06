@@ -17583,6 +17583,19 @@
           "author": {
             "$ref": "#/components/schemas/ForumAuthorDto"
           },
+          "parentReplyId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "parentAuthor": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ForumAuthorDto"
+              }
+            ]
+          },
           "_count": {
             "$ref": "#/components/schemas/ForumReactionCountDto"
           },
@@ -17749,6 +17762,11 @@
           "body": {
             "type": "string"
           },
+          "parentReplyId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -17765,6 +17783,11 @@
         "properties": {
           "body": {
             "type": "string"
+          },
+          "parentReplyId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Balasan utama yang sedang ditanggapi."
           }
         },
         "required": [
