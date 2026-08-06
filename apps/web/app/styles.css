@@ -2465,8 +2465,10 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
     flex: none; max-width: 42%;
     color: var(--muted); font-size: 11px; font-weight: 600;
     letter-spacing: 0.06em; text-transform: uppercase;
+    overflow-wrap: normal; white-space: nowrap;
   }
   .masterShell table.data td.num { text-align: left; }
+  .masterShell table.data .courseTableTitle { min-width: 0; flex: 1; }
 
   /* Sel tindakan tidak punya nama kolom untuk ditampilkan, dan tombolnya butuh
      lebar penuh supaya cukup besar disentuh. */
@@ -3298,12 +3300,13 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 
 /* ── Penyortiran daftar kursus ───────────────────────────────────────────
-   Dua jalan menuju keadaan yang sama, keduanya tautan biasa, sehingga tidak
-   ada keadaan kedua yang bisa menyimpang: pil di atas tabel — satu-satunya
-   yang terjangkau di lebar ponsel, tempat `thead` disembunyikan — dan kepala
-   kolom yang dapat diklik di layar lebar. */
-.sortBar{margin-top:-6px}
-.sortBarLabel{margin-right:2px;font-size:12px;font-weight:650;color:var(--muted)}
+   Dropdown tetap terjangkau di mobile ketika `thead` disembunyikan. Kepala
+   kolom yang dapat diklik dipertahankan sebagai jalan cepat di desktop. */
+.sortBar{display:flex;align-items:flex-end;gap:10px;margin:-6px 0 18px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.sortField{display:grid;flex:0 0 auto;gap:5px;white-space:nowrap}
+.sortField>span{color:var(--muted);font-size:11px;font-weight:650}
+.sortField select{min-width:170px;height:40px;padding:8px 34px 8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);font:inherit;font-size:13px}
+.sortBar>.btn{flex:0 0 auto;min-height:40px}
 .sortHead{display:inline-flex;align-items:center;gap:5px;color:inherit;font:inherit;text-decoration:none;white-space:nowrap}
 .sortHead:hover{color:var(--text)}
 .sortHeadActive{color:var(--text)}
@@ -3312,3 +3315,9 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .sortHeadArrow{font-size:11px;opacity:.32}
 .sortHead:hover .sortHeadArrow,.sortHeadActive .sortHeadArrow{opacity:1}
 .cellPosition{width:1%;color:var(--muted);font-variant-numeric:tabular-nums}
+@media(max-width:680px){
+  .courseStatusBar{flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px;scrollbar-width:none}
+  .courseStatusBar::-webkit-scrollbar{display:none}
+  .courseStatusBar>.pill{flex:0 0 auto}
+  .sortField select{min-width:158px}
+}

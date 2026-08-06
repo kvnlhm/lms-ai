@@ -179,7 +179,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
           </form>
         </section>
 
-        <div className="toolbar">
+        <div className="toolbar courseStatusBar">
           {FILTERS.map((filter) => {
             const active = filter.key === status;
             return (
@@ -195,36 +195,27 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
           })}
         </div>
 
-        {/* Penyortiran diletakkan di sini, bukan hanya pada kepala tabel.
-            Di lebar ponsel `thead` disembunyikan dan tabelnya berubah menjadi
-            kartu, sehingga kepala tabel yang dapat diklik akan membuat fitur ini
-            tidak terjangkau sama sekali justru di layar yang paling sering
-            dipakai merapikan katalog. */}
-        <div className="toolbar sortBar" role="group" aria-label="Urutkan daftar">
-          <span className="sortBarLabel">Urutkan</span>
-          {SORTS.map((s) => {
-            const active = s.key === keadaan.sort;
-            return (
-              <Link
-                key={s.key}
-                href={buildHref(arahkan(keadaan, s.key), 1)}
-                className={active ? 'pill pillAccent' : 'pill'}
-                aria-current={active ? 'true' : undefined}
-              >
-                {s.label}
-                {active ? (
-                  <span aria-hidden="true"> {keadaan.order === 'asc' ? '↑' : '↓'}</span>
-                ) : null}
-                {active ? (
-                  <span className="srOnly">
-                    , aktif, {keadaan.order === 'asc' ? 'menaik' : 'menurun'}. Pilih lagi untuk
-                    membalik arah.
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
-        </div>
+        {/* Kepala tabel tetap dapat dipilih pada desktop. Di mobile kepala itu
+            disembunyikan, jadi penyortiran juga tersedia sebagai kontrol native
+            yang tidak memadat menjadi deretan tombol kecil. */}
+        <form className="sortBar" action="/master/courses">
+          {status ? <input type="hidden" name="status" value={status} /> : null}
+          {search ? <input type="hidden" name="search" value={search} /> : null}
+          <label className="sortField">
+            <span>Urutkan berdasarkan</span>
+            <select name="sort" defaultValue={keadaan.sort}>
+              {SORTS.map((sort) => <option key={sort.key} value={sort.key}>{sort.label}</option>)}
+            </select>
+          </label>
+          <label className="sortField">
+            <span>Arah</span>
+            <select name="order" defaultValue={keadaan.order}>
+              <option value="asc">Menaik ↑</option>
+              <option value="desc">Menurun ↓</option>
+            </select>
+          </label>
+          <button className="btn btnGhost" type="submit">Terapkan</button>
+        </form>
 
         {items.length === 0 ? (
           <div className="card empty">
