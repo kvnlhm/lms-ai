@@ -3099,6 +3099,10 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
    dua navigasi channel sekaligus. Drawer tablet dibuat ringkas; layar ponsel
    tetap memakai drawer penuh pada aturan di bawah. */
 @media(min-width:761px) and (max-width:1120px){
+  .topbar{height:auto;min-height:var(--topbar);flex-wrap:wrap;padding-block:8px}
+  .topbar>.mainNav{display:flex;order:3;width:100%;margin:0;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none}
+  .topbar>.mainNav::-webkit-scrollbar{display:none}
+  .topbar>.mainNav .navLink{flex:0 0 auto;white-space:nowrap}
   .learnerShellBody{display:block}
   .learnerShellBody>.learnerChannelSidebarDesktop{display:none}
   .learnerMobileDrawer{width:min(360px,92vw);background:var(--bg)}

@@ -42,6 +42,11 @@ test('lebar setengah desktop memakai satu navigasi channel melalui drawer', () =
   assert.match(css, /@media\(min-width:761px\) and \(max-width:1120px\)[\s\S]*\.learnerChannelSidebarDrawer\{position:static/);
 });
 
+test('lebar setengah desktop mempertahankan menu utama sebagai baris yang dapat digeser', () => {
+  assert.match(css, /@media\(min-width:761px\) and \(max-width:1120px\)[\s\S]*\.topbar>\.mainNav\{display:flex[^}]*overflow-x:auto/);
+  assert.match(css, /@media\(min-width:761px\) and \(max-width:1120px\)[\s\S]*\.topbar>\.mainNav \.navLink\{flex:0 0 auto/);
+});
+
 test('pencarian mobile dapat ditutup dan memakai id aksesibilitas yang unik', () => {
   assert.match(mobileNav, /role="dialog" aria-modal="true"/);
   assert.match(mobileNav, /event\.key === 'Escape'/);

@@ -400,7 +400,9 @@ OpenAPI dengan sumber web dan gagal bila ada endpoint tanpa pemanggil.
 - Navbar Pelajar tidak menampilkan tautan Beranda yang berulang, dan sidebar
   hanya menampilkan Monitoring harian serta channel pilihan Master.
 - Pada lebar 761–1120 px, sidebar desktop disembunyikan saat hamburger muncul;
-  pintasan channel tersedia satu kali melalui drawer tablet yang ringkas.
+  pintasan channel tersedia satu kali melalui drawer tablet yang ringkas,
+  sedangkan menu utama tetap terlihat sebagai baris horizontal yang dapat
+  digeser.
 - Beranda Pelajar tetap menampilkan ringkasan progres dan pintasan ke halaman
   Community yang terpisah.
 - Master dapat mengubah nama, slug, keterangan, urutan, dan akses menulis
