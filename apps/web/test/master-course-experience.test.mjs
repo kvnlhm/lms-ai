@@ -48,6 +48,19 @@ test('halaman kelola kursus menyediakan menu aksi dan pratinjau langsung', async
   assert.match(editor, /Pratinjau materi/);
 });
 
+test('penyusun kursus memberi pratinjau seret dan menggeser kartu dengan halus', async () => {
+  const [source, css] = await Promise.all([
+    read('../app/master/courses/course-order.tsx'),
+    read('../app/styles.css'),
+  ]);
+  assert.match(source, /classList\.add\('orderDragGhost'\)/);
+  assert.match(source, /element\.animate\(/);
+  assert.match(source, /prefers-reduced-motion: reduce/);
+  assert.match(source, /Math\.hypot\(/);
+  assert.match(css, /\.orderDragGhost\{[^}]*position:fixed[^}]*pointer-events:none/);
+  assert.match(css, /\.orderCardItem\{[^}]*will-change:transform/);
+});
+
 test('halaman pemeliharaan memakai logo aplikasi yang dilayani gateway sendiri', async () => {
   const [source, dockerfile, nginx] = await Promise.all([
     read('../../../deploy/nginx/pemeliharaan/__pemeliharaan.html'),

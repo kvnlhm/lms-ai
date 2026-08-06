@@ -3253,12 +3253,13 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .orderWarn{margin:8px 0 0;max-width:56ch;font-size:12.5px;color:var(--danger)}
 .orderActions{display:flex;gap:10px;flex-wrap:wrap}
 .orderGrid{margin:0;padding:0;list-style:none}
-.orderCardItem{overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s}
+.orderCardItem{overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s,opacity .15s;will-change:transform}
 .orderCardItem .cover{position:relative}
 /* Kartu yang sedang diseret dibuat tembus terhadap penunjuk, supaya
    `elementFromPoint` mengembalikan kartu di bawahnya, bukan dirinya sendiri.
    Tanpa itu tujuan perpindahan tidak pernah dapat dihitung. */
-.orderCardDragging{pointer-events:none;border-color:var(--primary);box-shadow:0 14px 34px rgba(0,0,0,.3);opacity:.9}
+.orderCardDragging{pointer-events:none;border-color:var(--primary);box-shadow:inset 0 0 0 2px var(--primary);opacity:.28}
+.orderDragGhost{position:fixed;z-index:250;top:0;left:0;margin:0;pointer-events:none;overflow:hidden;display:flex;flex-direction:column;border-color:var(--primary);box-shadow:0 22px 55px rgba(0,0,0,.38);opacity:.96;transform-origin:top left;will-change:transform}
 /* Pegangan dan nomor mengambang di atas sampul, bukan di bawah judul: keduanya
    harus dapat dijangkau tanpa mata meninggalkan gambar yang sedang ditata. */
 .orderBadge{position:absolute;top:9px;left:9px;right:9px;display:flex;align-items:center;justify-content:space-between;gap:8px}

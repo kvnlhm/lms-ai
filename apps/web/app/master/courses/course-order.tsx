@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
 import { useNotifier } from '../../components/notifier';
 import { StatusPill } from '../../components/status-pill';
@@ -54,6 +55,7 @@ export function CourseOrder({ courses, lengkap }: Props) {
   const [menyimpan, setMenyimpan] = useState(false);
   const [kabar, setKabar] = useState('');
   const daftarRef = useRef<HTMLOListElement>(null);
+  const visualSeretRef = useRef<{ elemen: HTMLElement; offsetX: number; offsetY: number } | null>(null);
 
   const berubah = !samaUrutannya(urutan, courses);
 
@@ -88,10 +90,54 @@ export function CourseOrder({ courses, lengkap }: Props) {
     const item = sekarang[dari];
     const hasil = pindahkan(sekarang, dari, ke);
     if (hasil === sekarang) return;
+    const posisiLama = new Map(
+      [...(daftarRef.current?.querySelectorAll<HTMLElement>('[data-course-id]') ?? [])]
+        .map((element) => [element.dataset.courseId!, element.getBoundingClientRect()] as const),
+    );
     urutanRef.current = hasil;
     setUrutan(hasil);
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        daftarRef.current?.querySelectorAll<HTMLElement>('[data-course-id]').forEach((element) => {
+          const lama = posisiLama.get(element.dataset.courseId!);
+          if (!lama) return;
+          const baru = element.getBoundingClientRect();
+          const x = lama.left - baru.left;
+          const y = lama.top - baru.top;
+          if (x === 0 && y === 0) return;
+          element.animate(
+            [{ transform: `translate3d(${x}px, ${y}px, 0)` }, { transform: 'translate3d(0, 0, 0)' }],
+            { duration: 220, easing: 'cubic-bezier(.2,.8,.2,1)' },
+          );
+        });
+      }));
+    }
     if (item) setKabar(`${item.title} kini di urutan ${ke + 1}.`);
   }, []);
+
+  function mulaiSeret(event: ReactPointerEvent<HTMLButtonElement>, index: number): void {
+    if (event.button !== 0) return;
+    const kartu = event.currentTarget.closest<HTMLElement>('[data-course-id]');
+    if (!kartu) return;
+    event.preventDefault();
+    const kotak = kartu.getBoundingClientRect();
+    const visual = kartu.cloneNode(true) as HTMLElement;
+    visual.removeAttribute('data-indeks');
+    visual.removeAttribute('data-course-id');
+    visual.setAttribute('aria-hidden', 'true');
+    visual.setAttribute('inert', '');
+    visual.classList.add('orderDragGhost');
+    visual.style.width = `${kotak.width}px`;
+    visual.style.height = `${kotak.height}px`;
+    visual.style.transform = `translate3d(${kotak.left}px, ${kotak.top}px, 0)`;
+    document.body.append(visual);
+    visualSeretRef.current = {
+      elemen: visual,
+      offsetX: event.clientX - kotak.left,
+      offsetY: event.clientY - kotak.top,
+    };
+    setSeret(index);
+  }
 
   // ── Menyeret ────────────────────────────────────────────────
   //
@@ -107,6 +153,10 @@ export function CourseOrder({ courses, lengkap }: Props) {
 
     const bergerak = (event: PointerEvent) => {
       event.preventDefault();
+      const visual = visualSeretRef.current;
+      if (visual) {
+        visual.elemen.style.transform = `translate3d(${event.clientX - visual.offsetX}px, ${event.clientY - visual.offsetY}px, 0)`;
+      }
 
       // Menggulung sendiri di dekat tepi layar.
       //
@@ -123,9 +173,24 @@ export function CourseOrder({ courses, lengkap }: Props) {
 
       const bawah = document.elementFromPoint(event.clientX, event.clientY);
       const kartu = bawah?.closest<HTMLElement>('[data-indeks]');
-      if (!kartu || !daftarRef.current?.contains(kartu)) return;
-
-      const tujuan = Number.parseInt(kartu.dataset.indeks ?? '', 10);
+      const daftar = daftarRef.current;
+      if (!daftar) return;
+      let tujuan = kartu && daftar.contains(kartu)
+        ? Number.parseInt(kartu.dataset.indeks ?? '', 10)
+        : Number.NaN;
+      if (Number.isNaN(tujuan)) {
+        const batas = daftar.getBoundingClientRect();
+        if (event.clientX < batas.left || event.clientX > batas.right || event.clientY < batas.top || event.clientY > batas.bottom) return;
+        let jarak = Number.POSITIVE_INFINITY;
+        daftar.querySelectorAll<HTMLElement>('[data-indeks]').forEach((calon) => {
+          const kotak = calon.getBoundingClientRect();
+          const nilai = Math.hypot(event.clientX - (kotak.left + kotak.width / 2), event.clientY - (kotak.top + kotak.height / 2));
+          if (nilai < jarak) {
+            jarak = nilai;
+            tujuan = Number.parseInt(calon.dataset.indeks ?? '', 10);
+          }
+        });
+      }
       if (Number.isNaN(tujuan) || tujuan === seret) return;
 
       // Tidak ada ambang titik tengah di sini, tidak seperti pada daftar
@@ -139,7 +204,11 @@ export function CourseOrder({ courses, lengkap }: Props) {
       setSeret(tujuan);
     };
 
-    const lepas = () => setSeret(null);
+    const lepas = () => {
+      visualSeretRef.current?.elemen.remove();
+      visualSeretRef.current = null;
+      setSeret(null);
+    };
 
     window.addEventListener('pointermove', bergerak, { passive: false });
     window.addEventListener('pointerup', lepas);
@@ -150,6 +219,8 @@ export function CourseOrder({ courses, lengkap }: Props) {
       window.removeEventListener('pointercancel', lepas);
     };
   }, [seret, pindahKe]);
+
+  useEffect(() => () => visualSeretRef.current?.elemen.remove(), []);
 
   // ── Kotak nomor ─────────────────────────────────────────────
 
@@ -256,6 +327,7 @@ export function CourseOrder({ courses, lengkap }: Props) {
           <li
             key={course.id}
             data-indeks={index}
+            data-course-id={course.id}
             className={`card orderCardItem${seret === index ? ' orderCardDragging' : ''}`}
           >
             <span className={`cover${course.thumbnailUrl ? ' hasImage' : ''}`}>
@@ -271,10 +343,7 @@ export function CourseOrder({ courses, lengkap }: Props) {
                   className="orderGrip"
                   aria-label={`Pindahkan ${course.title}. Urutan sekarang ${index + 1} dari ${urutan.length}. Pakai tombol panah untuk menggeser satu langkah.`}
                   onPointerDown={(event) => {
-                    // Hanya tombol kiri tetikus atau sentuhan; klik kanan tidak
-                    // boleh memulai perpindahan yang tak bisa dibatalkan.
-                    if (event.button !== 0) return;
-                    setSeret(index);
+                    mulaiSeret(event, index);
                   }}
                   onKeyDown={(event) => {
                     // Kiri dan atas sama-sama mundur satu, kanan dan bawah maju
