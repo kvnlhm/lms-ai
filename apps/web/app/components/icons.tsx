@@ -251,3 +251,39 @@ export const MessageCircle = (props: IconProps) => (
     <path d="M8 12h.01M12 12h.01M16 12h.01" />
   </Base>
 );
+
+export const Package = (props: IconProps) => (
+  <Base {...props}><path d="M21 8l-9 5-9-5M3.3 6.5L12 2l8.7 4.5v11L12 22l-8.7-4.5zM12 13v9" /></Base>
+);
+
+export const CreditCard = (props: IconProps) => (
+  <Base {...props}><rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M2.5 10h19M6.5 15h3" /></Base>
+);
+
+export const Hash = (props: IconProps) => (
+  <Base {...props}><path d="M10 3L8 21M16 3l-2 18M4 9h17M3 15h17" /></Base>
+);
+
+export const BarChart = (props: IconProps) => (
+  <Base {...props}><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></Base>
+);
+
+export const Calendar = (props: IconProps) => (
+  <Base {...props}><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></Base>
+);
+
+export const Megaphone = (props: IconProps) => (
+  <Base {...props}><path d="M3 11v3a2 2 0 002 2h3l8 4V5L8 9H5a2 2 0 00-2 2zM8 16l1.5 5M19 9a4 4 0 010 7" /></Base>
+);
+
+export const Video = (props: IconProps) => (
+  <Base {...props}><rect x="2.5" y="5" width="14" height="14" rx="2" /><path d="M16.5 10l5-3v10l-5-3z" /></Base>
+);
+
+export const FileText = (props: IconProps) => (
+  <Base {...props}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M8 13h8M8 17h8M8 9h2" /></Base>
+);
+
+export const ClipboardList = (props: IconProps) => (
+  <Base {...props}><path d="M9 5H6a2 2 0 00-2 2v13a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-3" /><rect x="9" y="2" width="6" height="5" rx="2" /><path d="M9 12h7M9 16h7M7 12h.01M7 16h.01" /></Base>
+);

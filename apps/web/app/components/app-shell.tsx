@@ -4,7 +4,7 @@ import { serverClient, unwrap } from '../lib/api';
 import type { CurrentUser } from '../lib/session';
 import { can, initials } from '../lib/session';
 import { BrandMark } from './brand-mark';
-import { Bell, Courses, Dashboard, ExternalLink, Users } from './icons';
+import { AlertTriangle, BarChart, Bell, Calendar, ClipboardList, Courses, CreditCard, Dashboard, ExternalLink, FileText, Hash, Megaphone, MessageCircle, Package, Users, Video } from './icons';
 import { LogoutButton } from './logout-button';
 import { MasterMobileNav } from './master-mobile-nav';
 import { NavLink } from './nav-link';
@@ -28,27 +28,27 @@ const MASTER_NAV = [
   { href: '/master', label: 'Dashboard', icon: Dashboard, permission: 'courses.manage' },
   { href: '/master/courses', label: 'Kursus', icon: Courses, permission: 'courses.manage' },
   { href: '/master/users', label: 'Pengguna', icon: Users, permission: 'users.read' },
-  { href: '/master/access-tiers', label: 'Paket akses', icon: Courses, permission: 'commerce.manage' },
-  { href: '/master/transactions', label: 'Transaksi', icon: Dashboard, permission: 'commerce.manage' },
-  { href: '/master/forum', label: 'Forum', icon: Users, permission: 'discussions.moderate' },
-  { href: '/master/community', label: 'Channel komunitas', icon: Users, permission: 'discussions.moderate' },
-  { href: '/master/insights', label: 'Insight', icon: Dashboard, permission: 'analytics.read' },
+  { href: '/master/access-tiers', label: 'Paket akses', icon: Package, permission: 'commerce.manage' },
+  { href: '/master/transactions', label: 'Transaksi', icon: CreditCard, permission: 'commerce.manage' },
+  { href: '/master/forum', label: 'Forum', icon: MessageCircle, permission: 'discussions.moderate' },
+  { href: '/master/community', label: 'Channel komunitas', icon: Hash, permission: 'discussions.moderate' },
+  { href: '/master/insights', label: 'Insight', icon: BarChart, permission: 'analytics.read' },
   {
     href: '/master/live-sessions',
     label: 'Sesi langsung',
-    icon: Courses,
+    icon: Calendar,
     permission: 'courses.manage',
   },
   {
     href: '/master/announcements',
     label: 'Pengumuman',
-    icon: Dashboard,
+    icon: Megaphone,
     permission: 'announcements.manage',
   },
-  { href: '/master/media', label: 'Perpustakaan video', icon: Courses, permission: 'courses.manage' },
-  { href: '/master/reports', label: 'Laporan', icon: Dashboard, permission: 'reports.export' },
-  { href: '/master/errors', label: 'Galat', icon: Dashboard, permission: 'audit.read' },
-  { href: '/master/audit', label: 'Audit log', icon: Users, permission: 'audit.read' },
+  { href: '/master/media', label: 'Perpustakaan video', icon: Video, permission: 'courses.manage' },
+  { href: '/master/reports', label: 'Laporan', icon: FileText, permission: 'reports.export' },
+  { href: '/master/errors', label: 'Galat', icon: AlertTriangle, permission: 'audit.read' },
+  { href: '/master/audit', label: 'Audit log', icon: ClipboardList, permission: 'audit.read' },
 ] as const;
 
 /**
@@ -143,7 +143,7 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
             {/* Tanpa permission: Master juga menerima notifikasi diskusi baru
                 dan konten yang dilaporkan. */}
             <NavLink href="/notifications">
-              <span className="sideIcon"><Dashboard size={18} /></span>
+              <span className="sideIcon"><Bell size={18} /></span>
               Notifikasi
             </NavLink>
             <span className="sideLabel sideLabelSpace">Lihat akademi</span>
@@ -180,7 +180,7 @@ export async function AppShell({ user, children }: { user: CurrentUser; children
                   );
                 })}
                 <NavLink href="/notifications">
-                  <span className="sideIcon"><Dashboard size={18} /></span>
+                  <span className="sideIcon"><Bell size={18} /></span>
                   Notifikasi
                 </NavLink>
                 <Link className="navLink" href="/courses">
