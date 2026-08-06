@@ -4,7 +4,7 @@ import type { Schemas } from '@lms/api-client';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { ActionMenu } from '../../components/action-menu';
-import { Plus } from '../../components/icons';
+import { Plus, Users } from '../../components/icons';
 import { Modal } from '../../components/modal';
 import { useNotifier } from '../../components/notifier';
 import { StatusPill } from '../../components/status-pill';
@@ -231,8 +231,14 @@ export function UserManager({ users, total }: { users: User[]; total: number }) 
                 />
               </div>
               <div className="field">
-                <label htmlFor="newUserRole">Role</label>
-                <input id="newUserRole" value="Pelajar" readOnly aria-label="Role pengguna baru" />
+                <span className="userCreateLabel">Role</span>
+                <div className="userCreateRole" aria-label="Role pengguna baru: Pelajar">
+                  <span className="userCreateRoleIcon"><Users size={17} /></span>
+                  <span>
+                    <strong>Pelajar</strong>
+                    <small>Aktif setelah undangan diterima</small>
+                  </span>
+                </div>
               </div>
             </div>
             <div className="userCreateActions">
