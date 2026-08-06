@@ -35,6 +35,11 @@ export function Modal({
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const tutup = useRef<HTMLButtonElement>(null);
+  const onCloseTerkini = useRef(onClose);
+  const busyTerkini = useRef(busy);
+
+  onCloseTerkini.current = onClose;
+  busyTerkini.current = busy;
 
   useEffect(() => {
     const sebelumnya = document.activeElement as HTMLElement | null;
@@ -49,7 +54,7 @@ export function Modal({
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.preventDefault();
-        if (!busy) onClose();
+        if (!busyTerkini.current) onCloseTerkini.current();
         return;
       }
       if (event.key !== 'Tab' || !panel.current) return;
@@ -79,7 +84,7 @@ export function Modal({
       document.body.style.overflow = gulirSemula;
       sebelumnya?.focus();
     };
-  }, [busy, onClose]);
+  }, []);
 
   return (
     <div

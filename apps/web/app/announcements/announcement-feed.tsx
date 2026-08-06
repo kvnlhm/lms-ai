@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Schemas } from '@lms/api-client';
+import { Bell, Check } from '../components/icons';
 import { ApiError, browserClient, unwrapList } from '../lib/browser-api';
 
 type Announcement = Schemas['LearnerAnnouncementDto'];
@@ -73,7 +74,7 @@ export function AnnouncementFeed() {
     }
   }
 
-  if (loading) return <p className="stageNote">Memuat pengumuman…</p>;
+  if (loading) return <p className="stageNote announcementState">Memuat pengumuman…</p>;
   if (error) {
     return (
       <div className="notice noticeError" role="alert">
@@ -82,32 +83,43 @@ export function AnnouncementFeed() {
     );
   }
   if (items.length === 0) {
-    return <p className="stageNote">Belum ada pengumuman untukmu saat ini.</p>;
+    return <p className="stageNote announcementState">Belum ada pengumuman untukmu saat ini.</p>;
   }
 
   return (
     <>
-      <ul className="stack">
+      <ul className="announcementFeed">
         {items.map((item) => (
-          <li key={item.id} className={item.readAt === null ? 'card cardAccent' : 'card'}>
-            <div className="rowBetween">
-              <div>
-                <strong>{item.title}</strong>
-                <small className="muted">
+          <li
+            key={item.id}
+            className={`card announcementCard${item.readAt === null ? ' announcementCardUnread' : ''}`}
+          >
+            <div className="announcementIcon" aria-hidden="true">
+              <Bell size={20} />
+            </div>
+            <div className="announcementContent">
+              <div className="announcementHead">
+                <div>
+                  <h2>{item.title}</h2>
+                  <small className="announcementDate">
                   {formatDate(item.publishedAt)}
                   {item.endsAt ? ` · berlaku sampai ${formatDate(item.endsAt)}` : ''}
-                </small>
+                  </small>
+                </div>
+                {item.readAt === null ? <span className="pill pillAccent">Baru</span> : null}
               </div>
-              {item.readAt === null ? <span className="pill pillAccent">Baru</span> : null}
+              <p className="announcementBody">{item.body}</p>
+              {item.readAt === null ? (
+                <div className="announcementActions">
+                  <button className="announcementReadButton" type="button" onClick={() => void markRead(item.id)}>
+                    <Check size={16} />
+                    Tandai sudah dibaca
+                  </button>
+                </div>
+              ) : (
+                <span className="announcementReadState"><Check size={14} /> Sudah dibaca</span>
+              )}
             </div>
-            <p>{item.body}</p>
-            {item.readAt === null ? (
-              <span className="inlineActions">
-                <button className="btnTiny" type="button" onClick={() => void markRead(item.id)}>
-                  Tandai dibaca
-                </button>
-              </span>
-            ) : null}
           </li>
         ))}
       </ul>

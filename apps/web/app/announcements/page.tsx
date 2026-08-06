@@ -11,7 +11,7 @@ export default async function AnnouncementsPage() {
 
   return (
     <AppShell user={user}>
-      <main className={user.role === 'MASTER' ? 'masterContent' : 'wrap wrapNarrow'}>
+      <main className={user.role === 'MASTER' ? 'masterContent' : 'wrap learnerAnnouncementPage'}>
         <div className="pageHead">
           <div className="pageHeadMain">
             <span className="eyebrow">Kabar akademi</span>

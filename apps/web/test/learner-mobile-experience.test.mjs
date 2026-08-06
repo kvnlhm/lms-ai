@@ -8,6 +8,8 @@ const mobileNav = await readFile(new URL('../app/components/learner-mobile-nav.t
 const drawer = await readFile(new URL('../app/components/mobile-navigation.tsx', import.meta.url), 'utf8');
 const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const lesson = await readFile(new URL('../app/learn/[courseId]/[lessonId]/page.tsx', import.meta.url), 'utf8');
+const announcementsPage = await readFile(new URL('../app/announcements/page.tsx', import.meta.url), 'utf8');
+const announcementsFeed = await readFile(new URL('../app/announcements/announcement-feed.tsx', import.meta.url), 'utf8');
 
 test('Pelajar memiliki navigasi bawah mobile dengan empat tujuan utama', () => {
   assert.match(shell, /LearnerMobileNav unread=\{notifikasiBelumDibaca\}/);
@@ -47,4 +49,13 @@ test('Histori dan bookmark tidak ditampilkan pada pengalaman Pelajar', () => {
   assert.doesNotMatch(shell, /href: '\/history'|href: '\/bookmarks'/);
   assert.doesNotMatch(home, /Aktivitas terbaru|Riwayat belajar|learning-history/);
   assert.doesNotMatch(lesson, /BookmarkButton|bookmark-button/);
+});
+
+test('pengumuman Pelajar memakai kartu responsif dengan status baca yang jelas', () => {
+  assert.match(announcementsPage, /learnerAnnouncementPage/);
+  assert.match(announcementsFeed, /announcementCardUnread/);
+  assert.match(announcementsFeed, /announcementReadButton/);
+  assert.match(announcementsFeed, /Tandai sudah dibaca/);
+  assert.match(css, /\.announcementCard\{display:grid/);
+  assert.match(css, /\.announcementCardUnread\{border-color:/);
 });
