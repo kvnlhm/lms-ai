@@ -502,6 +502,32 @@ docker exec "$PG_CONTAINER" pg_dumpall -U "$PG_USER" --globals-only --no-role-pa
 MIGRATION="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   "select migration_name from _prisma_migrations where finished_at is not null order by finished_at desc limit 1")"
 
+# Volume diarsipkan lewat container helper supaya skrip tidak bergantung pada
+# tata letak /var/lib/docker, yang berubah bila storage driver diganti.
+#
+# Dijalankan sebelum MANIFEST ditulis supaya volume yang terlewat dapat ikut
+# tercatat di sana. Dump database tetap diambil lebih dulu, jadi invarian
+# rekonsiliasi di kepala berkas ini tidak berubah: volume hanya bertambah isi
+# setelah dump, tidak pernah berkurang.
+MISSING_VOLUMES=()
+for volume in "${VOLUMES[@]}"; do
+  full="${APP_UUID}_${volume}"
+  if ! docker volume inspect "$full" >/dev/null 2>&1; then
+    # Dicatat, bukan dibunyikan sebagai alarm. Volume yang belum ada karena
+    # fiturnya memang belum ter-deploy akan memicu peringatan setiap malam,
+    # dan peringatan yang berbohong lebih cepat diabaikan daripada tidak ada
+    # peringatan sama sekali. Tetapi diam sepenuhnya juga salah: baris log ini
+    # berbunyi sama untuk "belum ter-deploy" dan "seharusnya ada tapi hilang".
+    # MANIFEST-lah yang membedakannya, karena ia ikut tersimpan di dalam arsip
+    # dan terbaca kembali saat restore.
+    log "volume $full tidak ada, dilewati."
+    MISSING_VOLUMES+=("$volume")
+    continue
+  fi
+  docker run --rm -v "$full":/src:ro -w /src alpine:3 tar czf - . \
+    >"$WORK/${volume}.tar.gz" || die "arsip volume $full gagal."
+done
+
 {
   printf 'checkpoint: %s\n' "$STAMP"
   printf 'database: %s\n' "$PG_DB"
@@ -514,6 +540,7 @@ MIGRATION="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   printf 'catatan_pemulihan: berkas volume di atas tidak ada di arsip ini dan\n'
   printf '  harus diunggah ulang dari salinan master di luar server. Baris\n'
   printf '  video_assets beserta object key-nya tetap pulih dari database.dump.\n'
+  printf 'volume_dicari_tapi_hilang: %s\n' "${MISSING_VOLUMES[*]:-tidak ada}"
   printf '\njumlah_baris:\n'
   for table in "${COUNTED_TABLES[@]}"; do
     count="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
@@ -521,18 +548,6 @@ MIGRATION="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
     printf '  %s: %s\n' "$table" "$count"
   done
 } >"$WORK/MANIFEST.txt"
-
-# Volume diarsipkan lewat container helper supaya skrip tidak bergantung pada
-# tata letak /var/lib/docker, yang berubah bila storage driver diganti.
-for volume in "${VOLUMES[@]}"; do
-  full="${APP_UUID}_${volume}"
-  if ! docker volume inspect "$full" >/dev/null 2>&1; then
-    log "volume $full tidak ada, dilewati."
-    continue
-  fi
-  docker run --rm -v "$full":/src:ro -w /src alpine:3 tar czf - . \
-    >"$WORK/${volume}.tar.gz" || die "arsip volume $full gagal."
-done
 
 # Checksum ditulis di luar $WORK dulu; kalau langsung ke dalamnya, file
 # checksum yang masih kosong ikut terhitung oleh globnya sendiri.
