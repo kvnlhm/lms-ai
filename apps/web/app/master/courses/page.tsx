@@ -198,24 +198,26 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
         {/* Kepala tabel tetap dapat dipilih pada desktop. Di mobile kepala itu
             disembunyikan, jadi penyortiran juga tersedia sebagai kontrol native
             yang tidak memadat menjadi deretan tombol kecil. */}
-        <form className="sortBar" action="/master/courses">
-          {status ? <input type="hidden" name="status" value={status} /> : null}
-          {search ? <input type="hidden" name="search" value={search} /> : null}
-          <label className="sortField">
-            <span>Urutkan berdasarkan</span>
-            <select name="sort" defaultValue={keadaan.sort}>
-              {SORTS.map((sort) => <option key={sort.key} value={sort.key}>{sort.label}</option>)}
-            </select>
-          </label>
-          <label className="sortField">
-            <span>Arah</span>
-            <select name="order" defaultValue={keadaan.order}>
-              <option value="asc">Menaik ↑</option>
-              <option value="desc">Menurun ↓</option>
-            </select>
-          </label>
-          <button className="btn btnGhost" type="submit">Terapkan</button>
-        </form>
+        <section className="card sortCard" aria-label="Urutkan daftar kursus">
+          <form className="sortBar" action="/master/courses">
+            {status ? <input type="hidden" name="status" value={status} /> : null}
+            {search ? <input type="hidden" name="search" value={search} /> : null}
+            <label className="sortField">
+              <span>Urutkan berdasarkan</span>
+              <select name="sort" defaultValue={keadaan.sort}>
+                {SORTS.map((sort) => <option key={sort.key} value={sort.key}>{sort.label}</option>)}
+              </select>
+            </label>
+            <label className="sortField">
+              <span>Arah</span>
+              <select name="order" defaultValue={keadaan.order}>
+                <option value="asc">Menaik ↑</option>
+                <option value="desc">Menurun ↓</option>
+              </select>
+            </label>
+            <button className="btn" type="submit">Terapkan</button>
+          </form>
+        </section>
 
         {items.length === 0 ? (
           <div className="card empty">
@@ -255,7 +257,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
                 <tbody>
                   {items.map((course) => (
                     <tr key={course.id}>
-                      <td className="num cellPosition" data-label="Urutan">
+                      <td className="num cellPosition">
                         {course.position}
                       </td>
                       <td data-label="Kursus">

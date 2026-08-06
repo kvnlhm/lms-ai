@@ -54,15 +54,21 @@ test('sortir kursus memakai dropdown dan label kartu mobile tetap terbaca', asyn
     read('../app/styles.css'),
   ]);
 
-  assert.match(listPage, /<form className="sortBar" action="\/master\/courses">/);
+  assert.match(listPage, /<section className="card sortCard"[^>]*>[\s\S]*<form className="sortBar" action="\/master\/courses">/);
   assert.match(listPage, /<select name="sort" defaultValue=\{keadaan\.sort\}>/);
   assert.match(listPage, /<select name="order" defaultValue=\{keadaan\.order\}>/);
-  assert.match(listPage, />Terapkan<\/button>/);
+  assert.match(listPage, /<button className="btn" type="submit">Terapkan<\/button>/);
+  assert.doesNotMatch(listPage, /className="num cellPosition" data-label="Urutan"/);
   assert.match(listPage, /className="toolbar courseStatusBar"/);
-  assert.match(css, /\.sortBar\{[^}]*overflow-x:auto/);
+  assert.match(css, /\.sortCard\{[^}]*padding:14px/);
   assert.match(css, /\.sortField\{[^}]*white-space:nowrap/);
+  assert.match(css, /\.sortField select\{[^}]*background:var\(--raised\)/);
   assert.match(css, /@media \(max-width: 680px\)[\s\S]*table\.data td::before\s*\{[^}]*white-space:\s*nowrap/);
+  assert.match(css, /@media \(max-width: 680px\)[\s\S]*\.cellPosition::before\s*\{\s*content:\s*none/);
+  assert.match(css, /@media \(max-width: 680px\)[\s\S]*\.masterShell \.tableWrap::after\s*\{\s*display:\s*none/);
   assert.match(css, /@media\(max-width:680px\)[\s\S]*\.courseStatusBar\{[^}]*flex-wrap:nowrap[^}]*overflow-x:auto/);
+  assert.match(css, /@media\(max-width:680px\)[\s\S]*\.sortBar\{[^}]*flex-direction:column[^}]*overflow:visible/);
+  assert.match(css, /@media\(max-width:680px\)[\s\S]*\.sortField[^}]*width:100%/);
   assert.match(css, /@media \(max-width: 680px\)[\s\S]*\.courseTableTitle\s*\{[^}]*min-width:\s*0[^}]*flex:\s*1/);
 });
 
