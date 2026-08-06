@@ -28,6 +28,7 @@ export type CommunityPost = {
   canEdit: boolean; canDelete: boolean; canPin: boolean;
   channel: Pick<CommunitySubchannel, 'id' | 'slug' | 'name' | 'type' | 'isReadOnly' | 'allowReplies'> & { groupSlug: string; groupName: string };
   comments: CommunityComment[];
+  attachment: { id: string; originalName: string; mimeType: string; sizeBytes: string; createdAt: string } | null;
 };
 
 /** Tindakan atas sebuah tulisan; dibawa utuh agar mode chat dan feed sama persis. */
@@ -421,7 +422,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   };
 
   if (activeChannelSlug && activeSubchannelSlug && selected?.type === 'CHECKLIST') {
-    return <ChecklistPage posts={posts} selected={selected} currentUserName={currentUserName} pending={pending} message={message} canPost={Boolean(canPost)} checklistTitle={checklistTitle} setChecklistTitle={setChecklistTitle} body={body} setBody={setBody} publish={publish} simpanPost={simpanPost} hapusPost={hapusPost} adaYangLebihLama={posts.length < total} memuatLama={memuatLama} muatLebihLama={muatLebihLama} />;
+    return <ChecklistPage posts={posts} selected={selected} currentUserName={currentUserName} pending={pending} message={message} canPost={Boolean(canPost)} checklistTitle={checklistTitle} setChecklistTitle={setChecklistTitle} body={body} setBody={setBody} publish={publish} hapusPost={hapusPost} adaYangLebihLama={posts.length < total} memuatLama={memuatLama} muatLebihLama={muatLebihLama} />;
   }
 
   if (activeChannelSlug && activeSubchannelSlug && selected?.type === 'CHAT') {
@@ -478,7 +479,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   );
 }
 
-function ChecklistPage({ posts, selected, currentUserName, pending, message, canPost, checklistTitle, setChecklistTitle, body, setBody, publish, simpanPost, hapusPost, adaYangLebihLama, memuatLama, muatLebihLama }: {
+function ChecklistPage({ posts, selected, currentUserName, pending, message, canPost, checklistTitle, setChecklistTitle, body, setBody, publish, hapusPost, adaYangLebihLama, memuatLama, muatLebihLama }: {
   posts: CommunityPost[];
   selected: CommunitySubchannel & { groupSlug: string; groupName: string };
   currentUserName?: string;
@@ -490,30 +491,15 @@ function ChecklistPage({ posts, selected, currentUserName, pending, message, can
   body: string;
   setBody: (value: string) => void;
   publish: () => void;
-  simpanPost: (post: CommunityPost, body: string, checklistTitle?: string) => Promise<boolean>;
   hapusPost: (post: CommunityPost) => void;
   adaYangLebihLama: boolean;
   memuatLama: boolean;
   muatLebihLama: () => void;
 }) {
-  const [topikDisunting, setTopikDisunting] = useState<string | null>(null);
-  const [judulSuntingan, setJudulSuntingan] = useState('');
-  const [isiSuntingan, setIsiSuntingan] = useState('');
-  const [topikDisimpan, setTopikDisimpan] = useState<string | null>(null);
   const topics = [...posts].reverse();
   const selesai = posts.filter((post) => post.completedByMe).length;
   const persentase = posts.length === 0 ? 0 : Math.round((selesai / posts.length) * 100);
   const mulai = () => document.querySelector<HTMLAnchorElement>('.checklistTopic:not(.completed) .checklistTopicLink')?.click();
-  const mulaiSunting = (post: CommunityPost) => { setTopikDisunting(post.id); setJudulSuntingan(post.checklistTitle ?? ''); setIsiSuntingan(post.body); };
-  const batalSunting = () => { setTopikDisunting(null); setJudulSuntingan(''); setIsiSuntingan(''); };
-  const simpanTopik = async (post: CommunityPost) => {
-    const isi = isiSuntingan.trim();
-    const judul = judulSuntingan.trim();
-    if (!judul || !isi || (judul === post.checklistTitle && isi === post.body)) { batalSunting(); return; }
-    setTopikDisimpan(post.id);
-    if (await simpanPost(post, isi, judul)) batalSunting();
-    setTopikDisimpan(null);
-  };
 
   return <section className="checklistPage" aria-labelledby="checklist-title">
     <header className="checklistTitleBar"><span aria-hidden="true">☷</span><h1 id="checklist-title">{selected.name}</h1></header>
@@ -526,10 +512,8 @@ function ChecklistPage({ posts, selected, currentUserName, pending, message, can
           <summary><span>{selected.description || selected.name}</span><small>{posts.length} topik</small></summary>
           <div className="checklistTopics">{topics.map((post, index) => <div className={post.completedByMe ? 'checklistTopic completed' : 'checklistTopic'} key={post.id}>
             <span className={post.completedByMe ? 'checklistStatus completed' : 'checklistStatus'} aria-label={post.completedByMe ? 'Sudah selesai' : 'Belum selesai'}>{post.completedByMe ? '✓' : ''}</span>
-            {topikDisunting === post.id ? <div className="checklistTopicEditor"><input aria-label={`Judul topik ${index + 1}`} value={judulSuntingan} maxLength={160} autoFocus disabled={topikDisimpan === post.id} onChange={(event) => setJudulSuntingan(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') batalSunting(); }} /><textarea aria-label={`Konten topik ${index + 1}`} value={isiSuntingan} rows={5} maxLength={5000} disabled={topikDisimpan === post.id} onChange={(event) => setIsiSuntingan(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') batalSunting(); }} /><div className="checklistTopicEditorActions"><button className="btnSecondary" type="button" disabled={topikDisimpan === post.id} onClick={batalSunting}>Batal</button><button className="btn" type="button" disabled={topikDisimpan === post.id || !judulSuntingan.trim() || !isiSuntingan.trim()} onClick={() => void simpanTopik(post)}>{topikDisimpan === post.id ? 'Menyimpan…' : 'Simpan'}</button></div></div> : <>
-              <div className="checklistTopicMain"><Link className="checklistTopicLink" href={`/community/${selected.groupSlug}/${selected.slug}/${post.id}`}><span className="checklistTopicNumber">{index + 1}</span><span>{post.checklistTitle ?? 'Checklist tanpa judul'}<Diedit at={post.editedAt} /></span><span aria-hidden="true">›</span></Link></div>
-              <div className="checklistTopicActions">{post.canEdit ? <button type="button" onClick={() => mulaiSunting(post)}>Sunting</button> : null}{post.canDelete ? <button type="button" onClick={() => hapusPost(post)}>Hapus</button> : null}</div>
-            </>}
+            <div className="checklistTopicMain"><Link className="checklistTopicLink" href={`/community/${selected.groupSlug}/${selected.slug}/${post.id}`}><span className="checklistTopicNumber">{index + 1}</span><span>{post.checklistTitle ?? 'Checklist tanpa judul'}<Diedit at={post.editedAt} /></span><span aria-hidden="true">›</span></Link></div>
+            <div className="checklistTopicActions">{post.canEdit ? <Link href={`/community/${selected.groupSlug}/${selected.slug}/${post.id}/edit`}>Sunting</Link> : null}{post.canDelete ? <button type="button" onClick={() => hapusPost(post)}>Hapus</button> : null}</div>
           </div>)}</div>
         </details>
       </section>

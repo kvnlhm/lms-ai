@@ -968,6 +968,7 @@ users 1 ── * community_posts (author_id)
 community_posts 1 ── * community_comments
 community_posts 1 ── * community_reactions
 community_posts 1 ── * community_checklist_completions
+community_posts 1 ── 0..1 community_post_attachments
 users 1 ── * community_comments / community_reactions / community_checklist_completions
 ```
 

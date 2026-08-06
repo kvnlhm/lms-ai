@@ -2560,8 +2560,16 @@ memerlukan sesi aktif.
   halaman bacaan. Response membawa `previousPostId`, `nextPostId`, `position`,
   dan `total` berdasarkan urutan pembuatan item aktif dalam sub-channel yang
   sama; post non-checklist dan konten yang sudah diarsipkan tidak diterima.
+- `PUT|DELETE /community/checklist/{postId}/attachment` — mengunggah/mengganti
+  satu lampiran mentah atau menghapusnya. Hanya penulis atau pemegang
+  `discussions.moderate`; tipe yang diterima JPG, PNG, WebP, MP4, WebM, dan PDF
+  hingga 100 MB, serta isi berkas diverifikasi dari magic bytes.
+- `GET /community/checklist/{postId}/attachment` — menyajikan lampiran aktif
+  kepada pengguna login melalui internal redirect; object key tidak pernah
+  dikirim ke browser.
 - `POST /community/posts/{postId}/comments` — membalas post; ditolak bila
-  `allowReplies=false` (termasuk seluruh sub-channel `ANNOUNCEMENTS`).
+  `allowReplies=false` (termasuk seluruh `ANNOUNCEMENTS`) dan selalu ditolak
+  untuk item `CHECKLIST`.
 - `POST /community/posts/{postId}/reaction` — menyalakan/mematikan reaksi
   pengguna; ditolak untuk tulisan dalam sub-channel `ANNOUNCEMENTS`.
 - `PATCH /community/posts/{postId}/checklist` — menyimpan body

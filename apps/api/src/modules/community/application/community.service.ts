@@ -77,6 +77,7 @@ export class CommunityService {
         group: { select: { slug: true, name: true } },
       } },
       author: { select: authorSelect },
+      attachment: { select: { id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true } },
       reactions: { where: { userId }, select: { userId: true } },
       checklistCompletions: { where: { userId }, select: { userId: true } },
       comments: {
@@ -110,10 +111,11 @@ export class CommunityService {
     userId: string,
     canModerate: boolean,
   ) {
-    const { reactions, checklistCompletions, comments, channel, ...post } = row as T & { channel?: { type?: CommunityChannelType; group?: { slug: string; name: string } } };
+    const { reactions, checklistCompletions, comments, channel, attachment, ...post } = row as T & { channel?: { type?: CommunityChannelType; group?: { slug: string; name: string } }; attachment?: { sizeBytes: bigint } | null };
     const hakTulisan = this.hakTulisan(row.author.id, userId, canModerate);
     return {
       ...post,
+      attachment: attachment ? { ...attachment, sizeBytes: attachment.sizeBytes.toString() } : null,
       ...(channel ? { channel: {
         ...channel,
         groupSlug: channel.group?.slug,
@@ -238,7 +240,7 @@ export class CommunityService {
       select: { id: true, channel: { select: { type: true, allowReplies: true } } },
     });
     if (!post) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Post tidak ditemukan.');
-    if (!post.channel.allowReplies || post.channel.type === CommunityChannelType.ANNOUNCEMENTS) throw new AppError('PERMISSION_DENIED', 403, 'Sub-channel ini tidak menerima balasan.');
+    if (!post.channel.allowReplies || post.channel.type === CommunityChannelType.ANNOUNCEMENTS || post.channel.type === CommunityChannelType.CHECKLIST) throw new AppError('PERMISSION_DENIED', 403, 'Sub-channel ini tidak menerima balasan.');
     const comment = await this.prisma.$transaction(async (tx) => {
       const created = await tx.communityComment.create({
         data: { postId, authorId: userId, body: body.trim() },
@@ -432,6 +434,7 @@ export class CommunityService {
     });
     if (!post) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Post tidak ditemukan.');
     if (post.channel.type === CommunityChannelType.ANNOUNCEMENTS) throw new AppError('PERMISSION_DENIED', 403, 'Pengumuman tidak menerima reaksi.');
+    if (post.channel.type === CommunityChannelType.CHECKLIST) throw new AppError('PERMISSION_DENIED', 403, 'Checklist tidak menerima reaksi.');
     return this.prisma.$transaction(async (tx) => {
       const existing = await tx.communityReaction.findUnique({ where: { postId_userId: { postId, userId } } });
       if (existing) await tx.communityReaction.delete({ where: { postId_userId: { postId, userId } } });

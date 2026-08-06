@@ -49,6 +49,13 @@ export function ChecklistDetail({ item, listUrl }: { item: ChecklistDetailData; 
 
     <div className="checklistArticleBody">{item.body}</div>
 
+    {item.attachment ? <section className="checklistArticleAttachment" aria-label="Lampiran checklist">
+      {item.attachment.mimeType.startsWith('image/') ? <img src={`/api/v1/community/checklist/${item.id}/attachment`} alt={item.attachment.originalName} /> : null}
+      {item.attachment.mimeType.startsWith('video/') ? <video controls preload="metadata" src={`/api/v1/community/checklist/${item.id}/attachment`}>Browser tidak mendukung video ini.</video> : null}
+      {item.attachment.mimeType === 'application/pdf' ? <iframe src={`/api/v1/community/checklist/${item.id}/attachment`} title={item.attachment.originalName} /> : null}
+      <small>{item.attachment.originalName}</small>
+    </section> : null}
+
     <footer className="checklistArticleComplete">
       <label><input type="checkbox" checked={completed} disabled={pending} onChange={(event) => ubahStatus(event.target.checked)} /><span><strong>Saya sudah membaca konten ini</strong><small>Centang setelah selesai membaca untuk melanjutkan.</small></span></label>
       {message ? <p className="communityMessage" role="status">{message}</p> : null}

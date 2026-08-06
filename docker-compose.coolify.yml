@@ -98,6 +98,7 @@ services:
       - avatar-data:/data/avatars
       - course-thumbnail-data:/data/course-thumbnails
       - material-data:/data/materials
+      - community-attachment-data:/data/community-attachments
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -170,6 +171,7 @@ services:
     volumes:
       - video-data:/data/videos:ro
       - material-data:/data/materials:ro
+      - community-attachment-data:/data/community-attachments:ro
     # Sengaja tanpa depends_on.
     #
     # Dulu gateway menunggu web sehat, sehingga ia selalu yang terakhir menyala
@@ -190,3 +192,4 @@ volumes:
   avatar-data:
   course-thumbnail-data:
   material-data:
+  community-attachment-data:

@@ -41,7 +41,7 @@ DAILY_KEEP="${LMS_DAILY_KEEP:-14}"
 WEEKLY_KEEP="${LMS_WEEKLY_KEEP:-8}"
 MONTHLY_KEEP="${LMS_MONTHLY_KEEP:-12}"
 
-VOLUMES=(video-data avatar-data course-thumbnail-data material-data)
+VOLUMES=(video-data avatar-data course-thumbnail-data material-data community-attachment-data)
 COUNTED_TABLES=(users enrollments lesson_progress registration_orders video_assets forum_topics)
 
 ALERT_TO="${LMS_ALERT_TO:-}"

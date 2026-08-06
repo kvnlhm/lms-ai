@@ -20,7 +20,9 @@ penyelesaian sendiri, bukan satu status global.
   `user_id`. Keberadaan row berarti selesai; membatalkan centang menghapus row.
 - API membaca user dari session dan mengembalikan `completedByMe`; client tidak
   boleh memilih user lain.
-- Kontrol `allowReplies` dari ADR-030 tetap berlaku tanpa perubahan.
+- Kontrol `allowReplies` dari ADR-030 tetap berlaku untuk tipe selain checklist.
+- Item checklist tidak menerima komentar atau reaksi meskipun konfigurasi lama
+  masih menyimpan `allowReplies=true`.
 - Item checklist adalah konten terkelola. Pemegang `discussions.moderate` dapat
   menyunting item milik siapa pun; pengecualian ini tidak berlaku untuk post
   forum atau komentar biasa. Penyuntingan lintas pemilik dicatat di audit log.
@@ -29,6 +31,10 @@ penyelesaian sendiri, bukan satu status global.
   menampilkan judul sebagai tautan ke halaman bacaan khusus. Kontrol selesai
   ditempatkan setelah konten, dan navigasi berikutnya baru aktif setelah item
   dicentang. Tidak dibuat editor rich-text atau persistence paralel.
+- Penyuntingan pindah ke halaman editor khusus. Satu item dapat memiliki satu
+  `community_post_attachment` privat (JPG, PNG, WebP, MP4, WebM, atau PDF,
+  maksimal 100 MB). Penggantian berkas tidak menumpuk attachment lama; browser
+  mengambilnya lewat endpoint ber-session dan Nginx internal redirect.
 - Channel hanya dapat dihapus permanen setelah diarsipkan. Penghapusan
   menghapus sub-channel dan seluruh konten turunannya melalui foreign key
   cascade, serta dicatat di audit log sebelum data dihapus.
@@ -46,3 +52,6 @@ tetap membutuhkan `discussions.moderate`, menolak channel aktif, dan membuat
 audit event `community.channel.delete_permanently`.
 Penyuntingan item checklist milik pengguna lain membuat audit event
 `community.checklist_item.update` dengan isi sebelum dan sesudah perubahan.
+Unggah/penggantian dan penghapusan lampiran membuat event
+`community.checklist_attachment.update` dan
+`community.checklist_attachment.delete` tanpa mencatat isi berkas.

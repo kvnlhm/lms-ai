@@ -67,6 +67,8 @@ Retention final disesuaikan compliance dan biaya.
 - Persistent video volume termasuk backup scope.
 - Persistent avatar volume termasuk backup scope dan harus direstore bersama
   database agar referensi `user.avatar_url` tetap valid.
+- Persistent community attachment volume termasuk backup scope dan harus
+  direstore bersama tabel `community_post_attachments`.
 - Backup harus encrypted dan berada di failure domain berbeda dari VPS.
 - Database dan video volume diambil dalam checkpoint yang dapat direkonsiliasi
   menggunakan `video_asset_id` dan object key.

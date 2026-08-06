@@ -29,7 +29,7 @@ nilai() {
 
 bersih() {
   docker rm -f "$PG" >/dev/null 2>&1
-  for v in video-data avatar-data course-thumbnail-data material-data; do
+  for v in video-data avatar-data course-thumbnail-data material-data community-attachment-data; do
     docker volume rm "drill-$v" >/dev/null 2>&1
   done
   rm -rf "$KERJA"
@@ -98,7 +98,7 @@ catat "enrollment ACTIVE yang relasinya utuh ke user dan course: $tertaut"
 [[ "${tertaut:-0}" -gt 0 ]] && { nilai "relasi enrollment utuh" "ada" "ada"; } || { nilai "relasi enrollment utuh" "kosong" "ada"; }
 
 catat "memulihkan volume unggahan"
-for v in video-data avatar-data course-thumbnail-data material-data; do
+for v in video-data avatar-data course-thumbnail-data material-data community-attachment-data; do
   berkas="$KERJA/${v}.tar.gz"
   if [[ ! -f "$berkas" ]]; then catat "  $v: tidak ada di arsip"; continue; fi
   docker volume create "drill-$v" >/dev/null

@@ -94,6 +94,24 @@ describe('CommunityService hierarchy invariants', () => {
     expect(transaction).not.toHaveBeenCalled();
   });
 
+  test('item checklist tidak menerima komentar maupun reaksi', async () => {
+    const service = new CommunityService({
+      communityPost: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'post-1', reactionCount: 0, channel: { type: 'CHECKLIST', allowReplies: true },
+        }),
+      },
+      $transaction: jest.fn().mockResolvedValue({
+        id: 'comment-1', body: 'Balasan', editedAt: null, createdAt: new Date(), author: { id: 'student-1' },
+      }),
+    } as never, {} as never);
+
+    await expect(service.addComment('student-1', 'post-1', 'Balasan'))
+      .rejects.toMatchObject({ status: 403 });
+    await expect(service.toggleReaction('student-1', 'post-1'))
+      .rejects.toMatchObject({ status: 403 });
+  });
+
   test('sub-channel yang menonaktifkan balasan menolak komentar baru', async () => {
     const transaction = jest.fn();
     const service = new CommunityService({

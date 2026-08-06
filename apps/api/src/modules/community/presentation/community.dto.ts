@@ -128,6 +128,15 @@ export class CommunityPostDto {
   @ApiProperty({ type: CommunityPersonDto }) author!: CommunityPersonDto;
   @ApiProperty({ type: CommunityPostChannelDto }) channel!: CommunityPostChannelDto;
   @ApiProperty({ type: [CommunityCommentDto] }) comments!: CommunityCommentDto[];
+  @ApiProperty({ type: () => CommunityAttachmentDto, nullable: true }) attachment!: CommunityAttachmentDto | null;
+}
+
+export class CommunityAttachmentDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() originalName!: string;
+  @ApiProperty() mimeType!: string;
+  @ApiProperty({ description: 'Ukuran byte sebagai string agar aman untuk JSON.' }) sizeBytes!: string;
+  @ApiProperty() createdAt!: Date;
 }
 
 export class CommunityChecklistItemDto extends CommunityPostDto {

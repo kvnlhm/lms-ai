@@ -240,6 +240,16 @@ Saat `VIDEO_PROVIDER=SELF_HOSTED` sesuai ADR-014:
 - Sesuai ADR-027, player tidak menampilkan nama, email, atau kode sesi sebagai watermark.
 - Pemutar menyembunyikan kontrol unduh, picture-in-picture, dan remote playback yang didukung browser.
 - Concurrent playback dapat dibatasi melalui playback session.
+
+## 13a. Lampiran Checklist Komunitas
+
+- Upload hanya untuk penulis item atau pemegang `discussions.moderate`, dengan
+  session dan CSRF yang sama seperti mutation komunitas lain.
+- Allow-list MIME, magic-byte validation, batas 100 MB, nama yang disanitasi,
+  penulisan streaming ke berkas sementara, dan atomic rename wajib diterapkan.
+- Object key acak tidak dikirim ke browser. Pembacaan memerlukan session dan
+  disajikan melalui lokasi internal Nginx dengan `nosniff` serta `no-store`.
+- Volume lampiran masuk backup, restore drill, dan penyapu `.uploading`.
 - Account suspension dan enrollment expiry memblokir session baru.
 - Video tidak melewati bandwidth NestJS.
 - Signed playback dan kontrol browser mengurangi pengunduhan kasual, tetapi tidak dapat mencegah

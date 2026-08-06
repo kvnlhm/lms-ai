@@ -104,6 +104,10 @@ export interface AppConfig {
     storagePath: string;
     maxUploadBytes: number;
   };
+  communityAttachment: {
+    storagePath: string;
+    maxUploadBytes: number;
+  };
   /**
    * Penyapu unggahan yang tidak pernah selesai.
    *
@@ -293,6 +297,10 @@ export function loadConfig(): AppConfig {
     lessonMaterial: {
       storagePath: process.env.LESSON_MATERIAL_STORAGE_PATH ?? '/data/materials',
       maxUploadBytes: int('LESSON_MATERIAL_MAX_UPLOAD_BYTES', 52_428_800),
+    },
+    communityAttachment: {
+      storagePath: process.env.COMMUNITY_ATTACHMENT_STORAGE_PATH ?? '/data/community-attachments',
+      maxUploadBytes: int('COMMUNITY_ATTACHMENT_MAX_UPLOAD_BYTES', 104_857_600),
     },
     upload: {
       sweeperEnabled: bool('UPLOAD_SWEEPER_ENABLED', true),

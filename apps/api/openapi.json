@@ -10661,6 +10661,216 @@
         ]
       }
     },
+    "/api/v1/community/checklist/{postId}/attachment": {
+      "put": {
+        "operationId": "CommunityController_uploadChecklistAttachment",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/mp4": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/webm": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityAttachmentDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengunggah atau mengganti lampiran item checklist",
+        "tags": [
+          "community"
+        ]
+      },
+      "delete": {
+        "operationId": "CommunityController_removeChecklistAttachment",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      },
+      "get": {
+        "operationId": "CommunityController_checklistAttachment",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/v1/community/subchannels/{subchannelId}/posts": {
       "post": {
         "operationId": "CommunityController_createPost",
@@ -19448,6 +19658,35 @@
           "author"
         ]
       },
+      "CommunityAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "originalName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "string",
+            "description": "Ukuran byte sebagai string agar aman untuk JSON."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "createdAt"
+        ]
+      },
       "CommunityPostDto": {
         "type": "object",
         "properties": {
@@ -19515,6 +19754,14 @@
             "items": {
               "$ref": "#/components/schemas/CommunityCommentDto"
             }
+          },
+          "attachment": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunityAttachmentDto"
+              }
+            ]
           }
         },
         "required": [
@@ -19534,7 +19781,8 @@
           "canPin",
           "author",
           "channel",
-          "comments"
+          "comments",
+          "attachment"
         ]
       },
       "CommunityChecklistItemDto": {
@@ -19605,6 +19853,14 @@
               "$ref": "#/components/schemas/CommunityCommentDto"
             }
           },
+          "attachment": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunityAttachmentDto"
+              }
+            ]
+          },
           "previousPostId": {
             "type": "string",
             "nullable": true
@@ -19638,6 +19894,7 @@
           "author",
           "channel",
           "comments",
+          "attachment",
           "previousPostId",
           "nextPostId",
           "position",

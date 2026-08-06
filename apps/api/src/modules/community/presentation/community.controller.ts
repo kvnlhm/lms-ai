@@ -1,12 +1,14 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Header, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put, Query, Req, Res } from '@nestjs/common';
+import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
 import { PERMISSIONS } from '@lms/contracts';
 import { ApiEnvelope, ApiEnvelopeArray, ApiEnvelopeList, ApiErrors } from '../../../shared/http/api-envelope';
 import { Paginated } from '../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { CommunityService } from '../application/community.service';
-import { CommunityChannelDto, CommunityChecklistItemDto, CommunityChecklistResultDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityChecklistDto, SetCommunityPinnedDto } from './community.dto';
+import { CommunityAttachmentService } from '../application/community-attachment.service';
+import { CommunityAttachmentDto, CommunityChannelDto, CommunityChecklistItemDto, CommunityChecklistResultDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityChecklistDto, SetCommunityPinnedDto } from './community.dto';
 
 /** Pemegang izin moderasi diskusi; dipakai berulang di controller ini. */
 function moderator(user: AuthenticatedUser): boolean {
@@ -16,7 +18,7 @@ function moderator(user: AuthenticatedUser): boolean {
 @ApiTags('community')
 @Controller('community')
 export class CommunityController {
-  constructor(private readonly community: CommunityService) {}
+  constructor(private readonly community: CommunityService, private readonly attachments: CommunityAttachmentService) {}
 
   @Get('channels') @ApiOperation({ summary: 'Daftar channel komunitas aktif' }) @ApiEnvelopeArray(CommunityChannelDto) @ApiErrors(401)
   channels() { return this.community.listChannels(); }
@@ -42,6 +44,29 @@ export class CommunityController {
   @ApiEnvelope(CommunityChecklistItemDto) @ApiErrors(401, 404)
   checklistItem(@Param('postId', new ParseUUIDPipe()) postId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.community.getChecklistItem(user.id, postId, moderator(user));
+  }
+
+  @Put('checklist/:postId/attachment') @HttpCode(200)
+  @ApiConsumes('image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'application/pdf')
+  @ApiBody({ schema: { type: 'string', format: 'binary' } }) @ApiEnvelope(CommunityAttachmentDto)
+  @ApiOperation({ summary: 'Mengunggah atau mengganti lampiran item checklist' }) @ApiErrors(401, 403, 404, 422)
+  uploadChecklistAttachment(@Param('postId', new ParseUUIDPipe()) postId: string, @CurrentUser() user: AuthenticatedUser, @Req() request: Request) {
+    const rawLength = request.header('content-length');
+    return this.attachments.upload(postId, user.id, moderator(user), request, request.header('content-type'), request.header('x-file-name') ?? 'lampiran', rawLength ? Number.parseInt(rawLength, 10) : undefined);
+  }
+
+  @Delete('checklist/:postId/attachment') @HttpCode(204) @ApiErrors(401, 403, 404)
+  removeChecklistAttachment(@Param('postId', new ParseUUIDPipe()) postId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.attachments.remove(postId, user.id, moderator(user));
+  }
+
+  @Get('checklist/:postId/attachment') @Header('Cache-Control', 'private, no-store') @Header('X-Content-Type-Options', 'nosniff') @ApiErrors(401, 404)
+  async checklistAttachment(@Param('postId', new ParseUUIDPipe()) postId: string, @Res() response: Response) {
+    const attachment = await this.attachments.authorised(postId);
+    response.setHeader('X-Accel-Redirect', `/protected-community-attachments/${attachment.objectKey}`);
+    response.setHeader('Content-Type', attachment.mimeType);
+    response.setHeader('Content-Disposition', `inline; filename="${attachment.originalName.replace(/["\\]/g, '_')}"`);
+    response.status(200).end();
   }
 
   @Post('subchannels/:subchannelId/posts') @HttpCode(201) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)

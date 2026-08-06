@@ -2058,6 +2058,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/community/checklist/{postId}/attachment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CommunityController_checklistAttachment"];
+        /** Mengunggah atau mengganti lampiran item checklist */
+        put: operations["CommunityController_uploadChecklistAttachment"];
+        post?: never;
+        delete: operations["CommunityController_removeChecklistAttachment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/community/subchannels/{subchannelId}/posts": {
         parameters: {
             query?: never;
@@ -4456,6 +4473,15 @@ export interface components {
             canDelete: boolean;
             author: components["schemas"]["CommunityPersonDto"];
         };
+        CommunityAttachmentDto: {
+            id: string;
+            originalName: string;
+            mimeType: string;
+            /** @description Ukuran byte sebagai string agar aman untuk JSON. */
+            sizeBytes: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         CommunityPostDto: {
             id: string;
             /** @description Judul khusus item checklist. */
@@ -4485,6 +4511,7 @@ export interface components {
             author: components["schemas"]["CommunityPersonDto"];
             channel: components["schemas"]["CommunityPostChannelDto"];
             comments: components["schemas"]["CommunityCommentDto"][];
+            attachment: components["schemas"]["CommunityAttachmentDto"] | null;
         };
         CommunityChecklistItemDto: {
             id: string;
@@ -4515,6 +4542,7 @@ export interface components {
             author: components["schemas"]["CommunityPersonDto"];
             channel: components["schemas"]["CommunityPostChannelDto"];
             comments: components["schemas"]["CommunityCommentDto"][];
+            attachment: components["schemas"]["CommunityAttachmentDto"] | null;
             previousPostId: string | null;
             nextPostId: string | null;
             position: number;
@@ -11541,6 +11569,137 @@ export interface operations {
                 };
             };
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_checklistAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_uploadChecklistAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/jpeg": string;
+                "image/png": string;
+                "image/webp": string;
+                "video/mp4": string;
+                "video/webm": string;
+                "application/pdf": string;
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunityAttachmentDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_removeChecklistAttachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -11,6 +11,8 @@ const learnerSidebar = await readFile(new URL('../app/components/learner-channel
 const channelPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/page.tsx', import.meta.url), 'utf8');
 const checklistDetail = await readFile(new URL('../app/community/checklist-detail.tsx', import.meta.url), 'utf8').catch(() => '');
 const checklistDetailPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/[postId]/page.tsx', import.meta.url), 'utf8').catch(() => '');
+const checklistEdit = await readFile(new URL('../app/community/checklist-editor.tsx', import.meta.url), 'utf8').catch(() => '');
+const checklistEditPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/[postId]/edit/page.tsx', import.meta.url), 'utf8').catch(() => '');
 const masterShortcuts = await readFile(new URL('../app/components/master-community-shortcuts.tsx', import.meta.url), 'utf8');
 
 test('shell Pelajar menyediakan sidebar desktop dan memindahkannya ke drawer pada mobile', () => {
@@ -200,22 +202,30 @@ test('sub-channel checklist memakai halaman progres terstruktur seperti referens
   assert.match(css, /@media\(max-width:760px\)[\s\S]*\.checklistHero\{[^}]*grid-template-columns:1fr/);
 });
 
-test('Master dapat menyunting topik checklist secara inline dan form tambah mengikuti tema', () => {
-  assert.match(channel, /className="checklistTopicEditor"/);
-  assert.match(channel, /'Menyimpan…' : 'Simpan'/);
-  assert.match(channel, />Batal<\/button>/);
-  assert.match(channel, /simpanTopik/);
+test('Master menyunting topik checklist melalui halaman editor khusus', () => {
+  assert.doesNotMatch(channel, /className="checklistTopicEditor"/);
+  assert.match(channel, /href=\{`\/community\/\$\{selected\.groupSlug\}\/\$\{selected\.slug\}\/\$\{post\.id\}\/edit`\}/);
+  assert.match(checklistEditPage, /ChecklistEditor/);
+  assert.match(checklistEdit, /Simpan perubahan/);
   assert.match(css, /\.checklistComposer textarea\{[^}]*background:var\(--surface-2\)[^}]*color:var\(--text\)/);
-  assert.match(css, /\.checklistTopicEditor\{[^}]*grid-template-columns:minmax\(0,1fr\)/);
 });
 
 test('isi checklist dapat ditulis multiline seperti postingan', () => {
   assert.match(channel, /<textarea id="checklist-new-topic"/);
-  assert.match(channel, /className="checklistTopicEditor"><input[\s\S]*<textarea/);
+  assert.match(checklistEdit, /<textarea/);
   assert.match(channel, /className="checklistComposerCount">\{body\.length\}\/5000/);
   assert.match(checklistDetail, /className="checklistArticleBody"/);
   assert.match(css, /\.checklistArticleBody\{[^}]*white-space:pre-wrap/);
   assert.match(css, /\.checklistComposer textarea\{[^}]*resize:vertical/);
+});
+
+test('editor checklist menerima satu foto, video, atau PDF dan halaman bacaan menampilkannya', () => {
+  assert.match(checklistEdit, /accept="image\/jpeg,image\/png,image\/webp,video\/mp4,video\/webm,application\/pdf"/);
+  assert.match(checklistEdit, /uploadChecklistAttachment/);
+  assert.match(checklistDetail, /item\.attachment\.mimeType\.startsWith\('image\/'\)/);
+  assert.match(checklistDetail, /item\.attachment\.mimeType\.startsWith\('video\/'\)/);
+  assert.match(checklistDetail, /application\/pdf/);
+  assert.doesNotMatch(checklistDetail, /comment|balasan/i);
 });
 
 test('setiap checklist memiliki judul yang menuju halaman kontennya', () => {

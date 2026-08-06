@@ -92,6 +92,15 @@ server {
         types { application/pdf pdf; }
     }
 
+    location /protected-community-attachments/ {
+        internal;
+        alias /data/community-attachments/;
+        add_header Cache-Control "private, no-store" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Accept-Ranges bytes always;
+        types { image/jpeg jpg jpeg; image/png png; image/webp webp; video/mp4 mp4; video/webm webm; application/pdf pdf; }
+    }
+
     location / {
         set $web_upstream "web:3000";
         proxy_pass http://$web_upstream$request_uri;

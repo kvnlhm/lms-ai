@@ -2340,7 +2340,10 @@ Disetujui langsung oleh Product Owner pada 6 Agustus 2026.
   berupa teks multiline hingga 5.000 karakter. Memilih judul membuka halaman
   bacaan seperti postingan biasa. Setelah membaca, pelajar mencentang status
   selesai pada bagian akhir halaman sebelum melanjutkan ke item berikutnya.
-- Checklist tidak mendukung lampiran dan tidak menentukan progres kursus atau
-  kelulusan.
+- Penyuntingan item dilakukan pada halaman editor khusus. Setiap item dapat
+  memiliki satu lampiran privat berupa JPG, PNG, WebP, MP4, WebM, atau PDF
+  hingga 100 MB; lampiran ditampilkan pada halaman bacaan.
+- Checklist tidak menerima komentar maupun reaksi dan tidak menentukan progres
+  kursus atau kelulusan.
 
 Detail keputusan terdapat pada ADR-031.

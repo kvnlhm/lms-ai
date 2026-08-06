@@ -86,6 +86,7 @@ export class StaleUploadSweeper implements OnModuleInit, OnModuleDestroy {
       this.app.avatar.storagePath,
       this.app.courseThumbnail.storagePath,
       this.app.lessonMaterial.storagePath,
+      this.app.communityAttachment.storagePath,
     ];
   }
 
