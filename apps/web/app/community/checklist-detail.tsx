@@ -27,7 +27,7 @@ export function ChecklistDetail({ item, listUrl }: { item: ChecklistDetailData; 
     startTransition(async () => {
       try {
         const client = browserClient();
-        await unwrap(client.PATCH('/api/v1/community/posts/{postId}/checklist', {
+        unwrap(await client.PATCH('/api/v1/community/posts/{postId}/checklist', {
           params: { path: { postId: item.id } }, body: { completed: checked },
         }));
       } catch {
