@@ -10,6 +10,8 @@ export class CommunityPageQueryDto {
 
 export class CommunityPostBodyDto {
   @ApiProperty() @IsString() @MinLength(1) @MaxLength(5000) body!: string;
+  @ApiPropertyOptional({ description: 'Judul item; wajib untuk post dalam sub-channel CHECKLIST.' })
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(160) checklistTitle?: string;
 }
 
 export class CreateCommunityChannelDto {
@@ -108,6 +110,7 @@ export class CommunityCommentDto {
 
 export class CommunityPostDto {
   @ApiProperty() id!: string;
+  @ApiProperty({ type: String, nullable: true, description: 'Judul khusus item checklist.' }) checklistTitle!: string | null;
   @ApiProperty() body!: string;
   @ApiProperty() isPinned!: boolean;
   @ApiProperty() commentCount!: number;

@@ -19391,6 +19391,11 @@
           "id": {
             "type": "string"
           },
+          "checklistTitle": {
+            "type": "string",
+            "nullable": true,
+            "description": "Judul khusus item checklist."
+          },
           "body": {
             "type": "string"
           },
@@ -19451,6 +19456,7 @@
         },
         "required": [
           "id",
+          "checklistTitle",
           "body",
           "isPinned",
           "commentCount",
@@ -19473,6 +19479,10 @@
         "properties": {
           "body": {
             "type": "string"
+          },
+          "checklistTitle": {
+            "type": "string",
+            "description": "Judul item; wajib untuk post dalam sub-channel CHECKLIST."
           }
         },
         "required": [

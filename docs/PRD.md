@@ -2336,8 +2336,9 @@ Disetujui langsung oleh Product Owner pada 6 Agustus 2026.
 
 - Sub-channel checklist menyajikan setiap post sebagai satu item yang dapat
   dicentang secara terpisah oleh setiap pelajar.
-- Master dapat menulis dan menyunting isi item sebagai teks multiline hingga
-  5.000 karakter, seperti composer postingan, dan jeda baris tetap terlihat.
+- Setiap item memiliki judul ringkas hingga 160 karakter dan konten tersendiri
+  berupa teks multiline hingga 5.000 karakter. Memilih judul membuka atau
+  menutup konten item tersebut tanpa berpindah halaman.
 - Checklist tidak mendukung lampiran dan tidak menentukan progres kursus atau
   kelulusan.
 

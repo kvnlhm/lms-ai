@@ -253,6 +253,7 @@ model CommunityPost {
   id             String    @id @default(uuid()) @db.Uuid
   channelId      String    @map("channel_id") @db.Uuid
   authorId       String    @map("author_id") @db.Uuid
+  checklistTitle String?   @map("checklist_title")
   body           String
   isPinned       Boolean   @default(false) @map("is_pinned")
   commentCount   Int       @default(0) @map("comment_count")

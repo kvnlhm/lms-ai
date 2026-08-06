@@ -40,7 +40,7 @@ export class CommunityController {
 
   @Post('subchannels/:subchannelId/posts') @HttpCode(201) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)
   createPost(@Param('subchannelId', new ParseUUIDPipe()) subchannelId: string, @Body() dto: CommunityPostBodyDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.community.createPost(user.id, subchannelId, dto.body, moderator(user));
+    return this.community.createPost(user.id, subchannelId, dto.body, moderator(user), dto.checklistTitle);
   }
 
   @Get('channels/:channelSlug/:subchannelSlug/pinned') @ApiOperation({ summary: 'Tulisan tersemat pada sebuah sub-channel' }) @ApiEnvelopeArray(CommunityPostDto) @ApiErrors(401)
@@ -50,7 +50,7 @@ export class CommunityController {
 
   @Patch('posts/:postId') @ApiOperation({ summary: 'Mengubah tulisan sendiri' }) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)
   updatePost(@Param('postId', new ParseUUIDPipe()) postId: string, @Body() dto: CommunityPostBodyDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.community.updatePost(user.id, postId, dto.body, moderator(user));
+    return this.community.updatePost(user.id, postId, dto.body, moderator(user), dto.checklistTitle);
   }
 
   // Menyematkan adalah tindakan moderasi, jadi izinnya ditegakkan di sini —

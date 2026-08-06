@@ -4441,6 +4441,8 @@ export interface components {
         };
         CommunityPostDto: {
             id: string;
+            /** @description Judul khusus item checklist. */
+            checklistTitle: string | null;
             body: string;
             isPinned: boolean;
             commentCount: number;
@@ -4469,6 +4471,8 @@ export interface components {
         };
         CommunityPostBodyDto: {
             body: string;
+            /** @description Judul item; wajib untuk post dalam sub-channel CHECKLIST. */
+            checklistTitle?: string;
         };
         SetCommunityPinnedDto: {
             isPinned: boolean;

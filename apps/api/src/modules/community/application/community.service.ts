@@ -70,7 +70,7 @@ export class CommunityService {
 
   private postSelect(userId: string) {
     return {
-      id: true, body: true, isPinned: true, commentCount: true, reactionCount: true,
+      id: true, checklistTitle: true, body: true, isPinned: true, commentCount: true, reactionCount: true,
       lastActivityAt: true, editedAt: true, createdAt: true,
       channel: { select: {
         id: true, slug: true, name: true, type: true, isReadOnly: true, allowReplies: true,
@@ -189,12 +189,17 @@ export class CommunityService {
     return { total, items: rows.map((row) => ({ ...row, ...this.hak(row.author.id, userId, canModerate) })) };
   }
 
-  async createPost(userId: string, channelId: string, body: string, canModerate: boolean) {
+  async createPost(userId: string, channelId: string, body: string, canModerate: boolean, checklistTitle?: string) {
     const channel = await this.prisma.communityChannel.findFirst({ where: { id: channelId, archivedAt: null, group: { archivedAt: null } } });
     if (!channel) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
     if ((channel.isReadOnly || channel.type === CommunityChannelType.ANNOUNCEMENTS) && !canModerate) throw new AppError('PERMISSION_DENIED', 403, 'Channel ini hanya dapat ditulis oleh Master.');
+    if (channel.type === CommunityChannelType.CHECKLIST && !checklistTitle?.trim()) throw new AppError('VALIDATION_ERROR', 422, 'Judul checklist wajib diisi.');
     const row = await this.prisma.communityPost.create({
-      data: { channelId, authorId: userId, body: body.trim() }, select: this.postSelect(userId),
+      data: {
+        channelId, authorId: userId, body: body.trim(),
+        checklistTitle: channel.type === CommunityChannelType.CHECKLIST ? checklistTitle!.trim() : null,
+      },
+      select: this.postSelect(userId),
     });
     return this.sajikanPost(row, userId, canModerate);
   }
@@ -230,18 +235,22 @@ export class CommunityService {
    * dapat berubah diam-diam setelah dibaca orang lebih buruk daripada
    * percakapan yang tidak dapat diubah sama sekali.
    */
-  async updatePost(userId: string, postId: string, body: string, canModerate: boolean) {
+  async updatePost(userId: string, postId: string, body: string, canModerate: boolean, checklistTitle?: string) {
     const post = await this.prisma.communityPost.findFirst({
       where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } },
-      select: { id: true, authorId: true, body: true, channelId: true, channel: { select: { type: true } } },
+      select: { id: true, authorId: true, checklistTitle: true, body: true, channelId: true, channel: { select: { type: true } } },
     });
     if (!post) throw AppError.notFound();
     const mengelolaChecklist = canModerate && post.channel.type === CommunityChannelType.CHECKLIST;
     if (post.authorId !== userId && !mengelolaChecklist) throw AppError.permissionDenied();
+    if (post.channel.type === CommunityChannelType.CHECKLIST && !checklistTitle?.trim()) throw new AppError('VALIDATION_ERROR', 422, 'Judul checklist wajib diisi.');
 
     const row = await this.prisma.communityPost.update({
       where: { id: postId },
-      data: { body: body.trim(), editedAt: new Date() },
+      data: {
+        body: body.trim(), editedAt: new Date(),
+        ...(post.channel.type === CommunityChannelType.CHECKLIST ? { checklistTitle: checklistTitle!.trim() } : {}),
+      },
       select: this.postSelect(userId),
     });
     if (post.authorId !== userId) {
@@ -250,8 +259,8 @@ export class CommunityService {
         action: 'community.checklist_item.update',
         targetType: 'CommunityPost',
         targetId: postId,
-        before: { authorId: post.authorId, channelId: post.channelId, body: post.body },
-        after: { body: body.trim() },
+        before: { authorId: post.authorId, channelId: post.channelId, checklistTitle: post.checklistTitle, body: post.body },
+        after: { body: body.trim(), checklistTitle: checklistTitle!.trim() },
       });
     }
     return this.sajikanPost(row, userId, canModerate);

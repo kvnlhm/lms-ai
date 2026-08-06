@@ -204,14 +204,23 @@ test('Master dapat menyunting topik checklist secara inline dan form tambah meng
   assert.match(channel, />Batal<\/button>/);
   assert.match(channel, /simpanTopik/);
   assert.match(css, /\.checklistComposer textarea\{[^}]*background:var\(--surface-2\)[^}]*color:var\(--text\)/);
-  assert.match(css, /\.checklistTopicEditor\{[^}]*grid-template-columns:minmax\(0,1fr\) auto auto/);
+  assert.match(css, /\.checklistTopicEditor\{[^}]*grid-template-columns:minmax\(0,1fr\)/);
 });
 
 test('isi checklist dapat ditulis multiline seperti postingan', () => {
   assert.match(channel, /<textarea id="checklist-new-topic"/);
-  assert.match(channel, /className="checklistTopicEditor"><textarea/);
+  assert.match(channel, /className="checklistTopicEditor"><input[\s\S]*<textarea/);
   assert.match(channel, /className="checklistComposerCount">\{body\.length\}\/5000/);
-  assert.match(channel, /className="checklistTopicText"/);
-  assert.match(css, /\.checklistTopicText\{[^}]*white-space:pre-wrap/);
+  assert.match(channel, /className="checklistTopicBody"/);
+  assert.match(css, /\.checklistTopicBody\{[^}]*white-space:pre-wrap/);
   assert.match(css, /\.checklistComposer textarea\{[^}]*resize:vertical/);
+});
+
+test('setiap checklist memiliki judul dan konten yang dapat dibuka sendiri', () => {
+  assert.match(channel, /checklistTitle: string \| null/);
+  assert.match(channel, /id="checklist-new-title"/);
+  assert.match(channel, /className="checklistTopicToggle"/);
+  assert.match(channel, /aria-expanded=\{topikTerbuka === post\.id\}/);
+  assert.match(channel, /className="checklistTopicBody"/);
+  assert.match(css, /\.checklistTopicBody\{[^}]*white-space:pre-wrap/);
 });

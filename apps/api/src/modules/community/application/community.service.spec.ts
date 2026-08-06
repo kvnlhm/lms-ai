@@ -158,6 +158,43 @@ describe('CommunityService hierarchy invariants', () => {
     expect(upsert).not.toHaveBeenCalled();
   });
 
+  test('setiap item checklist menyimpan judul dan kontennya secara terpisah', async () => {
+    const create = jest.fn().mockResolvedValue({
+      id: 'post-1', checklistTitle: 'Lengkapi profil', body: 'Tambahkan foto dan bio.',
+      author: { id: 'master-1' }, comments: [], reactions: [], checklistCompletions: [],
+      channel: { id: 'sub-1', type: 'CHECKLIST', group: { slug: 'welcome', name: 'Welcome' } },
+    });
+    const service = new CommunityService({
+      communityChannel: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'sub-1', type: 'CHECKLIST', isReadOnly: true }),
+      },
+      communityPost: { create },
+    } as never, {} as never);
+
+    await expect(service.createPost(
+      'master-1', 'sub-1', 'Tambahkan foto dan bio.', true, 'Lengkapi profil',
+    )).resolves.toMatchObject({
+      checklistTitle: 'Lengkapi profil', body: 'Tambahkan foto dan bio.',
+    });
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ checklistTitle: 'Lengkapi profil', body: 'Tambahkan foto dan bio.' }),
+    }));
+  });
+
+  test('item checklist baru wajib memiliki judul', async () => {
+    const create = jest.fn();
+    const service = new CommunityService({
+      communityChannel: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'sub-1', type: 'CHECKLIST', isReadOnly: true }),
+      },
+      communityPost: { create },
+    } as never, {} as never);
+
+    await expect(service.createPost('master-1', 'sub-1', 'Konten saja', true))
+      .rejects.toMatchObject({ status: 422 });
+    expect(create).not.toHaveBeenCalled();
+  });
+
   test('channel aktif tidak dapat dihapus permanen', async () => {
     const remove = jest.fn();
     const service = new CommunityService({
@@ -174,22 +211,23 @@ describe('CommunityService hierarchy invariants', () => {
 
   test('Master dapat menyunting item checklist meskipun dibuat pengguna lain', async () => {
     const update = jest.fn().mockResolvedValue({
-      id: 'post-1', body: 'Isi baru', author: { id: 'student-1' }, comments: [], reactions: [], checklistCompletions: [],
+      id: 'post-1', checklistTitle: 'Judul baru', body: 'Isi baru', author: { id: 'student-1' }, comments: [], reactions: [], checklistCompletions: [],
       channel: { id: 'sub-1', type: 'CHECKLIST', group: { slug: 'welcome', name: 'Welcome' } },
     });
     const record = jest.fn();
     const service = new CommunityService({
       communityPost: {
-        findFirst: jest.fn().mockResolvedValue({ id: 'post-1', authorId: 'student-1', body: 'Isi lama', channelId: 'sub-1', channel: { type: 'CHECKLIST' } }),
+        findFirst: jest.fn().mockResolvedValue({ id: 'post-1', authorId: 'student-1', checklistTitle: 'Judul lama', body: 'Isi lama', channelId: 'sub-1', channel: { type: 'CHECKLIST' } }),
         update,
       },
     } as never, { record } as never);
 
-    await expect(service.updatePost('master-1', 'post-1', 'Isi baru', true))
+    await expect(service.updatePost('master-1', 'post-1', 'Isi baru', true, 'Judul baru'))
       .resolves.toMatchObject({ body: 'Isi baru', canEdit: true });
     expect(record).toHaveBeenCalledWith(expect.objectContaining({
       action: 'community.checklist_item.update', targetId: 'post-1',
-      before: expect.objectContaining({ body: 'Isi lama' }), after: { body: 'Isi baru' },
+      before: expect.objectContaining({ checklistTitle: 'Judul lama', body: 'Isi lama' }),
+      after: { checklistTitle: 'Judul baru', body: 'Isi baru' },
     }));
   });
 

@@ -24,9 +24,10 @@ penyelesaian sendiri, bukan satu status global.
 - Item checklist adalah konten terkelola. Pemegang `discussions.moderate` dapat
   menyunting item milik siapa pun; pengecualian ini tidak berlaku untuk post
   forum atau komentar biasa. Penyuntingan lintas pemilik dicatat di audit log.
-- Body item tetap memakai `community_posts.body`: composer dan editor menerima
-  teks multiline hingga 5.000 karakter serta mempertahankan jeda baris ketika
-  ditampilkan. Tidak dibuat persistence atau editor rich-text baru.
+- `community_posts.checklist_title` menyimpan judul item hingga 160 karakter,
+  sedangkan `body` menyimpan konten multiline hingga 5.000 karakter. Daftar
+  menampilkan judul dan konten dibuka secara inline per item. Tidak dibuat
+  editor rich-text atau persistence paralel.
 - Channel hanya dapat dihapus permanen setelah diarsipkan. Penghapusan
   menghapus sub-channel dan seluruh konten turunannya melalui foreign key
   cascade, serta dicatat di audit log sebelum data dihapus.

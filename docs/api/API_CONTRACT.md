@@ -2553,7 +2553,9 @@ memerlukan sesi aktif.
   berhalaman menaik. Daftar tulisan hanya membawa enam balasan **terakhir**
   sebagai pratinjau, sehingga sisanya harus diambil dari sini.
 - `POST /community/subchannels/{subchannelId}/posts` — membuat post; sub-channel
-  baca-saja dan tipe `ANNOUNCEMENTS` menuntut `discussions.moderate`.
+  baca-saja dan tipe `ANNOUNCEMENTS` menuntut `discussions.moderate`. Untuk
+  sub-channel `CHECKLIST`, body juga wajib membawa `checklistTitle` (1–160
+  karakter); `body` menjadi konten khusus item tersebut.
 - `POST /community/posts/{postId}/comments` — membalas post; ditolak bila
   `allowReplies=false` (termasuk seluruh sub-channel `ANNOUNCEMENTS`).
 - `POST /community/posts/{postId}/reaction` — menyalakan/mematikan reaksi
@@ -2564,7 +2566,8 @@ memerlukan sesi aktif.
   `completedByMe` agar status antar pelajar tidak tercampur.
 - `PATCH /community/posts/{postId}` dan `PATCH /community/comments/{commentId}` —
   mengubah tulisan sendiri. Pemegang `discussions.moderate` juga dapat mengubah
-  post bertipe `CHECKLIST` sebagai konten terkelola; perubahan lintas pemilik
+  post bertipe `CHECKLIST` sebagai konten terkelola; perubahan checklist
+  menerima `checklistTitle` dan `body`. Perubahan lintas pemilik
   dicatat sebagai `community.checklist_item.update`. Pengecualian itu tidak
   berlaku untuk post forum atau komentar biasa. Setiap perubahan mengisi
   `editedAt`.

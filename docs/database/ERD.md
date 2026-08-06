@@ -983,6 +983,8 @@ di `community_posts`, sedangkan service menerapkan aturan interaksinya.
 Untuk tipe `CHECKLIST`, satu post adalah satu item dan pasangan unik
 `community_checklist_completions(post_id, user_id)` menyimpan centang setiap
 pengguna secara terpisah. Tabel ini tidak mengubah progres atau kelulusan kursus.
+Kolom nullable `community_posts.checklist_title` menyimpan judul item; `body`
+tetap menyimpan kontennya. Kolom judul tidak dipakai oleh tipe post lain.
 
 `community_posts.edited_at` dan `community_comments.edited_at` berdiri sendiri,
 tidak diturunkan dari `updated_at`. Pada post, `updated_at` ikut berubah setiap

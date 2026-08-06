@@ -23,7 +23,7 @@ export type CommunityComment = {
   canEdit: boolean; canDelete: boolean;
 };
 export type CommunityPost = {
-  id: string; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
+  id: string; checklistTitle: string | null; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
   reactedByMe: boolean; completedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
   canEdit: boolean; canDelete: boolean; canPin: boolean;
   channel: Pick<CommunitySubchannel, 'id' | 'slug' | 'name' | 'type' | 'isReadOnly' | 'allowReplies'> & { groupSlug: string; groupName: string };
@@ -96,6 +96,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   const subchannels = useMemo(() => channels.flatMap((group) => group.subchannels.map((item) => ({ ...item, groupSlug: group.slug, groupName: group.name }))), [channels]);
   const [channelId, setChannelId] = useState(() => subchannels.find((item) => item.slug === activeSubchannelSlug && item.groupSlug === activeChannelSlug)?.id ?? subchannels.find((item) => item.type !== 'ANNOUNCEMENTS' && !item.isReadOnly)?.id ?? subchannels.find((item) => item.type !== 'ANNOUNCEMENTS')?.id ?? subchannels[0]?.id ?? '');
   const [body, setBody] = useState('');
+  const [checklistTitle, setChecklistTitle] = useState('');
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
   const [pending, startTransition] = useTransition();
@@ -209,12 +210,13 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
 
   function publish() {
     if (!channelId || !body.trim()) return;
+    if (selected?.type === 'CHECKLIST' && !checklistTitle.trim()) return;
     startTransition(async () => {
       try {
-        const result = await browserClient().POST('/api/v1/community/subchannels/{subchannelId}/posts', { params: { path: { subchannelId: channelId } }, body: { body: body.trim() } });
+        const result = await browserClient().POST('/api/v1/community/subchannels/{subchannelId}/posts', { params: { path: { subchannelId: channelId } }, body: { body: body.trim(), ...(selected?.type === 'CHECKLIST' ? { checklistTitle: checklistTitle.trim() } : {}) } });
         const created = unwrap<CommunityPost>(result);
         setPosts((current) => [created, ...current]); setTotal((current) => current + 1);
-        setBody(''); setMessage(activeSubchannelSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
+        setBody(''); setChecklistTitle(''); setMessage(activeSubchannelSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
       } catch (error) { setMessage(error instanceof Error ? error.message : activeSubchannelSlug ? 'Pesan gagal dikirim.' : 'Post gagal diterbitkan.'); }
     });
   }
@@ -265,14 +267,14 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
     setPosts((current) => current.map((post) => (post.id === postId ? ubah(post) : post)));
   }
 
-  async function simpanPost(post: CommunityPost, bodyBaru: string): Promise<boolean> {
+  async function simpanPost(post: CommunityPost, bodyBaru: string, judulChecklist?: string): Promise<boolean> {
     try {
       const hasil = unwrap<CommunityPost>(
         await browserClient().PATCH('/api/v1/community/posts/{postId}', {
-          params: { path: { postId: post.id } }, body: { body: bodyBaru },
+          params: { path: { postId: post.id } }, body: { body: bodyBaru, ...(judulChecklist ? { checklistTitle: judulChecklist } : {}) },
         }),
       );
-      gantiPost(post.id, (lama) => ({ ...lama, body: hasil.body, editedAt: hasil.editedAt }));
+      gantiPost(post.id, (lama) => ({ ...lama, checklistTitle: hasil.checklistTitle, body: hasil.body, editedAt: hasil.editedAt }));
       return true;
     } catch (error) {
       void notifier.error('Perubahan tidak tersimpan', { text: error instanceof Error ? error.message : undefined });
@@ -288,7 +290,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
       });
       // `null` berarti dibatalkan; teks yang sama persis tidak perlu dikirim.
       if (baru === null || baru === post.body) return;
-      await simpanPost(post, baru);
+      await simpanPost(post, baru, post.channel.type === 'CHECKLIST' ? post.checklistTitle ?? undefined : undefined);
     })();
   }
 
@@ -419,7 +421,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   };
 
   if (activeChannelSlug && activeSubchannelSlug && selected?.type === 'CHECKLIST') {
-    return <ChecklistPage posts={posts} selected={selected} currentUserName={currentUserName} pending={pending} message={message} canPost={Boolean(canPost)} body={body} setBody={setBody} publish={publish} checklist={checklist} simpanPost={simpanPost} hapusPost={hapusPost} adaYangLebihLama={posts.length < total} memuatLama={memuatLama} muatLebihLama={muatLebihLama} />;
+    return <ChecklistPage posts={posts} selected={selected} currentUserName={currentUserName} pending={pending} message={message} canPost={Boolean(canPost)} checklistTitle={checklistTitle} setChecklistTitle={setChecklistTitle} body={body} setBody={setBody} publish={publish} checklist={checklist} simpanPost={simpanPost} hapusPost={hapusPost} adaYangLebihLama={posts.length < total} memuatLama={memuatLama} muatLebihLama={muatLebihLama} />;
   }
 
   if (activeChannelSlug && activeSubchannelSlug && selected?.type === 'CHAT') {
@@ -456,7 +458,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
           {posts.map((post) => (
             <article className="communityPost card" key={post.id}>
               <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.groupSlug}/${post.channel.slug}`}>{post.channel.groupName} / {COMMUNITY_CHANNEL_TYPES[post.channel.type].icon} {post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
-              {post.channel.type === 'CHECKLIST' ? <label className={post.completedByMe ? 'checklistItem completed' : 'checklistItem'}><input type="checkbox" checked={post.completedByMe} disabled={pending} onChange={() => checklist(post)} /><span>{post.body}<Diedit at={post.editedAt} /></span></label> : <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>}
+              {post.channel.type === 'CHECKLIST' ? <div className={post.completedByMe ? 'checklistItem completed' : 'checklistItem'}><label><input type="checkbox" checked={post.completedByMe} disabled={pending} onChange={() => checklist(post)} /><strong>{post.checklistTitle ?? 'Checklist tanpa judul'}<Diedit at={post.editedAt} /></strong></label>{post.body ? <p>{post.body}</p> : null}</div> : <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>}
               <div className="postActions">{post.channel.type === 'ANNOUNCEMENTS' ? <span>Pengumuman resmi</span> : <button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button>}{post.channel.allowReplies ? <span>◯ {post.commentCount} balasan</span> : <span>Balasan ditutup</span>}<PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
               {post.channel.allowReplies ? <><MuatBalasan post={post} aksi={aksi} />{balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}<div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div></> : null}
             </article>
@@ -476,37 +478,42 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   );
 }
 
-function ChecklistPage({ posts, selected, currentUserName, pending, message, canPost, body, setBody, publish, checklist, simpanPost, hapusPost, adaYangLebihLama, memuatLama, muatLebihLama }: {
+function ChecklistPage({ posts, selected, currentUserName, pending, message, canPost, checklistTitle, setChecklistTitle, body, setBody, publish, checklist, simpanPost, hapusPost, adaYangLebihLama, memuatLama, muatLebihLama }: {
   posts: CommunityPost[];
   selected: CommunitySubchannel & { groupSlug: string; groupName: string };
   currentUserName?: string;
   pending: boolean;
   message: string;
   canPost: boolean;
+  checklistTitle: string;
+  setChecklistTitle: (value: string) => void;
   body: string;
   setBody: (value: string) => void;
   publish: () => void;
   checklist: (post: CommunityPost) => void;
-  simpanPost: (post: CommunityPost, body: string) => Promise<boolean>;
+  simpanPost: (post: CommunityPost, body: string, checklistTitle?: string) => Promise<boolean>;
   hapusPost: (post: CommunityPost) => void;
   adaYangLebihLama: boolean;
   memuatLama: boolean;
   muatLebihLama: () => void;
 }) {
   const [topikDisunting, setTopikDisunting] = useState<string | null>(null);
+  const [judulSuntingan, setJudulSuntingan] = useState('');
   const [isiSuntingan, setIsiSuntingan] = useState('');
   const [topikDisimpan, setTopikDisimpan] = useState<string | null>(null);
+  const [topikTerbuka, setTopikTerbuka] = useState<string | null>(null);
   const topics = [...posts].reverse();
   const selesai = posts.filter((post) => post.completedByMe).length;
   const persentase = posts.length === 0 ? 0 : Math.round((selesai / posts.length) * 100);
   const mulai = () => document.querySelector<HTMLInputElement>('.checklistTopic input:not(:checked)')?.focus();
-  const mulaiSunting = (post: CommunityPost) => { setTopikDisunting(post.id); setIsiSuntingan(post.body); };
-  const batalSunting = () => { setTopikDisunting(null); setIsiSuntingan(''); };
+  const mulaiSunting = (post: CommunityPost) => { setTopikDisunting(post.id); setJudulSuntingan(post.checklistTitle ?? ''); setIsiSuntingan(post.body); };
+  const batalSunting = () => { setTopikDisunting(null); setJudulSuntingan(''); setIsiSuntingan(''); };
   const simpanTopik = async (post: CommunityPost) => {
     const isi = isiSuntingan.trim();
-    if (!isi || isi === post.body) { batalSunting(); return; }
+    const judul = judulSuntingan.trim();
+    if (!judul || !isi || (judul === post.checklistTitle && isi === post.body)) { batalSunting(); return; }
     setTopikDisimpan(post.id);
-    if (await simpanPost(post, isi)) batalSunting();
+    if (await simpanPost(post, isi, judul)) batalSunting();
     setTopikDisimpan(null);
   };
 
@@ -521,8 +528,8 @@ function ChecklistPage({ posts, selected, currentUserName, pending, message, can
           <summary><span>{selected.description || selected.name}</span><small>{posts.length} topik</small></summary>
           <div className="checklistTopics">{topics.map((post, index) => <div className={post.completedByMe ? 'checklistTopic completed' : 'checklistTopic'} key={post.id}>
             <input id={`checklist-topic-${post.id}`} type="checkbox" checked={post.completedByMe} disabled={pending || topikDisunting === post.id} onChange={() => checklist(post)} />
-            {topikDisunting === post.id ? <div className="checklistTopicEditor"><textarea aria-label={`Edit topik ${index + 1}`} value={isiSuntingan} rows={4} maxLength={5000} autoFocus disabled={topikDisimpan === post.id} onChange={(event) => setIsiSuntingan(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') batalSunting(); }} /><button className="btnSecondary" type="button" disabled={topikDisimpan === post.id} onClick={batalSunting}>Batal</button><button className="btn" type="button" disabled={topikDisimpan === post.id || !isiSuntingan.trim()} onClick={() => void simpanTopik(post)}>{topikDisimpan === post.id ? 'Menyimpan…' : 'Simpan'}</button></div> : <>
-              <label htmlFor={`checklist-topic-${post.id}`}><span className="checklistTopicNumber">{index + 1}</span><span className="checklistTopicText">{post.body}<Diedit at={post.editedAt} /></span></label>
+            {topikDisunting === post.id ? <div className="checklistTopicEditor"><input aria-label={`Judul topik ${index + 1}`} value={judulSuntingan} maxLength={160} autoFocus disabled={topikDisimpan === post.id} onChange={(event) => setJudulSuntingan(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') batalSunting(); }} /><textarea aria-label={`Konten topik ${index + 1}`} value={isiSuntingan} rows={5} maxLength={5000} disabled={topikDisimpan === post.id} onChange={(event) => setIsiSuntingan(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') batalSunting(); }} /><div className="checklistTopicEditorActions"><button className="btnSecondary" type="button" disabled={topikDisimpan === post.id} onClick={batalSunting}>Batal</button><button className="btn" type="button" disabled={topikDisimpan === post.id || !judulSuntingan.trim() || !isiSuntingan.trim()} onClick={() => void simpanTopik(post)}>{topikDisimpan === post.id ? 'Menyimpan…' : 'Simpan'}</button></div></div> : <>
+              <div className="checklistTopicMain"><button className="checklistTopicToggle" type="button" aria-expanded={topikTerbuka === post.id} aria-controls={`checklist-content-${post.id}`} onClick={() => setTopikTerbuka((current) => current === post.id ? null : post.id)}><span className="checklistTopicNumber">{index + 1}</span><span>{post.checklistTitle ?? 'Checklist tanpa judul'}<Diedit at={post.editedAt} /></span><span aria-hidden="true">⌄</span></button>{topikTerbuka === post.id ? <div className="checklistTopicBody" id={`checklist-content-${post.id}`}>{post.body || 'Konten belum ditambahkan.'}</div> : null}</div>
               <div className="checklistTopicActions">{post.canEdit ? <button type="button" onClick={() => mulaiSunting(post)}>Sunting</button> : null}{post.canDelete ? <button type="button" onClick={() => hapusPost(post)}>Hapus</button> : null}</div>
             </>}
           </div>)}</div>
@@ -530,7 +537,7 @@ function ChecklistPage({ posts, selected, currentUserName, pending, message, can
       </section>
       {posts.length === 0 ? <div className="checklistEmpty"><strong>Belum ada topik.</strong><span>{canPost ? 'Tambahkan item pertama melalui form di bawah.' : 'Master belum menambahkan item checklist.'}</span></div> : null}
       {adaYangLebihLama ? <button className="btnSecondary checklistLoad" type="button" disabled={memuatLama} onClick={muatLebihLama}>{memuatLama ? 'Memuat…' : 'Muat topik lainnya'}</button> : null}
-      {canPost ? <div className="checklistComposer"><label htmlFor="checklist-new-topic">Tambah konten checklist</label><textarea id="checklist-new-topic" value={body} rows={4} onChange={(event) => setBody(event.target.value)} placeholder="Tulis langkah, penjelasan, atau arahan seperti postingan…" maxLength={5000} /><div className="checklistComposerFoot"><span className="checklistComposerCount">{body.length}/5000</span><button className="btn" type="button" disabled={pending || !body.trim()} onClick={publish}>Tambahkan</button></div></div> : null}
+      {canPost ? <div className="checklistComposer"><label htmlFor="checklist-new-title">Tambah checklist</label><input id="checklist-new-title" value={checklistTitle} onChange={(event) => setChecklistTitle(event.target.value)} placeholder="Judul checklist" maxLength={160} /><label htmlFor="checklist-new-topic">Konten</label><textarea id="checklist-new-topic" value={body} rows={5} onChange={(event) => setBody(event.target.value)} placeholder="Tulis penjelasan atau arahan untuk checklist ini…" maxLength={5000} /><div className="checklistComposerFoot"><span className="checklistComposerCount">{body.length}/5000</span><button className="btn" type="button" disabled={pending || !checklistTitle.trim() || !body.trim()} onClick={publish}>Tambahkan</button></div></div> : null}
       {message ? <p className="communityMessage" role="status">{message}</p> : null}
     </div>
   </section>;
