@@ -51,6 +51,19 @@ Monthly: 12 bulan
 
 Retention final disesuaikan compliance dan biaya.
 
+**Retensi harian lokal yang berlaku sejak 6 Agustus 2026: 2 checkpoint**, bukan
+14 hari seperti baseline di atas. Keputusan pemilik, atas dasar bahwa kedalaman
+pemulihan yang sesungguhnya berada di salinan offsite — `LMS_OFFSITE_KEEP=30`
+checkpoint di Cloudflare R2, pada failure domain yang berbeda dari VPS ini.
+Keranjang lokal hanya melayani pemulihan cepat tanpa perlu mengunduh apa pun.
+
+Konsekuensinya harus disadari sebelum dibutuhkan: kerusakan data yang baru
+ketahuan lebih dari dua hari setelah terjadi tidak lagi ada di disk ini, dan
+harus diambil dari R2. Jalur itu karenanya berhenti menjadi cadangan kedua dan
+menjadi satu-satunya cadangan untuk rentang di luar dua hari — kegagalan
+unggahan offsite kini jauh lebih serius daripada sebelumnya, dan peringatannya
+tidak boleh diabaikan.
+
 ---
 
 ## 4. Object Storage
@@ -65,6 +78,11 @@ Retention final disesuaikan compliance dan biaya.
 ### Self-hosted video (ADR-014)
 
 - Persistent video volume termasuk backup scope.
+  **Penyimpangan yang disengaja sejak 6 Agustus 2026:** volume ini tidak lagi
+  ikut dicadangkan. Lihat "Pengecualian video-data" di §4a untuk alasan,
+  konsekuensi, dan syaratnya. Baris ini sengaja dibiarkan utuh: yang berubah
+  adalah praktiknya, bukan apa yang diminta ADR-014, dan penyimpangan yang
+  menghapus jejak persyaratan aslinya berhenti terbaca sebagai penyimpangan.
 - Persistent avatar volume termasuk backup scope dan harus direstore bersama
   database agar referensi `user.avatar_url` tetap valid.
 - Persistent community attachment volume termasuk backup scope dan harus
@@ -125,9 +143,10 @@ terjangkau dan penggunaan disk, dan mengirimnya lewat Resend ke alamat yang
 sama.
 
 18:30 UTC setara 01:30 WIB. Hasilnya ada di `/var/backups/lms-ai/` dengan
-tiga keranjang — `daily/`, `weekly/`, `monthly/` — sesuai retention baseline
-§3. Weekly dan monthly berupa hardlink, jadi retensi panjang tidak memakan
-ruang tambahan. Ukuran satu checkpoint saat ini 4,4 MB.
+tiga keranjang — `daily/`, `weekly/`, `monthly/`. `daily/` menyimpan 2
+checkpoint terakhir (lihat §3); weekly dan monthly berupa hardlink, jadi
+retensi panjang tidak memakan ruang tambahan. Ukuran satu checkpoint saat ini
+24 MB, sehingga menyimpan riwayat bulanan praktis tidak berbiaya.
 
 Isi tiap berkas `lms-<stempel>.tar`:
 
@@ -135,11 +154,55 @@ Isi tiap berkas `lms-<stempel>.tar`:
 |---|---|
 | `database.dump` | `pg_dump --format=custom --no-owner` |
 | `globals.sql` | definisi role, tanpa kata sandi |
-| `video-data.tar.gz` | volume video self-hosted |
 | `avatar-data.tar.gz` | volume foto profil |
 | `course-thumbnail-data.tar.gz` | volume thumbnail kursus |
-| `MANIFEST.txt` | versi migrasi terakhir dan jumlah baris tabel inti |
+| `material-data.tar.gz` | volume materi kursus |
+| `MANIFEST.txt` | versi migrasi, jumlah baris, dan volume yang dikecualikan |
 | `SHA256SUMS` | checksum seluruh berkas di atas |
+
+### Pengecualian video-data
+
+`video-data.tar.gz` **tidak lagi ada di dalam arsip.** Sampai 6 Agustus 2026
+volume video ikut dikemas utuh setiap malam. Volumenya 3,3 GB dan nyaris tidak
+berubah, sementara `database.dump` hanya 350 KB — sehingga satu checkpoint
+menjadi 3,2 GB dan retensi 14 checkpoint memakan 45 GB. Malam itu disk 96 GB
+benar-benar penuh dan backup 18:30 gagal pada langkah pengarsipan video:
+cadangan yang menghabiskan disknya sendiri berhenti menjadi cadangan.
+
+Berkas master video disimpan pemilik di luar server, jadi VPS ini tidak perlu
+menjadi tempat penyimpanan keduanya.
+
+**Syarat yang membuat keputusan ini tetap aman:**
+
+- Salinan master di luar server harus benar-benar ada dan diperbarui ketika
+  video baru diunggah. Tidak ada yang memeriksa ini secara otomatis; inilah
+  satu-satunya titik yang bergantung sepenuhnya pada disiplin manusia.
+- Salinan itu sebaiknya tidak tunggal. Satu disk pribadi tanpa checksum dan
+  tanpa versi adalah satu kegagalan perangkat keras dari kehilangan permanen.
+
+**Konsekuensi saat restore.** `database.dump` tetap memulihkan seluruh baris
+`video_assets` beserta object key-nya, sehingga katalog, kurikulum, dan progres
+belajar kembali utuh. Yang tidak kembali adalah berkas videonya; sampai berkas
+itu diunggah ulang dari salinan master, object key menunjuk ke berkas yang
+belum ada dan pemutaran gagal. Setiap MANIFEST mencantumkan
+`volume_tidak_dicadangkan` supaya kenyataan ini terbaca sebelum restore
+dimulai, bukan sesudahnya.
+
+Mengembalikan perilaku lama cukup dengan memindahkan `video-data` dari
+`EXCLUDED_VOLUMES` ke `VOLUMES` di `scripts/backup.sh`, dan menyediakan disk
+untuk menampungnya.
+
+### Satu checkpoint per hari
+
+Keranjang harian menyimpan `DAILY_KEEP` checkpoint, bukan `DAILY_KEEP` hari.
+Pada 6 Agustus 2026 skrip dijalankan manual lima kali dalam sehari, sehingga
+14 slot yang dimaksudkan menutup dua minggu hanya menutup tiga hari — riwayat
+menyusut diam-diam justru karena backup dijalankan lebih sering.
+
+Skrip kini melewati checkpoint kedua pada hari yang sama. Penjaganya melihat
+berkas di `daily/`, dan berkas itu hanya muncul setelah checkpoint selesai
+utuh, sehingga percobaan ulang setelah kegagalan tetap diizinkan. Gunakan
+`lms-backup --force` bila memang perlu checkpoint tambahan.
 
 Kata sandi role sengaja tidak disimpan. Saat restore, kata sandi diambil dari
 environment variable Coolify (`POSTGRES_PASSWORD`), sehingga arsip yang bocor
@@ -277,14 +340,24 @@ createdb -U postgres lms
 pg_restore -U postgres -d lms --no-owner database.dump
 
 # Volume dipulihkan bersama database agar object_key tetap menunjuk file nyata.
-tar xzf video-data.tar.gz -C /data/videos
 tar xzf avatar-data.tar.gz -C /data/avatars
 tar xzf course-thumbnail-data.tar.gz -C /data/course-thumbnails
+tar xzf material-data.tar.gz -C /data/materials
+
+# video-data TIDAK ada di arsip; lihat "Pengecualian video-data" di §4a.
+# Berkas video diunggah ulang dari salinan master di luar server, ke object key
+# yang sama seperti tercatat pada tabel video_assets hasil restore.
 ```
 
 Verifikasi: bandingkan jumlah baris terhadap `MANIFEST.txt`, pastikan
 `_prisma_migrations` menunjuk migrasi yang sama, lalu cocokkan `object_key`
 pada `video_assets` dengan daftar berkas di arsip volume.
+
+Untuk video, pencocokan itu berjalan terbalik: daftar `object_key` hasil
+restore adalah daftar berkas yang harus disediakan kembali. Selama masih ada
+key yang belum punya berkas, pemutaran video gagal walaupun seluruh pemeriksaan
+database sudah lulus — dan itulah kegagalan yang paling mudah terlewat, karena
+tidak ada satu pun angka di MANIFEST yang menjadi merah karenanya.
 
 Melewatkan `globals.sql` bukan galat yang mencolok — restore tetap terlihat
 berhasil, tetapi setiap GRANT dibuang diam-diam.

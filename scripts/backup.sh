@@ -8,6 +8,9 @@
 # yang menyusul setelahnya hanya membuat volume berisi lebih banyak, tidak
 # lebih sedikit, sehingga tidak ada baris database yang menunjuk file hilang.
 #
+# Berkas video adalah pengecualian yang disengaja dan tidak ikut dicadangkan;
+# lihat EXCLUDED_VOLUMES di bawah beserta alasannya.
+#
 # Setiap checkpoint berdiri sendiri: satu file tar berisi dump, arsip volume,
 # dan MANIFEST yang mencatat checksum, versi migrasi, serta jumlah baris tabel
 # inti. MANIFEST itulah yang dipakai saat restore drill untuk membuktikan
@@ -24,6 +27,7 @@
 #
 # Pemakaian:
 #   backup.sh                # ambil checkpoint, pangkas, lalu unggah offsite
+#   backup.sh --force        # ambil checkpoint walau hari ini sudah ada
 #   backup.sh --prune-only   # hanya pangkas yang lokal
 #   backup.sh --test-alert   # kirim satu peringatan contoh, lalu berhenti
 #   backup.sh --test-offsite # uji tulis, baca, dan hapus ke penyimpanan objek
@@ -36,12 +40,41 @@ APP_UUID="${LMS_APP_UUID:-}"
 BACKUP_ROOT="${LMS_BACKUP_ROOT:-/var/backups/lms-ai}"
 LOG_FILE="${LMS_BACKUP_LOG:-$BACKUP_ROOT/backup.log}"
 
-# Sesuai retention baseline pada BACKUP_RESTORE.md §3.
-DAILY_KEEP="${LMS_DAILY_KEEP:-14}"
+# Kedalaman pemulihan yang sebenarnya ada di salinan offsite, bukan di sini:
+# LMS_OFFSITE_KEEP menyimpan 30 checkpoint di penyimpanan objek, di failure
+# domain yang berbeda. Keranjang harian lokal hanya perlu cukup untuk pemulihan
+# cepat tanpa mengunduh apa pun, dan dua checkpoint sudah memenuhi itu.
+#
+# Angka ini lebih kecil daripada retention baseline BACKUP_RESTORE.md §3 (14),
+# atas keputusan pemilik pada 6 Agustus 2026. Konsekuensinya: kesalahan yang
+# baru ketahuan setelah lebih dari dua hari tidak lagi dapat dipulihkan dari
+# disk ini dan harus diambil dari offsite.
+DAILY_KEEP="${LMS_DAILY_KEEP:-2}"
 WEEKLY_KEEP="${LMS_WEEKLY_KEEP:-8}"
 MONTHLY_KEEP="${LMS_MONTHLY_KEEP:-12}"
 
-VOLUMES=(video-data avatar-data course-thumbnail-data material-data community-attachment-data)
+# Volume yang ikut dikemas utuh ke dalam setiap checkpoint. Semuanya kecil:
+# gambar dan dokumen, bukan video.
+VOLUMES=(avatar-data course-thumbnail-data material-data community-attachment-data)
+
+# Volume yang SENGAJA tidak ikut dicadangkan.
+#
+# video-data berukuran 3,3 GB dan hampir tidak pernah berubah, sementara
+# database.dump hanya 350 KB. Mengemasnya ulang setiap malam membuat satu
+# checkpoint menjadi 3,2 GB, sehingga retensi 14 hari memakan 45 GB dan pada
+# 6 Agustus 2026 benar-benar memenuhi disk 96 GB — backup malam itu gagal
+# justru karena backup sebelumnya kehabisan tempat. Cadangan yang menghabiskan
+# disknya sendiri berhenti menjadi cadangan.
+#
+# Berkas master video disimpan di luar server (salinan lokal pemilik), jadi
+# server ini tidak perlu menjadi tempat penyimpanan keduanya. Konsekuensinya
+# nyata dan harus diketahui sebelum restore, bukan sesudahnya: memulihkan
+# checkpoint mengembalikan baris `video_assets` beserta object key-nya, tetapi
+# berkasnya sendiri harus diunggah ulang dari salinan itu. Karena itu daftar ini
+# ikut ditulis ke MANIFEST — pengecualian yang tidak tercatat akan terbaca
+# sebagai cadangan lengkap pada hari orang paling percaya padanya.
+EXCLUDED_VOLUMES=(video-data)
+
 COUNTED_TABLES=(users enrollments lesson_progress registration_orders video_assets forum_topics)
 
 ALERT_TO="${LMS_ALERT_TO:-}"
@@ -419,6 +452,25 @@ if [[ "${1:-}" == "--test-offsite" ]]; then
   exit 0
 fi
 
+# Satu checkpoint per hari, kecuali diminta lain.
+#
+# Keranjang harian menyimpan DAILY_KEEP checkpoint, bukan DAILY_KEEP hari. Pada
+# 6 Agustus 2026 skrip ini dijalankan manual lima kali dalam sehari, sehingga
+# 14 slot yang dimaksudkan menutup dua minggu hanya menutup tiga hari — riwayat
+# menyusut diam-diam justru karena backup dijalankan lebih sering.
+#
+# Penjaganya melihat berkas di keranjang harian, dan berkas itu hanya muncul
+# setelah checkpoint selesai utuh. Jadi percobaan ulang setelah kegagalan tetap
+# diizinkan pada hari yang sama, dan hanya pengulangan yang berhasil yang
+# dicegah.
+if [[ "${1:-}" != "--force" ]]; then
+  HARI_INI="$(date -u '+%Y%m%d')"
+  if ls -1 "$BACKUP_ROOT/daily" 2>/dev/null | grep -q "^lms-${HARI_INI}T"; then
+    log "checkpoint untuk ${HARI_INI} sudah ada; dilewati. Jalankan dengan --force bila memang perlu."
+    exit 0
+  fi
+fi
+
 PG_CONTAINER="$(resolve_container "postgres-${APP_UUID}")"
 STAMP="$(date -u '+%Y%m%dT%H%M%SZ')"
 WORK="$(mktemp -d)"
@@ -455,6 +507,13 @@ MIGRATION="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
   printf 'database: %s\n' "$PG_DB"
   printf 'migration_terakhir: %s\n' "${MIGRATION:-tidak diketahui}"
   printf 'pg_dump: %s\n' "$(docker exec "$PG_CONTAINER" pg_dump --version)"
+  # Ditulis sebelum `jumlah_baris:`, bukan sesudahnya: restore-drill.sh membaca
+  # dari penanda itu sampai akhir berkas dan akan menyangka baris tambahan
+  # apa pun sebagai nama tabel.
+  printf '\nvolume_tidak_dicadangkan: %s\n' "${EXCLUDED_VOLUMES[*]:-tidak ada}"
+  printf 'catatan_pemulihan: berkas volume di atas tidak ada di arsip ini dan\n'
+  printf '  harus diunggah ulang dari salinan master di luar server. Baris\n'
+  printf '  video_assets beserta object key-nya tetap pulih dari database.dump.\n'
   printf '\njumlah_baris:\n'
   for table in "${COUNTED_TABLES[@]}"; do
     count="$(docker exec "$PG_CONTAINER" psql -U "$PG_USER" -d "$PG_DB" -tAc \
