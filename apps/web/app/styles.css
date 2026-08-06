@@ -1598,14 +1598,16 @@ table.data tbody tr:hover { background: var(--raised); }
 
 @media (max-width: 980px) {
   .masterShell { grid-template-columns: 76px minmax(0, 1fr); }
-  .workspaceSwitch > span:nth-child(2), .sideNav .navLink:not([aria-current])::after,
+  .masterSidebar { overflow: hidden; }
+  .workspaceSwitch > span:nth-child(2) { display: none; }
   .sideNav .navLink { font-size: 0; }
   .workspaceSwitch { justify-content: center; padding: 6px; }
   .sideNav .navLink { justify-content: center; padding: 10px; }
   .sideIcon { font-size: 18px; }
   .sideLabel, .sideProfileText { display: none; }
   .masterCommunityShortcuts { display: none; }
-  .sideProfile { flex-wrap: wrap; justify-content: center; }
+  .sideProfile { flex-direction: column; flex-wrap: nowrap; justify-content: center; }
+  .sideProfileLink { flex: none; }
   .metricGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .masterGrid { grid-template-columns: 1fr; }
   .analyticsMetricGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -24,6 +24,18 @@ test('label navbar tidak dipecah menjadi beberapa baris', () => {
   assert.match(navLabelRule[1], /overflow-wrap: normal;/);
 });
 
+test('sidebar Master ringkas hanya menampilkan ikon tanpa label yang terjepit', () => {
+  const breakpoint = css.indexOf('@media (max-width: 980px)');
+  const nextMedia = css.indexOf('@media', breakpoint + 1);
+  const compactRule = css.slice(breakpoint, nextMedia);
+
+  assert.notEqual(breakpoint, -1, 'breakpoint sidebar Master ringkas harus tersedia');
+  assert.match(compactRule, /\.workspaceSwitch > span:nth-child\(2\)\s*\{\s*display:\s*none;/);
+  assert.match(compactRule, /\.masterSidebar\s*\{[^}]*overflow:\s*hidden;/);
+  assert.match(compactRule, /\.sideProfile\s*\{[^}]*flex-direction:\s*column;[^}]*flex-wrap:\s*nowrap;/);
+  assert.match(compactRule, /\.sideProfileLink\s*\{[^}]*flex:\s*none;/);
+});
+
 test('menu Master memakai ikon yang sesuai dengan fungsi setiap halaman', () => {
   const mappings = [
     ['Paket akses', 'Package'], ['Transaksi', 'CreditCard'], ['Forum', 'MessageCircle'],
