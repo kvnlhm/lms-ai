@@ -176,6 +176,7 @@ table.data td.cellActions {
   /* Garis tipis sebagai tanda bahwa masih ada isi di baliknya. */
   box-shadow: inset 1px 0 0 var(--line-soft);
 }
+table.data td.cellActions:has(.actionMenu[open]) { z-index: 2; }
 table.data tbody tr:hover td.cellActions { background: var(--raised); }
 :focus-visible { outline: 2px solid var(--accent-hot); outline-offset: 2px; border-radius: 4px; }
 svg { display: block; }
@@ -655,6 +656,7 @@ table.data tbody tr:hover { background: var(--raised); }
 .tierAdminLayout { display: grid; grid-template-columns: minmax(300px, .75fr) minmax(420px, 1.25fr); gap: 22px; align-items: start; }
 .tierAdminForm { padding: 24px; position: sticky; top: 80px; }
 .tierAdminForm h2, .tierAdminList h2 { margin: 0 0 6px; font-size: 18px; }
+.tierCreateButton { margin-top: 18px; }
 .tierFieldGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 22px 0; }
 .tierDescription, .tierCourses, .tierFieldGrid > .checkRow { grid-column: 1 / -1; }
 .tierCourses { border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; display: grid; gap: 10px; }

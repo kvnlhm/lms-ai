@@ -100,7 +100,7 @@ await browserClient().PATCH('/api/v1/admin/access-tiers/{tierId}', {
       <section className="card tierAdminForm">
         <h2>Buat paket baru</h2>
         <p className="pageSub">Gunakan lifetime bila akses tidak memiliki tanggal berakhir.</p>
-        <button className="btn" onClick={() => setCreateOpen(true)} disabled={busy} type="button">
+        <button className="btn tierCreateButton" onClick={() => setCreateOpen(true)} disabled={busy} type="button">
           Buat paket
         </button>
       </section>
