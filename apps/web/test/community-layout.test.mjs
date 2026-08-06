@@ -9,6 +9,8 @@ const channel = await readFile(new URL('../app/community/community-feed.tsx', im
 const channelManager = await readFile(new URL('../app/master/community/channel-manager.tsx', import.meta.url), 'utf8');
 const learnerSidebar = await readFile(new URL('../app/components/learner-channel-sidebar.tsx', import.meta.url), 'utf8');
 const channelPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/page.tsx', import.meta.url), 'utf8');
+const checklistDetail = await readFile(new URL('../app/community/checklist-detail.tsx', import.meta.url), 'utf8').catch(() => '');
+const checklistDetailPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/[postId]/page.tsx', import.meta.url), 'utf8').catch(() => '');
 const masterShortcuts = await readFile(new URL('../app/components/master-community-shortcuts.tsx', import.meta.url), 'utf8');
 
 test('shell Pelajar menyediakan sidebar desktop dan memindahkannya ke drawer pada mobile', () => {
@@ -211,16 +213,25 @@ test('isi checklist dapat ditulis multiline seperti postingan', () => {
   assert.match(channel, /<textarea id="checklist-new-topic"/);
   assert.match(channel, /className="checklistTopicEditor"><input[\s\S]*<textarea/);
   assert.match(channel, /className="checklistComposerCount">\{body\.length\}\/5000/);
-  assert.match(channel, /className="checklistTopicBody"/);
-  assert.match(css, /\.checklistTopicBody\{[^}]*white-space:pre-wrap/);
+  assert.match(checklistDetail, /className="checklistArticleBody"/);
+  assert.match(css, /\.checklistArticleBody\{[^}]*white-space:pre-wrap/);
   assert.match(css, /\.checklistComposer textarea\{[^}]*resize:vertical/);
 });
 
-test('setiap checklist memiliki judul dan konten yang dapat dibuka sendiri', () => {
+test('setiap checklist memiliki judul yang menuju halaman kontennya', () => {
   assert.match(channel, /checklistTitle: string \| null/);
   assert.match(channel, /id="checklist-new-title"/);
-  assert.match(channel, /className="checklistTopicToggle"/);
-  assert.match(channel, /aria-expanded=\{topikTerbuka === post\.id\}/);
-  assert.match(channel, /className="checklistTopicBody"/);
-  assert.match(css, /\.checklistTopicBody\{[^}]*white-space:pre-wrap/);
+  assert.match(channel, /className="checklistTopicLink"/);
+  assert.match(checklistDetail, /className="checklistArticleBody"/);
+  assert.match(css, /\.checklistArticleBody\{[^}]*white-space:pre-wrap/);
+});
+
+test('judul checklist membuka halaman postingan dan selesai sebelum lanjut', () => {
+  assert.match(channel, /href=\{`\/community\/\$\{selected\.groupSlug\}\/\$\{selected\.slug\}\/\$\{post\.id\}`\}/);
+  assert.match(checklistDetailPage, /ChecklistDetail/);
+  assert.match(checklistDetail, /className="checklistArticle"/);
+  assert.match(checklistDetail, /Saya sudah membaca konten ini/);
+  assert.match(checklistDetail, /nextPostId/);
+  assert.match(checklistDetail, /Lanjut ke checklist berikutnya/);
+  assert.match(css, /\.checklistArticleBody\{[^}]*white-space:pre-wrap/);
 });

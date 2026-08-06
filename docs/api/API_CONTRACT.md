@@ -2556,6 +2556,10 @@ memerlukan sesi aktif.
   baca-saja dan tipe `ANNOUNCEMENTS` menuntut `discussions.moderate`. Untuk
   sub-channel `CHECKLIST`, body juga wajib membawa `checklistTitle` (1–160
   karakter); `body` menjadi konten khusus item tersebut.
+- `GET /community/checklist/{postId}` — mengambil satu item checklist untuk
+  halaman bacaan. Response membawa `previousPostId`, `nextPostId`, `position`,
+  dan `total` berdasarkan urutan pembuatan item aktif dalam sub-channel yang
+  sama; post non-checklist dan konten yang sudah diarsipkan tidak diterima.
 - `POST /community/posts/{postId}/comments` — membalas post; ditolak bila
   `allowReplies=false` (termasuk seluruh sub-channel `ANNOUNCEMENTS`).
 - `POST /community/posts/{postId}/reaction` — menyalakan/mematikan reaksi

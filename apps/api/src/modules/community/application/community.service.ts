@@ -164,6 +164,34 @@ export class CommunityService {
     return { total, posts: rows.map((row) => this.sajikanPost(row, userId, canModerate)) };
   }
 
+  async getChecklistItem(userId: string, postId: string, canModerate: boolean) {
+    const row = await this.prisma.communityPost.findFirst({
+      where: {
+        id: postId,
+        deletedAt: null,
+        channel: { type: CommunityChannelType.CHECKLIST, archivedAt: null, group: { archivedAt: null } },
+      },
+      select: this.postSelect(userId),
+    });
+    if (!row) throw AppError.notFound();
+
+    const urutan = await this.prisma.communityPost.findMany({
+      where: { channelId: row.channel.id, deletedAt: null },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { id: true },
+    });
+    const index = urutan.findIndex((item) => item.id === postId);
+    if (index < 0) throw AppError.notFound();
+
+    return {
+      ...this.sajikanPost(row, userId, canModerate),
+      previousPostId: urutan[index - 1]?.id ?? null,
+      nextPostId: urutan[index + 1]?.id ?? null,
+      position: index + 1,
+      total: urutan.length,
+    };
+  }
+
   /**
    * Seluruh balasan sebuah tulisan, berhalaman.
    *

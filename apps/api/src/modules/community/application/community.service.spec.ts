@@ -195,6 +195,24 @@ describe('CommunityService hierarchy invariants', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  test('detail checklist membawa urutan sebelumnya dan berikutnya', async () => {
+    const service = new CommunityService({
+      communityPost: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'post-2', checklistTitle: 'Langkah kedua', body: 'Baca isi ini.',
+          author: { id: 'master-1' }, comments: [], reactions: [], checklistCompletions: [],
+          channel: { id: 'sub-1', type: 'CHECKLIST', group: { slug: 'welcome', name: 'Welcome' } },
+        }),
+        findMany: jest.fn().mockResolvedValue([{ id: 'post-1' }, { id: 'post-2' }, { id: 'post-3' }]),
+      },
+    } as never, {} as never);
+
+    await expect(service.getChecklistItem('student-1', 'post-2', false)).resolves.toMatchObject({
+      id: 'post-2', position: 2, total: 3,
+      previousPostId: 'post-1', nextPostId: 'post-3', completedByMe: false,
+    });
+  });
+
   test('channel aktif tidak dapat dihapus permanen', async () => {
     const remove = jest.fn();
     const service = new CommunityService({

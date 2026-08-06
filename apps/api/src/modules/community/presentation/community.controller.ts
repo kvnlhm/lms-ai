@@ -6,7 +6,7 @@ import { Paginated } from '../../../shared/http/response.interceptor';
 import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { CommunityService } from '../application/community.service';
-import { CommunityChannelDto, CommunityChecklistResultDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityChecklistDto, SetCommunityPinnedDto } from './community.dto';
+import { CommunityChannelDto, CommunityChecklistItemDto, CommunityChecklistResultDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityChecklistDto, SetCommunityPinnedDto } from './community.dto';
 
 /** Pemegang izin moderasi diskusi; dipakai berulang di controller ini. */
 function moderator(user: AuthenticatedUser): boolean {
@@ -36,6 +36,12 @@ export class CommunityController {
     const page = query.page ?? 1; const pageSize = query.pageSize ?? 20;
     const result = await this.community.listPosts(user.id, page, pageSize, moderator(user), channelSlug, subchannelSlug);
     return new Paginated(result.posts, page, pageSize, result.total);
+  }
+
+  @Get('checklist/:postId') @ApiOperation({ summary: 'Membaca satu item checklist beserta urutan navigasinya' })
+  @ApiEnvelope(CommunityChecklistItemDto) @ApiErrors(401, 404)
+  checklistItem(@Param('postId', new ParseUUIDPipe()) postId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.getChecklistItem(user.id, postId, moderator(user));
   }
 
   @Post('subchannels/:subchannelId/posts') @HttpCode(201) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)

@@ -130,6 +130,13 @@ export class CommunityPostDto {
   @ApiProperty({ type: [CommunityCommentDto] }) comments!: CommunityCommentDto[];
 }
 
+export class CommunityChecklistItemDto extends CommunityPostDto {
+  @ApiProperty({ type: String, nullable: true }) previousPostId!: string | null;
+  @ApiProperty({ type: String, nullable: true }) nextPostId!: string | null;
+  @ApiProperty() position!: number;
+  @ApiProperty() total!: number;
+}
+
 export class SetCommunityPinnedDto {
   @ApiProperty() @IsBoolean() isPinned!: boolean;
 }

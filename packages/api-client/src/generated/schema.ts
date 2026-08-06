@@ -2041,6 +2041,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/community/checklist/{postId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Membaca satu item checklist beserta urutan navigasinya */
+        get: operations["CommunityController_checklistItem"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/community/subchannels/{subchannelId}/posts": {
         parameters: {
             query?: never;
@@ -4468,6 +4485,40 @@ export interface components {
             author: components["schemas"]["CommunityPersonDto"];
             channel: components["schemas"]["CommunityPostChannelDto"];
             comments: components["schemas"]["CommunityCommentDto"][];
+        };
+        CommunityChecklistItemDto: {
+            id: string;
+            /** @description Judul khusus item checklist. */
+            checklistTitle: string | null;
+            body: string;
+            isPinned: boolean;
+            commentCount: number;
+            reactionCount: number;
+            reactedByMe: boolean;
+            /** @description Status item checklist untuk pengguna dari session. */
+            completedByMe: boolean;
+            /**
+             * Format: date-time
+             * @description Terisi bila tulisannya pernah diubah.
+             */
+            editedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            lastActivityAt: string;
+            /** @description Hanya penulisnya sendiri. */
+            canEdit: boolean;
+            /** @description Penulisnya sendiri, atau pemegang izin moderasi. */
+            canDelete: boolean;
+            /** @description Hanya pemegang izin moderasi; menyematkan bukan hak penulis. */
+            canPin: boolean;
+            author: components["schemas"]["CommunityPersonDto"];
+            channel: components["schemas"]["CommunityPostChannelDto"];
+            comments: components["schemas"]["CommunityCommentDto"][];
+            previousPostId: string | null;
+            nextPostId: string | null;
+            position: number;
+            total: number;
         };
         CommunityPostBodyDto: {
             body: string;
@@ -11446,6 +11497,46 @@ export interface operations {
                     "application/json": {
                         data: components["schemas"]["CommunityPostDto"][];
                         meta: components["schemas"]["PaginatedMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_checklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunityChecklistItemDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
                     };
                 };
             };

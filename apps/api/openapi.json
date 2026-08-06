@@ -10598,6 +10598,69 @@
         ]
       }
     },
+    "/api/v1/community/checklist/{postId}": {
+      "get": {
+        "operationId": "CommunityController_checklistItem",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityChecklistItemDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Membaca satu item checklist beserta urutan navigasinya",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/v1/community/subchannels/{subchannelId}/posts": {
       "post": {
         "operationId": "CommunityController_createPost",
@@ -19472,6 +19535,113 @@
           "author",
           "channel",
           "comments"
+        ]
+      },
+      "CommunityChecklistItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "checklistTitle": {
+            "type": "string",
+            "nullable": true,
+            "description": "Judul khusus item checklist."
+          },
+          "body": {
+            "type": "string"
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "commentCount": {
+            "type": "number"
+          },
+          "reactionCount": {
+            "type": "number"
+          },
+          "reactedByMe": {
+            "type": "boolean"
+          },
+          "completedByMe": {
+            "type": "boolean",
+            "description": "Status item checklist untuk pengguna dari session."
+          },
+          "editedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Terisi bila tulisannya pernah diubah."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "canEdit": {
+            "type": "boolean",
+            "description": "Hanya penulisnya sendiri."
+          },
+          "canDelete": {
+            "type": "boolean",
+            "description": "Penulisnya sendiri, atau pemegang izin moderasi."
+          },
+          "canPin": {
+            "type": "boolean",
+            "description": "Hanya pemegang izin moderasi; menyematkan bukan hak penulis."
+          },
+          "author": {
+            "$ref": "#/components/schemas/CommunityPersonDto"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/CommunityPostChannelDto"
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityCommentDto"
+            }
+          },
+          "previousPostId": {
+            "type": "string",
+            "nullable": true
+          },
+          "nextPostId": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "checklistTitle",
+          "body",
+          "isPinned",
+          "commentCount",
+          "reactionCount",
+          "reactedByMe",
+          "completedByMe",
+          "editedAt",
+          "createdAt",
+          "lastActivityAt",
+          "canEdit",
+          "canDelete",
+          "canPin",
+          "author",
+          "channel",
+          "comments",
+          "previousPostId",
+          "nextPostId",
+          "position",
+          "total"
         ]
       },
       "CommunityPostBodyDto": {
