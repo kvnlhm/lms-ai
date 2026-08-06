@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }: Props) {
   return (
     <main className="authShell">
       <section className="card authCard" aria-labelledby="login-title">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="authCardHead">
           <span className="brand">
             <BrandMark />
             <span>Academy AIPreneur</span>

@@ -360,6 +360,7 @@ input, select, textarea { min-width: 0; }
   width: min(430px, 100%); padding: 32px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
 }
+.authCardHead { display: flex; align-items: center; justify-content: space-between; }
 .authFootnote { margin: 20px 0 0; text-align: center; font-size: 13.5px; color: var(--muted); }
 .authTitle { margin: 22px 0 6px; font-size: 25px; font-weight: 700; letter-spacing: -0.03em; }
 .authLead { margin: 0 0 26px; color: var(--muted); font-size: 14.5px; }
@@ -1748,6 +1749,7 @@ table.data tbody tr:hover { background: var(--raised); }
   .topbarRight { gap: 3px; }
   .topbarRight > .globalSearch, .topbarRight > .iconBtn { display: none; }
   .mainNav { display: none; }
+  .authCardHead .brand { order: 0; }
 
   .tierCard { padding: 20px; }
 
