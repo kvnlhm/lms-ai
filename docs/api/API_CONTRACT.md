@@ -2563,9 +2563,11 @@ memerlukan sesi aktif.
   sub-channel `CHECKLIST` yang diterima; response post membawa
   `completedByMe` agar status antar pelajar tidak tercampur.
 - `PATCH /community/posts/{postId}` dan `PATCH /community/comments/{commentId}` —
-  mengubah tulisan sendiri. Hanya penulisnya, termasuk terhadap pemegang
-  `discussions.moderate`: kewenangan moderasi adalah kuasa menghapus, bukan
-  kuasa menulis ulang ucapan orang lain. Setiap perubahan mengisi `editedAt`.
+  mengubah tulisan sendiri. Pemegang `discussions.moderate` juga dapat mengubah
+  post bertipe `CHECKLIST` sebagai konten terkelola; perubahan lintas pemilik
+  dicatat sebagai `community.checklist_item.update`. Pengecualian itu tidak
+  berlaku untuk post forum atau komentar biasa. Setiap perubahan mengisi
+  `editedAt`.
 - `DELETE /community/posts/{postId}` dan `DELETE /community/comments/{commentId}` —
   penghapusan lunak oleh penulisnya, atau oleh pemegang `discussions.moderate`
   atas tulisan siapa pun. Penghapusan tulisan orang lain dicatat ke audit log

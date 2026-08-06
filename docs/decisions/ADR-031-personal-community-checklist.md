@@ -21,6 +21,9 @@ penyelesaian sendiri, bukan satu status global.
 - API membaca user dari session dan mengembalikan `completedByMe`; client tidak
   boleh memilih user lain.
 - Kontrol `allowReplies` dari ADR-030 tetap berlaku tanpa perubahan.
+- Item checklist adalah konten terkelola. Pemegang `discussions.moderate` dapat
+  menyunting item milik siapa pun; pengecualian ini tidak berlaku untuk post
+  forum atau komentar biasa. Penyuntingan lintas pemilik dicatat di audit log.
 - Channel hanya dapat dihapus permanen setelah diarsipkan. Penghapusan
   menghapus sub-channel dan seluruh konten turunannya melalui foreign key
   cascade, serta dicatat di audit log sebelum data dihapus.
@@ -36,3 +39,5 @@ tidak dapat dipulihkan dari aplikasi dan membutuhkan backup untuk recovery.
 Status checklist selalu dibatasi pada user session. Endpoint hapus permanen
 tetap membutuhkan `discussions.moderate`, menolak channel aktif, dan membuat
 audit event `community.channel.delete_permanently`.
+Penyuntingan item checklist milik pengguna lain membuat audit event
+`community.checklist_item.update` dengan isi sebelum dan sesudah perubahan.

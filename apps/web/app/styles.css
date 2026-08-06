@@ -3374,3 +3374,22 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .sortField,.sortField select{width:100%;min-width:0}
   .sortBar>.btn{width:100%}
 }
+
+/* Editor checklist mengikuti permukaan tema dan tetap ringkas saat baris sedang disunting. */
+.checklistComposer input{min-width:0;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);padding:10px 12px;font:inherit}
+.checklistComposer input::placeholder,.checklistTopicEditor input::placeholder{color:var(--muted)}
+.checklistComposer input:focus,.checklistTopicEditor input:focus{outline:2px solid color-mix(in srgb,var(--primary) 28%,transparent);border-color:var(--primary)}
+.checklistTopicActions{display:flex;align-items:center;gap:4px}
+.checklistTopicActions button{border:0;background:transparent;color:var(--muted);padding:7px 8px;border-radius:7px;font:inherit;font-size:12px;cursor:pointer}
+.checklistTopicActions button:hover{background:var(--surface-2);color:var(--text)}
+.checklistTopicEditor{grid-column:2/4;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;min-width:0}
+.checklistTopicEditor input{min-width:0;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);padding:9px 11px;font:inherit}
+.checklistTopicEditor button{min-height:38px}
+@media(max-width:560px){
+  .checklistComposer>div{grid-template-columns:1fr}
+  .checklistComposer .btn{width:100%}
+  .checklistTopic{grid-template-columns:auto minmax(0,1fr)}
+  .checklistTopicActions{grid-column:2;justify-content:flex-end}
+  .checklistTopicEditor{grid-column:2;grid-template-columns:1fr 1fr}
+  .checklistTopicEditor input{grid-column:1/3}
+}

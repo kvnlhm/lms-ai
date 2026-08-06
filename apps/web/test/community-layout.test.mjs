@@ -197,3 +197,12 @@ test('sub-channel checklist memakai halaman progres terstruktur seperti referens
   assert.match(css, /\.checklistProgressBar>span\{[^}]*transition:width/);
   assert.match(css, /@media\(max-width:760px\)[\s\S]*\.checklistHero\{[^}]*grid-template-columns:1fr/);
 });
+
+test('Master dapat menyunting topik checklist secara inline dan form tambah mengikuti tema', () => {
+  assert.match(channel, /className="checklistTopicEditor"/);
+  assert.match(channel, /'Menyimpan…' : 'Simpan'/);
+  assert.match(channel, />Batal<\/button>/);
+  assert.match(channel, /simpanTopik/);
+  assert.match(css, /\.checklistComposer input\{[^}]*background:var\(--surface-2\)[^}]*color:var\(--text\)/);
+  assert.match(css, /\.checklistTopicEditor\{[^}]*grid-template-columns:minmax\(0,1fr\) auto auto/);
+});

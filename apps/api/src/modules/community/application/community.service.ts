@@ -110,7 +110,8 @@ export class CommunityService {
     userId: string,
     canModerate: boolean,
   ) {
-    const { reactions, checklistCompletions, comments, channel, ...post } = row as T & { channel?: { group?: { slug: string; name: string } } };
+    const { reactions, checklistCompletions, comments, channel, ...post } = row as T & { channel?: { type?: CommunityChannelType; group?: { slug: string; name: string } } };
+    const hakTulisan = this.hakTulisan(row.author.id, userId, canModerate);
     return {
       ...post,
       ...(channel ? { channel: {
@@ -122,7 +123,10 @@ export class CommunityService {
       reactedByMe: reactions.length > 0,
       completedByMe: checklistCompletions.length > 0,
       comments: comments.map((comment) => ({ ...comment, ...this.hak(comment.author.id, userId, canModerate) })),
-      ...this.hakTulisan(row.author.id, userId, canModerate),
+      ...hakTulisan,
+      // Item checklist adalah konten terkelola, bukan ucapan pengguna dalam
+      // forum. Master perlu dapat memperbaiki langkah yang dilihat semuanya.
+      ...(canModerate && channel?.type === CommunityChannelType.CHECKLIST ? { canEdit: true } : {}),
     };
   }
 
@@ -220,7 +224,7 @@ export class CommunityService {
   // ─────────────────────────────────────────────
 
   /**
-   * Mengubah tulisan sendiri.
+   * Mengubah tulisan sendiri, atau item checklist sebagai Master.
    *
    * `editedAt` diisi supaya jejaknya terlihat pembaca lain. Percakapan yang
    * dapat berubah diam-diam setelah dibaca orang lebih buruk daripada
@@ -229,16 +233,27 @@ export class CommunityService {
   async updatePost(userId: string, postId: string, body: string, canModerate: boolean) {
     const post = await this.prisma.communityPost.findFirst({
       where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } },
-      select: { id: true, authorId: true },
+      select: { id: true, authorId: true, body: true, channelId: true, channel: { select: { type: true } } },
     });
     if (!post) throw AppError.notFound();
-    if (post.authorId !== userId) throw AppError.permissionDenied();
+    const mengelolaChecklist = canModerate && post.channel.type === CommunityChannelType.CHECKLIST;
+    if (post.authorId !== userId && !mengelolaChecklist) throw AppError.permissionDenied();
 
     const row = await this.prisma.communityPost.update({
       where: { id: postId },
       data: { body: body.trim(), editedAt: new Date() },
       select: this.postSelect(userId),
     });
+    if (post.authorId !== userId) {
+      await this.audit.record({
+        actorUserId: userId,
+        action: 'community.checklist_item.update',
+        targetType: 'CommunityPost',
+        targetId: postId,
+        before: { authorId: post.authorId, channelId: post.channelId, body: post.body },
+        after: { body: body.trim() },
+      });
+    }
     return this.sajikanPost(row, userId, canModerate);
   }
 
