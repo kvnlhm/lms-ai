@@ -208,6 +208,8 @@ test('Master menyunting topik checklist melalui halaman editor khusus', () => {
   assert.match(checklistEditPage, /ChecklistEditor/);
   assert.match(checklistEdit, /Simpan perubahan/);
   assert.match(css, /\.checklistComposer textarea\{[^}]*background:var\(--surface-2\)[^}]*color:var\(--text\)/);
+  assert.match(channel, /className="btn checklistAddToggle"/);
+  assert.match(channel, /aria-expanded=\{composerTerbuka\}/);
 });
 
 test('isi checklist dapat ditulis multiline seperti postingan', () => {

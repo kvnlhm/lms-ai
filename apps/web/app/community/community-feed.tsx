@@ -497,6 +497,7 @@ function ChecklistPage({ posts, selected, currentUserName, pending, message, can
   muatLebihLama: () => void;
 }) {
   const topics = [...posts].reverse();
+  const [composerTerbuka, setComposerTerbuka] = useState(false);
   const selesai = posts.filter((post) => post.completedByMe).length;
   const persentase = posts.length === 0 ? 0 : Math.round((selesai / posts.length) * 100);
   const mulai = () => document.querySelector<HTMLAnchorElement>('.checklistTopic:not(.completed) .checklistTopicLink')?.click();
@@ -519,7 +520,7 @@ function ChecklistPage({ posts, selected, currentUserName, pending, message, can
       </section>
       {posts.length === 0 ? <div className="checklistEmpty"><strong>Belum ada topik.</strong><span>{canPost ? 'Tambahkan item pertama melalui form di bawah.' : 'Master belum menambahkan item checklist.'}</span></div> : null}
       {adaYangLebihLama ? <button className="btnSecondary checklistLoad" type="button" disabled={memuatLama} onClick={muatLebihLama}>{memuatLama ? 'Memuat…' : 'Muat topik lainnya'}</button> : null}
-      {canPost ? <div className="checklistComposer"><label htmlFor="checklist-new-title">Tambah checklist</label><input id="checklist-new-title" value={checklistTitle} onChange={(event) => setChecklistTitle(event.target.value)} placeholder="Judul checklist" maxLength={160} /><label htmlFor="checklist-new-topic">Konten</label><textarea id="checklist-new-topic" value={body} rows={5} onChange={(event) => setBody(event.target.value)} placeholder="Tulis penjelasan atau arahan untuk checklist ini…" maxLength={5000} /><div className="checklistComposerFoot"><span className="checklistComposerCount">{body.length}/5000</span><button className="btn" type="button" disabled={pending || !checklistTitle.trim() || !body.trim()} onClick={publish}>Tambahkan</button></div></div> : null}
+      {canPost ? <div className="checklistComposer"><button className="btn checklistAddToggle" type="button" aria-expanded={composerTerbuka} onClick={() => setComposerTerbuka((terbuka) => !terbuka)}>{composerTerbuka ? 'Tutup form' : 'Tambah checklist'}</button>{composerTerbuka ? <div className="checklistComposerForm"><label htmlFor="checklist-new-title">Judul checklist</label><input id="checklist-new-title" value={checklistTitle} onChange={(event) => setChecklistTitle(event.target.value)} placeholder="Judul checklist" maxLength={160} /><label htmlFor="checklist-new-topic">Konten</label><textarea id="checklist-new-topic" value={body} rows={5} onChange={(event) => setBody(event.target.value)} placeholder="Tulis penjelasan atau arahan untuk checklist ini…" maxLength={5000} /><div className="checklistComposerFoot"><span className="checklistComposerCount">{body.length}/5000</span><button className="btn" type="button" disabled={pending || !checklistTitle.trim() || !body.trim()} onClick={publish}>Tambahkan</button></div></div> : null}</div> : null}
       {message ? <p className="communityMessage" role="status">{message}</p> : null}
     </div>
   </section>;
