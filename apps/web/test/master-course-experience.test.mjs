@@ -57,7 +57,11 @@ test('penyusun kursus memberi pratinjau seret dan menggeser kartu dengan halus',
   assert.match(source, /element\.animate\(/);
   assert.match(source, /prefers-reduced-motion: reduce/);
   assert.match(source, /Math\.hypot\(/);
+  assert.match(source, /tujuanSeretRef/);
+  assert.match(source, /pindahKe\(asal, tujuan\)/);
+  assert.doesNotMatch(source, /pindahKe\(seret, tujuan\)/);
   assert.match(css, /\.orderDragGhost\{[^}]*position:fixed[^}]*pointer-events:none/);
+  assert.match(css, /\.orderCardTarget\{/);
   assert.match(css, /\.orderCardItem\{[^}]*will-change:transform/);
 });
 

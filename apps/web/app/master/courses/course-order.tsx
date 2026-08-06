@@ -51,11 +51,13 @@ export function CourseOrder({ courses, lengkap }: Props) {
   const notifier = useNotifier();
   const [urutan, setUrutan] = useState<AdminCourse[]>(courses);
   const [seret, setSeret] = useState<number | null>(null);
+  const [tujuanSeret, setTujuanSeret] = useState<number | null>(null);
   const [nomor, setNomor] = useState<{ id: string; nilai: string } | null>(null);
   const [menyimpan, setMenyimpan] = useState(false);
   const [kabar, setKabar] = useState('');
   const daftarRef = useRef<HTMLOListElement>(null);
   const visualSeretRef = useRef<{ elemen: HTMLElement; offsetX: number; offsetY: number } | null>(null);
+  const tujuanSeretRef = useRef<number | null>(null);
 
   const berubah = !samaUrutannya(urutan, courses);
 
@@ -75,10 +77,9 @@ export function CourseOrder({ courses, lengkap }: Props) {
   /**
    * Salinan urutan terkini yang dapat dibaca seketika.
    *
-   * Satu gerakan seret memicu beberapa perpindahan sebelum React sempat
-   * merender ulang. Membaca `urutan` dari state akan membuat perpindahan kedua
-   * bertolak dari susunan sebelum perpindahan pertama, dan barisnya melompat
-   * mundur di tengah gerakan.
+   * Kontrol keyboard dan kotak nomor dapat memicu perpindahan beruntun sebelum
+   * React sempat merender ulang. Ref menjaga setiap langkah bertolak dari
+   * susunan terbaru.
    */
   const urutanRef = useRef(urutan);
   useEffect(() => {
@@ -136,6 +137,8 @@ export function CourseOrder({ courses, lengkap }: Props) {
       offsetX: event.clientX - kotak.left,
       offsetY: event.clientY - kotak.top,
     };
+    tujuanSeretRef.current = index;
+    setTujuanSeret(index);
     setSeret(index);
   }
 
@@ -191,32 +194,36 @@ export function CourseOrder({ courses, lengkap }: Props) {
           }
         });
       }
-      if (Number.isNaN(tujuan) || tujuan === seret) return;
-
-      // Tidak ada ambang titik tengah di sini, tidak seperti pada daftar
-      // menurun. Kartunya tersusun sebagai kisi, jadi tetangga sebuah kartu bisa
-      // berada di kanan atau di bawahnya — dan ambang satu sumbu justru salah
-      // pada separuh arah. Yang menjaganya tetap tenang adalah kartu yang sedang
-      // diseret dibuat tembus terhadap penunjuk: begitu ia menempati posisi
-      // tujuan, penunjuk berada di atas dirinya sendiri dan tidak menemukan
-      // kartu lain sampai benar-benar digerakkan ke kartu berikutnya.
-      pindahKe(seret, tujuan);
-      setSeret(tujuan);
+      if (Number.isNaN(tujuan) || tujuan === tujuanSeretRef.current) return;
+      tujuanSeretRef.current = tujuan;
+      setTujuanSeret(tujuan);
     };
 
     const lepas = () => {
+      const asal = seret;
+      const tujuan = tujuanSeretRef.current;
       visualSeretRef.current?.elemen.remove();
       visualSeretRef.current = null;
+      tujuanSeretRef.current = null;
+      setTujuanSeret(null);
+      setSeret(null);
+      if (tujuan !== null) pindahKe(asal, tujuan);
+    };
+    const batal = () => {
+      visualSeretRef.current?.elemen.remove();
+      visualSeretRef.current = null;
+      tujuanSeretRef.current = null;
+      setTujuanSeret(null);
       setSeret(null);
     };
 
     window.addEventListener('pointermove', bergerak, { passive: false });
     window.addEventListener('pointerup', lepas);
-    window.addEventListener('pointercancel', lepas);
+    window.addEventListener('pointercancel', batal);
     return () => {
       window.removeEventListener('pointermove', bergerak);
       window.removeEventListener('pointerup', lepas);
-      window.removeEventListener('pointercancel', lepas);
+      window.removeEventListener('pointercancel', batal);
     };
   }, [seret, pindahKe]);
 
@@ -328,7 +335,7 @@ export function CourseOrder({ courses, lengkap }: Props) {
             key={course.id}
             data-indeks={index}
             data-course-id={course.id}
-            className={`card orderCardItem${seret === index ? ' orderCardDragging' : ''}`}
+            className={`card orderCardItem${seret === index ? ' orderCardDragging' : ''}${seret !== null && tujuanSeret === index && seret !== index ? ' orderCardTarget' : ''}`}
           >
             <span className={`cover${course.thumbnailUrl ? ' hasImage' : ''}`}>
               {course.thumbnailUrl ? (
