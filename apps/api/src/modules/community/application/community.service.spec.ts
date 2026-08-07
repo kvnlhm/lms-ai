@@ -201,6 +201,18 @@ describe('CommunityService hierarchy invariants', () => {
     }));
   });
 
+  test('postingan biasa juga menyimpan judul yang dikirim composer', async () => {
+    const create = jest.fn().mockResolvedValue({ id: 'post-judul' });
+    const prisma = {
+      communityChannel: { findFirst: jest.fn().mockResolvedValue({ id: 'sub-2', type: 'POSTS', isReadOnly: false }) },
+      communityPost: { create, findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'post-judul', title: 'Judul post', body: 'Isi', author: { id: 'student-1' }, comments: [], reactions: [], checklistCompletions: [], channel: { id: 'sub-2', type: 'POSTS', group: { slug: 'komunitas', name: 'Komunitas' } }, attachments: [] }) },
+      $transaction: (jalankan: (tx: unknown) => unknown) => jalankan(prisma),
+    };
+    const service = new CommunityService(prisma as never, {} as never, { bind: jest.fn() } as never);
+    await service.createPost('student-1', 'sub-2', 'Isi', false, 'Judul post');
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ title: 'Judul post' }) }));
+  });
+
   test('lampiran diikat di dalam transaksi yang sama dengan pembuatan tulisannya', async () => {
     // Kalau pengikatannya di luar transaksi, tulisan sudah terlihat di feed
     // sementara lampirannya menyusul — dan lampiran yang ditolak meninggalkan

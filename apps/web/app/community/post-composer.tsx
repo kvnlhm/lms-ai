@@ -56,17 +56,19 @@ export function PostComposer({ channelName, announcement, pending, onPublish }: 
     if (berkasRef.current) { berkasRef.current.value = ''; berkasRef.current.accept = TERIMA[jenis]; berkasRef.current.click(); }
   }
 
-  async function unggah(file: File) {
+  async function unggah(files: File[]) {
     setGalat('');
-    if (file.size > MAKS_BYTE) { setGalat(`Ukuran maksimal ${ukuranTerbaca(MAKS_BYTE)} per berkas.`); return; }
-    setProgres(0);
-    try {
-      const hasil = await uploadDraftAttachment(file, setProgres);
-      setLampiran((current) => [...current, hasil]);
-    } catch (error) {
-      setGalat(error instanceof Error ? error.message : 'Lampiran gagal diunggah.');
-    } finally {
-      setProgres(null);
+    for (const file of files.slice(0, MAKS_LAMPIRAN - lampiran.length)) {
+      if (file.size > MAKS_BYTE) { setGalat(`Ukuran maksimal ${ukuranTerbaca(MAKS_BYTE)} per berkas.`); continue; }
+      setProgres(0);
+      try {
+        const hasil = await uploadDraftAttachment(file, setProgres);
+        setLampiran((current) => [...current, hasil]);
+      } catch (error) {
+        setGalat(error instanceof Error ? error.message : 'Lampiran gagal diunggah.');
+      } finally {
+        setProgres(null);
+      }
     }
   }
 
@@ -141,8 +143,9 @@ export function PostComposer({ channelName, announcement, pending, onPublish }: 
           ref={berkasRef}
           className="srOnly"
           type="file"
+          multiple
           accept={terima}
-          onChange={(event) => { const file = event.target.files?.[0]; if (file) void unggah(file); }}
+          onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) void unggah(files); event.currentTarget.value = ''; }}
         />
 
         <div className="composerToolbar">

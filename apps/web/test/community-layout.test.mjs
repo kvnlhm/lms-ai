@@ -183,6 +183,12 @@ test('hapus postingan dan balasan menerima respons 204 tanpa body', () => {
   assert.doesNotMatch(channel, /unwrap\(await browserClient\(\)\.DELETE\('\/api\/v1\/community\/(posts|comments)/);
 });
 
+test('composer dapat memilih beberapa lampiran sekaligus', () => {
+  assert.match(composer, /type="file"[\s\S]*multiple/);
+  assert.match(composer, /Array\.from\(event\.target\.files/);
+  assert.match(composer, /for \(const file of files/);
+});
+
 test('isi yang lebih lama punya jalan menuju ke sana, dan penyegaran tidak membuangnya', () => {
   // Tanpa penggabungan, penyegaran lima detik akan menghapus pesan lama yang
   // baru saja ditarik pengguna — tombolnya ada, tetapi hasilnya lenyap.

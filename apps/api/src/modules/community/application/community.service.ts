@@ -291,7 +291,7 @@ export class CommunityService {
       const created = await tx.communityPost.create({
         data: {
           channelId, authorId: userId, body: body.trim(),
-          title: channel.type === CommunityChannelType.CHECKLIST ? title!.trim() : null,
+          title: title?.trim() || null,
         },
         select: { id: true },
       });
