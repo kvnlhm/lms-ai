@@ -33,8 +33,8 @@ const MASTER_NAV = [
   { href: '/master/community', label: 'Channel komunitas', icon: Hash, permission: 'discussions.moderate' },
   { href: '/master/insights', label: 'Insight', icon: BarChart, permission: 'analytics.read' },
   {
-    href: '/master/live-sessions',
-    label: 'Sesi langsung',
+    href: '/master/events',
+    label: 'Kelola event',
     icon: Calendar,
     permission: 'courses.manage',
   },

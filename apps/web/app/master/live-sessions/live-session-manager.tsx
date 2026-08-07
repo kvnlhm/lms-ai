@@ -33,6 +33,7 @@ function toLocalInputValue(date: Date): string {
 export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
   const notifier = useNotifier();
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [editing, setEditing] = useState<LiveSession | null>(null);
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -64,28 +65,22 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
     void load();
   }, [load]);
 
-  async function create(event: React.FormEvent) {
+  async function save(event: React.FormEvent) {
     event.preventDefault();
     if (busy) return;
-    setBusy('create');
+    setBusy(editing ? `edit-${editing.id}` : 'create');
     try {
-      unwrap(
-        await browserClient().POST('/api/v1/admin/live-sessions', {
-          body: {
-            courseId,
-            title: title.trim(),
-            description: description.trim() || undefined,
-            joinUrl: joinUrl.trim(),
-            // Input bernilai waktu lokal; server menyimpannya sebagai UTC.
-            startsAt: new Date(startsAt).toISOString(),
-            durationMinutes,
-          },
-        }),
-      );
+      const body = { title: title.trim(), description: description.trim() || undefined, joinUrl: joinUrl.trim(), startsAt: new Date(startsAt).toISOString(), durationMinutes };
+      if (editing) {
+        unwrap(await browserClient().PATCH('/api/v1/admin/live-sessions/{sessionId}', { params: { path: { sessionId: editing.id } }, body }));
+      } else {
+        unwrap(await browserClient().POST('/api/v1/admin/live-sessions', { body: { courseId, ...body } }));
+      }
       setTitle('');
       setDescription('');
       setJoinUrl('');
-      notifier.success('Sesi dijadwalkan.');
+      setEditing(null);
+      notifier.success(editing ? 'Event diperbarui.' : 'Event dijadwalkan.');
       setScheduleOpen(false);
       await load();
     } catch (caught) {
@@ -96,6 +91,17 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
     } finally {
       setBusy(null);
     }
+  }
+
+  function edit(session: LiveSession) {
+    setEditing(session);
+    setScheduleOpen(true);
+    setCourseId(session.course.id);
+    setTitle(session.title);
+    setDescription(session.description ?? '');
+    setJoinUrl(session.joinUrl);
+    setStartsAt(toLocalInputValue(new Date(session.startsAt)));
+    setDurationMinutes(session.durationMinutes);
   }
 
   async function cancel(session: LiveSession) {
@@ -149,12 +155,12 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
 
       {scheduleOpen ? (
         <Modal
-          title="Jadwalkan sesi baru"
+          title={editing ? 'Sunting event' : 'Jadwalkan sesi baru'}
           description="Pilih kursus, tentukan waktu, lalu masukkan tautan ruang pertemuan."
           busy={busy !== null}
-          onClose={() => setScheduleOpen(false)}
+          onClose={() => { setScheduleOpen(false); setEditing(null); }}
         >
-      <form className="stack" onSubmit={create}>
+      <form className="stack" onSubmit={save}>
         <label className="field">
           <span>Kursus</span>
           <select
@@ -238,7 +244,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
             Batal
           </button>
           <button className="btn" type="submit" disabled={busy !== null}>
-            {busy === 'create' ? 'Menyimpan…' : 'Jadwalkan'}
+            {busy === 'create' ? 'Menyimpan…' : editing ? 'Simpan perubahan' : 'Jadwalkan'}
           </button>
         </div>
       </form>
@@ -273,14 +279,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
                   {cancelled ? (
                     <span className="pill pillDanger">Dibatalkan</span>
                   ) : (
-                    <button
-                      className="btnTiny"
-                      type="button"
-                      disabled={busy !== null}
-                      onClick={() => void cancel(session)}
-                    >
-                      Batalkan
-                    </button>
+                    <div className="rowActions"><button className="btnTiny" type="button" disabled={busy !== null} onClick={() => edit(session)}>Sunting</button><button className="btnTiny" type="button" disabled={busy !== null} onClick={() => void cancel(session)}>Batalkan</button></div>
                   )}
                 </div>
                 {session.description ? <p>{session.description}</p> : null}

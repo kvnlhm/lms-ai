@@ -18,6 +18,8 @@ const composer = await readFile(new URL('../app/community/post-composer.tsx', im
 const editForm = await readFile(new URL('../app/community/post-edit-form.tsx', import.meta.url), 'utf8');
 const attachments = await readFile(new URL('../app/community/post-attachments.tsx', import.meta.url), 'utf8');
 const poll = await readFile(new URL('../app/community/post-poll.tsx', import.meta.url), 'utf8');
+const announcementManager = await readFile(new URL('../app/master/announcements/announcement-manager.tsx', import.meta.url), 'utf8');
+const liveSessionManager = await readFile(new URL('../app/master/live-sessions/live-session-manager.tsx', import.meta.url), 'utf8');
 
 test('shell Pelajar menyediakan sidebar desktop dan memindahkannya ke drawer pada mobile', () => {
   assert.match(css, /\.learnerShellBody\{[^}]*grid-template-columns:220px minmax\(0,1fr\)/);
@@ -167,6 +169,14 @@ test('judul dan lampiran postingan tampil di feed maupun chat, dan editor mengir
   assert.match(channel, /className="chatPostAttachments"/);
   assert.match(channel, /attachmentIds/);
   assert.match(channel, /title:.*body:/s);
+});
+
+test('Master dapat menyunting pengumuman dan mengelola event', () => {
+  assert.match(announcementManager, /PATCH\('\/api\/v1\/admin\/announcements\/\{announcementId\}'/);
+  assert.match(announcementManager, /Sunting pengumuman/);
+  assert.match(liveSessionManager, /PATCH\('\/api\/v1\/admin\/live-sessions\/\{sessionId\}'/);
+  assert.match(liveSessionManager, /Sunting event/);
+  assert.match(shell, /href: '\/master\/events'/);
 });
 
 test('gambar lampiran dibuka sebagai zoom satu layar dengan tombol tutup, bukan tab baru', () => {

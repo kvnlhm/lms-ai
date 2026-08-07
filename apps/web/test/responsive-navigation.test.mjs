@@ -47,7 +47,7 @@ test('Dashboard Master mobile menampilkan logo dan ranking tidak melebarkan view
 test('menu Master memakai ikon yang sesuai dengan fungsi setiap halaman', () => {
   const mappings = [
     ['Paket akses', 'Package'], ['Transaksi', 'CreditCard'], ['Forum', 'MessageCircle'],
-    ['Channel komunitas', 'Hash'], ['Insight', 'BarChart'], ['Sesi langsung', 'Calendar'],
+    ['Channel komunitas', 'Hash'], ['Insight', 'BarChart'], ['Kelola event', 'Calendar'],
     ['Pengumuman', 'Megaphone'], ['Perpustakaan video', 'Video'], ['Laporan', 'FileText'],
     ['Galat', 'AlertTriangle'], ['Audit log', 'ClipboardList'],
   ];

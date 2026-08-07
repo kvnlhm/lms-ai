@@ -40,6 +40,7 @@ function toLocalInputValue(date: Date): string {
 export function AnnouncementManager({ courses }: { courses: { id: string; title: string }[] }) {
   const notifier = useNotifier();
   const [composeOpen, setComposeOpen] = useState(false);
+  const [editing, setEditing] = useState<Announcement | null>(null);
   const [items, setItems] = useState<Announcement[]>([]);
   const [total, setTotal] = useState(0);
   const [halaman, setHalaman] = useState(1);
@@ -120,31 +121,49 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
     event.preventDefault();
     // Modal hanya menutup bila benar-benar tersimpan; bila gagal, isian yang
     // sudah diketik tetap ada untuk diperbaiki.
-    const ok = await run(
-      'create',
-      async () => {
-        await browserClient().POST('/api/v1/admin/announcements', {
-          body: {
-            title: title.trim(),
-            body: body.trim(),
-            audience,
-            courseId: audience === 'COURSE_LEARNERS' ? courseId : undefined,
-            publishedAt: scheduled ? new Date(publishedAt).toISOString() : undefined,
-            endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
-          },
+    const ok = await run(editing ? `edit-${editing.id}` : 'create', async () => {
+      const bodyPayload = {
+        title: title.trim(), body: body.trim(), audience,
+        courseId: audience === 'COURSE_LEARNERS' ? courseId : undefined,
+        publishedAt: scheduled ? new Date(publishedAt).toISOString() : undefined,
+        endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
+      };
+      if (editing) {
+        await browserClient().PATCH('/api/v1/admin/announcements/{announcementId}', {
+          params: { path: { announcementId: editing.id } }, body: bodyPayload,
         });
+      } else {
+        await browserClient().POST('/api/v1/admin/announcements', { body: bodyPayload });
+      }
         setTitle('');
         setBody('');
         setEndsAt('');
-      },
-      'Draft pengumuman tersimpan.',
-    );
+      }, editing ? 'Pengumuman diperbarui.' : 'Draft pengumuman tersimpan.');
     if (ok) {
       setComposeOpen(false);
+      setEditing(null);
       // Draft baru berada di halaman pertama karena daftarnya terbaru dulu;
       // `run` sudah memuat ulang halaman yang sedang dibuka.
       if (halaman !== 1) await load(1);
     }
+  }
+
+  function edit(item: Announcement) {
+    setEditing(item);
+    setComposeOpen(false);
+    setTitle(item.title);
+    setBody(item.body);
+    setAudience(item.audience);
+    setCourseId(item.course?.id ?? courses[0]?.id ?? '');
+    setScheduled(Boolean(item.publishedAt));
+    setPublishedAt(item.publishedAt ? toLocalInputValue(new Date(item.publishedAt)) : toLocalInputValue(new Date()));
+    setEndsAt(item.endsAt ? toLocalInputValue(new Date(item.endsAt)) : '');
+  }
+
+  function closeForm() {
+    if (busy !== null) return;
+    setComposeOpen(false);
+    setEditing(null);
   }
 
   return (
@@ -160,17 +179,17 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
           <span className="eyebrow">Pesan baru</span>
           <h2 className="sectionTitle">Tulis pengumuman</h2>
         </div>
-        <button className="btn" type="button" disabled={busy !== null} onClick={() => setComposeOpen(true)}>
+        <button className="btn" type="button" disabled={busy !== null} onClick={() => { setEditing(null); setComposeOpen(true); }}>
           Tulis pengumuman
         </button>
       </div>
 
-      {composeOpen ? (
+      {composeOpen || editing ? (
         <Modal
-          title="Tulis pengumuman"
+          title={editing ? 'Sunting pengumuman' : 'Tulis pengumuman'}
           description="Sampaikan informasi penting kepada seluruh pengguna atau peserta kursus tertentu."
           busy={busy !== null}
-          onClose={() => setComposeOpen(false)}
+          onClose={closeForm}
         >
       <form className="stack" onSubmit={submit}>
         <label className="field">
@@ -262,11 +281,11 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
           Tersimpan sebagai draft. Pelajar baru melihatnya setelah kamu menekan Terbitkan.
         </small>
         <div className="lessonEditActions">
-          <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={() => setComposeOpen(false)}>
+          <button className="btn btnGhost" type="button" disabled={busy !== null} onClick={closeForm}>
             Batal
           </button>
           <button className="btn" type="submit" disabled={busy !== null}>
-            {busy === 'create' ? 'Menyimpan…' : 'Simpan draft'}
+            {busy === 'create' ? 'Menyimpan…' : editing ? 'Simpan perubahan' : 'Simpan draft'}
           </button>
         </div>
       </form>
@@ -308,6 +327,9 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
                 {/* Diringkas menjadi satu tombol, sebentuk dengan daftar kursus
                     dan daftar pengguna. */}
                 <ActionMenu label="Aksi">
+                  <button className="btnTiny" type="button" disabled={busy !== null} onClick={() => edit(item)}>
+                    Sunting
+                  </button>
                   {item.status === 'DRAFT' ? (
                     <button
                       className="btnTiny"
