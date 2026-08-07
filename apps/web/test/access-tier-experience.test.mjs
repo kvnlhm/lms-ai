@@ -9,3 +9,22 @@ test('tombol buat paket memiliki jarak yang cukup dari deskripsi', () => {
   assert.match(manager, /className="btn tierCreateButton"/);
   assert.match(css, /\.tierCreateButton\s*\{[^}]*margin-top:\s*18px/);
 });
+
+test('pemilihan kursus paket memiliki pencarian dan aksi pilih cepat', () => {
+  assert.match(manager, /Cari kursus dalam paket/);
+  assert.match(manager, /Pilih semua/);
+  assert.match(manager, /Kosongkan/);
+  assert.match(css, /\.tierCourseTools/);
+});
+
+test('kartu paket tunggal tetap berada di tengah dan form memiliki kode promo', async () => {
+  assert.match(css, /\.tierGrid[^}]*justify-content:\s*center/);
+  assert.match(css, /\.regPromo/);
+  assert.match((await readFile(new URL('../app/register/registration-form.tsx', import.meta.url), 'utf8')), /Kode promo/);
+});
+
+test('tautan kontak memakai ikon tetapi tetap memiliki nama aksesibel', async () => {
+  const page = await readFile(new URL('../app/register/page.tsx', import.meta.url), 'utf8');
+  assert.match(page, /aria-label=\{tautan\.label\}/);
+  assert.match(page, /title=\{tautan\.label\}/);
+});

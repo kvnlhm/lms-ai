@@ -29,6 +29,7 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [promoCode, setPromoCode] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const notifier = useNotifier();
@@ -41,7 +42,7 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
     try {
       const checkout = unwrap<Checkout>(
 await browserClient().POST('/api/v1/registration/checkout', {
-          body: { tierId, fullName, email, phone, termsAccepted },
+          body: { tierId, fullName, email, phone, promoCode: promoCode.trim() || undefined, termsAccepted },
         }),
   );
       await loadSnap(checkout.clientKey, checkout.isProduction);
@@ -144,6 +145,16 @@ await browserClient().POST('/api/v1/registration/checkout', {
               placeholder="081234567890"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
+            />
+          </label>
+          <label className="field regPromo">
+            <span>Kode promo <small>(opsional)</small></span>
+            <input
+              autoCapitalize="characters"
+              value={promoCode}
+              placeholder="Masukkan kode promo"
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              maxLength={80}
             />
           </label>
         </div>

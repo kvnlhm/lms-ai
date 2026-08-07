@@ -851,6 +851,7 @@ model RegistrationOrder {
   fullName               String             @map("full_name")
   email                  String             @db.Citext
   phone                  String
+  promoCode              String?            @map("promo_code")
   grossAmount            Int                @map("gross_amount")
   status                 PaymentOrderStatus @default(PENDING)
   paymentProvider        PaymentProvider    @default(MIDTRANS) @map("payment_provider")

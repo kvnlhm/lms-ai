@@ -201,6 +201,7 @@ export class CommerceService {
         fullName: input.fullName.trim(),
         email: input.email.trim().toLowerCase(),
         phone: normalizePhone(input.phone),
+        promoCode: input.promoCode?.trim().toUpperCase() || null,
         grossAmount: tier.priceIdr,
         expiresAt,
       },

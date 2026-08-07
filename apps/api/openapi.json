@@ -16783,6 +16783,10 @@
             "type": "string",
             "example": "6281234567890"
           },
+          "promoCode": {
+            "type": "string",
+            "description": "Kode promo opsional dari penyelenggara."
+          },
           "termsAccepted": {
             "type": "boolean",
             "example": true

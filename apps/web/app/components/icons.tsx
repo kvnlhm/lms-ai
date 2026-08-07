@@ -252,6 +252,21 @@ export const MessageCircle = (props: IconProps) => (
   </Base>
 );
 
+export const Globe = (props: IconProps) => (
+  <Base {...props}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" />
+  </Base>
+);
+
+export const Instagram = (props: IconProps) => (
+  <Base {...props}>
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none" />
+  </Base>
+);
+
 export const Package = (props: IconProps) => (
   <Base {...props}><path d="M21 8l-9 5-9-5M3.3 6.5L12 2l8.7 4.5v11L12 22l-8.7-4.5zM12 13v9" /></Base>
 );

@@ -3559,6 +3559,8 @@ export interface components {
             email: string;
             /** @example 6281234567890 */
             phone: string;
+            /** @description Kode promo opsional dari penyelenggara. */
+            promoCode?: string;
             /** @example true */
             termsAccepted: boolean;
         };

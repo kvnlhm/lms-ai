@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { Schemas } from '@lms/api-client';
 import Link from 'next/link';
-import { ArrowLeft, Plus } from '../components/icons';
+import { ArrowLeft, Globe, Instagram, MessageCircle, Plus } from '../components/icons';
 import { serverClient, unwrap } from '../lib/api';
 import { RegistrationForm } from './registration-form';
 import { BrandMark } from '../components/brand-mark';
@@ -27,11 +27,12 @@ const COCOK_UNTUK = [
 ];
 
 const TAUTAN_KONTAK = [
-  { label: 'Instagram', href: 'https://www.instagram.com/aipreneur.co' },
-  { label: 'Website', href: 'https://aipreneur.co.id' },
+  { label: 'Instagram', href: 'https://www.instagram.com/aipreneur.co', icon: Instagram },
+  { label: 'Website', href: 'https://aipreneur.co.id', icon: Globe },
   {
     label: 'Join Group WhatsApp AIpreneur',
     href: 'https://www.whatsapp.com/channel/0029Vb5lIxR5PO0sK0TxdO1l',
+    icon: MessageCircle,
   },
 ];
 
@@ -159,17 +160,22 @@ await client.GET('/api/v1/registration/tiers')
       <section className="regSection regContact">
         <h2>Hubungi kita lebih lanjut</h2>
         <div className="regContactLinks">
-          {TAUTAN_KONTAK.map((tautan) => (
-            <a
-              key={tautan.href}
-              className="btn btnGhost"
-              href={tautan.href}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {tautan.label}
-            </a>
-          ))}
+          {TAUTAN_KONTAK.map((tautan) => {
+            const Icon = tautan.icon;
+            return (
+                <a
+                  key={tautan.href}
+                  className="btn btnGhost"
+                  href={tautan.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={tautan.label}
+                  title={tautan.label}
+                >
+                  <Icon size={19} />
+                </a>
+            );
+          })}
         </div>
       </section>
 

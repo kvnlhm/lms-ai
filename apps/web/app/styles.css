@@ -630,7 +630,7 @@ table.data tbody tr:hover { background: var(--raised); }
 
 /* Registrasi publik dan pengelolaan paket akses. */
 .registrationSectionTitle { text-align: center; color: var(--text-2); font-weight: 550; }
-.tierGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+.tierGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 360px)); gap: 20px; align-items: stretch; justify-content: center; }
 .tierCard {
   position: relative; display: flex; flex-direction: column;
   padding: 28px; border: 1px solid var(--line-strong); border-radius: var(--r-lg);
@@ -670,7 +670,8 @@ table.data tbody tr:hover { background: var(--raised); }
 .tierCard:not(.selected) .tierChoose { background: var(--raised-2); color: var(--text); }
 .tierCard:hover .tierChoose { background: var(--accent-hot); color: white; }
 .registrationFields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-.registrationFields .field:last-child { grid-column: 1 / -1; }
+.registrationFields .field:nth-child(3), .registrationFields .regPromo { grid-column: 1 / -1; }
+.regPromo small { color: var(--muted); font-weight: 400; }
 
 .tierAdminLayout { display: grid; grid-template-columns: minmax(300px, .75fr) minmax(420px, 1.25fr); gap: 22px; align-items: start; }
 .tierAdminForm { padding: 24px; position: sticky; top: 80px; }
@@ -681,6 +682,13 @@ table.data tbody tr:hover { background: var(--raised); }
 .tierCourses { border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; display: grid; gap: 10px; }
 .tierCourses legend { padding: 0 6px; color: var(--text-2); font-size: 13px; }
 .tierCourses small { color: var(--muted); }
+.tierCourseTools { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+.tierCourseSearch input { width: 100%; min-height: 36px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised); color: var(--text); font: inherit; }
+.tierCourseSearch input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tierCourseCount { padding: 0 2px; }
+.tierCourseList { max-height: 360px; overflow: auto; display: grid; gap: 2px; padding: 4px; border: 1px solid var(--line-soft); border-radius: var(--r-sm); }
+.tierCourseRow { min-height: 38px; padding: 7px 8px; border-radius: var(--r-sm); cursor: pointer; }
+.tierCourseRow:hover { background: var(--raised); }
 .tierAdminList { display: grid; gap: 12px; }
 .tierAdminCard { padding: 22px; display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; }
 .tierAdminCard h3 { margin: 10px 0 4px; font-size: 18px; }
@@ -706,6 +714,8 @@ table.data tbody tr:hover { background: var(--raised); }
   .registrationFields .field:last-child, .tierDescription, .tierCourses, .tierFieldGrid > .checkRow { grid-column: auto; }
   .tierAdminForm { position: static; }
   .tierAdminCard { flex-direction: column; }
+  .tierCourseTools { grid-template-columns: 1fr 1fr; }
+  .tierCourseSearch { grid-column: 1 / -1; }
 }
 
 .moduleCard { border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 14px; overflow: visible; }
@@ -2765,6 +2775,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 .regContact { gap: 16px; }
 .regContactLinks { display: flex; flex-wrap: wrap; gap: 10px; }
+.regContactLinks .btn { width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: var(--r-pill); }
 
 .regFoot {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;

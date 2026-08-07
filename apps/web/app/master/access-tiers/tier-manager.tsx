@@ -188,7 +188,19 @@ function TierFields({
   courses: Course[];
   onChange?: (draft: TierDraft) => void;
 }) {
+  const [courseQuery, setCourseQuery] = useState('');
   const update = (patch: Partial<TierDraft>) => onChange?.({ ...draft, ...patch });
+  const visibleCourses = courses.filter((course) =>
+    course.title.toLocaleLowerCase().includes(courseQuery.trim().toLocaleLowerCase()),
+  );
+  const toggleVisibleCourses = (checked: boolean) => {
+    const visibleIds = new Set(visibleCourses.map((course) => course.id));
+    update({
+      courseIds: checked
+        ? Array.from(new Set([...draft.courseIds, ...visibleIds]))
+        : draft.courseIds.filter((id) => !visibleIds.has(id)),
+    });
+  };
   return (
     <div className="tierFieldGrid">
       <label className="field"><span>Nama paket</span><input required minLength={3} value={draft.name} onChange={(e) => update({ name: e.target.value, slug: draft.slug || slugify(e.target.value) })} /></label>
@@ -229,8 +241,22 @@ function TierFields({
       <label className="field tierDescription"><span>Deskripsi</span><textarea rows={3} value={draft.description} onChange={(e) => update({ description: e.target.value })} /></label>
       <fieldset className="tierCourses">
         <legend>Kursus dalam paket</legend>
-        {courses.map((course) => (
-          <label className="checkRow" key={course.id}>
+        <div className="tierCourseTools">
+          <label className="tierCourseSearch">
+            <span className="srOnly">Cari kursus dalam paket</span>
+            <input
+              value={courseQuery}
+              placeholder="Cari kursus dalam paket…"
+              onChange={(event) => setCourseQuery(event.currentTarget.value)}
+            />
+          </label>
+          <button className="btnTiny" type="button" onClick={() => toggleVisibleCourses(true)}>Pilih semua</button>
+          <button className="btnTiny" type="button" onClick={() => toggleVisibleCourses(false)}>Kosongkan</button>
+        </div>
+        <small className="tierCourseCount">{draft.courseIds.length} dipilih dari {courses.length} kursus</small>
+        <div className="tierCourseList">
+        {visibleCourses.map((course) => (
+          <label className="checkRow tierCourseRow" key={course.id}>
             <input
               type="checkbox"
               value={course.id}
@@ -246,6 +272,8 @@ function TierFields({
             <span>{course.title} <small>({statusLabel(course.status)})</small></span>
           </label>
         ))}
+        {!visibleCourses.length ? <small className="muted">Kursus tidak ditemukan.</small> : null}
+        </div>
       </fieldset>
       <label className="checkRow"><input type="checkbox" checked={draft.isActive} onChange={(e) => update({ isActive: e.target.checked })} /><span>Tampilkan paket pada halaman pendaftaran</span></label>
     </div>

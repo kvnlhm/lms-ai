@@ -113,6 +113,12 @@ export class CreateCheckoutDto {
   @Matches(/^\+?[0-9]{9,16}$/, { message: 'Nomor WhatsApp tidak valid.' })
   phone!: string;
 
+  @ApiPropertyOptional({ description: 'Kode promo opsional dari penyelenggara.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  promoCode?: string;
+
   @ApiProperty({ example: true })
   @IsBoolean()
   termsAccepted!: boolean;
