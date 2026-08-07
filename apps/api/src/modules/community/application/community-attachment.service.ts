@@ -35,6 +35,10 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     this.config = config.get('app', { infer: true }).communityAttachment;
   }
 
+  async removeObject(objectKey: string): Promise<void> {
+    await rm(join(this.config.storagePath, objectKey), { force: true });
+  }
+
   // ─────────────────────────────────────────────
   // Unggahan dari composer, sebelum postingannya ada
   // ─────────────────────────────────────────────
@@ -104,6 +108,29 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     for (const [position, id] of unik.entries()) {
       await tx.communityPostAttachment.update({ where: { id }, data: { postId, position } });
     }
+  }
+
+  /** Mengganti seluruh lampiran post; id lama boleh dipertahankan, id baru harus unggahan draf penulis. */
+  async replace(tx: Prisma.TransactionClient, postId: string, userId: string, attachmentIds: string[]): Promise<string[]> {
+    if (attachmentIds.length > this.config.maxPerPost) {
+      throw AppError.validation({ attachmentIds: [`Maksimum ${this.config.maxPerPost} lampiran per postingan.`] });
+    }
+    const unik = [...new Set(attachmentIds)];
+    if (unik.length !== attachmentIds.length) throw AppError.validation({ attachmentIds: ['Ada lampiran yang disebut lebih dari sekali.'] });
+
+    const lama = await tx.communityPostAttachment.findMany({ where: { postId }, select: { id: true, objectKey: true } });
+    const tersedia = await tx.communityPostAttachment.findMany({
+      where: { id: { in: unik }, OR: [{ postId }, { postId: null, uploaderId: userId }] },
+      select: { id: true },
+    });
+    if (tersedia.length !== unik.length) throw AppError.validation({ attachmentIds: ['Lampiran tidak ditemukan atau bukan milik postingan ini.'] });
+
+    await tx.communityPostAttachment.deleteMany({ where: { postId, id: { notIn: unik } } });
+    for (const [position, id] of unik.entries()) {
+      await tx.communityPostAttachment.update({ where: { id }, data: { postId, position } });
+    }
+    const dipertahankan = new Set(unik);
+    return lama.filter((item) => !dipertahankan.has(item.id)).map((item) => item.objectKey);
   }
 
   // ─────────────────────────────────────────────

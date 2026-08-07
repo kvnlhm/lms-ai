@@ -126,6 +126,19 @@ describe('CommunityAttachmentService', () => {
     });
   });
 
+  test('mengganti lampiran postingan hanya dengan milik penulis atau unggahan drafnya', async () => {
+    const update = jest.fn().mockResolvedValue({});
+    const deleteMany = jest.fn().mockResolvedValue({ count: 1 });
+    const findMany = jest.fn()
+      .mockResolvedValueOnce([{ id: 'lama', objectKey: 'lama.png' }])
+      .mockResolvedValueOnce([{ id: 'baru' }]);
+    const { value } = service();
+
+    await expect(value.replace({ communityPostAttachment: { findMany, deleteMany, update } } as never, 'post-1', 'pelajar-1', ['baru']))
+      .resolves.toEqual(['lama.png']);
+    expect(deleteMany).toHaveBeenCalledWith({ where: { postId: 'post-1', id: { notIn: ['baru'] } } });
+  });
+
   test('penyapu membuang unggahan yang tidak pernah diterbitkan beserta berkasnya', async () => {
     const deleteMany = jest.fn().mockResolvedValue({ count: 1 });
     const { value } = service({

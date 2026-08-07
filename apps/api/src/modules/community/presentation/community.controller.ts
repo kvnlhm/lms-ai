@@ -112,7 +112,7 @@ export class CommunityController {
 
   @Patch('posts/:postId') @ApiOperation({ summary: 'Mengubah tulisan sendiri' }) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)
   updatePost(@Param('postId', new ParseUUIDPipe()) postId: string, @Body() dto: CommunityPostBodyDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.community.updatePost(user.id, postId, dto.body, moderator(user), dto.title);
+    return this.community.updatePost(user.id, postId, dto.body, moderator(user), dto.title, dto.attachmentIds);
   }
 
   // Menyematkan adalah tindakan moderasi, jadi izinnya ditegakkan di sini —

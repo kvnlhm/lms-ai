@@ -3461,6 +3461,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .composerCount{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
 
 .postTitle{margin:16px 0 0;font-size:19px;line-height:1.35}
+.chatPostTitle{margin:0 0 6px;font-size:14px;line-height:1.35}.chatPostAttachments{margin-top:8px}.chatPostAttachments .postAttachments{margin-top:0}
 .postTitle+.postBody{margin-top:8px}
 
 .postAttachments{display:grid;gap:10px;margin:14px 0}

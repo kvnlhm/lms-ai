@@ -7,6 +7,7 @@ import { browserClient, unwrap, unwrapList } from '../lib/browser-api';
 import { PostComposer } from './post-composer';
 import { PostAttachments, type LampiranPost } from './post-attachments';
 import { PostPoll, type Poll } from './post-poll';
+import { PostEditForm } from './post-edit-form';
 
 /** Satu tarikan pesan atau balasan; dipakai baik saat memuat lama maupun menyegarkan. */
 const UKURAN_HALAMAN = 30;
@@ -103,6 +104,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   const [channelId, setChannelId] = useState(() => subchannels.find((item) => item.slug === activeSubchannelSlug && item.groupSlug === activeChannelSlug)?.id ?? subchannels.find((item) => item.type !== 'ANNOUNCEMENTS' && !item.isReadOnly)?.id ?? subchannels.find((item) => item.type !== 'ANNOUNCEMENTS')?.id ?? subchannels[0]?.id ?? '');
   const [body, setBody] = useState('');
   const [title, setTitle] = useState('');
+  const [editingPost, setEditingPost] = useState<CommunityPost | null>(null);
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
   const [pending, startTransition] = useTransition();
@@ -279,14 +281,14 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
     setPosts((current) => current.map((post) => (post.id === postId ? ubah(post) : post)));
   }
 
-  async function simpanPost(post: CommunityPost, bodyBaru: string, judulChecklist?: string): Promise<boolean> {
+  async function simpanPost(post: CommunityPost, input: { title: string; body: string; attachmentIds: string[] }): Promise<boolean> {
     try {
       const hasil = unwrap<CommunityPost>(
         await browserClient().PATCH('/api/v1/community/posts/{postId}', {
-          params: { path: { postId: post.id } }, body: { body: bodyBaru, ...(judulChecklist ? { title: judulChecklist } : {}) },
+          params: { path: { postId: post.id } }, body: { body: input.body, title: input.title || undefined, attachmentIds: input.attachmentIds },
         }),
       );
-      gantiPost(post.id, (lama) => ({ ...lama, title: hasil.title, body: hasil.body, editedAt: hasil.editedAt }));
+      gantiPost(post.id, (lama) => ({ ...lama, title: hasil.title, body: hasil.body, attachments: hasil.attachments, editedAt: hasil.editedAt }));
       return true;
     } catch (error) {
       void notifier.error('Perubahan tidak tersimpan', { text: error instanceof Error ? error.message : undefined });
@@ -295,15 +297,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   }
 
   function suntingPost(post: CommunityPost) {
-    void (async () => {
-      const baru = await notifier.prompt('Ubah tulisan', {
-        label: 'Tulisanmu', defaultValue: post.body, multiline: true, minLength: 1,
-        confirmLabel: 'Simpan perubahan',
-      });
-      // `null` berarti dibatalkan; teks yang sama persis tidak perlu dikirim.
-      if (baru === null || baru === post.body) return;
-      await simpanPost(post, baru, post.channel.type === 'CHECKLIST' ? post.title ?? undefined : undefined);
-    })();
+    setEditingPost(post);
   }
 
   function hapusPost(post: CommunityPost) {
@@ -524,6 +518,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
           </div>
         ) : null}
       </section>
+      {editingPost ? <PostEditForm title={editingPost.title ?? ''} body={editingPost.body} attachments={editingPost.attachments ?? []} onClose={() => setEditingPost(null)} onSave={(input) => simpanPost(editingPost, input)} /> : null}
     </>
   );
 }
@@ -672,7 +667,7 @@ function ChannelChat({ posts, selected, currentUserId, body, setBody, canPost, p
             {!mine ? <Avatar person={post.author} /> : null}
             <div className="chatMessageContent">
               <div className="chatMeta"><strong>{mine ? 'Kamu' : post.author.fullName}</strong><time dateTime={post.createdAt}>{formatDate(post.createdAt)}</time>{post.isPinned ? <span className="chatPinnedMark">Disematkan</span> : null}</div>
-              <div className="chatBubble"><p>{post.body}<Diedit at={post.editedAt} /></p></div>
+              <div className="chatBubble">{post.title ? <h2 className="chatPostTitle">{post.title}</h2> : null}<p>{post.body}<Diedit at={post.editedAt} /></p><div className="chatPostAttachments"><PostAttachments attachments={post.attachments ?? []} /></div></div>
               <div className="chatMessageActions">
                 <button type="button" className={post.reactedByMe ? 'chatReaction reacted' : 'chatReaction'} onClick={() => aksi.react(post.id)} aria-label={`Beri reaksi pada pesan ${post.author.fullName}`}>♡ {post.reactionCount || ''}</button>
                 {/* Membalas hanya ada di mode feed selama ini: balasan tampil

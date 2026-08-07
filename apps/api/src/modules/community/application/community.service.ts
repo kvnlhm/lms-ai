@@ -405,7 +405,7 @@ export class CommunityService {
    * dapat berubah diam-diam setelah dibaca orang lebih buruk daripada
    * percakapan yang tidak dapat diubah sama sekali.
    */
-  async updatePost(userId: string, postId: string, body: string, canModerate: boolean, title?: string) {
+  async updatePost(userId: string, postId: string, body: string, canModerate: boolean, title?: string, attachmentIds?: string[]) {
     const post = await this.prisma.communityPost.findFirst({
       where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } },
       select: { id: true, authorId: true, title: true, body: true, channelId: true, channel: { select: { type: true } } },
@@ -415,14 +415,23 @@ export class CommunityService {
     if (post.authorId !== userId && !mengelolaChecklist) throw AppError.permissionDenied();
     if (post.channel.type === CommunityChannelType.CHECKLIST && !title?.trim()) throw new AppError('VALIDATION_ERROR', 422, 'Judul checklist wajib diisi.');
 
-    const row = await this.prisma.communityPost.update({
-      where: { id: postId },
-      data: {
-        body: body.trim(), editedAt: new Date(),
-        ...(post.channel.type === CommunityChannelType.CHECKLIST ? { title: title!.trim() } : {}),
-      },
-      select: this.postSelect(userId),
-    });
+    let removed: string[] = [];
+    const updateData = {
+      body: body.trim(), editedAt: new Date(),
+      ...(title !== undefined ? { title: title.trim() || null } : {}),
+    };
+    const row = attachmentIds === undefined
+      ? await this.prisma.communityPost.update({ where: { id: postId }, data: updateData, select: this.postSelect(userId) })
+      : await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.communityPost.update({
+          where: { id: postId },
+          data: updateData,
+          select: this.postSelect(userId),
+        });
+        removed = await this.attachments.replace(tx, postId, userId, attachmentIds);
+        return updated;
+      });
+    for (const objectKey of removed) await this.attachments.removeObject(objectKey);
     if (post.authorId !== userId) {
       await this.audit.record({
         actorUserId: userId,

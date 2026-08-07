@@ -159,6 +159,15 @@ test('sunting dan hapus pesan bersandar pada kewenangan dari server, bukan tebak
   assert.match(css, /\.editedMark\{/);
 });
 
+test('judul dan lampiran postingan tampil di feed maupun chat, dan editor mengirim semuanya', () => {
+  assert.match(channel, /post\.title \? <h2 className="postTitle">\{post\.title\}<\/h2>/);
+  assert.match(channel, /<PostAttachments attachments=\{post\.attachments \?\? \[\]\} \/>/);
+  assert.match(channel, /className="chatPostTitle"/);
+  assert.match(channel, /className="chatPostAttachments"/);
+  assert.match(channel, /attachmentIds/);
+  assert.match(channel, /title:.*body:/s);
+});
+
 test('isi yang lebih lama punya jalan menuju ke sana, dan penyegaran tidak membuangnya', () => {
   // Tanpa penggabungan, penyegaran lima detik akan menghapus pesan lama yang
   // baru saja ditarik pengguna — tombolnya ada, tetapi hasilnya lenyap.
