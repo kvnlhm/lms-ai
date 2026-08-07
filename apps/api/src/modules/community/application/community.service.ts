@@ -13,6 +13,11 @@ const commentSelect = {
   id: true, body: true, editedAt: true, createdAt: true, author: { select: authorSelect },
 } as const;
 
+/** Id sub-channel bertipe checklist saja; dipakai untuk membatasi hitungan progres. */
+function checklistChannelIds(groups: { subchannels: { id: string; type: CommunityChannelType }[] }[]): string[] {
+  return groups.flatMap((group) => group.subchannels.filter((item) => item.type === CommunityChannelType.CHECKLIST).map((item) => item.id));
+}
+
 @Injectable()
 export class CommunityService {
   constructor(
@@ -20,8 +25,26 @@ export class CommunityService {
     private readonly audit: AuditService,
   ) {}
 
-  listChannels(includeArchived = false) {
-    return this.prisma.communityChannelGroup.findMany({
+  /**
+   * Berapa item checklist yang sudah diselesaikan pengguna ini, per sub-channel.
+   *
+   * Dihitung di server, bukan dari tulisan yang kebetulan sudah termuat di
+   * layar. Feed dipenggal per halaman, jadi menghitungnya di antarmuka akan
+   * memberi "2 dari 3" pada checklist yang sebenarnya berisi lima item hanya
+   * karena dua sisanya belum ikut terkirim.
+   */
+  private async checklistCompletedCounts(userId: string | undefined, channelIds: string[]): Promise<Map<string, number>> {
+    if (!userId || channelIds.length === 0) return new Map();
+    const rows = await this.prisma.communityPost.groupBy({
+      by: ['channelId'],
+      where: { channelId: { in: channelIds }, deletedAt: null, checklistCompletions: { some: { userId } } },
+      _count: { _all: true },
+    });
+    return new Map(rows.map((row) => [row.channelId, row._count._all]));
+  }
+
+  async listChannels(includeArchived = false, userId?: string) {
+    const groups = await this.prisma.communityChannelGroup.findMany({
       where: includeArchived ? {} : { archivedAt: null },
       orderBy: [{ position: 'asc' }, { name: 'asc' }],
       select: {
@@ -37,17 +60,20 @@ export class CommunityService {
           },
         },
       },
-    }).then((groups) => groups.map((group) => ({
+    });
+    const selesai = await this.checklistCompletedCounts(userId, checklistChannelIds(groups));
+    return groups.map((group) => ({
       ...group,
       subchannels: group.subchannels.map(({ _count, ...subchannel }) => ({
         ...subchannel, postCount: _count.posts,
+        checklistCompletedCount: subchannel.type === CommunityChannelType.CHECKLIST ? selesai.get(subchannel.id) ?? 0 : 0,
       })),
-    })));
+    }));
   }
 
   /** Hanya pintasan yang dipilih Master; halaman Komunitas tetap melihat semua Channel aktif. */
-  listSidebarChannels() {
-    return this.prisma.communityChannelGroup.findMany({
+  async listSidebarChannels(userId?: string) {
+    const groups = await this.prisma.communityChannelGroup.findMany({
       where: { archivedAt: null, showInSidebar: true },
       orderBy: [{ position: 'asc' }, { name: 'asc' }],
       select: {
@@ -62,10 +88,15 @@ export class CommunityService {
           },
         },
       },
-    }).then((groups) => groups.map((group) => ({
+    });
+    const selesai = await this.checklistCompletedCounts(userId, checklistChannelIds(groups));
+    return groups.map((group) => ({
       ...group,
-      subchannels: group.subchannels.map(({ _count, ...subchannel }) => ({ ...subchannel, postCount: _count.posts })),
-    })));
+      subchannels: group.subchannels.map(({ _count, ...subchannel }) => ({
+        ...subchannel, postCount: _count.posts,
+        checklistCompletedCount: subchannel.type === CommunityChannelType.CHECKLIST ? selesai.get(subchannel.id) ?? 0 : 0,
+      })),
+    }));
   }
 
   private postSelect(userId: string) {
@@ -476,7 +507,7 @@ export class CommunityService {
         const subchannel = await tx.communityChannel.create({
           data: { groupId: channel.id, name: input.subchannelName.trim(), slug: subchannelSlug, description: input.subchannelDescription, type, isReadOnly: type === CommunityChannelType.ANNOUNCEMENTS ? true : input.isReadOnly, allowReplies: type === CommunityChannelType.ANNOUNCEMENTS ? false : input.allowReplies, showInSidebar: input.showInSidebar, createdBy: userId },
         });
-        return { ...channel, subchannels: [{ ...subchannel, postCount: 0 }] };
+        return { ...channel, subchannels: [{ ...subchannel, postCount: 0, checklistCompletedCount: 0 }] };
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw new AppError('VALIDATION_ERROR', 422, 'Slug channel sudah digunakan.');
@@ -562,7 +593,7 @@ export class CommunityService {
     try {
       const type = input.type ?? CommunityChannelType.CHAT;
       const subchannel = await this.prisma.communityChannel.create({ data: { ...input, type, isReadOnly: type === CommunityChannelType.ANNOUNCEMENTS ? true : input.isReadOnly, allowReplies: type === CommunityChannelType.ANNOUNCEMENTS ? false : input.allowReplies, groupId, slug, name: input.name.trim(), createdBy: userId } });
-      return { ...subchannel, postCount: 0 };
+      return { ...subchannel, postCount: 0, checklistCompletedCount: 0 };
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw new AppError('VALIDATION_ERROR', 422, 'Slug sub-channel sudah digunakan dalam channel ini.');
       throw error;
@@ -576,7 +607,7 @@ export class CommunityService {
       this.prisma.communityChannel.update({ where: { id }, data: { ...input, ...(input.type === CommunityChannelType.ANNOUNCEMENTS ? { isReadOnly: true, allowReplies: false } : {}) } }),
       this.prisma.communityPost.count({ where: { channelId: id, deletedAt: null } }),
     ]);
-    return { ...subchannel, postCount };
+    return { ...subchannel, postCount, checklistCompletedCount: 0 };
   }
 
   async archiveSubchannel(userId: string, id: string) {
@@ -597,6 +628,6 @@ export class CommunityService {
       this.prisma.communityPost.count({ where: { channelId: id, deletedAt: null } }),
     ]);
     if (subchannel.archivedAt) await this.audit.record({ actorUserId: userId, action: 'community.subchannel.restore', targetType: 'CommunityChannel', targetId: id, before: { archivedAt: subchannel.archivedAt } });
-    return { ...restored, postCount };
+    return { ...restored, postCount, checklistCompletedCount: 0 };
   }
 }

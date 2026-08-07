@@ -282,4 +282,50 @@ describe('CommunityService hierarchy invariants', () => {
       .rejects.toMatchObject({ status: 403 });
     expect(update).not.toHaveBeenCalled();
   });
+  test('progres checklist dihitung dari basis data, bukan dari tulisan yang termuat feed', async () => {
+    // Feed dipenggal per halaman. Kalau progresnya dihitung dari tulisan yang
+    // kebetulan sudah terkirim, checklist berisi lima langkah akan tampil
+    // "1 dari 2" hanya karena tiga sisanya belum ikut halaman pertama.
+    const groupBy = jest.fn().mockResolvedValue([{ channelId: 'sub-checklist', _count: { _all: 3 } }]);
+    const service = new CommunityService({
+      communityChannelGroup: {
+        findMany: jest.fn().mockResolvedValue([{
+          id: 'group-1', slug: 'selamat-datang', name: 'Selamat Datang', description: null, position: 0, showInSidebar: true,
+          archivedAt: null, createdAt: new Date(),
+          subchannels: [
+            { id: 'sub-checklist', slug: 'welcome', name: 'Welcome Checklist', description: null, position: 0, type: 'CHECKLIST', isReadOnly: true, allowReplies: true, showInSidebar: true, archivedAt: null, createdAt: new Date(), _count: { posts: 5 } },
+            { id: 'sub-chat', slug: 'mulai', name: 'Mulai Disini', description: null, position: 1, type: 'POSTS', isReadOnly: false, allowReplies: true, showInSidebar: true, archivedAt: null, createdAt: new Date(), _count: { posts: 9 } },
+          ],
+        }]),
+      },
+      communityPost: { groupBy },
+    } as never, {} as never);
+
+    const [group] = await service.listChannels(false, 'student-1');
+    const [checklist, posts] = group.subchannels;
+    expect(checklist).toMatchObject({ postCount: 5, checklistCompletedCount: 3 });
+    // Sub-channel bukan checklist tidak ikut dihitung dan tidak ikut ditanyakan.
+    expect(posts).toMatchObject({ postCount: 9, checklistCompletedCount: 0 });
+    expect(groupBy).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ channelId: { in: ['sub-checklist'] } }),
+    }));
+  });
+
+  test('tanpa pengguna, progres checklist tidak ditanyakan sama sekali', async () => {
+    const groupBy = jest.fn();
+    const service = new CommunityService({
+      communityChannelGroup: {
+        findMany: jest.fn().mockResolvedValue([{
+          id: 'group-1', slug: 'selamat-datang', name: 'Selamat Datang', description: null, position: 0, showInSidebar: true,
+          archivedAt: null, createdAt: new Date(),
+          subchannels: [{ id: 'sub-checklist', slug: 'welcome', name: 'Welcome Checklist', description: null, position: 0, type: 'CHECKLIST', isReadOnly: true, allowReplies: true, showInSidebar: true, archivedAt: null, createdAt: new Date(), _count: { posts: 5 } }],
+        }]),
+      },
+      communityPost: { groupBy },
+    } as never, {} as never);
+
+    const [group] = await service.listChannels(true);
+    expect(group.subchannels[0]).toMatchObject({ checklistCompletedCount: 0 });
+    expect(groupBy).not.toHaveBeenCalled();
+  });
 });

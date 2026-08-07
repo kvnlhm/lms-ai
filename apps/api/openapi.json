@@ -19496,6 +19496,9 @@
           "postCount": {
             "type": "number"
           },
+          "checklistCompletedCount": {
+            "type": "number"
+          },
           "showInSidebar": {
             "type": "boolean"
           }
@@ -19510,6 +19513,7 @@
           "isReadOnly",
           "allowReplies",
           "postCount",
+          "checklistCompletedCount",
           "showInSidebar"
         ]
       },

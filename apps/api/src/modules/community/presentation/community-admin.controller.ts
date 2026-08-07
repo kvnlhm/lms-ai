@@ -12,7 +12,8 @@ import { AdminCommunityChannelDto, CommunitySubchannelDto, CreateCommunityChanne
 @RequirePermissions(PERMISSIONS.DISCUSSIONS_MODERATE)
 export class CommunityAdminController {
   constructor(private readonly community: CommunityService) {}
-  @Get() @ApiEnvelopeArray(AdminCommunityChannelDto) @ApiErrors(401, 403) list() { return this.community.listChannels(true); }
+  @Get() @ApiEnvelopeArray(AdminCommunityChannelDto) @ApiErrors(401, 403)
+  list(@CurrentUser() user: AuthenticatedUser) { return this.community.listChannels(true, user.id); }
   @Post() @HttpCode(201) @ApiEnvelope(AdminCommunityChannelDto) @ApiErrors(401, 403, 422)
   create(@Body() dto: CreateCommunityChannelDto, @CurrentUser() user: AuthenticatedUser) { return this.community.createChannel(user.id, dto); }
   @Patch(':id') @ApiEnvelope(AdminCommunityChannelDto) @ApiErrors(401, 403, 404, 422)

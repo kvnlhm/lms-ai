@@ -15,7 +15,7 @@ export const COMMUNITY_CHANNEL_TYPES: Record<CommunityChannelType, { label: stri
   ANNOUNCEMENTS: { label: 'Pengumuman', icon: '!', description: 'Kabar satu arah yang hanya diterbitkan Master.' },
   CHECKLIST: { label: 'Checklist', icon: '✓', description: 'Daftar langkah ringkas, misalnya Welcome Checklist.' },
 };
-export type CommunitySubchannel = { id: string; slug: string; name: string; description: string | null; type: CommunityChannelType; isReadOnly: boolean; allowReplies: boolean; postCount: number; showInSidebar: boolean; archivedAt?: string | null; position?: number };
+export type CommunitySubchannel = { id: string; slug: string; name: string; description: string | null; type: CommunityChannelType; isReadOnly: boolean; allowReplies: boolean; postCount: number; checklistCompletedCount: number; showInSidebar: boolean; archivedAt?: string | null; position?: number };
 export type CommunityChannel = { id: string; slug: string; name: string; description: string | null; showInSidebar: boolean; position?: number; archivedAt?: string | null; subchannels: CommunitySubchannel[] };
 type Person = { id: string; fullName: string; avatarUrl: string | null };
 export type CommunityComment = {
@@ -232,20 +232,6 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
     });
   }
 
-  function checklist(post: CommunityPost) {
-    startTransition(async () => {
-      try {
-        const result = await browserClient().PATCH('/api/v1/community/posts/{postId}/checklist', {
-          params: { path: { postId: post.id } }, body: { completed: !post.completedByMe },
-        });
-        const value = unwrap<{ completed: boolean }>(result);
-        gantiPost(post.id, (item) => ({ ...item, completedByMe: value.completed }));
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : 'Checklist gagal disimpan.');
-      }
-    });
-  }
-
   function comment(postId: string) {
     const draft = commentDrafts[postId]?.trim(); if (!draft) return;
     startTransition(async () => {
@@ -421,6 +407,34 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
     balasan, sisaBalasan, muatKomentar, memuatKomentar,
   };
 
+  /**
+   * Isi feed: tulisan biasa apa adanya, checklist diringkas satu kartu.
+   *
+   * Sebelumnya setiap langkah checklist mengalir ke feed sebagai tulisan
+   * tersendiri, sehingga satu Welcome Checklist berisi lima langkah muncul
+   * sebagai lima kartu berturut-turut — masing-masing dengan tombol suka dan
+   * kolom "Balas post ini…". Checklist adalah materi yang dibaca dan ditandai
+   * selesai, bukan percakapan, jadi ia diwakili satu kartu per sub-channel.
+   *
+   * Kartunya ditaruh pada posisi langkah terbarunya supaya urutan feed tetap
+   * kronologis, bukan dipaksa ke atas.
+   */
+  const entriFeed = useMemo(() => {
+    const terbaru = new Map<string, string>();
+    const biasa: CommunityPost[] = [];
+    for (const post of posts) {
+      if (post.channel.type !== 'CHECKLIST') { biasa.push(post); continue; }
+      const tercatat = terbaru.get(post.channel.id);
+      if (!tercatat || +new Date(post.createdAt) > +new Date(tercatat)) terbaru.set(post.channel.id, post.createdAt);
+    }
+    const kartuChecklist = [...terbaru].flatMap(([channelId, createdAt]) => {
+      const channel = subchannels.find((item) => item.id === channelId);
+      return channel ? [{ jenis: 'checklist' as const, kunci: `checklist-${channelId}`, createdAt, channel }] : [];
+    });
+    const kartuPost = biasa.map((post) => ({ jenis: 'post' as const, kunci: post.id, createdAt: post.createdAt, post }));
+    return [...kartuPost, ...kartuChecklist].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+  }, [posts, subchannels]);
+
   if (activeChannelSlug && activeSubchannelSlug && selected?.type === 'CHECKLIST') {
     return <ChecklistPage posts={posts} selected={selected} currentUserName={currentUserName} pending={pending} message={message} canPost={Boolean(canPost)} checklistTitle={checklistTitle} setChecklistTitle={setChecklistTitle} body={body} setBody={setBody} publish={publish} hapusPost={hapusPost} adaYangLebihLama={posts.length < total} memuatLama={memuatLama} muatLebihLama={muatLebihLama} />;
   }
@@ -450,21 +464,28 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
         <div className="communityHeading"><div><span className="eyebrow">{activeSubchannelSlug ? COMMUNITY_CHANNEL_TYPES[selected?.type ?? 'POSTS'].label : 'Komunitas'}</span><h1>{activeSubchannelSlug ? selected?.name : 'Feed terbaru'}</h1>{activeSubchannelSlug && selected?.description ? <p className="communityMuted">{selected.description}</p> : null}</div></div>
         {subchannels.length > 0 ? (
           <div className="postComposer card">
-            {!activeSubchannelSlug ? <div className="composerChannelPicker" role="group" aria-label="Pilih sub-channel tujuan">{subchannels.filter((channel) => channel.type !== 'ANNOUNCEMENTS').map((channel) => <button key={channel.id} className={channel.id === channelId ? 'active' : ''} type="button" onClick={() => setChannelId(channel.id)}>{channel.groupName} / {COMMUNITY_CHANNEL_TYPES[channel.type].icon} {channel.name}</button>)}</div> : null}
+            {/* Checklist ikut disingkirkan dari pilihan tujuan seperti pengumuman:
+                composer feed tidak punya kolom judul, sedangkan `publish` menolak
+                item checklist tanpa judul — jadi tombol Terbitkan di sini diam
+                saja tanpa memberi tahu apa pun. Langkah checklist ditambahkan
+                lewat form "Tambah checklist" di halaman checklist-nya. */}
+            {!activeSubchannelSlug ? <div className="composerChannelPicker" role="group" aria-label="Pilih sub-channel tujuan">{subchannels.filter((channel) => channel.type !== 'ANNOUNCEMENTS' && channel.type !== 'CHECKLIST').map((channel) => <button key={channel.id} className={channel.id === channelId ? 'active' : ''} type="button" onClick={() => setChannelId(channel.id)}>{channel.groupName} / {COMMUNITY_CHANNEL_TYPES[channel.type].icon} {channel.name}</button>)}</div> : null}
             {canPost ? <><textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={announcementPage ? `Tulis pengumuman untuk ${selected?.name}...` : `Bagikan sesuatu ke ${selected?.name ?? 'channel'}...`} maxLength={5000} /><div className="composerFoot"><span>{body.length}/5000</span><button className="btn" type="button" disabled={pending || !body.trim()} onClick={publish}>{announcementPage ? 'Terbitkan pengumuman' : 'Terbitkan'}</button></div></> : <p className="communityMuted">{announcementPage ? 'Hanya Master yang dapat menerbitkan pengumuman.' : 'Channel ini hanya dapat ditulis oleh Master.'}</p>}
           </div>
         ) : null}
         {message ? <p className="communityMessage" role="status">{message}</p> : null}
         <div className="postList">
-          {posts.map((post) => (
-            <article className="communityPost card" key={post.id}>
+          {entriFeed.map((entri) => {
+            if (entri.jenis === 'checklist') return <ChecklistFeedCard key={entri.kunci} channel={entri.channel} />;
+            const post = entri.post;
+            return <article className="communityPost card" key={entri.kunci}>
               <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.groupSlug}/${post.channel.slug}`}>{post.channel.groupName} / {COMMUNITY_CHANNEL_TYPES[post.channel.type].icon} {post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
-              {post.channel.type === 'CHECKLIST' ? <div className={post.completedByMe ? 'checklistItem completed' : 'checklistItem'}><label><input type="checkbox" checked={post.completedByMe} disabled={pending} onChange={() => checklist(post)} /><strong>{post.checklistTitle ?? 'Checklist tanpa judul'}<Diedit at={post.editedAt} /></strong></label>{post.body ? <p>{post.body}</p> : null}</div> : <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>}
+              <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
               <div className="postActions">{post.channel.type === 'ANNOUNCEMENTS' ? <span>Pengumuman resmi</span> : <button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button>}{post.channel.allowReplies ? <span>◯ {post.commentCount} balasan</span> : <span>Balasan ditutup</span>}<PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
               {post.channel.allowReplies ? <><MuatBalasan post={post} aksi={aksi} />{balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}<div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div></> : null}
-            </article>
-          ))}
-          {posts.length === 0 ? <div className="card empty"><p>{announcementPage ? 'Belum ada pengumuman.' : 'Belum ada post. Jadilah yang pertama memulai percakapan.'}</p></div> : null}
+            </article>;
+          })}
+          {entriFeed.length === 0 ? <div className="card empty"><p>{announcementPage ? 'Belum ada pengumuman.' : 'Belum ada post. Jadilah yang pertama memulai percakapan.'}</p></div> : null}
         </div>
         {posts.length < total ? (
           <div className="muatLagi">
@@ -477,6 +498,37 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
       </section>
     </>
   );
+}
+
+/**
+ * Wakil sebuah checklist di dalam feed: satu kartu untuk seluruh langkahnya.
+ *
+ * Sengaja tanpa tombol suka dan tanpa kolom balasan. Angka progresnya datang
+ * dari server (`postCount` dan `checklistCompletedCount`), bukan dari tulisan
+ * yang kebetulan sudah termuat, sehingga tetap benar meski feed baru memuat
+ * sebagian langkahnya.
+ */
+function ChecklistFeedCard({ channel }: { channel: CommunitySubchannel & { groupSlug: string; groupName: string } }) {
+  const total = channel.postCount;
+  const selesai = Math.min(channel.checklistCompletedCount, total);
+  const persentase = total === 0 ? 0 : Math.round((selesai / total) * 100);
+  const tuntas = total > 0 && selesai === total;
+  const alamat = `/community/${channel.groupSlug}/${channel.slug}`;
+  return <article className="communityPost card checklistFeedCard">
+    <header>
+      <span className="checklistFeedIcon" aria-hidden="true">{COMMUNITY_CHANNEL_TYPES.CHECKLIST.icon}</span>
+      <div><strong>{channel.name}</strong><small><Link href={alamat}>{channel.groupName}</Link> · {total} topik</small></div>
+    </header>
+    {channel.description ? <p className="postBody">{channel.description}</p> : null}
+    <div className="checklistFeedProgress">
+      <div><span>{tuntas ? 'Seluruh topik selesai' : `${selesai} dari ${total} topik selesai`}</span><strong>{persentase}%</strong></div>
+      <div className="checklistProgressBar" role="progressbar" aria-label={`Progres ${channel.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={persentase}><span style={{ width: `${persentase}%` }} /></div>
+    </div>
+    <div className="checklistFeedActions">
+      <Link className="btn" href={alamat}>{tuntas ? 'Lihat checklist' : selesai === 0 ? 'Mulai checklist' : 'Lanjutkan checklist'}</Link>
+      <span className="checklistFeedClosed">Tidak menerima balasan</span>
+    </div>
+  </article>;
 }
 
 function ChecklistPage({ posts, selected, currentUserName, pending, message, canPost, checklistTitle, setChecklistTitle, body, setBody, publish, hapusPost, adaYangLebihLama, memuatLama, muatLebihLama }: {

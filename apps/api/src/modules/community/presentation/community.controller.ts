@@ -21,10 +21,10 @@ export class CommunityController {
   constructor(private readonly community: CommunityService, private readonly attachments: CommunityAttachmentService) {}
 
   @Get('channels') @ApiOperation({ summary: 'Daftar channel komunitas aktif' }) @ApiEnvelopeArray(CommunityChannelDto) @ApiErrors(401)
-  channels() { return this.community.listChannels(); }
+  channels(@CurrentUser() user: AuthenticatedUser) { return this.community.listChannels(false, user.id); }
 
   @Get('sidebar-channels') @ApiOperation({ summary: 'Pintasan channel yang dipilih Master untuk sidebar Pelajar' }) @ApiEnvelopeArray(CommunityChannelDto) @ApiErrors(401)
-  sidebarChannels() { return this.community.listSidebarChannels(); }
+  sidebarChannels(@CurrentUser() user: AuthenticatedUser) { return this.community.listSidebarChannels(user.id); }
 
   @Get('feed') @ApiOperation({ summary: 'Feed komunitas lintas channel' }) @ApiEnvelopeList(CommunityPostDto) @ApiErrors(401)
   async feed(@Query() query: CommunityPageQueryDto, @CurrentUser() user: AuthenticatedUser) {

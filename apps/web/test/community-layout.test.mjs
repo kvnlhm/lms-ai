@@ -247,3 +247,33 @@ test('judul checklist membuka halaman postingan dan selesai sebelum lanjut', () 
   assert.match(checklistDetail, /Lanjut ke checklist berikutnya/);
   assert.match(css, /\.checklistArticleBody\{[^}]*white-space:pre-wrap/);
 });
+
+test('checklist tampil sebagai satu kartu di feed, bukan satu kartu per langkah', () => {
+  // Lima langkah Welcome Checklist dulu mengalir ke feed sebagai lima tulisan
+  // lepas, masing-masing lengkap dengan tombol suka dan kolom "Balas post ini…".
+  assert.match(channel, /const entriFeed = useMemo/);
+  assert.match(channel, /post\.channel\.type !== 'CHECKLIST'/);
+  assert.match(channel, /entriFeed\.map/);
+  assert.doesNotMatch(channel, /posts\.map\(\(post\) => \(\s*<article className="communityPost card"/);
+  // Kartunya berdiri di posisi langkah terbarunya supaya feed tetap kronologis.
+  assert.match(channel, /\[\.\.\.kartuPost, \.\.\.kartuChecklist\]\.sort/);
+});
+
+test('kartu checklist di feed tidak menerima reaksi maupun balasan', () => {
+  const kartu = channel.slice(channel.indexOf('function ChecklistFeedCard'), channel.indexOf('function ChecklistPage'));
+  assert.doesNotMatch(kartu, /reactionCount|reactedByMe|commentComposer|Balas post ini/);
+  assert.match(kartu, /Tidak menerima balasan/);
+  assert.match(kartu, /Mulai checklist/);
+  assert.match(kartu, /Lanjutkan checklist/);
+  assert.match(css, /\.checklistFeedClosed\{[^}]*color:var\(--muted\)/);
+});
+
+test('progres kartu checklist datang dari server, bukan dari tulisan yang termuat', () => {
+  // Feed dipenggal per halaman; menghitung dari `posts` akan menyebut "2 dari 2"
+  // pada checklist yang sebenarnya berisi lima langkah.
+  assert.match(channel, /checklistCompletedCount: number/);
+  assert.match(channel, /const total = channel\.postCount/);
+  assert.match(channel, /Math\.min\(channel\.checklistCompletedCount, total\)/);
+  // Bilah progresnya dipakai bersama halaman checklist, bukan disalin.
+  assert.match(channel, /className="checklistProgressBar"/);
+});

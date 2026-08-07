@@ -4430,6 +4430,7 @@ export interface components {
             isReadOnly: boolean;
             allowReplies: boolean;
             postCount: number;
+            checklistCompletedCount: number;
             showInSidebar: boolean;
         };
         CommunityChannelDto: {

@@ -62,6 +62,16 @@ export class CommunitySubchannelDto {
   @ApiProperty() isReadOnly!: boolean;
   @ApiProperty() allowReplies!: boolean;
   @ApiProperty() postCount!: number;
+  /**
+   * Item checklist yang sudah diselesaikan pengguna yang sedang meminta, dipakai
+   * feed untuk menampilkan progres tanpa menghitung dari tulisan yang termuat.
+   *
+   * Hanya diisi pada endpoint daftar channel, dan hanya untuk sub-channel
+   * bertipe `CHECKLIST`. Tipe lain selalu 0, begitu pula balasan endpoint
+   * pembuatan dan penyuntingan sub-channel — di sana nilainya tidak berlaku dan
+   * tidak boleh dibaca sebagai progres.
+   */
+  @ApiProperty() checklistCompletedCount!: number;
   @ApiProperty() showInSidebar!: boolean;
 }
 
