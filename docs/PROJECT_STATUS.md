@@ -7,8 +7,8 @@ tersimpan di mana pun kecuali di kepala orang yang baru saja mengerjakannya:
 keadaan produksi hari ini, apa yang sudah ditutup, dan apa yang sengaja
 dibiarkan terbuka beserta alasannya.
 
-Terakhir diperbarui: **7 Agustus 2026**, setelah perapian kolom paket dan
-spinner jumlah mengikuti tema, deployment **239** terverifikasi.
+Terakhir diperbarui: **7 Agustus 2026**, setelah perapian kolom formulir
+kelola channel, event, dan pengumuman, deployment **240** terverifikasi.
 
 ---
 
@@ -23,7 +23,7 @@ sedang dibangun menuju rilis; ini proyek yang sedang berjalan.
 | Repo | `kvnlhm/lms-ai`, cabang `feat/walking-skeleton-and-master` — **publik** |
 | VPS | Hostinger `31.97.105.104`, 7 GB RAM, sisa disk ±64 G dari 96 G |
 | Orkestrasi | Coolify 4.1.2, aplikasi UUID `e1b4fo52n9tnzjpm5m2i5k8l` |
-| Deploy terakhir | commit `07a4db3`, deployment **239**, selesai dan terverifikasi |
+| Deploy terakhir | commit `eb39980`, deployment **240**, selesai dan terverifikasi |
 | Pembayaran | Midtrans **Production** (bukan sandbox) |
 | Email | Resend, domain pengirim `send.aipreneur.co.id` |
 | Pemantauan | UptimeRobot, `HEAD /api/v1/health/ready` tiap 5 menit |
