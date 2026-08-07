@@ -35,6 +35,12 @@ export class CreateAccessTierDto {
   @MaxLength(1_000)
   description?: string;
 
+  @ApiPropertyOptional({ type: String, nullable: true, description: 'Kode promo yang dapat dimasukkan calon pembeli.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  promoCode?: string | null;
+
   @ApiProperty({ example: 1_499_000 })
   @Type(() => Number)
   @IsInt()

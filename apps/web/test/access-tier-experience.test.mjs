@@ -21,6 +21,8 @@ test('kartu paket tunggal tetap berada di tengah dan form memiliki kode promo', 
   assert.match(css, /\.tierGrid[^}]*justify-content:\s*center/);
   assert.match(css, /\.regPromo/);
   assert.match((await readFile(new URL('../app/register/registration-form.tsx', import.meta.url), 'utf8')), /Kode promo/);
+  assert.match(manager, /Kode promo paket/);
+  assert.match(manager, /promoCode/);
 });
 
 test('tautan kontak memakai ikon tetapi tetap memiliki nama aksesibel', async () => {

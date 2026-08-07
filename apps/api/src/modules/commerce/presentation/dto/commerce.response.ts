@@ -12,6 +12,7 @@ export class AccessTierDto {
   @ApiProperty() slug!: string;
   @ApiProperty() name!: string;
   @ApiPropertyOptional({ type: String, nullable: true }) description!: string | null;
+  @ApiPropertyOptional({ type: String, nullable: true }) promoCode!: string | null;
   @ApiProperty() priceIdr!: number;
   @ApiPropertyOptional({ type: Number, nullable: true }) originalPriceIdr!: number | null;
   @ApiPropertyOptional({ type: Number, nullable: true }) durationMonths!: number | null;

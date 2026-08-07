@@ -814,6 +814,7 @@ model AccessTier {
   slug           String   @unique
   name           String
   description    String?
+  promoCode      String?  @map("promo_code")
   priceIdr       Int      @map("price_idr")
   /// Harga sebelum diskon, untuk ditampilkan tercoret di samping harga jual.
   /// Opsional: paket tanpa nilai ini tampil dengan satu harga saja.

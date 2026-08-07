@@ -114,6 +114,7 @@ export class CommerceService {
           name: input.name.trim(),
           slug: input.slug,
           description: input.description?.trim() || null,
+          promoCode: input.promoCode?.trim().toUpperCase() || null,
           priceIdr: input.priceIdr,
           originalPriceIdr: input.originalPriceIdr ?? null,
           durationMonths: input.durationMonths ?? null,
@@ -154,6 +155,9 @@ export class CommerceService {
             ...(input.description !== undefined
               ? { description: input.description?.trim() || null }
               : {}),
+            ...(input.promoCode !== undefined
+              ? { promoCode: input.promoCode?.trim().toUpperCase() || null }
+              : {}),
             ...(input.priceIdr !== undefined ? { priceIdr: input.priceIdr } : {}),
             ...(input.originalPriceIdr !== undefined
               ? { originalPriceIdr: input.originalPriceIdr }
@@ -192,6 +196,10 @@ export class CommerceService {
       include: tierInclude,
     });
     if (!tier || tier.courses.length === 0) throw AppError.notFound();
+    const promoCode = input.promoCode?.trim().toUpperCase();
+    if (promoCode && promoCode !== tier.promoCode) {
+      throw AppError.validation({ promoCode: ['Kode promo tidak sesuai untuk paket ini.'] });
+    }
     const orderCode = `REG-${randomUUID().replaceAll('-', '')}`;
     const expiresAt = new Date(Date.now() + this.config.commerce.orderTtlMinutes * 60_000);
     const order = await this.prisma.registrationOrder.create({
@@ -201,7 +209,7 @@ export class CommerceService {
         fullName: input.fullName.trim(),
         email: input.email.trim().toLowerCase(),
         phone: normalizePhone(input.phone),
-        promoCode: input.promoCode?.trim().toUpperCase() || null,
+        promoCode: promoCode || null,
         grossAmount: tier.priceIdr,
         expiresAt,
       },
@@ -676,6 +684,7 @@ export class CommerceService {
       slug: tier.slug,
       name: tier.name,
       description: tier.description,
+      promoCode: publishedOnly ? null : tier.promoCode,
       priceIdr: tier.priceIdr,
       originalPriceIdr: tier.originalPriceIdr,
       durationMonths: tier.durationMonths,

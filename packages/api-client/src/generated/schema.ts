@@ -3535,6 +3535,7 @@ export interface components {
             slug: string;
             name: string;
             description?: string | null;
+            promoCode?: string | null;
             priceIdr: number;
             originalPriceIdr?: number | null;
             durationMonths?: number | null;
@@ -3619,6 +3620,8 @@ export interface components {
             /** @example pro-12-bulan */
             slug: string;
             description?: string;
+            /** @description Kode promo yang dapat dimasukkan calon pembeli. */
+            promoCode?: string | null;
             /** @example 1499000 */
             priceIdr: number;
             /**
@@ -3643,6 +3646,8 @@ export interface components {
             /** @example pro-12-bulan */
             slug?: string;
             description?: string;
+            /** @description Kode promo yang dapat dimasukkan calon pembeli. */
+            promoCode?: string | null;
             /** @example 1499000 */
             priceIdr?: number;
             /**

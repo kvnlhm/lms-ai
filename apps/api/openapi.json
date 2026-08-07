@@ -16696,6 +16696,10 @@
             "type": "string",
             "nullable": true
           },
+          "promoCode": {
+            "type": "string",
+            "nullable": true
+          },
           "priceIdr": {
             "type": "number"
           },
@@ -16968,6 +16972,11 @@
           "description": {
             "type": "string"
           },
+          "promoCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Kode promo yang dapat dimasukkan calon pembeli."
+          },
           "priceIdr": {
             "type": "number",
             "example": 1499000
@@ -17020,6 +17029,11 @@
           },
           "description": {
             "type": "string"
+          },
+          "promoCode": {
+            "type": "string",
+            "nullable": true,
+            "description": "Kode promo yang dapat dimasukkan calon pembeli."
           },
           "priceIdr": {
             "type": "number",

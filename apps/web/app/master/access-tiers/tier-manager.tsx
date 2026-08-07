@@ -13,6 +13,7 @@ interface TierDraft {
   name: string;
   slug: string;
   description: string;
+  promoCode: string;
   priceIdr: string;
   originalPriceIdr: string;
   duration: string;
@@ -25,6 +26,7 @@ const emptyDraft: TierDraft = {
   name: '',
   slug: '',
   description: '',
+  promoCode: '',
   priceIdr: '',
   originalPriceIdr: '',
   duration: '6',
@@ -147,6 +149,7 @@ await browserClient().PATCH('/api/v1/admin/access-tiers/{tierId}', {
                 name: tier.name,
                 slug: tier.slug,
                 description: tier.description ?? '',
+                promoCode: tier.promoCode ?? '',
                 priceIdr: String(tier.priceIdr),
                 originalPriceIdr: tier.originalPriceIdr === null ? '' : String(tier.originalPriceIdr),
                 duration: tier.isLifetime ? 'lifetime' : String(tier.durationMonths),
@@ -239,6 +242,7 @@ function TierFields({
       </div>
       <label className="field"><span>Urutan</span><input type="number" min={0} value={draft.position} onChange={(e) => update({ position: e.target.value })} /></label>
       <label className="field tierDescription"><span>Deskripsi</span><textarea rows={3} value={draft.description} onChange={(e) => update({ description: e.target.value })} /></label>
+      <label className="field"><span>Kode promo paket</span><input value={draft.promoCode} placeholder="Contoh: AIPRENEUR2026" maxLength={80} onChange={(e) => update({ promoCode: e.target.value.toUpperCase() })} /><span className="fieldHint">Kode ini dapat dimasukkan calon pembeli saat mendaftar.</span></label>
       <fieldset className="tierCourses">
         <legend>Kursus dalam paket</legend>
         <div className="tierCourseTools">
@@ -285,6 +289,7 @@ function payload(draft: TierDraft) {
     name: draft.name,
     slug: draft.slug,
     description: draft.description || undefined,
+    promoCode: draft.promoCode.trim() || null,
     priceIdr: Number(draft.priceIdr),
     originalPriceIdr: draft.originalPriceIdr.trim() === '' ? null : Number(draft.originalPriceIdr),
     durationMonths: draft.duration === 'lifetime' ? null : Number(draft.duration),

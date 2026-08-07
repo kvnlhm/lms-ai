@@ -229,9 +229,11 @@ function tierBenefits(tier: Tier): string[] {
   const courseItems = tier.courses.map((course) => `Akses kursus ${course.title}`);
   const items = [...descriptionItems, ...courseItems];
 
-  return items.length > 0
-    ? Array.from(new Set(items))
-    : ['Akses materi belajar dalam paket ini'];
+  const uniqueItems = Array.from(new Set(items));
+  if (uniqueItems.length === 0) return ['Akses materi belajar dalam paket ini'];
+  return uniqueItems.length > 5
+    ? [...uniqueItems.slice(0, 5), `+ ${uniqueItems.length - 5} manfaat lainnya`]
+    : uniqueItems;
 }
 
 async function loadSnap(clientKey: string, isProduction: boolean): Promise<void> {
