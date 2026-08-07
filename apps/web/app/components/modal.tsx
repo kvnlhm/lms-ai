@@ -24,6 +24,7 @@ export function Modal({
   description,
   onClose,
   children,
+  className,
   /** Menahan penutupan selama penyimpanan berjalan. */
   busy = false,
 }: {
@@ -31,6 +32,7 @@ export function Modal({
   description?: string;
   onClose: () => void;
   children: ReactNode;
+  className?: string;
   busy?: boolean;
 }) {
   const panel = useRef<HTMLDivElement>(null);
@@ -98,7 +100,7 @@ export function Modal({
     >
       <div
         ref={panel}
-        className="formModalPanel"
+        className={`formModalPanel${className ? ` ${className}` : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="formModalTitle"

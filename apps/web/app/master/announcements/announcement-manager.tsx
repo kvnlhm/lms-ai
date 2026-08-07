@@ -188,10 +188,11 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
         <Modal
           title={editing ? 'Sunting pengumuman' : 'Tulis pengumuman'}
           description="Sampaikan informasi penting kepada seluruh pengguna atau peserta kursus tertentu."
+          className="wideFormModal"
           busy={busy !== null}
           onClose={closeForm}
         >
-      <form className="stack" onSubmit={submit}>
+      <form className="stack adminModalForm" onSubmit={submit}>
         <label className="field">
           <span>Judul</span>
           <input
@@ -216,7 +217,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
             disabled={busy !== null}
           />
         </label>
-        <div className="fieldRow">
+        <div className="fieldRow adminFormRow">
           <label className="field">
             <span>Ditujukan kepada</span>
             <select
@@ -255,7 +256,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
           />
           <span>Jadwalkan tampil pada waktu tertentu</span>
         </label>
-        <div className="fieldRow">
+        <div className="fieldRow adminFormRow">
           {scheduled ? (
             <label className="field">
               <span>Mulai tampil</span>

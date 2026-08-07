@@ -3,6 +3,17 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const css = await readFile(new URL('../app/styles.css', import.meta.url), 'utf8');
+const layoutEventManager = await readFile(new URL('../app/master/live-sessions/live-session-manager.tsx', import.meta.url), 'utf8');
+const layoutAnnouncementManager = await readFile(new URL('../app/master/announcements/announcement-manager.tsx', import.meta.url), 'utf8');
+const layoutChannelManager = await readFile(new URL('../app/master/community/channel-manager.tsx', import.meta.url), 'utf8');
+
+test('form kelola channel, event, dan pengumuman memakai grid kolom sejajar', () => {
+  assert.match(css, /\.adminFormRow\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(css, /\.formModalPanel\.wideFormModal\s*\{[^}]*width:\s*min\(700px/);
+  assert.match(layoutEventManager, /className="stack adminModalForm"/);
+  assert.match(layoutAnnouncementManager, /className="stack adminModalForm"/);
+  assert.match(layoutChannelManager, /className="channelForm adminModalForm"/);
+});
 const shell = await readFile(new URL('../app/components/app-shell.tsx', import.meta.url), 'utf8');
 const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const channel = await readFile(new URL('../app/community/community-feed.tsx', import.meta.url), 'utf8');

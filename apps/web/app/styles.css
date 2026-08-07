@@ -706,6 +706,7 @@ table.data tbody tr:hover { background: var(--raised); }
   background: var(--surface); box-shadow: var(--shadow);
   overscroll-behavior: contain;
 }
+.formModalPanel.wideFormModal { width: min(700px, 100%); }
 .tierEditModal .sectionHead h2 { margin: 5px 0 0; }
 
 @media (max-width: 800px) {
@@ -2607,6 +2608,22 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
    di dalam halaman — tingginya di sana dipakai untuk menandai area menulis. */
 .formModalBody .lessonContentInput { min-height: 170px; }
 
+/* Formulir pengelolaan memakai satu grid yang sama: label dan kontrol mulai
+   pada garis yang sama, sementara bidang panjang tetap mengambil satu baris. */
+.adminModalForm { gap: 14px; }
+.adminModalForm > .field { min-width: 0; margin-bottom: 0; }
+.adminModalForm .fieldRow,
+.adminFormRow { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; }
+.adminModalForm .fieldRow > .field { min-width: 0; margin-bottom: 0; }
+.adminModalForm input,
+.adminModalForm select,
+.adminModalForm textarea { width: 100%; box-sizing: border-box; }
+.adminModalForm .field textarea { min-height: 90px; }
+@media (max-width: 680px) {
+  .adminModalForm .fieldRow,
+  .adminFormRow { grid-template-columns: 1fr; }
+}
+
 
 @media (max-width: 680px) {
   /* Formulir dengan enam sampai sepuluh kolom tidak muat di kotak mengambang
@@ -3156,6 +3173,8 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .shortcutChevron{font-size:20px;line-height:1;transition:transform .18s ease}
 .channelManagerHead{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:12px}.channelManagerHead>div:first-child{display:grid;gap:3px}.channelManagerHead>div:last-child{display:flex;align-items:center;gap:14px}.channelManagerHead>div:last-child>span{color:var(--muted);font-size:12px}.channelManagerHead .btn{display:inline-flex;align-items:center;gap:7px}
 .channelFormDivider{display:grid;gap:3px;border-top:1px solid var(--border);padding-top:16px;margin-top:3px}.channelFormDivider small,.channelSubHead small{color:var(--muted);font-size:12px}.channelSubFields{display:grid;gap:12px}.channelShortcutCheck{display:flex;align-items:flex-start;gap:10px;padding:11px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);cursor:pointer}.channelShortcutCheck input{width:auto;margin-top:3px}.channelShortcutCheck span{display:grid;gap:2px}.channelShortcutCheck small{color:var(--muted)}.channelAccordion{display:grid;gap:10px}.channelAccordionItem{border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow:hidden}.channelAccordionHead{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:12px 14px}.channelExpand{border:0;background:transparent;color:var(--text);display:grid;grid-template-columns:20px 38px minmax(0,1fr);align-items:center;gap:10px;text-align:left;cursor:pointer;min-width:0}.channelExpand>span:last-child{display:grid;gap:3px;min-width:0}.channelExpand small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.channelChevron{font-size:24px;color:var(--muted);transition:transform .18s ease}.channelExpand[aria-expanded="true"] .channelChevron{transform:rotate(90deg)}.channelShortcutState{color:var(--muted);font-size:11px;white-space:nowrap}.channelAccordionPanel{border-top:1px solid var(--border);padding:14px;display:grid;gap:8px;background:color-mix(in srgb,var(--surface-2) 35%,transparent)}.channelSubHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 0 8px}.channelSubHead>div{display:grid;gap:2px}.channelSubRow{display:grid;grid-template-columns:34px minmax(0,1fr) auto auto;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--border);border-radius:11px;background:var(--surface)}.channelSubRow>div{display:grid;gap:3px}.channelSubRow small{color:var(--muted)}.channelSubCreate{display:grid;gap:14px;padding:14px;border:1px dashed var(--border);border-radius:11px;background:var(--surface)}
+.channelForm.adminModalForm .field { margin-bottom: 0; }
+.channelRuleGrid .field { min-width: 0; margin-bottom: 0; }
 .learnerMenuLabel{margin-top:0}.learnerIndexPage{padding-top:32px}.learnerIndexList{display:grid;gap:11px}.learnerIndexRow{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:13px;padding:15px;text-decoration:none;color:var(--text)}.learnerIndexRow>span:nth-child(2){display:grid;gap:3px}.learnerIndexRow small,.learnerEventRow small{color:var(--muted)}.learnerIndexIcon{display:grid;place-items:center;width:42px;height:42px;border-radius:11px;background:var(--surface-2);color:var(--primary)}.learnerEventRow{display:grid;grid-template-columns:58px minmax(0,1fr) auto;align-items:center;gap:16px;padding:16px}.learnerEventRow>time{display:grid;place-items:center;width:54px;height:58px;border-radius:12px;background:var(--surface-2)}.learnerEventRow>time strong{font-size:20px}.learnerEventRow>time span{text-transform:uppercase;color:var(--muted);font-size:10px}.learnerEventRow>div:nth-child(2){display:grid;gap:4px}.learnerEventRow p{margin:3px 0 0;color:var(--muted);font-size:13px}
 .communityLayout{grid-template-columns:minmax(0,1fr) 310px;max-width:1280px}
 .homeCommunitySection{margin-top:34px}

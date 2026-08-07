@@ -146,10 +146,11 @@ export function LiveSessionManager() {
         <Modal
           title={editing ? 'Sunting event' : 'Jadwalkan sesi baru'}
           description="Tentukan waktu event, lalu masukkan tautan ruang pertemuan."
+          className="wideFormModal"
           busy={busy !== null}
           onClose={() => { setScheduleOpen(false); setEditing(null); }}
         >
-      <form className="stack" onSubmit={save}>
+      <form className="stack adminModalForm" onSubmit={save}>
         <label className="field">
           <span>Judul sesi</span>
           <input
@@ -189,7 +190,7 @@ export function LiveSessionManager() {
         <small className="muted">
           Didukung: Zoom, Google Meet, Microsoft Teams, Whereby, dan Jitsi. Tautan wajib https.
         </small>
-        <div className="fieldRow">
+        <div className="fieldRow adminFormRow">
           <label className="field">
             <span>Mulai</span>
             <input
