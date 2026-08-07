@@ -168,6 +168,15 @@ test('judul dan lampiran postingan tampil di feed maupun chat, dan editor mengir
   assert.match(channel, /title:.*body:/s);
 });
 
+test('gambar lampiran dibuka sebagai zoom satu layar dengan tombol tutup, bukan tab baru', () => {
+  assert.match(attachments, /useState<LampiranPost \| null>/);
+  assert.match(attachments, /role="dialog"/);
+  assert.match(attachments, /aria-label="Tutup gambar"/);
+  assert.match(attachments, /className="postLightboxImage"/);
+  assert.doesNotMatch(attachments, /<a className="postMediaItem" href=\{alamat\(item\.id\)\} target="_blank"/);
+  assert.match(css, /\.postLightboxBackdrop\{/);
+});
+
 test('isi yang lebih lama punya jalan menuju ke sana, dan penyegaran tidak membuangnya', () => {
   // Tanpa penggabungan, penyegaran lima detik akan menghapus pesan lama yang
   // baru saja ditarik pengguna — tombolnya ada, tetapi hasilnya lenyap.
