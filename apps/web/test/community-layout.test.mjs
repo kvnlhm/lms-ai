@@ -14,6 +14,11 @@ test('form kelola channel, event, dan pengumuman memakai grid kolom sejajar', ()
   assert.match(layoutAnnouncementManager, /className="stack adminModalForm"/);
   assert.match(layoutChannelManager, /className="channelForm adminModalForm"/);
 });
+
+test('form pengumuman memberi baris tanggal satu kolom saat penjadwalan belum aktif', () => {
+  assert.match(css, /\.adminFormRow\.singleFieldRow\s*\{[^}]*grid-template-columns:\s*1fr/);
+  assert.match(layoutAnnouncementManager, /adminFormRow \$\{scheduled \? '' : 'singleFieldRow'\}/);
+});
 const shell = await readFile(new URL('../app/components/app-shell.tsx', import.meta.url), 'utf8');
 const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
 const channel = await readFile(new URL('../app/community/community-feed.tsx', import.meta.url), 'utf8');

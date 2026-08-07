@@ -256,7 +256,7 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
           />
           <span>Jadwalkan tampil pada waktu tertentu</span>
         </label>
-        <div className="fieldRow adminFormRow">
+        <div className={`fieldRow adminFormRow ${scheduled ? '' : 'singleFieldRow'}`}>
           {scheduled ? (
             <label className="field">
               <span>Mulai tampil</span>

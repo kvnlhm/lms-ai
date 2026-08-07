@@ -2614,6 +2614,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .adminModalForm > .field { min-width: 0; margin-bottom: 0; }
 .adminModalForm .fieldRow,
 .adminFormRow { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; }
+.adminFormRow.singleFieldRow { grid-template-columns: 1fr; }
 .adminModalForm .fieldRow > .field { min-width: 0; margin-bottom: 0; }
 .adminModalForm input,
 .adminModalForm select,
