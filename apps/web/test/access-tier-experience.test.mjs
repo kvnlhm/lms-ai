@@ -42,3 +42,8 @@ test('pendaftaran menyediakan halaman syarat dan ketentuan sebelum persetujuan',
   assert.match(terms, /Syarat dan Ketentuan/);
   assert.match(terms, /Pembayaran/);
 });
+
+test('kolom paket sejajar dan spinner angka mengikuti tema gelap', () => {
+  assert.match(css, /\.tierFieldGrid[^}]*align-items:\s*start/);
+  assert.match(css, /\.tierFieldGrid input\[type="number"\][^}]*color-scheme:\s*dark/);
+});
