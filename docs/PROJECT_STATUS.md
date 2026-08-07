@@ -7,9 +7,8 @@ tersimpan di mana pun kecuali di kepala orang yang baru saja mengerjakannya:
 keadaan produksi hari ini, apa yang sudah ditutup, dan apa yang sengaja
 dibiarkan terbuka beserta alasannya.
 
-Terakhir diperbarui: **7 Agustus 2026**, setelah sidebar Pelajar dirapikan dan
-postingan komunitas mendapat lampiran banyak beserta jajak pendapat, deployment
-**221** terverifikasi.
+Terakhir diperbarui: **7 Agustus 2026**, setelah alur lampiran komunitas dipulihkan
+setelah refresh dan lightbox foto diberi navigasi, deployment **231** terverifikasi.
 
 ---
 
@@ -24,7 +23,7 @@ sedang dibangun menuju rilis; ini proyek yang sedang berjalan.
 | Repo | `kvnlhm/lms-ai`, cabang `feat/walking-skeleton-and-master` — **publik** |
 | VPS | Hostinger `31.97.105.104`, 7 GB RAM, sisa disk ±64 G dari 96 G |
 | Orkestrasi | Coolify 4.1.2, aplikasi UUID `e1b4fo52n9tnzjpm5m2i5k8l` |
-| Deploy terakhir | commit `e9af445`, deployment **221**, selesai dan terverifikasi |
+| Deploy terakhir | commit `3d5c98d`, deployment **231**, selesai dan terverifikasi |
 | Pembayaran | Midtrans **Production** (bukan sandbox) |
 | Email | Resend, domain pengirim `send.aipreneur.co.id` |
 | Pemantauan | UptimeRobot, `HEAD /api/v1/health/ready` tiap 5 menit |
@@ -211,7 +210,7 @@ Halaman chat dan checklist tidak tersentuh.
 
 ## 1e. Postingan komunitas menerima lampiran banyak dan jajak pendapat
 
-Deployment 221 (`e9af445`), 7 Agustus. Tiga migrasi:
+Deployment 231 (`3d5c98d`), 7 Agustus. Tiga migrasi:
 `20260807140000_community_post_multiple_attachments`,
 `20260807150000_community_post_title`, `20260807160000_community_polls`.
 
@@ -267,6 +266,18 @@ berarti kolom `allowMultiple` dan penggantian UNIQUE-nya.
 
 Halaman chat dan checklist tidak tersentuh — keduanya punya composer sendiri
 yang memang bukan modal.
+
+Perbaikan lanjutan pada alur lampiran postingan:
+
+- Composer memulihkan draf lampiran milik penulis dari endpoint
+  `GET /api/v1/community/attachments/drafts` setelah halaman atau composer
+  dibuka ulang. Draf tidak lagi memenuhi batas 10 berkas tanpa bisa ditemukan
+  pengguna; setiap draf tetap dapat dibuang dari daftar sebelum menerbitkan.
+- Lightbox gambar kini menyediakan tombol foto sebelumnya/berikutnya dan
+  pintasan keyboard `ArrowLeft`/`ArrowRight`; tombol hanya muncul bila ada lebih
+  dari satu gambar.
+- Pada 7 Agustus, sepuluh draf yatim akibat percobaan upload sebelumnya dibuang
+  dari database dan volume storage production; hitungan draf akun kembali nol.
 
 ---
 
@@ -579,9 +590,9 @@ diputuskan.
   transien Coolify, bukan kode maupun kapasitas. Baru sekali terjadi — kejar
   sebagai masalah nyata hanya bila berulang.
 - **Volume lampiran mulai tumbuh.** Pelajar kini dapat menaruh berkas di disk
-  VPS. Per 7 Agustus `community-attachment-data` berisi 5,8 MB dari dua lampiran.
-  Penahannya: 10 MB × 10 berkas per postingan, dan penyapu yang membuang unggahan
-  yang tidak jadi diterbitkan. Layak dipantau bersama disk.
+  VPS. Setelah deployment 231, `community-attachment-data` berisi sekitar 195 MB
+  dalam 78 file. Penahannya: 10 MB × 10 berkas per postingan, dan penyapu yang
+  membuang unggahan yang tidak jadi diterbitkan. Layak dipantau bersama disk.
 - Keadaan aturan penyelesaian pelajaran video sebelum migrasi 7 Agustus disimpan
   di `/var/backups/lms-ai/pre-migration/`, di luar repo. Lihat §1c.
 
