@@ -44,7 +44,10 @@ export function ChecklistEditor({ item, detailUrl }: { item: ChecklistDetailData
         <div><strong>Lampiran</strong><span>Satu foto, video, atau PDF. Maksimal 100 MB.</span></div>
         {item.attachment && !removeAttachment && !file ? <div className="checklistAttachmentCurrent"><span>{item.attachment.originalName}</span><button type="button" onClick={() => setRemoveAttachment(true)}>Hapus</button></div> : null}
         {file ? <div className="checklistAttachmentCurrent"><span>{file.name}</span><button type="button" onClick={() => { setFile(null); if (fileInput.current) fileInput.current.value = ''; }}>Batal</button></div> : null}
-        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf" disabled={pending} onChange={(event) => { setFile(event.target.files?.[0] ?? null); setRemoveAttachment(false); }} />
+        <label className="btnSecondary checklistAttachmentPick">
+          {file || (item.attachment && !removeAttachment) ? 'Ganti berkas' : 'Pilih berkas'}
+          <input ref={fileInput} type="file" hidden accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf" disabled={pending} onChange={(event) => { setFile(event.target.files?.[0] ?? null); setRemoveAttachment(false); }} />
+        </label>
         {pending && file ? <progress max={100} value={progress}>{progress}%</progress> : null}
       </div>
       {message ? <p className="communityMessage" role="status">{message}</p> : null}
