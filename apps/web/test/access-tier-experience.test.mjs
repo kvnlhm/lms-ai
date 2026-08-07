@@ -30,3 +30,12 @@ test('tautan kontak memakai ikon tetapi tetap memiliki nama aksesibel', async ()
   assert.match(page, /aria-label=\{tautan\.label\}/);
   assert.match(page, /title=\{tautan\.label\}/);
 });
+
+test('pendaftaran menyediakan halaman syarat dan ketentuan sebelum persetujuan', async () => {
+  const form = await readFile(new URL('../app/register/registration-form.tsx', import.meta.url), 'utf8');
+  const terms = await readFile(new URL('../app/terms/page.tsx', import.meta.url), 'utf8');
+  assert.match(form, /href="\/terms"/);
+  assert.match(form, /Syarat dan Ketentuan/);
+  assert.match(terms, /Syarat dan Ketentuan/);
+  assert.match(terms, /Pembayaran/);
+});

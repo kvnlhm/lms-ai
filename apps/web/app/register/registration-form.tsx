@@ -4,6 +4,7 @@ import type { Schemas } from '@lms/api-client';
 import { useState, type FormEvent } from 'react';
 import { useNotifier } from '../components/notifier';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
+import Link from 'next/link';
 
 type Tier = Schemas['AccessTierDto'];
 type Checkout = Schemas['CheckoutResponseDto'];
@@ -165,7 +166,10 @@ await browserClient().POST('/api/v1/registration/checkout', {
             checked={termsAccepted}
             onChange={(e) => setTermsAccepted(e.target.checked)}
           />
-          <span>Saya menyetujui syarat layanan dan pemrosesan data untuk aktivasi akun.</span>
+          <span>
+            Saya menyetujui <Link href="/terms">Syarat dan Ketentuan</Link> serta pemrosesan data
+            untuk aktivasi akun.
+          </span>
         </label>
         {message ? <p className="notice" role="status">{message}</p> : null}
 

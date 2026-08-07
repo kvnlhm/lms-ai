@@ -2714,6 +2714,13 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 .regLoginHint { margin: 0; text-align: center; color: var(--muted); font-size: 13.5px; }
 .regLoginHint a { color: var(--accent-text); text-decoration: underline; }
+.checkRow a { color: var(--accent-text); text-decoration: underline; }
+.termsContent { gap: 22px; }
+.termsPage .regHero { width: min(100%, 760px); }
+.termsContent section { display: grid; gap: 7px; }
+.termsContent h2 { margin: 0; font-size: 17px; }
+.termsContent p { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.7; }
+.termsUpdated { margin: 0; color: var(--muted); font-size: 12.5px; }
 
 /* Kartu memakai lebar penuh halaman, sedangkan naskahnya dibatasi: baris
    sepanjang 940px melelahkan dibaca, sementara formulir justru butuh ruang. */
