@@ -7038,6 +7038,2254 @@
         ]
       }
     },
+    "/api/v1/community/channels": {
+      "get": {
+        "operationId": "CommunityController_channels",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommunityChannelDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Daftar channel komunitas aktif",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/sidebar-channels": {
+      "get": {
+        "operationId": "CommunityController_sidebarChannels",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommunityChannelDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Pintasan channel yang dipilih Master untuk sidebar Pelajar",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/feed": {
+      "get": {
+        "operationId": "CommunityController_feed",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommunityPostDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Feed komunitas lintas channel",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/channels/{channelSlug}/{subchannelSlug}/posts": {
+      "get": {
+        "operationId": "CommunityController_channelPosts",
+        "parameters": [
+          {
+            "name": "channelSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subchannelSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommunityPostDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Post pada sebuah sub-channel",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/checklist/{postId}": {
+      "get": {
+        "operationId": "CommunityController_checklistItem",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityChecklistItemDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Membaca satu item checklist beserta urutan navigasinya",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/checklist/{postId}/attachment": {
+      "put": {
+        "operationId": "CommunityController_uploadChecklistAttachment",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/mp4": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/webm": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityAttachmentDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengunggah atau mengganti lampiran item checklist",
+        "tags": [
+          "community"
+        ]
+      },
+      "delete": {
+        "operationId": "CommunityController_removeChecklistAttachment",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      },
+      "get": {
+        "operationId": "CommunityController_checklistAttachment",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/attachments": {
+      "put": {
+        "operationId": "CommunityController_uploadDraftAttachment",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/mp4": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/webm": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityAttachmentDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengunggah berkas dari composer, sebelum postingannya diterbitkan",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/attachments/{attachmentId}": {
+      "delete": {
+        "operationId": "CommunityController_removeDraftAttachment",
+        "parameters": [
+          {
+            "name": "attachmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Membuang unggahan composer yang belum diterbitkan",
+        "tags": [
+          "community"
+        ]
+      },
+      "get": {
+        "operationId": "CommunityController_attachment",
+        "parameters": [
+          {
+            "name": "attachmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Membaca satu lampiran postingan",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/subchannels/{subchannelId}/posts": {
+      "post": {
+        "operationId": "CommunityController_createPost",
+        "parameters": [
+          {
+            "name": "subchannelId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityPostBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityPostDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/channels/{channelSlug}/{subchannelSlug}/pinned": {
+      "get": {
+        "operationId": "CommunityController_pinned",
+        "parameters": [
+          {
+            "name": "channelSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subchannelSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommunityPostDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Tulisan tersemat pada sebuah sub-channel",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/posts/{postId}": {
+      "patch": {
+        "operationId": "CommunityController_updatePost",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityPostBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityPostDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengubah tulisan sendiri",
+        "tags": [
+          "community"
+        ]
+      },
+      "delete": {
+        "operationId": "CommunityController_deletePost",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus tulisan sendiri, atau tulisan siapa pun bagi moderator",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/posts/{postId}/pin": {
+      "patch": {
+        "operationId": "CommunityController_setPinned",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCommunityPinnedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityPostDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menyematkan tulisan atau melepas sematannya",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/comments/{commentId}": {
+      "patch": {
+        "operationId": "CommunityController_updateComment",
+        "parameters": [
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityPostBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityCommentDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengubah balasan sendiri",
+        "tags": [
+          "community"
+        ]
+      },
+      "delete": {
+        "operationId": "CommunityController_deleteComment",
+        "parameters": [
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus balasan sendiri, atau balasan siapa pun bagi moderator",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/posts/{postId}/comments": {
+      "get": {
+        "operationId": "CommunityController_comments",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommunityCommentDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/PaginatedMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Seluruh balasan sebuah tulisan",
+        "tags": [
+          "community"
+        ]
+      },
+      "post": {
+        "operationId": "CommunityController_comment",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityPostBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityCommentDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/posts/{postId}/reaction": {
+      "post": {
+        "operationId": "CommunityController_react",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityReactionResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/community/posts/{postId}/checklist": {
+      "patch": {
+        "operationId": "CommunityController_checklist",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCommunityChecklistDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityChecklistResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menyimpan status checklist pengguna dari session",
+        "tags": [
+          "community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels": {
+      "get": {
+        "operationId": "CommunityAdminController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminCommunityChannelDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      },
+      "post": {
+        "operationId": "CommunityAdminController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommunityChannelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminCommunityChannelDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/{id}": {
+      "patch": {
+        "operationId": "CommunityAdminController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommunityChannelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminCommunityChannelDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      },
+      "delete": {
+        "operationId": "CommunityAdminController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengarsipkan channel; isinya disembunyikan, bukan dihapus",
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/{id}/permanent": {
+      "delete": {
+        "operationId": "CommunityAdminController_deletePermanently",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menghapus permanen channel yang sudah diarsipkan beserta seluruh isinya",
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/{id}/restore": {
+      "post": {
+        "operationId": "CommunityAdminController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AdminCommunityChannelDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mengembalikan channel yang diarsipkan",
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/{id}/subchannels": {
+      "post": {
+        "operationId": "CommunityAdminController_createSubchannel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommunitySubchannelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunitySubchannelDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/subchannels/{id}": {
+      "patch": {
+        "operationId": "CommunityAdminController_updateSubchannel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommunitySubchannelDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunitySubchannelDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      },
+      "delete": {
+        "operationId": "CommunityAdminController_archiveSubchannel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
+    "/api/v1/admin/community/channels/subchannels/{id}/restore": {
+      "post": {
+        "operationId": "CommunityAdminController_restoreSubchannel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunitySubchannelDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin-community"
+        ]
+      }
+    },
     "/api/v1/learn/courses/{courseId}/forum/topics": {
       "get": {
         "operationId": "ForumController_listTopics",
@@ -10343,2079 +12591,6 @@
         "summary": "Membatalkan sesi",
         "tags": [
           "live-sessions"
-        ]
-      }
-    },
-    "/api/v1/community/channels": {
-      "get": {
-        "operationId": "CommunityController_channels",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CommunityChannelDto"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Daftar channel komunitas aktif",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/sidebar-channels": {
-      "get": {
-        "operationId": "CommunityController_sidebarChannels",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CommunityChannelDto"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Pintasan channel yang dipilih Master untuk sidebar Pelajar",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/feed": {
-      "get": {
-        "operationId": "CommunityController_feed",
-        "parameters": [
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CommunityPostDto"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/PaginatedMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Feed komunitas lintas channel",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/channels/{channelSlug}/{subchannelSlug}/posts": {
-      "get": {
-        "operationId": "CommunityController_channelPosts",
-        "parameters": [
-          {
-            "name": "channelSlug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subchannelSlug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CommunityPostDto"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/PaginatedMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Post pada sebuah sub-channel",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/checklist/{postId}": {
-      "get": {
-        "operationId": "CommunityController_checklistItem",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunityChecklistItemDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Membaca satu item checklist beserta urutan navigasinya",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/checklist/{postId}/attachment": {
-      "put": {
-        "operationId": "CommunityController_uploadChecklistAttachment",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "image/jpeg": {
-              "schema": {
-                "type": "string",
-                "format": "binary"
-              }
-            },
-            "image/png": {
-              "schema": {
-                "type": "string",
-                "format": "binary"
-              }
-            },
-            "image/webp": {
-              "schema": {
-                "type": "string",
-                "format": "binary"
-              }
-            },
-            "video/mp4": {
-              "schema": {
-                "type": "string",
-                "format": "binary"
-              }
-            },
-            "video/webm": {
-              "schema": {
-                "type": "string",
-                "format": "binary"
-              }
-            },
-            "application/pdf": {
-              "schema": {
-                "type": "string",
-                "format": "binary"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunityAttachmentDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Mengunggah atau mengganti lampiran item checklist",
-        "tags": [
-          "community"
-        ]
-      },
-      "delete": {
-        "operationId": "CommunityController_removeChecklistAttachment",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "community"
-        ]
-      },
-      "get": {
-        "operationId": "CommunityController_checklistAttachment",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/subchannels/{subchannelId}/posts": {
-      "post": {
-        "operationId": "CommunityController_createPost",
-        "parameters": [
-          {
-            "name": "subchannelId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CommunityPostBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunityPostDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/channels/{channelSlug}/{subchannelSlug}/pinned": {
-      "get": {
-        "operationId": "CommunityController_pinned",
-        "parameters": [
-          {
-            "name": "channelSlug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subchannelSlug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CommunityPostDto"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Tulisan tersemat pada sebuah sub-channel",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/posts/{postId}": {
-      "patch": {
-        "operationId": "CommunityController_updatePost",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CommunityPostBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunityPostDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Mengubah tulisan sendiri",
-        "tags": [
-          "community"
-        ]
-      },
-      "delete": {
-        "operationId": "CommunityController_deletePost",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Menghapus tulisan sendiri, atau tulisan siapa pun bagi moderator",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/posts/{postId}/pin": {
-      "patch": {
-        "operationId": "CommunityController_setPinned",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetCommunityPinnedDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunityPostDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Menyematkan tulisan atau melepas sematannya",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/comments/{commentId}": {
-      "patch": {
-        "operationId": "CommunityController_updateComment",
-        "parameters": [
-          {
-            "name": "commentId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CommunityPostBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunityCommentDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Mengubah balasan sendiri",
-        "tags": [
-          "community"
-        ]
-      },
-      "delete": {
-        "operationId": "CommunityController_deleteComment",
-        "parameters": [
-          {
-            "name": "commentId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Menghapus balasan sendiri, atau balasan siapa pun bagi moderator",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/posts/{postId}/comments": {
-      "get": {
-        "operationId": "CommunityController_comments",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "pageSize",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 20,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CommunityCommentDto"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/PaginatedMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Seluruh balasan sebuah tulisan",
-        "tags": [
-          "community"
-        ]
-      },
-      "post": {
-        "operationId": "CommunityController_comment",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CommunityPostBodyDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunityCommentDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/posts/{postId}/reaction": {
-      "post": {
-        "operationId": "CommunityController_react",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunityReactionResultDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/community/posts/{postId}/checklist": {
-      "patch": {
-        "operationId": "CommunityController_checklist",
-        "parameters": [
-          {
-            "name": "postId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetCommunityChecklistDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunityChecklistResultDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Menyimpan status checklist pengguna dari session",
-        "tags": [
-          "community"
-        ]
-      }
-    },
-    "/api/v1/admin/community/channels": {
-      "get": {
-        "operationId": "CommunityAdminController_list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/AdminCommunityChannelDto"
-                      }
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "admin-community"
-        ]
-      },
-      "post": {
-        "operationId": "CommunityAdminController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCommunityChannelDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/AdminCommunityChannelDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "admin-community"
-        ]
-      }
-    },
-    "/api/v1/admin/community/channels/{id}": {
-      "patch": {
-        "operationId": "CommunityAdminController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCommunityChannelDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/AdminCommunityChannelDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "admin-community"
-        ]
-      },
-      "delete": {
-        "operationId": "CommunityAdminController_archive",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Mengarsipkan channel; isinya disembunyikan, bukan dihapus",
-        "tags": [
-          "admin-community"
-        ]
-      }
-    },
-    "/api/v1/admin/community/channels/{id}/permanent": {
-      "delete": {
-        "operationId": "CommunityAdminController_deletePermanently",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Menghapus permanen channel yang sudah diarsipkan beserta seluruh isinya",
-        "tags": [
-          "admin-community"
-        ]
-      }
-    },
-    "/api/v1/admin/community/channels/{id}/restore": {
-      "post": {
-        "operationId": "CommunityAdminController_restore",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/AdminCommunityChannelDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Mengembalikan channel yang diarsipkan",
-        "tags": [
-          "admin-community"
-        ]
-      }
-    },
-    "/api/v1/admin/community/channels/{id}/subchannels": {
-      "post": {
-        "operationId": "CommunityAdminController_createSubchannel",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCommunitySubchannelDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunitySubchannelDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "admin-community"
-        ]
-      }
-    },
-    "/api/v1/admin/community/channels/subchannels/{id}": {
-      "patch": {
-        "operationId": "CommunityAdminController_updateSubchannel",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCommunitySubchannelDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunitySubchannelDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "admin-community"
-        ]
-      },
-      "delete": {
-        "operationId": "CommunityAdminController_archiveSubchannel",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "admin-community"
-        ]
-      }
-    },
-    "/api/v1/admin/community/channels/subchannels/{id}/restore": {
-      "post": {
-        "operationId": "CommunityAdminController_restoreSubchannel",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/CommunitySubchannelDto"
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMetaDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorDto"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "admin-community"
         ]
       }
     },
@@ -17832,6 +18007,751 @@
           "answers"
         ]
       },
+      "CommunitySubchannelDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
+            ]
+          },
+          "isReadOnly": {
+            "type": "boolean"
+          },
+          "allowReplies": {
+            "type": "boolean"
+          },
+          "postCount": {
+            "type": "number"
+          },
+          "checklistCompletedCount": {
+            "type": "number"
+          },
+          "showInSidebar": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "position",
+          "type",
+          "isReadOnly",
+          "allowReplies",
+          "postCount",
+          "checklistCompletedCount",
+          "showInSidebar"
+        ]
+      },
+      "CommunityChannelDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "showInSidebar": {
+            "type": "boolean"
+          },
+          "subchannels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunitySubchannelDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "position",
+          "showInSidebar",
+          "subchannels"
+        ]
+      },
+      "CommunityPersonDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "fullName",
+          "avatarUrl"
+        ]
+      },
+      "CommunityPostChannelDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
+            ]
+          },
+          "isReadOnly": {
+            "type": "boolean"
+          },
+          "allowReplies": {
+            "type": "boolean"
+          },
+          "groupSlug": {
+            "type": "string"
+          },
+          "groupName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "type",
+          "isReadOnly",
+          "allowReplies",
+          "groupSlug",
+          "groupName"
+        ]
+      },
+      "CommunityCommentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "editedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Terisi bila tulisannya pernah diubah."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "canEdit": {
+            "type": "boolean",
+            "description": "Hanya penulisnya sendiri."
+          },
+          "canDelete": {
+            "type": "boolean",
+            "description": "Penulisnya sendiri, atau pemegang izin moderasi."
+          },
+          "author": {
+            "$ref": "#/components/schemas/CommunityPersonDto"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "editedAt",
+          "createdAt",
+          "canEdit",
+          "canDelete",
+          "author"
+        ]
+      },
+      "CommunityAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "originalName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "sizeBytes": {
+            "type": "string",
+            "description": "Ukuran byte sebagai string agar aman untuk JSON."
+          },
+          "position": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "originalName",
+          "mimeType",
+          "sizeBytes",
+          "position",
+          "createdAt"
+        ]
+      },
+      "CommunityPostDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "checklistTitle": {
+            "type": "string",
+            "nullable": true,
+            "description": "Judul khusus item checklist."
+          },
+          "body": {
+            "type": "string"
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "commentCount": {
+            "type": "number"
+          },
+          "reactionCount": {
+            "type": "number"
+          },
+          "reactedByMe": {
+            "type": "boolean"
+          },
+          "completedByMe": {
+            "type": "boolean",
+            "description": "Status item checklist untuk pengguna dari session."
+          },
+          "editedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Terisi bila tulisannya pernah diubah."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "canEdit": {
+            "type": "boolean",
+            "description": "Hanya penulisnya sendiri."
+          },
+          "canDelete": {
+            "type": "boolean",
+            "description": "Penulisnya sendiri, atau pemegang izin moderasi."
+          },
+          "canPin": {
+            "type": "boolean",
+            "description": "Hanya pemegang izin moderasi; menyematkan bukan hak penulis."
+          },
+          "author": {
+            "$ref": "#/components/schemas/CommunityPersonDto"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/CommunityPostChannelDto"
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityCommentDto"
+            }
+          },
+          "attachment": {
+            "nullable": true,
+            "description": "Lampiran pertama. Dipertahankan untuk checklist, yang selalu berlampir satu berkas.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunityAttachmentDto"
+              }
+            ]
+          },
+          "attachments": {
+            "description": "Seluruh lampiran, urut sesuai pilihan penulisnya.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityAttachmentDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "checklistTitle",
+          "body",
+          "isPinned",
+          "commentCount",
+          "reactionCount",
+          "reactedByMe",
+          "completedByMe",
+          "editedAt",
+          "createdAt",
+          "lastActivityAt",
+          "canEdit",
+          "canDelete",
+          "canPin",
+          "author",
+          "channel",
+          "comments",
+          "attachment",
+          "attachments"
+        ]
+      },
+      "CommunityChecklistItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "checklistTitle": {
+            "type": "string",
+            "nullable": true,
+            "description": "Judul khusus item checklist."
+          },
+          "body": {
+            "type": "string"
+          },
+          "isPinned": {
+            "type": "boolean"
+          },
+          "commentCount": {
+            "type": "number"
+          },
+          "reactionCount": {
+            "type": "number"
+          },
+          "reactedByMe": {
+            "type": "boolean"
+          },
+          "completedByMe": {
+            "type": "boolean",
+            "description": "Status item checklist untuk pengguna dari session."
+          },
+          "editedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true,
+            "description": "Terisi bila tulisannya pernah diubah."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "canEdit": {
+            "type": "boolean",
+            "description": "Hanya penulisnya sendiri."
+          },
+          "canDelete": {
+            "type": "boolean",
+            "description": "Penulisnya sendiri, atau pemegang izin moderasi."
+          },
+          "canPin": {
+            "type": "boolean",
+            "description": "Hanya pemegang izin moderasi; menyematkan bukan hak penulis."
+          },
+          "author": {
+            "$ref": "#/components/schemas/CommunityPersonDto"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/CommunityPostChannelDto"
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityCommentDto"
+            }
+          },
+          "attachment": {
+            "nullable": true,
+            "description": "Lampiran pertama. Dipertahankan untuk checklist, yang selalu berlampir satu berkas.",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunityAttachmentDto"
+              }
+            ]
+          },
+          "attachments": {
+            "description": "Seluruh lampiran, urut sesuai pilihan penulisnya.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityAttachmentDto"
+            }
+          },
+          "previousPostId": {
+            "type": "string",
+            "nullable": true
+          },
+          "nextPostId": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "checklistTitle",
+          "body",
+          "isPinned",
+          "commentCount",
+          "reactionCount",
+          "reactedByMe",
+          "completedByMe",
+          "editedAt",
+          "createdAt",
+          "lastActivityAt",
+          "canEdit",
+          "canDelete",
+          "canPin",
+          "author",
+          "channel",
+          "comments",
+          "attachment",
+          "attachments",
+          "previousPostId",
+          "nextPostId",
+          "position",
+          "total"
+        ]
+      },
+      "CommunityPostBodyDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "checklistTitle": {
+            "type": "string",
+            "description": "Judul item; wajib untuk post dalam sub-channel CHECKLIST."
+          },
+          "attachmentIds": {
+            "description": "Id unggahan composer yang akan diikat ke postingan ini. Urutannya menjadi urutan tampilnya.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "SetCommunityPinnedDto": {
+        "type": "object",
+        "properties": {
+          "isPinned": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isPinned"
+        ]
+      },
+      "CommunityReactionResultDto": {
+        "type": "object",
+        "properties": {
+          "reacted": {
+            "type": "boolean"
+          },
+          "reactionCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "reacted",
+          "reactionCount"
+        ]
+      },
+      "CommunityChecklistResultDto": {
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "completed"
+        ]
+      },
+      "SetCommunityChecklistDto": {
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "completed"
+        ]
+      },
+      "AdminCommunityChannelDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "position": {
+            "type": "number"
+          },
+          "showInSidebar": {
+            "type": "boolean"
+          },
+          "subchannels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunitySubchannelDto"
+            }
+          },
+          "archivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "position",
+          "showInSidebar",
+          "subchannels",
+          "archivedAt",
+          "createdAt"
+        ]
+      },
+      "CreateCommunityChannelDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Huruf kecil, angka, dan tanda hubung."
+          },
+          "description": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number",
+            "default": 0
+          },
+          "subchannelName": {
+            "type": "string",
+            "description": "Nama sub-channel pertama."
+          },
+          "subchannelDescription": {
+            "type": "string"
+          },
+          "subchannelType": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
+            ],
+            "default": "CHAT"
+          },
+          "isReadOnly": {
+            "type": "boolean",
+            "default": false
+          },
+          "allowReplies": {
+            "type": "boolean",
+            "default": true
+          },
+          "showInSidebar": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "name",
+          "subchannelName"
+        ]
+      },
+      "UpdateCommunityChannelDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "showInSidebar": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateCommunitySubchannelDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Huruf kecil, angka, dan tanda hubung."
+          },
+          "description": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number",
+            "default": 0
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
+            ],
+            "default": "CHAT"
+          },
+          "isReadOnly": {
+            "type": "boolean",
+            "default": false
+          },
+          "allowReplies": {
+            "type": "boolean",
+            "default": true
+          },
+          "showInSidebar": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateCommunitySubchannelDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "description": "Huruf kecil, angka, dan tanda hubung."
+          },
+          "description": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number",
+            "default": 0
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "CHAT",
+              "POSTS",
+              "ANNOUNCEMENTS",
+              "CHECKLIST"
+            ],
+            "default": "CHAT"
+          },
+          "isReadOnly": {
+            "type": "boolean",
+            "default": false
+          },
+          "allowReplies": {
+            "type": "boolean",
+            "default": true
+          },
+          "showInSidebar": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
       "ForumAuthorDto": {
         "type": "object",
         "properties": {
@@ -19456,722 +20376,6 @@
             "type": "number",
             "minimum": 5,
             "maximum": 600
-          }
-        }
-      },
-      "CommunitySubchannelDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "position": {
-            "type": "number"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "CHAT",
-              "POSTS",
-              "ANNOUNCEMENTS",
-              "CHECKLIST"
-            ]
-          },
-          "isReadOnly": {
-            "type": "boolean"
-          },
-          "allowReplies": {
-            "type": "boolean"
-          },
-          "postCount": {
-            "type": "number"
-          },
-          "checklistCompletedCount": {
-            "type": "number"
-          },
-          "showInSidebar": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "slug",
-          "name",
-          "description",
-          "position",
-          "type",
-          "isReadOnly",
-          "allowReplies",
-          "postCount",
-          "checklistCompletedCount",
-          "showInSidebar"
-        ]
-      },
-      "CommunityChannelDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "position": {
-            "type": "number"
-          },
-          "showInSidebar": {
-            "type": "boolean"
-          },
-          "subchannels": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CommunitySubchannelDto"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "slug",
-          "name",
-          "description",
-          "position",
-          "showInSidebar",
-          "subchannels"
-        ]
-      },
-      "CommunityPersonDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "fullName": {
-            "type": "string"
-          },
-          "avatarUrl": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "fullName",
-          "avatarUrl"
-        ]
-      },
-      "CommunityPostChannelDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "CHAT",
-              "POSTS",
-              "ANNOUNCEMENTS",
-              "CHECKLIST"
-            ]
-          },
-          "isReadOnly": {
-            "type": "boolean"
-          },
-          "allowReplies": {
-            "type": "boolean"
-          },
-          "groupSlug": {
-            "type": "string"
-          },
-          "groupName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "slug",
-          "name",
-          "type",
-          "isReadOnly",
-          "allowReplies",
-          "groupSlug",
-          "groupName"
-        ]
-      },
-      "CommunityCommentDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "body": {
-            "type": "string"
-          },
-          "editedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true,
-            "description": "Terisi bila tulisannya pernah diubah."
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "canEdit": {
-            "type": "boolean",
-            "description": "Hanya penulisnya sendiri."
-          },
-          "canDelete": {
-            "type": "boolean",
-            "description": "Penulisnya sendiri, atau pemegang izin moderasi."
-          },
-          "author": {
-            "$ref": "#/components/schemas/CommunityPersonDto"
-          }
-        },
-        "required": [
-          "id",
-          "body",
-          "editedAt",
-          "createdAt",
-          "canEdit",
-          "canDelete",
-          "author"
-        ]
-      },
-      "CommunityAttachmentDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "originalName": {
-            "type": "string"
-          },
-          "mimeType": {
-            "type": "string"
-          },
-          "sizeBytes": {
-            "type": "string",
-            "description": "Ukuran byte sebagai string agar aman untuk JSON."
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "originalName",
-          "mimeType",
-          "sizeBytes",
-          "createdAt"
-        ]
-      },
-      "CommunityPostDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "checklistTitle": {
-            "type": "string",
-            "nullable": true,
-            "description": "Judul khusus item checklist."
-          },
-          "body": {
-            "type": "string"
-          },
-          "isPinned": {
-            "type": "boolean"
-          },
-          "commentCount": {
-            "type": "number"
-          },
-          "reactionCount": {
-            "type": "number"
-          },
-          "reactedByMe": {
-            "type": "boolean"
-          },
-          "completedByMe": {
-            "type": "boolean",
-            "description": "Status item checklist untuk pengguna dari session."
-          },
-          "editedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true,
-            "description": "Terisi bila tulisannya pernah diubah."
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "lastActivityAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "canEdit": {
-            "type": "boolean",
-            "description": "Hanya penulisnya sendiri."
-          },
-          "canDelete": {
-            "type": "boolean",
-            "description": "Penulisnya sendiri, atau pemegang izin moderasi."
-          },
-          "canPin": {
-            "type": "boolean",
-            "description": "Hanya pemegang izin moderasi; menyematkan bukan hak penulis."
-          },
-          "author": {
-            "$ref": "#/components/schemas/CommunityPersonDto"
-          },
-          "channel": {
-            "$ref": "#/components/schemas/CommunityPostChannelDto"
-          },
-          "comments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CommunityCommentDto"
-            }
-          },
-          "attachment": {
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CommunityAttachmentDto"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "checklistTitle",
-          "body",
-          "isPinned",
-          "commentCount",
-          "reactionCount",
-          "reactedByMe",
-          "completedByMe",
-          "editedAt",
-          "createdAt",
-          "lastActivityAt",
-          "canEdit",
-          "canDelete",
-          "canPin",
-          "author",
-          "channel",
-          "comments",
-          "attachment"
-        ]
-      },
-      "CommunityChecklistItemDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "checklistTitle": {
-            "type": "string",
-            "nullable": true,
-            "description": "Judul khusus item checklist."
-          },
-          "body": {
-            "type": "string"
-          },
-          "isPinned": {
-            "type": "boolean"
-          },
-          "commentCount": {
-            "type": "number"
-          },
-          "reactionCount": {
-            "type": "number"
-          },
-          "reactedByMe": {
-            "type": "boolean"
-          },
-          "completedByMe": {
-            "type": "boolean",
-            "description": "Status item checklist untuk pengguna dari session."
-          },
-          "editedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true,
-            "description": "Terisi bila tulisannya pernah diubah."
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "lastActivityAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "canEdit": {
-            "type": "boolean",
-            "description": "Hanya penulisnya sendiri."
-          },
-          "canDelete": {
-            "type": "boolean",
-            "description": "Penulisnya sendiri, atau pemegang izin moderasi."
-          },
-          "canPin": {
-            "type": "boolean",
-            "description": "Hanya pemegang izin moderasi; menyematkan bukan hak penulis."
-          },
-          "author": {
-            "$ref": "#/components/schemas/CommunityPersonDto"
-          },
-          "channel": {
-            "$ref": "#/components/schemas/CommunityPostChannelDto"
-          },
-          "comments": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CommunityCommentDto"
-            }
-          },
-          "attachment": {
-            "nullable": true,
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/CommunityAttachmentDto"
-              }
-            ]
-          },
-          "previousPostId": {
-            "type": "string",
-            "nullable": true
-          },
-          "nextPostId": {
-            "type": "string",
-            "nullable": true
-          },
-          "position": {
-            "type": "number"
-          },
-          "total": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "id",
-          "checklistTitle",
-          "body",
-          "isPinned",
-          "commentCount",
-          "reactionCount",
-          "reactedByMe",
-          "completedByMe",
-          "editedAt",
-          "createdAt",
-          "lastActivityAt",
-          "canEdit",
-          "canDelete",
-          "canPin",
-          "author",
-          "channel",
-          "comments",
-          "attachment",
-          "previousPostId",
-          "nextPostId",
-          "position",
-          "total"
-        ]
-      },
-      "CommunityPostBodyDto": {
-        "type": "object",
-        "properties": {
-          "body": {
-            "type": "string"
-          },
-          "checklistTitle": {
-            "type": "string",
-            "description": "Judul item; wajib untuk post dalam sub-channel CHECKLIST."
-          }
-        },
-        "required": [
-          "body"
-        ]
-      },
-      "SetCommunityPinnedDto": {
-        "type": "object",
-        "properties": {
-          "isPinned": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "isPinned"
-        ]
-      },
-      "CommunityReactionResultDto": {
-        "type": "object",
-        "properties": {
-          "reacted": {
-            "type": "boolean"
-          },
-          "reactionCount": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "reacted",
-          "reactionCount"
-        ]
-      },
-      "CommunityChecklistResultDto": {
-        "type": "object",
-        "properties": {
-          "completed": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "completed"
-        ]
-      },
-      "SetCommunityChecklistDto": {
-        "type": "object",
-        "properties": {
-          "completed": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "completed"
-        ]
-      },
-      "AdminCommunityChannelDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "position": {
-            "type": "number"
-          },
-          "showInSidebar": {
-            "type": "boolean"
-          },
-          "subchannels": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CommunitySubchannelDto"
-            }
-          },
-          "archivedAt": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "slug",
-          "name",
-          "description",
-          "position",
-          "showInSidebar",
-          "subchannels",
-          "archivedAt",
-          "createdAt"
-        ]
-      },
-      "CreateCommunityChannelDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string",
-            "description": "Huruf kecil, angka, dan tanda hubung."
-          },
-          "description": {
-            "type": "string"
-          },
-          "position": {
-            "type": "number",
-            "default": 0
-          },
-          "subchannelName": {
-            "type": "string",
-            "description": "Nama sub-channel pertama."
-          },
-          "subchannelDescription": {
-            "type": "string"
-          },
-          "subchannelType": {
-            "type": "string",
-            "enum": [
-              "CHAT",
-              "POSTS",
-              "ANNOUNCEMENTS",
-              "CHECKLIST"
-            ],
-            "default": "CHAT"
-          },
-          "isReadOnly": {
-            "type": "boolean",
-            "default": false
-          },
-          "allowReplies": {
-            "type": "boolean",
-            "default": true
-          },
-          "showInSidebar": {
-            "type": "boolean",
-            "default": true
-          }
-        },
-        "required": [
-          "name",
-          "subchannelName"
-        ]
-      },
-      "UpdateCommunityChannelDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "position": {
-            "type": "number"
-          },
-          "showInSidebar": {
-            "type": "boolean"
-          }
-        }
-      },
-      "CreateCommunitySubchannelDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string",
-            "description": "Huruf kecil, angka, dan tanda hubung."
-          },
-          "description": {
-            "type": "string"
-          },
-          "position": {
-            "type": "number",
-            "default": 0
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "CHAT",
-              "POSTS",
-              "ANNOUNCEMENTS",
-              "CHECKLIST"
-            ],
-            "default": "CHAT"
-          },
-          "isReadOnly": {
-            "type": "boolean",
-            "default": false
-          },
-          "allowReplies": {
-            "type": "boolean",
-            "default": true
-          },
-          "showInSidebar": {
-            "type": "boolean",
-            "default": true
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "UpdateCommunitySubchannelDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string",
-            "description": "Huruf kecil, angka, dan tanda hubung."
-          },
-          "description": {
-            "type": "string"
-          },
-          "position": {
-            "type": "number",
-            "default": 0
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "CHAT",
-              "POSTS",
-              "ANNOUNCEMENTS",
-              "CHECKLIST"
-            ],
-            "default": "CHAT"
-          },
-          "isReadOnly": {
-            "type": "boolean",
-            "default": false
-          },
-          "allowReplies": {
-            "type": "boolean",
-            "default": true
-          },
-          "showInSidebar": {
-            "type": "boolean",
-            "default": true
           }
         }
       },

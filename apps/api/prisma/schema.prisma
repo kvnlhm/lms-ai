@@ -184,6 +184,7 @@ model User {
   communityGroupsMade    CommunityChannelGroup[] @relation("CommunityChannelGroupCreator")
   communityPosts         CommunityPost[]         @relation("CommunityPostAuthor")
   communityComments      CommunityComment[]      @relation("CommunityCommentAuthor")
+  communityAttachments   CommunityPostAttachment[] @relation("CommunityAttachmentUploader")
   communityReactions     CommunityReaction[]     @relation("CommunityReactionUser")
   communityChecklistCompletions CommunityChecklistCompletion[] @relation("CommunityChecklistCompletionUser")
 
@@ -269,25 +270,39 @@ model CommunityPost {
   comments  CommunityComment[]
   reactions CommunityReaction[]
   checklistCompletions CommunityChecklistCompletion[]
-  attachment CommunityPostAttachment?
+  attachments CommunityPostAttachment[]
 
   @@index([channelId, deletedAt, isPinned, lastActivityAt])
   @@index([authorId, createdAt])
   @@map("community_posts")
 }
 
+/// Lampiran satu postingan.
+///
+/// `postId` boleh kosong dan itu disengaja: composer mengunggah berkasnya
+/// sebelum postingannya ada. Baris tanpa `postId` adalah unggahan yang masih
+/// menunggu diterbitkan; ia diikat saat publish, atau disapu
+/// `CommunityAttachmentReconciler` bila penulisnya menutup composer begitu saja.
+/// Tanpa itu, berkas hanya bisa diunggah ke postingan yang sudah terlihat semua
+/// orang — pembacanya akan melihat tulisan tanpa gambarnya selama unggahan
+/// berjalan.
 model CommunityPostAttachment {
   id           String   @id @default(uuid()) @db.Uuid
-  postId       String   @unique @map("post_id") @db.Uuid
+  postId       String?  @map("post_id") @db.Uuid
+  uploaderId   String   @map("uploader_id") @db.Uuid
   objectKey    String   @unique @map("object_key")
   originalName String   @map("original_name")
   mimeType     String   @map("mime_type")
   sizeBytes    BigInt   @map("size_bytes")
+  position     Int      @default(0)
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post     CommunityPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  uploader User           @relation("CommunityAttachmentUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
 
+  @@index([postId, position])
+  @@index([uploaderId, postId, createdAt])
   @@map("community_post_attachments")
 }
 

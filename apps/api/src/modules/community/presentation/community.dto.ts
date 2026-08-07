@@ -1,7 +1,7 @@
 import { CommunityChannelType } from '@prisma/client';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CommunityPageQueryDto {
   @ApiPropertyOptional({ default: 1 }) @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
@@ -12,6 +12,8 @@ export class CommunityPostBodyDto {
   @ApiProperty() @IsString() @MinLength(1) @MaxLength(5000) body!: string;
   @ApiPropertyOptional({ description: 'Judul item; wajib untuk post dalam sub-channel CHECKLIST.' })
   @IsOptional() @IsString() @MinLength(1) @MaxLength(160) checklistTitle?: string;
+  @ApiPropertyOptional({ type: [String], description: 'Id unggahan composer yang akan diikat ke postingan ini. Urutannya menjadi urutan tampilnya.' })
+  @IsOptional() @IsArray() @ArrayMaxSize(5) @IsUUID('4', { each: true }) attachmentIds?: string[];
 }
 
 export class CreateCommunityChannelDto {
@@ -138,7 +140,10 @@ export class CommunityPostDto {
   @ApiProperty({ type: CommunityPersonDto }) author!: CommunityPersonDto;
   @ApiProperty({ type: CommunityPostChannelDto }) channel!: CommunityPostChannelDto;
   @ApiProperty({ type: [CommunityCommentDto] }) comments!: CommunityCommentDto[];
-  @ApiProperty({ type: () => CommunityAttachmentDto, nullable: true }) attachment!: CommunityAttachmentDto | null;
+  @ApiProperty({ type: () => CommunityAttachmentDto, nullable: true, description: 'Lampiran pertama. Dipertahankan untuk checklist, yang selalu berlampir satu berkas.' })
+  attachment!: CommunityAttachmentDto | null;
+  @ApiProperty({ type: () => [CommunityAttachmentDto], description: 'Seluruh lampiran, urut sesuai pilihan penulisnya.' })
+  attachments!: CommunityAttachmentDto[];
 }
 
 export class CommunityAttachmentDto {
@@ -146,6 +151,7 @@ export class CommunityAttachmentDto {
   @ApiProperty() originalName!: string;
   @ApiProperty() mimeType!: string;
   @ApiProperty({ description: 'Ukuran byte sebagai string agar aman untuk JSON.' }) sizeBytes!: string;
+  @ApiProperty() position!: number;
   @ApiProperty() createdAt!: Date;
 }
 

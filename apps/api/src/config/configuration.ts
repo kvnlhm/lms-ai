@@ -107,6 +107,8 @@ export interface AppConfig {
   communityAttachment: {
     storagePath: string;
     maxUploadBytes: number;
+    maxDraftUploadBytes: number;
+    maxPerPost: number;
   };
   /**
    * Penyapu unggahan yang tidak pernah selesai.
@@ -300,7 +302,14 @@ export function loadConfig(): AppConfig {
     },
     communityAttachment: {
       storagePath: process.env.COMMUNITY_ATTACHMENT_STORAGE_PATH ?? '/data/community-attachments',
+      // Lampiran checklist: 100 MB, tidak berubah. Ia dikurasi Master dan
+      // jumlahnya terbatas pada langkah checklist yang memang sedikit.
       maxUploadBytes: int('COMMUNITY_ATTACHMENT_MAX_UPLOAD_BYTES', 104_857_600),
+      // Lampiran postingan biasa: 25 MB, dan lima berkas per postingan. Batasnya
+      // lebih ketat karena di sini Pelajar ikut mengunggah, di setiap postingan,
+      // ke disk VPS yang juga menampung basis data beserta cadangannya.
+      maxDraftUploadBytes: int('COMMUNITY_ATTACHMENT_MAX_DRAFT_UPLOAD_BYTES', 26_214_400),
+      maxPerPost: int('COMMUNITY_ATTACHMENT_MAX_PER_POST', 5),
     },
     upload: {
       sweeperEnabled: bool('UPLOAD_SWEEPER_ENABLED', true),

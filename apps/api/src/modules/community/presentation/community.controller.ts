@@ -69,9 +69,34 @@ export class CommunityController {
     response.status(200).end();
   }
 
+  @Put('attachments') @HttpCode(201)
+  @ApiConsumes('image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'application/pdf')
+  @ApiBody({ schema: { type: 'string', format: 'binary' } }) @ApiEnvelope(CommunityAttachmentDto)
+  @ApiOperation({ summary: 'Mengunggah berkas dari composer, sebelum postingannya diterbitkan' }) @ApiErrors(401, 422)
+  uploadDraftAttachment(@CurrentUser() user: AuthenticatedUser, @Req() request: Request) {
+    const rawLength = request.header('content-length');
+    return this.attachments.uploadDraft(user.id, request, request.header('content-type'), request.header('x-file-name') ?? 'lampiran', rawLength ? Number.parseInt(rawLength, 10) : undefined);
+  }
+
+  @Delete('attachments/:attachmentId') @HttpCode(204)
+  @ApiOperation({ summary: 'Membuang unggahan composer yang belum diterbitkan' }) @ApiErrors(401, 404)
+  removeDraftAttachment(@Param('attachmentId', new ParseUUIDPipe()) attachmentId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.attachments.removeDraft(attachmentId, user.id);
+  }
+
+  @Get('attachments/:attachmentId') @Header('Cache-Control', 'private, no-store') @Header('X-Content-Type-Options', 'nosniff')
+  @ApiOperation({ summary: 'Membaca satu lampiran postingan' }) @ApiErrors(401, 404)
+  async attachment(@Param('attachmentId', new ParseUUIDPipe()) attachmentId: string, @CurrentUser() user: AuthenticatedUser, @Res() response: Response) {
+    const attachment = await this.attachments.authorisedById(attachmentId, user.id);
+    response.setHeader('X-Accel-Redirect', `/protected-community-attachments/${attachment.objectKey}`);
+    response.setHeader('Content-Type', attachment.mimeType);
+    response.setHeader('Content-Disposition', `inline; filename="${attachment.originalName.replace(/["\\]/g, '_')}"`);
+    response.status(200).end();
+  }
+
   @Post('subchannels/:subchannelId/posts') @HttpCode(201) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)
   createPost(@Param('subchannelId', new ParseUUIDPipe()) subchannelId: string, @Body() dto: CommunityPostBodyDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.community.createPost(user.id, subchannelId, dto.body, moderator(user), dto.checklistTitle);
+    return this.community.createPost(user.id, subchannelId, dto.body, moderator(user), dto.checklistTitle, dto.attachmentIds ?? []);
   }
 
   @Get('channels/:channelSlug/:subchannelSlug/pinned') @ApiOperation({ summary: 'Tulisan tersemat pada sebuah sub-channel' }) @ApiEnvelopeArray(CommunityPostDto) @ApiErrors(401)

@@ -3,7 +3,7 @@ import { CommunityService } from './community.service';
 describe('CommunityService hierarchy invariants', () => {
   test('sidebar hanya meminta Channel dan Sub-channel yang dipilih Master', async () => {
     const findMany = jest.fn().mockResolvedValue([]);
-    const service = new CommunityService({ communityChannelGroup: { findMany } } as never, {} as never);
+    const service = new CommunityService({ communityChannelGroup: { findMany } } as never, {} as never, {} as never);
 
     await service.listSidebarChannels();
 
@@ -23,7 +23,7 @@ describe('CommunityService hierarchy invariants', () => {
         count: jest.fn().mockResolvedValue(1),
         update,
       },
-    } as never, { record: jest.fn() } as never);
+    } as never, { record: jest.fn() } as never, {} as never);
 
     await expect(service.archiveSubchannel('user-1', 'sub-1')).rejects.toMatchObject({ status: 422 });
     expect(update).not.toHaveBeenCalled();
@@ -34,7 +34,7 @@ describe('CommunityService hierarchy invariants', () => {
     const service = new CommunityService({
       communityChannelGroup: { findFirst: jest.fn().mockResolvedValue({ id: 'group-1' }) },
       communityChannel: { create },
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await service.createSubchannel('master-1', 'group-1', {
       name: 'Pengumuman', type: 'ANNOUNCEMENTS', isReadOnly: false,
@@ -54,7 +54,7 @@ describe('CommunityService hierarchy invariants', () => {
       },
       communityPost: { count: jest.fn().mockResolvedValue(0) },
       $transaction: jest.fn().mockImplementation(async (operations) => Promise.all(operations)),
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await service.updateSubchannel('sub-1', { type: 'ANNOUNCEMENTS', isReadOnly: false } as never);
 
@@ -70,7 +70,7 @@ describe('CommunityService hierarchy invariants', () => {
         findFirst: jest.fn().mockResolvedValue({ id: 'sub-1', type: 'ANNOUNCEMENTS', isReadOnly: false }),
       },
       communityPost: { create },
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await expect(service.createPost('student-1', 'sub-1', 'Tidak sah', false))
       .rejects.toMatchObject({ status: 403 });
@@ -85,7 +85,7 @@ describe('CommunityService hierarchy invariants', () => {
       },
       $transaction: transaction,
     };
-    const service = new CommunityService(prisma as never, {} as never);
+    const service = new CommunityService(prisma as never, {} as never, {} as never);
 
     await expect(service.addComment('student-1', 'post-1', 'Balasan'))
       .rejects.toMatchObject({ status: 403 });
@@ -104,7 +104,7 @@ describe('CommunityService hierarchy invariants', () => {
       $transaction: jest.fn().mockResolvedValue({
         id: 'comment-1', body: 'Balasan', editedAt: null, createdAt: new Date(), author: { id: 'student-1' },
       }),
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await expect(service.addComment('student-1', 'post-1', 'Balasan'))
       .rejects.toMatchObject({ status: 403 });
@@ -121,7 +121,7 @@ describe('CommunityService hierarchy invariants', () => {
         }),
       },
       $transaction: transaction,
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await expect(service.addComment('student-1', 'post-1', 'Balasan'))
       .rejects.toMatchObject({ status: 403 });
@@ -133,7 +133,7 @@ describe('CommunityService hierarchy invariants', () => {
     const service = new CommunityService({
       communityChannelGroup: { findFirst: jest.fn().mockResolvedValue({ id: 'group-1' }) },
       communityChannel: { create },
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await service.createSubchannel('master-1', 'group-1', {
       name: 'Pengumuman', type: 'ANNOUNCEMENTS', allowReplies: true,
@@ -151,7 +151,7 @@ describe('CommunityService hierarchy invariants', () => {
         findFirst: jest.fn().mockResolvedValue({ id: 'post-1', channel: { type: 'CHECKLIST' } }),
       },
       communityChecklistCompletion: { upsert },
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await expect(service.setChecklistCompleted('student-1', 'post-1', true))
       .resolves.toEqual({ completed: true });
@@ -169,7 +169,7 @@ describe('CommunityService hierarchy invariants', () => {
         findFirst: jest.fn().mockResolvedValue({ id: 'post-1', channel: { type: 'POSTS' } }),
       },
       communityChecklistCompletion: { upsert },
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await expect(service.setChecklistCompleted('student-1', 'post-1', true))
       .rejects.toMatchObject({ status: 422 });
@@ -182,12 +182,14 @@ describe('CommunityService hierarchy invariants', () => {
       author: { id: 'master-1' }, comments: [], reactions: [], checklistCompletions: [],
       channel: { id: 'sub-1', type: 'CHECKLIST', group: { slug: 'welcome', name: 'Welcome' } },
     });
-    const service = new CommunityService({
+    const prisma = {
       communityChannel: {
         findFirst: jest.fn().mockResolvedValue({ id: 'sub-1', type: 'CHECKLIST', isReadOnly: true }),
       },
-      communityPost: { create },
-    } as never, {} as never);
+      communityPost: { create, findUniqueOrThrow: jest.fn().mockImplementation(() => create.mock.results[0].value) },
+      $transaction: (jalankan: (tx: unknown) => unknown) => jalankan(prisma),
+    };
+    const service = new CommunityService(prisma as never, {} as never, { bind: jest.fn() } as never);
 
     await expect(service.createPost(
       'master-1', 'sub-1', 'Tambahkan foto dan bio.', true, 'Lengkapi profil',
@@ -199,6 +201,29 @@ describe('CommunityService hierarchy invariants', () => {
     }));
   });
 
+  test('lampiran diikat di dalam transaksi yang sama dengan pembuatan tulisannya', async () => {
+    // Kalau pengikatannya di luar transaksi, tulisan sudah terlihat di feed
+    // sementara lampirannya menyusul — dan lampiran yang ditolak meninggalkan
+    // tulisan yang sudah terbaca orang tanpa gambarnya.
+    const created = {
+      id: 'post-9', checklistTitle: null, body: 'Ini gambarnya.',
+      author: { id: 'pelajar-1' }, comments: [], reactions: [], checklistCompletions: [],
+      channel: { id: 'sub-2', type: 'POSTS', group: { slug: 'komunitas', name: 'Komunitas' } },
+      attachments: [],
+    };
+    const bind = jest.fn();
+    const prisma = {
+      communityChannel: { findFirst: jest.fn().mockResolvedValue({ id: 'sub-2', type: 'POSTS', isReadOnly: false }) },
+      communityPost: { create: jest.fn().mockResolvedValue({ id: 'post-9' }), findUniqueOrThrow: jest.fn().mockResolvedValue(created) },
+      $transaction: (jalankan: (tx: unknown) => unknown) => jalankan(prisma),
+    };
+    const service = new CommunityService(prisma as never, {} as never, { bind } as never);
+
+    await service.createPost('pelajar-1', 'sub-2', 'Ini gambarnya.', false, undefined, ['a', 'b']);
+
+    expect(bind).toHaveBeenCalledWith(prisma, 'post-9', 'pelajar-1', ['a', 'b']);
+  });
+
   test('item checklist baru wajib memiliki judul', async () => {
     const create = jest.fn();
     const service = new CommunityService({
@@ -206,7 +231,7 @@ describe('CommunityService hierarchy invariants', () => {
         findFirst: jest.fn().mockResolvedValue({ id: 'sub-1', type: 'CHECKLIST', isReadOnly: true }),
       },
       communityPost: { create },
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await expect(service.createPost('master-1', 'sub-1', 'Konten saja', true))
       .rejects.toMatchObject({ status: 422 });
@@ -223,7 +248,7 @@ describe('CommunityService hierarchy invariants', () => {
         }),
         findMany: jest.fn().mockResolvedValue([{ id: 'post-1' }, { id: 'post-2' }, { id: 'post-3' }]),
       },
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     await expect(service.getChecklistItem('student-1', 'post-2', false)).resolves.toMatchObject({
       id: 'post-2', position: 2, total: 3,
@@ -238,7 +263,7 @@ describe('CommunityService hierarchy invariants', () => {
         findUnique: jest.fn().mockResolvedValue({ id: 'group-1', name: 'Welcome', archivedAt: null }),
         delete: remove,
       },
-    } as never, { record: jest.fn() } as never);
+    } as never, { record: jest.fn() } as never, {} as never);
 
     await expect(service.deleteChannelPermanently('master-1', 'group-1'))
       .rejects.toMatchObject({ status: 422 });
@@ -256,7 +281,7 @@ describe('CommunityService hierarchy invariants', () => {
         findFirst: jest.fn().mockResolvedValue({ id: 'post-1', authorId: 'student-1', checklistTitle: 'Judul lama', body: 'Isi lama', channelId: 'sub-1', channel: { type: 'CHECKLIST' } }),
         update,
       },
-    } as never, { record } as never);
+    } as never, { record } as never, {} as never);
 
     await expect(service.updatePost('master-1', 'post-1', 'Isi baru', true, 'Judul baru'))
       .resolves.toMatchObject({ body: 'Isi baru', canEdit: true });
@@ -276,7 +301,7 @@ describe('CommunityService hierarchy invariants', () => {
         }),
         update,
       },
-    } as never, { record: jest.fn() } as never);
+    } as never, { record: jest.fn() } as never, {} as never);
 
     await expect(service.updatePost('master-1', 'post-1', 'Ditulis ulang', true))
       .rejects.toMatchObject({ status: 403 });
@@ -299,7 +324,7 @@ describe('CommunityService hierarchy invariants', () => {
         }]),
       },
       communityPost: { groupBy },
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     const [group] = await service.listChannels(false, 'student-1');
     const [checklist, posts] = group.subchannels;
@@ -322,7 +347,7 @@ describe('CommunityService hierarchy invariants', () => {
         }]),
       },
       communityPost: { groupBy },
-    } as never, {} as never);
+    } as never, {} as never, {} as never);
 
     const [group] = await service.listChannels(true);
     expect(group.subchannels[0]).toMatchObject({ checklistCompletedCount: 0 });

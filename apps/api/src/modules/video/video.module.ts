@@ -15,15 +15,12 @@ import { VideoController } from './presentation/video.controller';
     BunnyStreamClient,
     BunnyPlaybackCheck,
     { provide: LESSON_VIDEO_CLEANUP, useExisting: VideoService },
-    // Disediakan sebagai larik agar modul lain dapat menyusul menjadi pemulih
-    // tanpa mengubah penyapunya. Video satu-satunya untuk saat ini: hanya ia
-    // yang mencatat unggahan yang sedang berjalan sebagai baris tersendiri.
-    {
-      provide: STALE_UPLOAD_RECONCILER,
-      useFactory: (video: VideoService) => [video],
-      inject: [VideoService],
-    },
   ],
-  exports: [LESSON_VIDEO_CLEANUP, STALE_UPLOAD_RECONCILER],
+  // `VideoService` diekspor sebagai pemulih unggahan terbengkalai. Lariknya
+  // sendiri disusun `StorageModule`: sejak komunitas ikut menjadi pemulih,
+  // menyediakan token itu di sini berarti dua modul menyediakan token yang sama
+  // dan yang belakangan menimpa yang duluan alih-alih bergabung — penyapu akan
+  // diam-diam kehilangan salah satunya.
+  exports: [LESSON_VIDEO_CLEANUP, VideoService],
 })
 export class VideoModule {}

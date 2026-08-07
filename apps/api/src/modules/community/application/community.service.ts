@@ -3,6 +3,7 @@ import { CommunityChannelType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AuditService } from '../../../shared/audit/audit.service';
 import { AppError } from '../../../shared/errors/app-error';
+import { CommunityAttachmentService } from './community-attachment.service';
 
 const authorSelect = { id: true, fullName: true, avatarUrl: true } as const;
 
@@ -23,6 +24,7 @@ export class CommunityService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly attachments: CommunityAttachmentService,
   ) {}
 
   /**
@@ -108,7 +110,7 @@ export class CommunityService {
         group: { select: { slug: true, name: true } },
       } },
       author: { select: authorSelect },
-      attachment: { select: { id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true } },
+      attachments: { orderBy: { position: 'asc' as const }, select: { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true } },
       reactions: { where: { userId }, select: { userId: true } },
       checklistCompletions: { where: { userId }, select: { userId: true } },
       comments: {
@@ -142,11 +144,16 @@ export class CommunityService {
     userId: string,
     canModerate: boolean,
   ) {
-    const { reactions, checklistCompletions, comments, channel, attachment, ...post } = row as T & { channel?: { type?: CommunityChannelType; group?: { slug: string; name: string } }; attachment?: { sizeBytes: bigint } | null };
+    const { reactions, checklistCompletions, comments, channel, attachments, ...post } = row as T & { channel?: { type?: CommunityChannelType; group?: { slug: string; name: string } }; attachments?: { sizeBytes: bigint }[] };
     const hakTulisan = this.hakTulisan(row.author.id, userId, canModerate);
+    const daftarLampiran = (attachments ?? []).map((item) => ({ ...item, sizeBytes: item.sizeBytes.toString() }));
     return {
       ...post,
-      attachment: attachment ? { ...attachment, sizeBytes: attachment.sizeBytes.toString() } : null,
+      attachments: daftarLampiran,
+      // Checklist berlampir satu berkas dan antarmukanya membacanya sebagai satu
+      // nilai. Dipertahankan supaya halaman checklist tidak perlu tahu bahwa
+      // modelnya berubah menjadi jamak.
+      attachment: daftarLampiran[0] ?? null,
       ...(channel ? { channel: {
         ...channel,
         groupSlug: channel.group?.slug,
@@ -250,17 +257,29 @@ export class CommunityService {
     return { total, items: rows.map((row) => ({ ...row, ...this.hak(row.author.id, userId, canModerate) })) };
   }
 
-  async createPost(userId: string, channelId: string, body: string, canModerate: boolean, checklistTitle?: string) {
+  /**
+   * Menerbitkan satu tulisan beserta lampirannya.
+   *
+   * Pembuatan dan pengikatan lampiran berada dalam satu transaksi. Kalau
+   * dipisah, tulisan sudah muncul di feed sementara lampirannya masih menyusul,
+   * dan lampiran yang ditolak — milik orang lain, atau sudah dipakai postingan
+   * lain — meninggalkan tulisan yang sudah terbaca orang tanpa gambarnya.
+   */
+  async createPost(userId: string, channelId: string, body: string, canModerate: boolean, checklistTitle?: string, attachmentIds: string[] = []) {
     const channel = await this.prisma.communityChannel.findFirst({ where: { id: channelId, archivedAt: null, group: { archivedAt: null } } });
     if (!channel) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
     if ((channel.isReadOnly || channel.type === CommunityChannelType.ANNOUNCEMENTS) && !canModerate) throw new AppError('PERMISSION_DENIED', 403, 'Channel ini hanya dapat ditulis oleh Master.');
     if (channel.type === CommunityChannelType.CHECKLIST && !checklistTitle?.trim()) throw new AppError('VALIDATION_ERROR', 422, 'Judul checklist wajib diisi.');
-    const row = await this.prisma.communityPost.create({
-      data: {
-        channelId, authorId: userId, body: body.trim(),
-        checklistTitle: channel.type === CommunityChannelType.CHECKLIST ? checklistTitle!.trim() : null,
-      },
-      select: this.postSelect(userId),
+    const row = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.communityPost.create({
+        data: {
+          channelId, authorId: userId, body: body.trim(),
+          checklistTitle: channel.type === CommunityChannelType.CHECKLIST ? checklistTitle!.trim() : null,
+        },
+        select: { id: true },
+      });
+      await this.attachments.bind(tx, created.id, userId, attachmentIds);
+      return tx.communityPost.findUniqueOrThrow({ where: { id: created.id }, select: this.postSelect(userId) });
     });
     return this.sajikanPost(row, userId, canModerate);
   }
