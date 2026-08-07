@@ -3427,3 +3427,61 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 @media(max-width:640px){.checklistArticleAttachment{padding:0 20px 28px}.checklistArticleAttachment iframe{height:62vh}.checklistEditorPage{border-radius:14px}.checklistEditorPage>header,.checklistEditorForm{padding:22px 20px}.checklistEditorActions{align-items:stretch;flex-direction:column-reverse}.checklistEditorActions .btn,.checklistEditorActions .btnSecondary{justify-content:center;width:100%}}
 .checklistComposer{gap:14px}.checklistAddToggle{justify-self:start}.checklistComposerForm{display:grid;gap:8px}.checklistComposerForm>label{font-size:13px;font-weight:700}.checklistComposerForm>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
 @media(max-width:760px){.checklistComposerForm>div{grid-template-columns:1fr}}
+
+/* ── Composer postingan dan lampiran ─────────────────────────────────────
+   Pemicunya berbentuk kartu setinggi satu baris, bukan textarea: composer
+   sesungguhnya adalah modal, dan textarea di feed yang tidak dapat diketik
+   akan terbaca sebagai kolom yang rusak. */
+.composerTrigger{display:flex;align-items:center;gap:11px;width:100%;padding:15px 17px;margin-bottom:18px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--muted);text-align:left;font:inherit;cursor:pointer}
+.composerTrigger:hover{background:var(--surface-2);color:var(--text)}
+.composerTrigger>svg{flex:none;color:var(--primary)}
+
+.postComposerForm{display:grid;gap:12px;padding:4px}
+.postComposerForm .composerTitle{width:100%;border:0;background:transparent;padding:2px;color:var(--text);font-size:22px;font-weight:700;outline:0}
+.postComposerForm .composerTitle::placeholder{color:var(--muted);font-weight:600}
+.postComposerForm>textarea{width:100%;min-height:180px;resize:vertical;border:0;background:transparent;padding:2px;color:var(--text);font:inherit;line-height:1.6;outline:0}
+
+.composerAttachmentList{display:grid;gap:7px;margin:0;padding:0;list-style:none}
+.composerAttachmentList>li{display:grid;grid-template-columns:40px minmax(0,1fr) auto auto;align-items:center;gap:11px;padding:7px 9px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.composerAttachmentList img{width:40px;height:40px;border-radius:7px;object-fit:cover}
+.composerAttachmentIcon{display:grid;place-items:center;width:40px;height:40px;border-radius:7px;background:var(--surface);color:var(--muted)}
+.composerAttachmentName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.composerAttachmentList small{color:var(--muted);font-size:11px;white-space:nowrap}
+.composerAttachmentList button{display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
+.composerAttachmentList button:hover:not(:disabled){background:var(--surface);color:var(--danger)}
+
+.composerProgress,.composerError{margin:0;font-size:12px}
+.composerProgress{color:var(--muted)}
+.composerError{color:var(--danger)}
+
+.composerToolbar{display:flex;align-items:center;gap:6px;padding-top:12px;border-top:1px solid var(--border)}
+.composerToolbar>button:not(.btn){display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
+.composerToolbar>button:not(.btn):hover:not(:disabled){background:var(--surface-2);color:var(--text)}
+.composerToolbar>button:disabled{opacity:.45;cursor:not-allowed}
+.composerCount{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+
+.postTitle{margin:16px 0 0;font-size:19px;line-height:1.35}
+.postTitle+.postBody{margin-top:8px}
+
+.postAttachments{display:grid;gap:10px;margin:14px 0}
+/* `auto-fit` bukan jumlah kolom tetap: satu gambar mengisi lebar penuh,
+   dua atau tiga berbagi baris, dan sisanya membungkus sendiri. */
+.postImageGrid{display:grid;gap:6px;border-radius:12px;overflow:hidden}
+.postImageGrid2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.postImageGrid3{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.postImageGrid img{display:block;width:100%;max-height:420px;object-fit:cover;background:var(--surface-2)}
+.postImageGrid1 img{max-height:520px;object-fit:contain}
+.postVideo{width:100%;max-height:480px;border-radius:12px;background:#000}
+.postFileRow{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);text-decoration:none}
+.postFileRow:hover{background:var(--surface)}
+.postFileRow>svg{flex:none;color:var(--muted)}
+.postFileRow>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.postFileRow>small{margin-left:auto;color:var(--muted);font-size:11px;white-space:nowrap}
+
+@media(max-width:760px){
+  .postComposerForm .composerTitle{font-size:19px}
+  .postComposerForm>textarea{min-height:140px}
+  .composerToolbar{flex-wrap:wrap}
+  .composerCount{order:3;width:100%;margin-left:0}
+  .postImageGrid3{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

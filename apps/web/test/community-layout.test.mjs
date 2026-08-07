@@ -14,6 +14,8 @@ const checklistDetailPage = await readFile(new URL('../app/community/[slug]/[sub
 const checklistEdit = await readFile(new URL('../app/community/checklist-editor.tsx', import.meta.url), 'utf8').catch(() => '');
 const checklistEditPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/[postId]/edit/page.tsx', import.meta.url), 'utf8').catch(() => '');
 const masterShortcuts = await readFile(new URL('../app/components/master-community-shortcuts.tsx', import.meta.url), 'utf8');
+const composer = await readFile(new URL('../app/community/post-composer.tsx', import.meta.url), 'utf8');
+const attachments = await readFile(new URL('../app/community/post-attachments.tsx', import.meta.url), 'utf8');
 
 test('shell Pelajar menyediakan sidebar desktop dan memindahkannya ke drawer pada mobile', () => {
   assert.match(css, /\.learnerShellBody\{[^}]*grid-template-columns:220px minmax\(0,1fr\)/);
@@ -303,4 +305,37 @@ test('progres kartu checklist datang dari server, bukan dari tulisan yang termua
   assert.match(channel, /Math\.min\(channel\.checklistCompletedCount, total\)/);
   // Bilah progresnya dipakai bersama halaman checklist, bukan disalin.
   assert.match(channel, /className="checklistProgressBar"/);
+});
+
+test('composer mengunggah lampiran lebih dulu lalu menyebut id-nya saat menerbitkan', () => {
+  // Menerbitkan dulu lalu mengunggah berarti pembaca melihat tulisan tanpa
+  // gambarnya selama unggahan berjalan, dan tulisan itu tinggal selamanya bila
+  // unggahannya gagal.
+  assert.match(composer, /uploadDraftAttachment\(file, setProgres\)/);
+  assert.match(composer, /attachmentIds: lampiran\.map\(\(item\) => item\.id\)/);
+  assert.match(channel, /\.\.\.\(attachmentIds\.length \? \{ attachmentIds \} : \{\}\)/);
+});
+
+test('composer hanya mengosongkan isinya ketika server benar-benar menerima', () => {
+  // Kalau dikosongkan tanpa syarat, satu galat jaringan menghapus tulisan dan
+  // seluruh lampiran yang sudah diunggah.
+  assert.match(composer, /const berhasil = await onPublish\(/);
+  assert.match(composer, /if \(!berhasil\) return;/);
+  assert.match(channel, /return true;/);
+  assert.match(channel, /return false;/);
+});
+
+test('lampiran postingan dibaca lewat endpoint, bukan jalur berkas', () => {
+  // Kunci objek tidak pernah sampai ke klien; berkasnya disajikan API lewat
+  // X-Accel-Redirect sesudah kewenangannya diperiksa.
+  assert.match(attachments, /\/api\/v1\/community\/attachments\/\$\{item\.id\}/);
+  assert.doesNotMatch(attachments, /objectKey/);
+  assert.match(channel, /<PostAttachments attachments=\{post\.attachments \?\? \[\]\} \/>/);
+});
+
+test('batas lampiran di composer sejalan dengan batas server', () => {
+  // Dua angka di dua tempat. Kalau melenceng, penulisnya baru tahu setelah
+  // berkasnya selesai terunggah dan ditolak server.
+  assert.match(composer, /const MAKS_LAMPIRAN = 5;/);
+  assert.match(composer, /const MAKS_BYTE = 26_214_400;/);
 });

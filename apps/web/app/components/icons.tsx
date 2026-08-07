@@ -287,3 +287,7 @@ export const FileText = (props: IconProps) => (
 export const ClipboardList = (props: IconProps) => (
   <Base {...props}><path d="M9 5H6a2 2 0 00-2 2v13a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-3" /><rect x="9" y="2" width="6" height="5" rx="2" /><path d="M9 12h7M9 16h7M7 12h.01M7 16h.01" /></Base>
 );
+
+export const ImageIcon = (props: IconProps) => (
+  <Base {...props}><rect x="3" y="3" width="18" height="18" rx="2.5" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></Base>
+);

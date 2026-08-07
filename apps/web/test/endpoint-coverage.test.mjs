@@ -54,14 +54,7 @@ const DILUAR_JANGKAUAN_WEB = new Map([
  * berlaku akses, dihapus dari API setelah diputuskan bahwa akses kursus terbit
  * bersifat permanen. Daftar ini menunggu celah berikutnya.
  */
-const BELUM_DIPUTUSKAN = new Map([
-  // Fondasi lampiran banyak sudah berdiri di API; composer yang memanggilnya
-  // adalah tahap berikutnya. Ketiganya harus hilang dari daftar ini begitu
-  // composer modal terpasang — kalau masih di sini, composer-nya belum benar
-  // benar tersambung.
-  ['/api/v1/community/attachments', 'Menunggu composer modal; unggahan sebelum terbit belum punya antarmuka.'],
-  ['/api/v1/community/attachments/{attachmentId}', 'Menunggu composer modal; pratinjau dan pembuangan lampiran belum punya antarmuka.'],
-]);
+const BELUM_DIPUTUSKAN = new Map([]);
 
 async function sumberWeb() {
   const isi = [];

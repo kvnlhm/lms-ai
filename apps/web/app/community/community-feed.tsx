@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useNotifier } from '../components/notifier';
 import { browserClient, unwrap, unwrapList } from '../lib/browser-api';
+import { PostComposer } from './post-composer';
+import { PostAttachments, type LampiranPost } from './post-attachments';
 
 /** Satu tarikan pesan atau balasan; dipakai baik saat memuat lama maupun menyegarkan. */
 const UKURAN_HALAMAN = 30;
@@ -26,6 +28,7 @@ export type CommunityPost = {
   id: string; title: string | null; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
   reactedByMe: boolean; completedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
   canEdit: boolean; canDelete: boolean; canPin: boolean;
+  attachments?: LampiranPost[];
   channel: Pick<CommunitySubchannel, 'id' | 'slug' | 'name' | 'type' | 'isReadOnly' | 'allowReplies'> & { groupSlug: string; groupName: string };
   comments: CommunityComment[];
   attachment: { id: string; originalName: string; mimeType: string; sizeBytes: string; createdAt: string } | null;
@@ -213,13 +216,33 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
     if (!channelId || !body.trim()) return;
     if (selected?.type === 'CHECKLIST' && !title.trim()) return;
     startTransition(async () => {
-      try {
-        const result = await browserClient().POST('/api/v1/community/subchannels/{subchannelId}/posts', { params: { path: { subchannelId: channelId } }, body: { body: body.trim(), ...(selected?.type === 'CHECKLIST' ? { title: title.trim() } : {}) } });
-        const created = unwrap<CommunityPost>(result);
-        setPosts((current) => [created, ...current]); setTotal((current) => current + 1);
-        setBody(''); setTitle(''); setMessage(activeSubchannelSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
-      } catch (error) { setMessage(error instanceof Error ? error.message : activeSubchannelSlug ? 'Pesan gagal dikirim.' : 'Post gagal diterbitkan.'); }
+      const berhasil = await kirimPost({ title: title.trim(), body: body.trim(), attachmentIds: [] });
+      if (berhasil) { setBody(''); setTitle(''); }
     });
+  }
+
+  /**
+   * Menerbitkan satu tulisan dan menaruhnya di puncak feed.
+   *
+   * Mengembalikan keberhasilannya, bukan `void`: composer modal hanya boleh
+   * menutup dan mengosongkan isinya kalau server benar-benar menerima. Kalau
+   * tidak, apa yang sudah diketik dan diunggah ikut hilang bersama galatnya.
+   */
+  async function kirimPost({ title: judul, body: isi, attachmentIds }: { title: string; body: string; attachmentIds: string[] }) {
+    if (!channelId || !isi) return false;
+    try {
+      const result = await browserClient().POST('/api/v1/community/subchannels/{subchannelId}/posts', {
+        params: { path: { subchannelId: channelId } },
+        body: { body: isi, ...(judul ? { title: judul } : {}), ...(attachmentIds.length ? { attachmentIds } : {}) },
+      });
+      const created = unwrap<CommunityPost>(result);
+      setPosts((current) => [created, ...current]); setTotal((current) => current + 1);
+      setMessage(activeSubchannelSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
+      return true;
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : activeSubchannelSlug ? 'Pesan gagal dikirim.' : 'Post gagal diterbitkan.');
+      return false;
+    }
   }
 
   function react(postId: string) {
@@ -470,7 +493,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
                 saja tanpa memberi tahu apa pun. Langkah checklist ditambahkan
                 lewat form "Tambah checklist" di halaman checklist-nya. */}
             {!activeSubchannelSlug ? <div className="composerChannelPicker" role="group" aria-label="Pilih sub-channel tujuan">{subchannels.filter((channel) => channel.type !== 'ANNOUNCEMENTS' && channel.type !== 'CHECKLIST').map((channel) => <button key={channel.id} className={channel.id === channelId ? 'active' : ''} type="button" onClick={() => setChannelId(channel.id)}>{channel.groupName} / {COMMUNITY_CHANNEL_TYPES[channel.type].icon} {channel.name}</button>)}</div> : null}
-            {canPost ? <><textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder={announcementPage ? `Tulis pengumuman untuk ${selected?.name}...` : `Bagikan sesuatu ke ${selected?.name ?? 'channel'}...`} maxLength={5000} /><div className="composerFoot"><span>{body.length}/5000</span><button className="btn" type="button" disabled={pending || !body.trim()} onClick={publish}>{announcementPage ? 'Terbitkan pengumuman' : 'Terbitkan'}</button></div></> : <p className="communityMuted">{announcementPage ? 'Hanya Master yang dapat menerbitkan pengumuman.' : 'Channel ini hanya dapat ditulis oleh Master.'}</p>}
+            {canPost ? <PostComposer channelName={selected?.name ?? 'channel'} announcement={announcementPage} pending={pending} onPublish={(isi) => new Promise((selesai) => startTransition(async () => selesai(await kirimPost(isi))))} /> : <p className="communityMuted">{announcementPage ? 'Hanya Master yang dapat menerbitkan pengumuman.' : 'Channel ini hanya dapat ditulis oleh Master.'}</p>}
           </div>
         ) : null}
         {message ? <p className="communityMessage" role="status">{message}</p> : null}
@@ -480,7 +503,9 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
             const post = entri.post;
             return <article className="communityPost card" key={entri.kunci}>
               <header><Avatar person={post.author} /><div><strong>{post.author.fullName}</strong><small>di <Link href={`/community/${post.channel.groupSlug}/${post.channel.slug}`}>{post.channel.groupName} / {COMMUNITY_CHANNEL_TYPES[post.channel.type].icon} {post.channel.name}</Link> · {formatDate(post.createdAt)}</small></div>{post.isPinned ? <span className="postPinned">Disematkan</span> : null}</header>
+              {post.title ? <h2 className="postTitle">{post.title}</h2> : null}
               <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
+              <PostAttachments attachments={post.attachments ?? []} />
               <div className="postActions">{post.channel.type === 'ANNOUNCEMENTS' ? <span>Pengumuman resmi</span> : <button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button>}{post.channel.allowReplies ? <span>◯ {post.commentCount} balasan</span> : <span>Balasan ditutup</span>}<PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
               {post.channel.allowReplies ? <><MuatBalasan post={post} aksi={aksi} />{balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}<div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div></> : null}
             </article>;
