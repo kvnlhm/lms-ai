@@ -7,7 +7,9 @@ tersimpan di mana pun kecuali di kepala orang yang baru saja mengerjakannya:
 keadaan produksi hari ini, apa yang sudah ditutup, dan apa yang sengaja
 dibiarkan terbuka beserta alasannya.
 
-Terakhir diperbarui: **5 Agustus 2026**, setelah deploy 167 (`91ee1cb`).
+Terakhir diperbarui: **7 Agustus 2026**, setelah checklist diringkas menjadi satu
+kartu di feed dan materi video dipindahkan ke penandaan manual, deployment 217
+terverifikasi.
 
 ---
 
@@ -20,27 +22,163 @@ sedang dibangun menuju rilis; ini proyek yang sedang berjalan.
 |---|---|
 | Domain | https://academy.aipreneur.co.id |
 | Repo | `kvnlhm/lms-ai`, cabang `feat/walking-skeleton-and-master` — **publik** |
-| VPS | Hostinger `31.97.105.104`, 7 GB RAM, sisa disk ±45 G dari 96 G |
+| VPS | Hostinger `31.97.105.104`, 7 GB RAM, sisa disk ±64 G dari 96 G |
 | Orkestrasi | Coolify 4.1.2, aplikasi UUID `e1b4fo52n9tnzjpm5m2i5k8l` |
-| Deploy terakhir | 167 — `91ee1cb`, selesai 5 Agustus 2026 09:44 UTC |
+| Deploy terakhir | commit `797baf5`, deployment **217**, selesai dan terverifikasi |
 | Pembayaran | Midtrans **Production** (bukan sandbox) |
 | Email | Resend, domain pengirim `send.aipreneur.co.id` |
 | Pemantauan | UptimeRobot, `HEAD /api/v1/health/ready` tiap 5 menit |
 
-Isi database produksi per 5 Agustus 2026:
+Snapshot data produksi, dibaca langsung dari basis data pada 7 Agustus 2026
+sesudah deployment 217:
 
 ```
-migrasi terpasang   31
+migrasi terpasang   41
 users                4
 courses             38
 lessons            185
-enrollments        139
+enrollments        143
 video_assets       195
+community_posts      6   (aktif, belum terhapus)
 registration_orders  6   (PAID 3, FAILED 2, EXPIRED 1)
 ```
 
 `lesson_materials` masih 0 baris — jadi volume `material-data` yang kosong itu
 benar, bukan cacat. Ini pernah salah dibaca sebagai kegagalan cadangan.
+
+Aturan penyelesaian pelajaran, sesudah migrasi 7 Agustus:
+
+```
+VIDEO          MANUAL  123   OPENED 5
+TEXT           MANUAL    2
+EXTERNAL_LINK  MANUAL   55
+```
+
+Tidak ada lagi pelajaran ber-`VIDEO_PERCENTAGE`. Aturannya sendiri tidak dicabut
+dari sistem; lihat §1c.
+
+## 1a. Perubahan terbaru — Community Checklist
+
+Fitur checklist personal per pelajar sudah selesai dan ikut deploy produksi
+terbaru. Alur yang sekarang menjadi acuan:
+
+1. Master menekan **Tambah checklist** pada sub-channel checklist; form inline
+   terbuka untuk judul dan isi.
+2. Master dapat membuka halaman edit khusus, mengubah judul/isi, serta mengganti
+   atau menghapus satu lampiran per checklist.
+3. Pelajar membuka checklist seperti postingan, membaca konten dan melihat
+   lampiran, lalu mencentang selesai. Tombol berikutnya membawa ke checklist
+   berikutnya.
+4. Checklist tidak menerima balasan komentar maupun reaksi. Ini ditegakkan di
+   server — `addComment` dan `toggleReaction` menolak 403 pada post checklist —
+   bukan sekadar disembunyikan di antarmuka.
+
+Lampiran yang diizinkan: JPEG, PNG, WebP, MP4, WebM, dan PDF, maksimum 100 MB.
+Berkas disimpan di volume `community-attachment-data`, bukan di object key yang
+terlihat oleh klien. Endpoint utamanya:
+
+```
+PUT    /api/v1/community/checklist/{postId}/attachment
+DELETE /api/v1/community/checklist/{postId}/attachment
+GET    /api/v1/community/checklist/{postId}/attachment
+```
+
+Migrasi attachment: `20260806173000_community_checklist_attachments`.
+Commit fitur yang perlu diketahui sesi berikutnya: `5b6ac7c`, `bf2e5ee`,
+`30112f3`, `009220f`; commit produksi terbaru juga memuat perbaikan backup,
+`0efdf02` dan `08de193`.
+
+## 1b. Checklist di feed diringkas menjadi satu kartu
+
+Deployment 215 (`2a03ac5`) dan 216 (`5c2e1e9`), 7 Agustus.
+
+Dua cacat tampilan pada permukaan yang sama, keduanya datang dari laporan
+pemiliknya lewat tangkapan layar:
+
+1. **Pemilih berkas lampiran memakai input bawaan browser.** Editor checklist
+   adalah satu-satunya tempat yang menampilkan `<input type="file">` mentah,
+   sehingga tombol "Choose File" dan teks "No file chosen" muncul terang di atas
+   form gelap dan dalam bahasa Inggris. Seluruh pemilih berkas lain di aplikasi
+   ini sudah menyembunyikan input-nya di balik label bergaya; editor checklist
+   kini mengikuti pola yang sama (`2a03ac5`).
+
+2. **Setiap langkah checklist mengalir ke feed sebagai tulisan lepas.** Satu
+   Welcome Checklist berisi lima langkah muncul sebagai lima kartu berturut-turut,
+   masing-masing lengkap dengan tombol suka dan kolom "Balas post ini…" — padahal
+   API sudah menolak keduanya dengan 403. Kolom balasan itu hanya ada di layar dan
+   tidak akan pernah berhasil dikirim. Checklist kini diwakili **satu kartu per
+   sub-channel**: nama, jumlah topik, progres, dan tautan membuka halaman
+   checklist, tanpa reaksi dan tanpa kolom balasan (`5c2e1e9`).
+
+Kartunya berdiri pada posisi langkah terbarunya supaya urutan feed tetap
+kronologis, bukan dipaksa naik ke atas.
+
+Angka progresnya **tidak** dihitung dari tulisan yang sudah termuat. Feed
+dipenggal per halaman, jadi menghitungnya di antarmuka akan menyebut "2 dari 2"
+pada checklist yang sebenarnya berisi lima langkah. Karena itu ditambahkan
+`checklistCompletedCount` pada `CommunitySubchannelDto`, dihitung server dengan
+satu `groupBy`; penyebutnya memakai `postCount` yang sudah ada. Field itu hanya
+bermakna pada endpoint daftar channel dan hanya untuk sub-channel `CHECKLIST` —
+pada balasan endpoint pembuatan dan penyuntingan sub-channel nilainya selalu 0
+dan tidak boleh dibaca sebagai progres.
+
+Halaman checklist khusus dan halaman detail tiap langkah **tidak diubah**; yang
+berubah hanya wakilnya di feed.
+
+Ikut diperbaiki: pemilih tujuan pada composer feed tidak lagi menawarkan
+sub-channel checklist. Composer di sana tidak punya kolom judul sedangkan
+`publish` menolak item checklist tanpa judul, sehingga tombol Terbitkan diam saja
+tanpa memberi tahu apa pun.
+
+## 1c. Materi video diselesaikan dengan penandaan manual
+
+Deployment 217 (`797baf5`), 7 Agustus. Migrasi
+`20260807020000_video_lessons_manual_completion`.
+
+Aturan `VIDEO_PERCENTAGE` tersimpan sejak lama tetapi baru benar-benar ditegakkan
+belakangan (lihat catatan pada `completion-rule.ts`). Sejak saat itu 95 pelajaran
+video menuntut 90% tontonan sebelum dapat diselesaikan, dan tombol "Tandai
+selesai" pelajar mati sampai ambang itu terpenuhi. Pemiliknya memutuskan
+penyelesaian materi video cukup ditandai sendiri oleh pelajar.
+
+Yang berubah:
+
+- Migrasi memindahkan seluruh pelajaran video ber-`VIDEO_PERCENTAGE` ke `MANUAL`.
+  Terverifikasi di produksi: 95 → 0, dan `VIDEO MANUAL` naik dari 28 menjadi 123.
+  Pelajaran video ber-`OPENED` (5), `TEXT`, dan `EXTERNAL_LINK` tidak tersentuh.
+- Editor kursus tidak lagi memberi bawaan `VIDEO_PERCENTAGE` pada pelajaran video
+  baru. Itu satu-satunya sumber bawaan tersebut: skema Prisma dan
+  `course-authoring.service.ts` sebenarnya sudah lama berbawaan `MANUAL`.
+
+Yang **tidak** berubah, dan jangan dilaporkan sebagai pekerjaan yang belum
+selesai: aturan persentase video tetap ada di sistem. Penegakannya di server utuh
+dan opsi "Persentase video" tetap dapat dipilih per pelajaran, jadi Master masih
+bisa mewajibkan tontonan bila suatu saat diperlukan.
+
+`completion_config` sengaja **tidak** dikosongkan. Di bawah `MANUAL` ia tidak
+dibaca sama sekali, sedangkan membuangnya berarti menghapus angka yang dulu
+dipilih Master — angka yang akan dipakai lagi kalau sebuah pelajaran dikembalikan
+ke `VIDEO_PERCENTAGE`. Di produksi 85 dari 123 pelajaran video `MANUAL` masih
+memegang config-nya.
+
+Migrasi ini tidak sepenuhnya dapat dibalik: 10 dari 95 pelajaran ber-config kosong,
+dan sesudah menjadi `MANUAL` mereka tidak dapat dibedakan dari 28 pelajaran video
+yang memang sudah manual sejak awal. Karena itu keadaan sebelum migrasi disimpan
+terarah di luar repo:
+
+```
+/var/backups/lms-ai/pre-migration/video-completion-rules-20260807T021241Z.csv
+```
+
+128 baris, chmod 600, berisi `id`, `completion_rule`, dan `completion_config`
+seluruh pelajaran video sebelum perubahan.
+
+Progres pelajar tidak bergeser sedikit pun: 11 `COMPLETED` dan 40 `IN_PROGRESS`
+sebelum dan sesudah migrasi.
+
+Verifikasi deployment 217 berhasil untuk gateway, web, API, worker, Postgres,
+Redis, homepage HTTP 200, readiness DB/Redis, seluruh 41 migrasi, dan tidak ada
+runtime error sejak API start.
 
 ---
 
@@ -131,8 +269,8 @@ keputusan eksplisit pemiliknya.
 
 ## 4. Yang sudah ditutup pada pemeriksaan ini
 
-Lima dari sembilan butir daftar. Diurutkan dari yang termudah, atas permintaan
-pemiliknya.
+Butir pemeriksaan historis berikut sudah ditutup. Nomornya dipertahankan agar
+rujukan dari sesi lama tetap dapat ditemukan.
 
 1. **Stash lama dibuang.** Sisa dari sesi sebelumnya, sudah tidak relevan.
 2. **Pesanan yang menggantung ditutup.** Satu pesanan berstatus tidak jelas
@@ -218,8 +356,18 @@ pemiliknya.
    - `lessonCount` tidak dapat disortir; angkanya berjarak dua relasi dari kursus
      sehingga `_count` Prisma tidak menjangkaunya. Kolomnya dibiarkan polos, bukan
      diberi tautan yang tidak melakukan apa-apa.
+8. **Community Checklist selesai dan live** — alur baca/centang/lanjut,
+   editor khusus, form tambah checklist, dan lampiran media sudah terverifikasi
+   di produksi. Detail implementasi ada di §1a dan ADR-031.
+9. **Backup harian disesuaikan dengan kapasitas disk** — `0efdf02` mengecualikan
+   volume video yang memang disimpan pemilik di luar VPS dan membatasi retensi;
+   `08de193` mencatat volume yang tidak ikut arsip di manifest checkpoint.
+10. **Checklist di feed diringkas menjadi satu kartu** — `2a03ac5` dan `5c2e1e9`,
+    deployment 215 dan 216. Detail di §1b.
+11. **Materi video dipindahkan ke penandaan manual** — `797baf5`, deployment 217,
+    migrasi `20260807020000_video_lessons_manual_completion`. Detail di §1c.
 
-Dua koreksi yang perlu diingat supaya tidak diulang sebagai "temuan":
+Tiga koreksi yang perlu diingat supaya tidak diulang sebagai "temuan":
 
 - **SPF tidak hilang.** Domain Resend-nya memang `send.aipreneur.co.id`, jadi
   rekamannya ada di `send.send.aipreneur.co.id` — SPF dan MX keduanya lengkap di
@@ -227,6 +375,10 @@ Dua koreksi yang perlu diingat supaya tidak diulang sebagai "temuan":
 - **Cadangan bukan tidak pernah dipulihkan.** Drill 1 Agustus sudah membuktikan
   databasenya pulih dan jumlah barisnya cocok. Yang memang belum, dan baru
   ditutup 5 Agustus, adalah volume unggahan dan pemeriksaan isi.
+- **Aturan `VIDEO_PERCENTAGE` tidak dicabut.** Sesudah migrasi 7 Agustus tidak ada
+  lagi pelajaran yang memakainya, tetapi aturan, penegakannya di server, dan
+  opsinya di editor semuanya masih ada dan memang disengaja. Nol pemakai bukan
+  berarti kode mati yang perlu dibersihkan.
 
 ---
 
@@ -294,6 +446,29 @@ diputuskan.
   celah terakhir yang tersisa di `BACKUP_RESTORE.md`.
 - DMARC `send.aipreneur.co.id` masih `p=none`.
 
+### Catatan operasi terbaru
+
+- Percobaan backup/deploy sempat gagal karena disk penuh saat mengarsipkan
+  `video-data`. Artefak deploy dibersihkan otomatis; per 7 Agustus disk kembali
+  sekitar 64 GB kosong dari 96 GB.
+- Checkpoint terbaru yang dipakai sebagai backup gate sebelum migrasi 7 Agustus:
+  `/var/backups/lms-ai/daily/lms-20260806T235046Z.tar`. Manifest mencatat migrasi
+  terakhir `20260806160000_community_checklist_content` dan tabel penting
+  (`users 4`, `enrollments 143`, `lesson_progress 51`, `registration_orders 6`,
+  `video_assets 195`, `forum_topics 2`).
+- **`community-attachment-data` tercatat `volume_dicari_tapi_hilang`** di manifest
+  checkpoint 6 Agustus 23:50. Inilah pemeriksaan yang dulu diminta pada butir ini,
+  dan hasilnya bukan yang diharapkan. Belum ditelusuri — jangan dianggap sudah
+  beres hanya karena butirnya pernah disebut. Jangan pula menganggap ketiadaan
+  `video-data` sebagai kegagalan; itu pengecualian yang disengaja dan sudah
+  dijelaskan di `docs/operations/BACKUP_RESTORE.md`.
+- Manifest checkpoint yang sama mencatat `migration_terakhir`
+  `20260806160000_community_checklist_content`, padahal produksi saat itu sudah
+  memasang `20260806173000_community_checklist_attachments`. Selisih ini belum
+  dijelaskan dan layak diperiksa bersama butir di atas.
+- Keadaan aturan penyelesaian pelajaran video sebelum migrasi 7 Agustus disimpan
+  di `/var/backups/lms-ai/pre-migration/`, di luar repo. Lihat §1c.
+
 ### Tindakan yang hanya bisa dilakukan pemiliknya
 
 - Mengambil dan menyimpan frasa sandi cadangan. Tanpa itu, arsip terenkripsi
@@ -310,7 +485,57 @@ diputuskan.
 
 ---
 
-## 6. Bacaan lanjutan
+## 6. Handoff untuk sesi berikutnya
+
+Mulai sesi baru dengan urutan singkat ini sebelum mengubah kode:
+
+```bash
+rtk git status --short
+rtk git log -8 --oneline --decorate
+rtk sed -n '1,200p' docs/PROJECT_STATUS.md   # §1 sampai §3; sisanya sesuai kebutuhan
+```
+
+Berkasnya kini ±525 baris. Bagian yang wajib dibaca lebih dulu adalah §1 sampai
+§3 — keadaan hari ini, cara bekerja di mesin ini, dan aturan yang tidak boleh
+dilanggar. §4 dan §5 dibaca ketika hendak menyentuh area yang bersangkutan.
+
+Lalu baca `docs/DOCUMENTATION_INDEX.md`, `docs/PRD.md`, ADR/domain yang relevan,
+dan `docs/testing/DEFINITION_OF_DONE.md`. Untuk perubahan Community Checklist,
+mulai dari ADR-031 dan cek kontrak API, migrasi, volume Docker, serta backup
+scope secara bersamaan.
+
+Sebelum deploy:
+
+- jalankan lint, typecheck, build, dan test di container `node:22-alpine`;
+- bila kontrak API berubah, jalankan `openapi:generate` lalu commit
+  `apps/api/openapi.json` dan `packages/api-client/src/generated` bersama
+  perubahannya — CI menjalankan `openapi:check` dan gagal bila keduanya melenceng.
+  Perintah itu menuntut `DATABASE_URL`, `REDIS_URL`, dan `MFA_ENCRYPTION_KEY`
+  (32 byte base64) meski tidak menyentuh basis data;
+- `pnpm --filter @lms/web run typecheck` memakai `@lms/api-client` hasil build,
+  bukan sumbernya. Sesudah regenerasi, jalankan
+  `pnpm --filter @lms/api-client run build` lebih dulu atau typecheck-nya akan
+  mengeluh tentang field yang sebenarnya sudah ada;
+- pastikan migrasi baru tercatat dan checkpoint backup masih tersedia;
+- **migrasi yang mengubah data, bukan skema, diuji dulu di basis data buangan.**
+  Buat database sementara di `pg-test`, jalankan `prisma migrate deploy`, isi baris
+  tiruan yang mewakili tiap kasus batas, jalankan UPDATE-nya di dalam transaksi,
+  lalu `ROLLBACK`. Untuk baris produksi yang akan ditimpa dan tidak dapat
+  direkonstruksi, simpan snapshot terarah di `/var/backups/lms-ai/pre-migration/`
+  sebelum deploy — restore seluruh basis data terlalu mahal untuk membatalkan satu
+  kolom;
+- deploy lewat Coolify, lalu jalankan `scripts/verify-deploy.sh`;
+- periksa disk VPS dan status deployment queue; jangan mengulang deploy bila
+  queue sebelumnya masih berjalan;
+- sesudah deploy, buktikan perubahannya benar-benar terkirim, bukan sekadar
+  container hidup: `grep` kelas CSS atau teks baru di dalam container `web`, field
+  baru di `dist` container `api`, dan query ulang basis data untuk migrasi data.
+
+Jangan menganggap angka snapshot di §1 sebagai data real-time. Jika keputusan
+bergantung pada jumlah baris produksi, query ulang database produksi dengan
+perintah di §2.
+
+## 7. Bacaan lanjutan
 
 | Untuk | Berkas |
 |---|---|
