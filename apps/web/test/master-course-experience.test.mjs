@@ -101,3 +101,32 @@ test('halaman pemeliharaan memakai logo aplikasi yang dilayani gateway sendiri',
   assert.match(dockerfile, /COPY apps\/web\/app\/icon\.png \/usr\/share\/nginx\/pemeliharaan\/__brand\.png/);
   assert.match(nginx, /location = \/__brand\.png/);
 });
+
+test('materi video baru berbawaan ditandai manual, bukan ambang tontonan', async () => {
+  // Bawaan 'VIDEO_PERCENTAGE' membuat setiap pelajaran video baru menuntut 90%
+  // tontonan tanpa Master pernah memintanya, dan tombol "Tandai selesai" pelajar
+  // mati sampai ambang itu terpenuhi.
+  const editor = await read('../app/master/courses/[courseId]/course-editor.tsx');
+  assert.match(editor, /setCompletionRule\(nextType === 'VIDEO' \? 'MANUAL' : 'OPENED'\)/);
+  assert.doesNotMatch(editor, /nextType === 'VIDEO' \? 'VIDEO_PERCENTAGE'/);
+  // Aturannya tidak dicabut dari sistem; ia tetap dapat dipilih per pelajaran.
+  assert.match(editor, /\{ value: 'VIDEO_PERCENTAGE', label: 'Persentase video' \}/);
+});
+
+test('pelajaran video yang sudah ada ikut dipindahkan ke penandaan manual', async () => {
+  const migrasi = await read('../../api/prisma/migrations/20260807020000_video_lessons_manual_completion/migration.sql');
+  assert.match(migrasi, /UPDATE "lessons"/);
+  assert.match(migrasi, /SET "completion_rule" = 'MANUAL'/);
+  assert.match(migrasi, /"content_type" = 'VIDEO'/);
+  assert.match(migrasi, /"completion_rule" = 'VIDEO_PERCENTAGE'/);
+  // Ambang lama dibiarkan tersimpan: di bawah MANUAL ia tidak dibaca, dan
+  // membuangnya berarti menghapus angka yang dulu dipilih Master.
+  assert.doesNotMatch(migrasi, /completion_config"?\s*=/);
+});
+
+test('tombol selesai hanya terkunci oleh aturan yang memang punya ambang', async () => {
+  // Di bawah MANUAL, `videoPercentageTarget` bernilai null sehingga tombolnya
+  // tidak pernah mati — itulah yang membuat penandaan manual benar-benar manual.
+  const tombol = await read('../app/learn/[courseId]/[lessonId]/complete-button.tsx');
+  assert.match(tombol, /const belumCukup = videoPercentageTarget !== null && ditonton < videoPercentageTarget/);
+});

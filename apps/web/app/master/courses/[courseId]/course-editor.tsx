@@ -1428,7 +1428,11 @@ function AddLessonForm({
       setCompletionRule('MANUAL');
       return;
     }
-    setCompletionRule(nextType === 'VIDEO' ? 'VIDEO_PERCENTAGE' : 'OPENED');
+    // Materi video pun ditandai manual. Bawaan 'VIDEO_PERCENTAGE' membuat setiap
+    // pelajaran video baru menuntut 90% tontonan tanpa Master pernah memintanya,
+    // dan tombol "Tandai selesai" pelajar mati sampai ambang itu terpenuhi.
+    // Aturan persentase tetap dapat dipilih sendiri di daftar aturan.
+    setCompletionRule(nextType === 'VIDEO' ? 'MANUAL' : 'OPENED');
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
