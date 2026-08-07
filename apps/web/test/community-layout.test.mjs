@@ -334,20 +334,30 @@ test('lampiran postingan dibaca lewat endpoint, bukan jalur berkas', () => {
   assert.match(channel, /<PostAttachments attachments=\{post\.attachments \?\? \[\]\} \/>/);
 });
 
-test('media postingan mengikuti bentuk aslinya, bukan diregangkan ke kotak tetap', () => {
-  // Cacat yang diperbaiki: gambar dipaksa selebar kartu lalu dibatasi tingginya,
-  // dan `object-fit:contain` mengisi sisanya dengan ruang kosong — gambar potret
-  // tampil sempit di tengah dengan bilah kosong lebar di kiri dan kanannya.
-  // `[;{]width` dengan sengaja: `max-width:100%` adalah batas dan boleh, sedang
-  // `width:100%` adalah paksaan dan itulah yang meregangkan gambarnya.
-  assert.doesNotMatch(css, /\.postMedia[^{]*\{[^}]*[;{]width:100%/);
-  assert.doesNotMatch(css, /\.postMedia[^{]*\{[^}]*object-fit/);
-  assert.match(css, /\.postMediaSingle img,\.postMediaSingle video\{display:block;max-width:100%;max-height:520px;width:auto;height:auto\}/);
+test('satu media mengisi lebar kartu dan dipangkas, bukan disusutkan', () => {
+  // Cacat yang pernah terjadi dua kali di permukaan yang sama, keduanya
+  // dilaporkan lewat tangkapan layar:
+  //
+  //  1. `object-fit:contain` menyusutkan gambar sampai muat lalu mengisi sisa
+  //     kotaknya dengan ruang kosong — bilah abu-abu lebar mengapit potret.
+  //  2. Perbaikan pertamanya menghapus bilah itu dengan membiarkan gambar
+  //     menentukan ukurannya sendiri, tetapi potret jadi lajur sempit di kartu
+  //     yang lebar.
+  //
+  // Keduanya ditutup oleh aturan yang sama: isi lebar penuh, lalu pangkas yang
+  // kelebihan. `cover` tidak pernah menyisakan ruang kosong; `contain` selalu
+  // bisa.
+  assert.match(css, /\.postMediaSingle img\{display:block;width:100%;height:auto;max-height:min\(125cqw,760px\);object-fit:cover\}/);
+  assert.doesNotMatch(css, /\.postMediaSingle img\{[^}]*object-fit:contain/);
 
-  // Pembungkusnya wajib menyusut ke isinya. Sebagai elemen blok ia selalu
-  // selebar induknya, jadi latarnya sendiri yang menggambar bilah kosong itu
-  // kembali walau gambarnya sudah benar.
-  assert.match(css, /\.postMediaSingle\{display:flex\}/);
+  // Batasnya wajib relatif terhadap lebar kartu. Angka piksel mati memangkas
+  // dengan kadar yang berbeda-beda tergantung lebar layar, dan pada kartu sempit
+  // ia berhenti membatasi sama sekali.
+  assert.match(css, /\.postMediaSingle\{container-type:inline-size\}/);
+
+  // Video justru tidak boleh dipangkas: memotong gambar diam masih menyisakan
+  // pokoknya, memotong video memotong wajah orang yang sedang berbicara.
+  assert.match(css, /\.postMediaSingle video\{[^}]*object-fit:contain[^}]*\}/);
 
   // Dua media atau lebih: deret mendatar setinggi sama, lebar mengikuti rasio
   // masing-masing.

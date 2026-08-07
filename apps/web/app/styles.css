@@ -3477,14 +3477,26 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
    pernah diregangkan. */
 .postMedia{min-width:0}
 .postMediaItem{border-radius:12px;overflow:hidden;background:var(--surface-2);line-height:0}
-/* Flex, bukan blok. Elemen blok selalu selebar induknya walau isinya sempit,
-   sehingga pembungkusnya sendiri yang menggambar bilah kosong di samping
-   gambar potret — persis cacat yang sedang diperbaiki. Sebagai item flex ia
-   menyusut ke ukuran gambarnya. */
-.postMediaSingle{display:flex}
-.postMediaSingle .postMediaItem{flex:0 1 auto;min-width:0;max-width:100%}
-.postMediaSingle img,.postMediaSingle video{display:block;max-width:100%;max-height:520px;width:auto;height:auto}
-.postMediaSingle video{background:#000}
+
+/* Satu media mengisi lebar kartu, seperti Threads dan X.
+
+   Kuncinya `cover`, bukan `contain`. Keduanya sama-sama menjaga rasio, tetapi
+   `contain` menyusutkan gambar sampai muat lalu mengisi sisa kotaknya dengan
+   ruang kosong — itulah bilah abu-abu lebar yang dulu mengapit gambar potret.
+   `cover` memangkas kelebihannya, jadi tidak pernah ada ruang kosong.
+
+   Batas tingginya dinyatakan sebagai rasio terhadap lebar kartu, bukan angka
+   piksel mati: `125cqw` berarti paling tinggi 4:5 terhadap lebarnya sendiri,
+   sehingga potret 9:16 dipangkas ke potret yang wajar alih-alih menjadi lajur
+   sempit. `min()` dengan 760px menahannya pada kartu yang sangat lebar.
+   Gambar utuhnya tetap terjangkau — pembungkusnya tautan ke berkas aslinya. */
+.postMediaSingle{container-type:inline-size}
+.postMediaSingle .postMediaItem{display:block;width:100%}
+.postMediaSingle img{display:block;width:100%;height:auto;max-height:min(125cqw,760px);object-fit:cover}
+/* Video tidak dipangkas. Memotong gambar diam masih menyisakan pokoknya,
+   sedangkan memotong video memotong wajah orang yang sedang berbicara. Bilah
+   hitam pada video adalah hal biasa; bilah abu-abu pada gambar tidak. */
+.postMediaSingle video{display:block;width:100%;height:auto;max-height:min(125cqw,760px);object-fit:contain;background:#000}
 
 /* Dua media atau lebih: satu deret mendatar setinggi sama. Lebarnya berbeda
    mengikuti rasio masing-masing, dan yang berikutnya sengaja mengintip di tepi
@@ -3505,9 +3517,10 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .postComposerForm>textarea{min-height:140px}
   .composerToolbar{flex-wrap:wrap}
   .composerCount{order:3;width:100%;margin-left:0}
-  /* Layar ponsel lebih tinggi daripada lebar, jadi batas tinggi yang sama
-     dengan desktop membuat satu gambar potret memakan hampir seluruh layar. */
-  .postMediaSingle .postMediaItem,.postMediaSingle img{max-height:60vh}
+  /* Batasnya sudah relatif terhadap lebar kartu, jadi di ponsel ia mengecil
+     sendiri. Yang perlu ditambah hanya pagar terhadap tinggi layar supaya satu
+     gambar potret tidak memakan seluruh layar sekaligus. */
+  .postMediaSingle img,.postMediaSingle video{max-height:min(125cqw,70vh)}
   .postMediaRow .postMediaItem{height:230px}
 }
 
