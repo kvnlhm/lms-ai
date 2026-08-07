@@ -13,7 +13,7 @@ export class CommunityPostBodyDto {
   @ApiPropertyOptional({ description: 'Judul item; wajib untuk post dalam sub-channel CHECKLIST.' })
   @IsOptional() @IsString() @MinLength(1) @MaxLength(160) title?: string;
   @ApiPropertyOptional({ type: [String], description: 'Id unggahan composer yang akan diikat ke postingan ini. Urutannya menjadi urutan tampilnya.' })
-  @IsOptional() @IsArray() @ArrayMaxSize(5) @IsUUID('4', { each: true }) attachmentIds?: string[];
+  @IsOptional() @IsArray() @ArrayMaxSize(10) @IsUUID('4', { each: true }) attachmentIds?: string[];
   @ApiPropertyOptional({ type: [String], description: 'Pilihan jajak pendapat, 2 sampai 6. Kosongkan bila postingan ini bukan polling.' })
   @IsOptional() @IsArray() @ArrayMaxSize(6) @IsString({ each: true }) @MaxLength(120, { each: true }) pollOptions?: string[];
 }
