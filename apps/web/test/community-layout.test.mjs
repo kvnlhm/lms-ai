@@ -329,9 +329,37 @@ test('composer hanya mengosongkan isinya ketika server benar-benar menerima', ()
 test('lampiran postingan dibaca lewat endpoint, bukan jalur berkas', () => {
   // Kunci objek tidak pernah sampai ke klien; berkasnya disajikan API lewat
   // X-Accel-Redirect sesudah kewenangannya diperiksa.
-  assert.match(attachments, /\/api\/v1\/community\/attachments\/\$\{item\.id\}/);
+  assert.match(attachments, /\/api\/v1\/community\/attachments\/\$\{id\}/);
   assert.doesNotMatch(attachments, /objectKey/);
   assert.match(channel, /<PostAttachments attachments=\{post\.attachments \?\? \[\]\} \/>/);
+});
+
+test('media postingan mengikuti bentuk aslinya, bukan diregangkan ke kotak tetap', () => {
+  // Cacat yang diperbaiki: gambar dipaksa selebar kartu lalu dibatasi tingginya,
+  // dan `object-fit:contain` mengisi sisanya dengan ruang kosong — gambar potret
+  // tampil sempit di tengah dengan bilah kosong lebar di kiri dan kanannya.
+  // `[;{]width` dengan sengaja: `max-width:100%` adalah batas dan boleh, sedang
+  // `width:100%` adalah paksaan dan itulah yang meregangkan gambarnya.
+  assert.doesNotMatch(css, /\.postMedia[^{]*\{[^}]*[;{]width:100%/);
+  assert.doesNotMatch(css, /\.postMedia[^{]*\{[^}]*object-fit/);
+  assert.match(css, /\.postMediaSingle img,\.postMediaSingle video\{display:block;max-width:100%;max-height:520px;width:auto;height:auto\}/);
+
+  // Pembungkusnya wajib menyusut ke isinya. Sebagai elemen blok ia selalu
+  // selebar induknya, jadi latarnya sendiri yang menggambar bilah kosong itu
+  // kembali walau gambarnya sudah benar.
+  assert.match(css, /\.postMediaSingle\{display:flex\}/);
+
+  // Dua media atau lebih: deret mendatar setinggi sama, lebar mengikuti rasio
+  // masing-masing.
+  assert.match(css, /\.postMediaRow\{[^}]*overflow-x:auto/);
+  assert.match(css, /\.postMediaRow img,\.postMediaRow video\{display:block;height:100%;width:auto/);
+});
+
+test('gambar dan video berada dalam satu deret, urut sesuai position', () => {
+  // Memisahkan gambar dari video membuat urutan yang dipilih penulisnya hilang
+  // begitu ia mencampur jenis.
+  assert.match(attachments, /\.sort\(\(a, b\) => a\.position - b\.position\)/);
+  assert.match(attachments, /media\.length === 1 \? 'postMedia postMediaSingle' : 'postMedia postMediaRow'/);
 });
 
 test('batas lampiran di composer sejalan dengan batas server', () => {

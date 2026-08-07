@@ -3464,14 +3464,36 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .postTitle+.postBody{margin-top:8px}
 
 .postAttachments{display:grid;gap:10px;margin:14px 0}
-/* `auto-fit` bukan jumlah kolom tetap: satu gambar mengisi lebar penuh,
-   dua atau tiga berbagi baris, dan sisanya membungkus sendiri. */
-.postImageGrid{display:grid;gap:6px;border-radius:12px;overflow:hidden}
-.postImageGrid2{grid-template-columns:repeat(2,minmax(0,1fr))}
-.postImageGrid3{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
-.postImageGrid img{display:block;width:100%;max-height:420px;object-fit:cover;background:var(--surface-2)}
-.postImageGrid1 img{max-height:520px;object-fit:contain}
-.postVideo{width:100%;max-height:480px;border-radius:12px;background:#000}
+/* Media mengikuti bentuk aslinya.
+
+   Aturan sebelumnya memaksa setiap gambar selebar kartu lalu membatasi
+   tingginya, dan `object-fit:contain` mengisi sisa kotaknya dengan ruang
+   kosong. Akibatnya gambar potret tampil sempit di tengah dengan bilah kosong
+   lebar di kiri dan kanan, sementara kartunya tetap memakan tinggi penuh.
+
+   `width:auto` bersama `max-width`/`max-height` membuat batasnya bekerja pada
+   sisi yang benar tanpa satu pun angka rasio: gambar melebar berhenti di lebar
+   kartu, gambar meninggi berhenti di tinggi maksimum, dan keduanya tidak
+   pernah diregangkan. */
+.postMedia{min-width:0}
+.postMediaItem{border-radius:12px;overflow:hidden;background:var(--surface-2);line-height:0}
+/* Flex, bukan blok. Elemen blok selalu selebar induknya walau isinya sempit,
+   sehingga pembungkusnya sendiri yang menggambar bilah kosong di samping
+   gambar potret — persis cacat yang sedang diperbaiki. Sebagai item flex ia
+   menyusut ke ukuran gambarnya. */
+.postMediaSingle{display:flex}
+.postMediaSingle .postMediaItem{flex:0 1 auto;min-width:0;max-width:100%}
+.postMediaSingle img,.postMediaSingle video{display:block;max-width:100%;max-height:520px;width:auto;height:auto}
+.postMediaSingle video{background:#000}
+
+/* Dua media atau lebih: satu deret mendatar setinggi sama. Lebarnya berbeda
+   mengikuti rasio masing-masing, dan yang berikutnya sengaja mengintip di tepi
+   supaya terlihat bahwa deretnya dapat digeser. Kisi berkolom tetap tidak bisa
+   melakukan ini — ia memotong gambar potret dan meregangkan gambar lebar. */
+.postMediaRow{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-inline:contain;scrollbar-width:thin;padding-bottom:4px}
+.postMediaRow .postMediaItem{flex:0 0 auto;scroll-snap-align:start;height:300px;max-width:100%}
+.postMediaRow img,.postMediaRow video{display:block;height:100%;width:auto;max-width:none}
+.postMediaRow video{background:#000}
 .postFileRow{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);text-decoration:none}
 .postFileRow:hover{background:var(--surface)}
 .postFileRow>svg{flex:none;color:var(--muted)}
@@ -3483,7 +3505,10 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .postComposerForm>textarea{min-height:140px}
   .composerToolbar{flex-wrap:wrap}
   .composerCount{order:3;width:100%;margin-left:0}
-  .postImageGrid3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* Layar ponsel lebih tinggi daripada lebar, jadi batas tinggi yang sama
+     dengan desktop membuat satu gambar potret memakan hampir seluruh layar. */
+  .postMediaSingle .postMediaItem,.postMediaSingle img{max-height:60vh}
+  .postMediaRow .postMediaItem{height:230px}
 }
 
 /* ── Jajak pendapat ──────────────────────────────────────────────────────
