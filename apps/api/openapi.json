@@ -20526,7 +20526,12 @@
             "nullable": true
           },
           "course": {
-            "$ref": "#/components/schemas/LiveSessionCourseRefDto"
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LiveSessionCourseRefDto"
+              }
+            ]
           }
         },
         "required": [
@@ -20534,8 +20539,7 @@
           "title",
           "joinUrl",
           "startsAt",
-          "durationMinutes",
-          "course"
+          "durationMinutes"
         ]
       },
       "CreateLiveSessionDto": {
@@ -20543,7 +20547,8 @@
         "properties": {
           "courseId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "description": "Kosong untuk event umum."
           },
           "title": {
             "type": "string"
@@ -20567,7 +20572,6 @@
           }
         },
         "required": [
-          "courseId",
           "title",
           "joinUrl",
           "startsAt",

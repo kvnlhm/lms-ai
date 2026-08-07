@@ -15,11 +15,6 @@ import { ApiError, browserClient, ensureSuccess, unwrap } from '../../lib/browse
  */
 type LiveSession = Schemas['AdminLiveSessionDto'];
 
-interface CourseOption {
-  id: string;
-  title: string;
-}
-
 function formatDate(value: string): string {
   return new Date(value).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' });
 }
@@ -30,7 +25,7 @@ function toLocalInputValue(date: Date): string {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
-export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
+export function LiveSessionManager() {
   const notifier = useNotifier();
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [editing, setEditing] = useState<LiveSession | null>(null);
@@ -39,7 +34,6 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [courseId, setCourseId] = useState(courses[0]?.id ?? '');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [joinUrl, setJoinUrl] = useState('');
@@ -74,7 +68,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
       if (editing) {
         unwrap(await browserClient().PATCH('/api/v1/admin/live-sessions/{sessionId}', { params: { path: { sessionId: editing.id } }, body }));
       } else {
-        unwrap(await browserClient().POST('/api/v1/admin/live-sessions', { body: { courseId, ...body } }));
+        unwrap(await browserClient().POST('/api/v1/admin/live-sessions', { body }));
       }
       setTitle('');
       setDescription('');
@@ -96,7 +90,6 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
   function edit(session: LiveSession) {
     setEditing(session);
     setScheduleOpen(true);
-    setCourseId(session.course.id);
     setTitle(session.title);
     setDescription(session.description ?? '');
     setJoinUrl(session.joinUrl);
@@ -131,10 +124,6 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
     }
   }
 
-  if (courses.length === 0) {
-    return <p className="stageNote">Buat kursus terlebih dahulu sebelum menjadwalkan sesi.</p>;
-  }
-
   return (
     <section className="stack masterWorkspace">
       {error ? (
@@ -156,26 +145,11 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
       {scheduleOpen ? (
         <Modal
           title={editing ? 'Sunting event' : 'Jadwalkan sesi baru'}
-          description="Pilih kursus, tentukan waktu, lalu masukkan tautan ruang pertemuan."
+          description="Tentukan waktu event, lalu masukkan tautan ruang pertemuan."
           busy={busy !== null}
           onClose={() => { setScheduleOpen(false); setEditing(null); }}
         >
       <form className="stack" onSubmit={save}>
-        <label className="field">
-          <span>Kursus</span>
-          <select
-            value={courseId}
-            onChange={(event) => setCourseId(event.currentTarget.value)}
-            disabled={busy !== null}
-            required
-          >
-            {courses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.title}
-              </option>
-            ))}
-          </select>
-        </label>
         <label className="field">
           <span>Judul sesi</span>
           <input
@@ -272,7 +246,7 @@ export function LiveSessionManager({ courses }: { courses: CourseOption[] }) {
                   <div>
                     <strong>{session.title}</strong>
                     <small className="muted">
-                      {session.course.title} · {formatDate(session.startsAt)} ·{' '}
+                      {session.course ? `${session.course.title} · ` : 'Event umum · '}{formatDate(session.startsAt)} ·{' '}
                       {session.durationMinutes} menit
                     </small>
                   </div>

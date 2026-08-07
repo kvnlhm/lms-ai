@@ -34,7 +34,7 @@ export function isAllowedMeetingUrl(rawUrl: string): boolean {
 }
 
 interface UpsertInput {
-  courseId: string;
+  courseId?: string;
   title: string;
   description?: string;
   joinUrl: string;
@@ -58,7 +58,7 @@ export class LiveSessionService {
     await this.access.assertActiveAccess(userId, courseId);
     const now = new Date();
     const sessions = await this.prisma.liveSession.findMany({
-      where: { courseId, cancelledAt: null },
+      where: { OR: [{ courseId }, { courseId: null }], cancelledAt: null },
       orderBy: { startsAt: 'asc' },
       select: {
         id: true,
@@ -108,12 +108,9 @@ export class LiveSessionService {
 
   async create(input: UpsertInput, createdBy: string) {
     this.assertValid(input);
-    const course = await this.prisma.course.count({ where: { id: input.courseId } });
-    if (!course) throw AppError.validation({ courseId: ['Kursus tidak ditemukan.'] });
-
     const session = await this.prisma.liveSession.create({
       data: {
-        courseId: input.courseId,
+        courseId: input.courseId ?? null,
         title: input.title,
         description: input.description ?? null,
         joinUrl: input.joinUrl.trim(),
@@ -126,17 +123,19 @@ export class LiveSessionService {
 
     // Peserta kursus perlu tahu jadwalnya lebih awal; tanpa ini mereka baru
     // menemukannya secara kebetulan saat membuka halaman kursus.
-    const learners = await this.prisma.enrollment.findMany({
-      where: { courseId: input.courseId, status: 'ACTIVE' },
-      select: { userId: true },
-    });
+    const learners = input.courseId
+      ? await this.prisma.enrollment.findMany({
+          where: { courseId: input.courseId, status: 'ACTIVE' },
+          select: { userId: true },
+        })
+      : [];
     await this.notifications.notify(
       learners.map(({ userId }) => userId),
       {
         type: 'LIVE_SESSION_SCHEDULED',
         title: 'Sesi langsung dijadwalkan',
         body: `${input.title} — ${input.startsAt.toISOString()}`,
-        linkUrl: `/courses/${input.courseId}`,
+        linkUrl: input.courseId ? `/courses/${input.courseId}` : '/events',
       },
     );
     return session;

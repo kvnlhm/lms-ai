@@ -4724,11 +4724,14 @@ export interface components {
             durationMinutes: number;
             /** Format: date-time */
             cancelledAt?: string | null;
-            course: components["schemas"]["LiveSessionCourseRefDto"];
+            course?: components["schemas"]["LiveSessionCourseRefDto"] | null;
         };
         CreateLiveSessionDto: {
-            /** Format: uuid */
-            courseId: string;
+            /**
+             * Format: uuid
+             * @description Kosong untuk event umum.
+             */
+            courseId?: string;
             title: string;
             description?: string;
             /** @example https://zoom.us/j/1234567890 */

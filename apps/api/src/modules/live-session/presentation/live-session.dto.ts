@@ -13,7 +13,10 @@ import {
 } from 'class-validator';
 
 export class CreateLiveSessionDto {
-  @ApiProperty({ format: 'uuid' }) @IsUUID() courseId!: string;
+  @ApiPropertyOptional({ format: 'uuid', description: 'Kosong untuk event umum.' })
+  @IsOptional()
+  @IsUUID()
+  courseId?: string;
   @ApiProperty() @IsString() @MinLength(3) @MaxLength(200) title!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(1000) description?: string;
   @ApiProperty({ example: 'https://zoom.us/j/1234567890' })
@@ -79,5 +82,6 @@ export class AdminLiveSessionDto {
   @ApiProperty() durationMinutes!: number;
   @ApiPropertyOptional({ type: Date, format: 'date-time', nullable: true })
   cancelledAt!: Date | null;
-  @ApiProperty({ type: LiveSessionCourseRefDto }) course!: LiveSessionCourseRefDto;
+  @ApiPropertyOptional({ type: LiveSessionCourseRefDto, nullable: true })
+  course!: LiveSessionCourseRefDto | null;
 }

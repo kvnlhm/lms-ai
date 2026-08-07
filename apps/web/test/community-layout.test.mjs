@@ -177,6 +177,8 @@ test('Master dapat menyunting pengumuman dan mengelola event', () => {
   assert.match(liveSessionManager, /PATCH\('\/api\/v1\/admin\/live-sessions\/\{sessionId\}'/);
   assert.match(liveSessionManager, /Sunting event/);
   assert.match(shell, /href: '\/master\/events'/);
+  assert.doesNotMatch(liveSessionManager, /courseId, \.\.\.body/);
+  assert.doesNotMatch(liveSessionManager, /session\.course\.id/);
 });
 
 test('gambar lampiran dibuka sebagai zoom satu layar dengan tombol tutup, bukan tab baru', () => {
