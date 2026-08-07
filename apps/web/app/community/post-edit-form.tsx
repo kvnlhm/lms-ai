@@ -8,6 +8,8 @@ import { browserClient, ensureSuccess } from '../lib/browser-api';
 import { ukuranTerbaca, type LampiranPost } from './post-attachments';
 
 const TERIMA = 'image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf';
+const MAKS_LAMPIRAN = 5;
+const MAKS_BYTE = 26_214_400;
 
 export function PostEditForm({ title: initialTitle, body: initialBody, attachments, onSave, onClose }: {
   title: string; body: string; attachments: LampiranPost[];
@@ -20,11 +22,18 @@ export function PostEditForm({ title: initialTitle, body: initialBody, attachmen
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const input = useRef<HTMLInputElement>(null);
-  async function upload(file: File) {
+  async function upload(files: File[]) {
     setError(''); setBusy(true);
-    try { const hasil = await uploadDraftAttachment(file, () => {}); setLampiran((items) => [...items, hasil]); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Lampiran gagal diunggah.'); }
-    finally { setBusy(false); }
+    for (const file of files.slice(0, MAKS_LAMPIRAN - lampiran.length)) {
+      if (file.size > MAKS_BYTE) { setError(`Ukuran maksimal ${ukuranTerbaca(MAKS_BYTE)} per berkas.`); continue; }
+      try {
+        const hasil = await uploadDraftAttachment(file, () => {});
+        setLampiran((items) => [...items, hasil]);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Lampiran gagal diunggah.');
+      }
+    }
+    setBusy(false);
   }
   async function remove(id: string) {
     setLampiran((items) => items.filter((item) => item.id !== id));
@@ -46,8 +55,8 @@ export function PostEditForm({ title: initialTitle, body: initialBody, attachmen
         <span className="composerAttachmentName">{item.originalName}</span><small>{ukuranTerbaca(item.sizeBytes)}</small><button type="button" aria-label={`Buang ${item.originalName}`} onClick={() => void remove(item.id)}><Trash size={15} /></button>
       </li>)}</ul> : null}
       {error ? <p className="composerError" role="alert">{error}</p> : null}
-      <input ref={input} className="srOnly" type="file" accept={TERIMA} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.currentTarget.value = ''; }} />
-      <div className="composerToolbar"><button type="button" disabled={busy || lampiran.length >= 5} onClick={() => input.current?.click()}><ImageIcon size={18} /><span className="srOnly">Tambah atau ganti lampiran</span></button><span className="composerCount">{lampiran.length}/5 berkas · {body.length}/5000</span><button className="btn" type="button" disabled={busy || !body.trim()} onClick={() => void save()}>Simpan perubahan</button></div>
+      <input ref={input} className="srOnly" type="file" multiple accept={TERIMA} onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) void upload(files); event.currentTarget.value = ''; }} />
+      <div className="composerToolbar"><button type="button" disabled={busy || lampiran.length >= MAKS_LAMPIRAN} onClick={() => input.current?.click()}><ImageIcon size={18} /><span className="srOnly">Tambah lampiran</span></button><span className="composerCount">{lampiran.length}/{MAKS_LAMPIRAN} berkas · {body.length}/5000</span><button className="btn" type="button" disabled={busy || !body.trim()} onClick={() => void save()}>Simpan perubahan</button></div>
     </div>
   </Modal>;
 }

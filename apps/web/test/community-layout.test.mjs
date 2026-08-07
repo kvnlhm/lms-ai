@@ -15,6 +15,7 @@ const checklistEdit = await readFile(new URL('../app/community/checklist-editor.
 const checklistEditPage = await readFile(new URL('../app/community/[slug]/[subchannelSlug]/[postId]/edit/page.tsx', import.meta.url), 'utf8').catch(() => '');
 const masterShortcuts = await readFile(new URL('../app/components/master-community-shortcuts.tsx', import.meta.url), 'utf8');
 const composer = await readFile(new URL('../app/community/post-composer.tsx', import.meta.url), 'utf8');
+const editForm = await readFile(new URL('../app/community/post-edit-form.tsx', import.meta.url), 'utf8');
 const attachments = await readFile(new URL('../app/community/post-attachments.tsx', import.meta.url), 'utf8');
 const poll = await readFile(new URL('../app/community/post-poll.tsx', import.meta.url), 'utf8');
 
@@ -187,6 +188,12 @@ test('composer dapat memilih beberapa lampiran sekaligus', () => {
   assert.match(composer, /type="file"[\s\S]*multiple/);
   assert.match(composer, /Array\.from\(event\.target\.files/);
   assert.match(composer, /for \(const file of files/);
+});
+
+test('editor dapat menambahkan beberapa lampiran sekaligus', () => {
+  assert.match(editForm, /type="file"[\s\S]*multiple/);
+  assert.match(editForm, /Array\.from\(event\.target\.files/);
+  assert.match(editForm, /for \(const file of files/);
 });
 
 test('isi yang lebih lama punya jalan menuju ke sana, dan penyegaran tidak membuangnya', () => {
