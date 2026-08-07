@@ -198,6 +198,11 @@ test('composer dapat memilih beberapa lampiran sekaligus', () => {
   assert.match(composer, /for \(const file of files/);
 });
 
+test('composer memulihkan draf lampiran setelah refresh', () => {
+  assert.match(composer, /attachments\/drafts/);
+  assert.match(composer, /setLampiran\(drafts\)/);
+});
+
 test('editor dapat menambahkan beberapa lampiran sekaligus', () => {
   assert.match(editForm, /type="file"[\s\S]*multiple/);
   assert.match(editForm, /Array\.from\(event\.target\.files/);

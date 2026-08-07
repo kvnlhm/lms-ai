@@ -7658,6 +7658,53 @@
         ]
       }
     },
+    "/api/v1/community/attachments/drafts": {
+      "get": {
+        "operationId": "CommunityController_draftAttachments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommunityAttachmentDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Memulihkan unggahan composer yang belum diterbitkan",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/v1/community/attachments/{attachmentId}": {
       "delete": {
         "operationId": "CommunityController_removeDraftAttachment",

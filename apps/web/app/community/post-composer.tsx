@@ -1,10 +1,10 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal } from '../components/modal';
 import { BarChart, FileText, ImageIcon, Plus, Trash, Video } from '../components/icons';
 import { uploadDraftAttachment, type LampiranTerunggah } from '../lib/checklist-upload';
-import { browserClient, ensureSuccess } from '../lib/browser-api';
+import { browserClient, ensureSuccess, unwrap } from '../lib/browser-api';
 import { ukuranTerbaca } from './post-attachments';
 
 /** Sejalan dengan COMMUNITY_ATTACHMENT_MAX_PER_POST di API. */
@@ -45,9 +45,24 @@ export function PostComposer({ channelName, announcement, pending, onPublish }: 
   const [terima, setTerima] = useState<string>(TERIMA.gambar);
   /** `null` berarti postingan biasa; larik berarti composer sedang menyusun polling. */
   const [polling, setPolling] = useState<string[] | null>(null);
+  const [draftsLoaded, setDraftsLoaded] = useState(false);
 
   const sibuk = pending || progres !== null;
   const penuh = lampiran.length >= MAKS_LAMPIRAN;
+
+  useEffect(() => {
+    if (!open || draftsLoaded) return;
+    void (async () => {
+      try {
+        const drafts = unwrap(await browserClient().GET('/api/v1/community/attachments/drafts', {}));
+        setLampiran(drafts);
+      } catch {
+        // Gagal memulihkan draf tidak menghalangi pembuatan postingan baru.
+      } finally {
+        setDraftsLoaded(true);
+      }
+    })();
+  }, [open, draftsLoaded]);
 
   function pilih(jenis: keyof typeof TERIMA) {
     setTerima(TERIMA[jenis]);

@@ -56,6 +56,14 @@ describe('CommunityAttachmentService', () => {
     }));
   });
 
+  test('mengembalikan draf milik penulis untuk pemulihan composer', async () => {
+    const findMany = jest.fn().mockResolvedValue([{ id: 'draft-1', originalName: 'foto.png', mimeType: 'image/png', sizeBytes: 12n, position: 0, createdAt: new Date('2026-08-07T00:00:00Z') }]);
+    const { value } = service({ communityPostAttachment: { findMany } });
+
+    await expect(value.listDrafts('pelajar-1')).resolves.toEqual([expect.objectContaining({ id: 'draft-1', sizeBytes: '12' })]);
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { uploaderId: 'pelajar-1', postId: null } }));
+  });
+
   test('unggahan composer yang menumpuk ditolak sebelum berkasnya ditulis', async () => {
     // Tanpa batas ini, membuka dan menutup composer berulang kali memenuhi disk
     // tanpa satu pun postingan terbit.

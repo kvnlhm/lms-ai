@@ -75,6 +75,16 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     }
   }
 
+  /** Mengembalikan draf milik penulis agar composer pulih setelah refresh. */
+  async listDrafts(userId: string) {
+    const drafts = await this.prisma.communityPostAttachment.findMany({
+      where: { uploaderId: userId, postId: null },
+      orderBy: { createdAt: 'asc' },
+      select: pilih,
+    });
+    return drafts.map((draft) => this.sajikan(draft));
+  }
+
   /** Membuang unggahan yang belum diterbitkan, dari composer. */
   async removeDraft(attachmentId: string, userId: string) {
     const attachment = await this.prisma.communityPostAttachment.findFirst({ where: { id: attachmentId, uploaderId: userId, postId: null } });

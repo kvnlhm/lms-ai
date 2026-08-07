@@ -78,6 +78,11 @@ export class CommunityController {
     return this.attachments.uploadDraft(user.id, request, request.header('content-type'), request.header('x-file-name') ?? 'lampiran', rawLength ? Number.parseInt(rawLength, 10) : undefined);
   }
 
+  @Get('attachments/drafts') @ApiOperation({ summary: 'Memulihkan unggahan composer yang belum diterbitkan' }) @ApiEnvelopeArray(CommunityAttachmentDto) @ApiErrors(401)
+  draftAttachments(@CurrentUser() user: AuthenticatedUser) {
+    return this.attachments.listDrafts(user.id);
+  }
+
   @Delete('attachments/:attachmentId') @HttpCode(204)
   @ApiOperation({ summary: 'Membuang unggahan composer yang belum diterbitkan' }) @ApiErrors(401, 404)
   removeDraftAttachment(@Param('attachmentId', new ParseUUIDPipe()) attachmentId: string, @CurrentUser() user: AuthenticatedUser) {
