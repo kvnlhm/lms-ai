@@ -92,7 +92,7 @@ test('sidebar Pelajar hanya memakai pintasan pilihan Master dan mendaftar sub-ch
   // isinya: seluruh sub-channel harus langsung terlihat tanpa dibuka dulu.
   assert.match(learnerSidebar, /<span className="channelGroup">\{channel\.name\}<\/span>/);
   assert.doesNotMatch(learnerSidebar, /aria-expanded/);
-  assert.match(learnerSidebar, /channel\.subchannels\.map\(\(sub\) => <Link/);
+  assert.match(learnerSidebar, /channel\.subchannels\.map\(\(sub\) => \{[\s\S]{0,120}<Link/);
   assert.match(channelManager, /showInSidebar/);
   assert.match(channelManager, /Sembunyikan dari sidebar/);
 });
@@ -107,6 +107,18 @@ test('baris sidebar Pelajar berisi satu baris tanpa keterangan tambahan', () => 
   // mengerut sampai tinggi 0 begitu daftarnya melebihi layar.
   assert.match(css, /\.channelGroup\{flex:none;/);
   assert.doesNotMatch(css, /\.channelLink\.active\{box-shadow:inset 3px 0 0/);
+});
+
+test('ikon sidebar Pelajar memakai SVG sistem ikon, bukan glif teks', () => {
+  // Glif `#` dan `▤` diambil dari font yang berbeda per sistem, jadi tinggi dan
+  // tebalnya tidak pernah sejajar dengan ikon Monitoring di barisan yang sama.
+  assert.match(learnerSidebar, /CHAT: MessageCircle/);
+  assert.match(learnerSidebar, /POSTS: FileText/);
+  assert.match(learnerSidebar, /ANNOUNCEMENTS: Megaphone/);
+  assert.match(learnerSidebar, /CHECKLIST: ClipboardList/);
+  assert.doesNotMatch(learnerSidebar, /COMMUNITY_CHANNEL_TYPES\[sub\.type\]\.icon/);
+  // SVG membawa width/height inline, jadi ukuran drawer ponsel harus ditimpa.
+  assert.match(css, /\.learnerChannelSidebarDrawer \.channelIcon svg\{width:22px;height:22px\}/);
 });
 
 test('sidebar Pelajar hanya berisi monitoring harian dan channel pilihan Master', () => {
