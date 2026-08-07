@@ -86,12 +86,27 @@ test('form Channel dibuka dari tombol tambah dan penambahan sub-channel berada d
   assert.doesNotMatch(channelManager, /channelSubHead[\s\S]{0,300}<button[^>]*>Tambah sub-channel<\/button>/);
 });
 
-test('sidebar Pelajar hanya memakai pintasan pilihan Master dan menampilkan sub-channel secara accordion', () => {
+test('sidebar Pelajar hanya memakai pintasan pilihan Master dan mendaftar sub-channel secara datar', () => {
   assert.match(learnerSidebar, /GET\('\/api\/v1\/community\/sidebar-channels'/);
-  assert.match(learnerSidebar, /aria-expanded=\{open\}/);
-  assert.match(learnerSidebar, /open \? <div className="learnerShortcutChildren"/);
+  // Nama Channel adalah label kelompok, bukan tombol yang menyembunyikan
+  // isinya: seluruh sub-channel harus langsung terlihat tanpa dibuka dulu.
+  assert.match(learnerSidebar, /<span className="channelGroup">\{channel\.name\}<\/span>/);
+  assert.doesNotMatch(learnerSidebar, /aria-expanded/);
+  assert.match(learnerSidebar, /channel\.subchannels\.map\(\(sub\) => <Link/);
   assert.match(channelManager, /showInSidebar/);
   assert.match(channelManager, /Sembunyikan dari sidebar/);
+});
+
+test('baris sidebar Pelajar berisi satu baris tanpa keterangan tambahan', () => {
+  // Keterangan di bawah tiap baris adalah yang membuat sidebar lama terasa
+  // padat; ia tidak boleh kembali lewat `description` sub-channel.
+  assert.doesNotMatch(learnerSidebar, /<small>/);
+  assert.doesNotMatch(learnerSidebar, /sub\.description/);
+  assert.match(css, /\.channelLink\{flex:none;display:flex;align-items:center/);
+  // Sidebar adalah flex column setinggi layar; tanpa `flex:none` label kelompok
+  // mengerut sampai tinggi 0 begitu daftarnya melebihi layar.
+  assert.match(css, /\.channelGroup\{flex:none;/);
+  assert.doesNotMatch(css, /\.channelLink\.active\{box-shadow:inset 3px 0 0/);
 });
 
 test('sidebar Pelajar hanya berisi monitoring harian dan channel pilihan Master', () => {
