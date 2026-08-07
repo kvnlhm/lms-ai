@@ -256,18 +256,16 @@ export function AnnouncementManager({ courses }: { courses: { id: string; title:
           />
           <span>Jadwalkan tampil pada waktu tertentu</span>
         </label>
-        <div className={`fieldRow adminFormRow ${scheduled ? '' : 'singleFieldRow'}`}>
-          {scheduled ? (
-            <label className="field">
-              <span>Mulai tampil</span>
-              <input
-                type="datetime-local"
-                value={publishedAt}
-                onChange={(event) => setPublishedAt(event.currentTarget.value)}
-                disabled={busy !== null}
-              />
-            </label>
-          ) : null}
+        <div className="fieldRow adminFormRow">
+          <label className="field">
+            <span>Mulai tampil</span>
+            <input
+              type="datetime-local"
+              value={publishedAt}
+              onChange={(event) => setPublishedAt(event.currentTarget.value)}
+              disabled={busy !== null || !scheduled}
+            />
+          </label>
           <label className="field">
             <span>Berhenti tampil (opsional)</span>
             <input
