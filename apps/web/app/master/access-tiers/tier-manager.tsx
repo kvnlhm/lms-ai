@@ -14,6 +14,7 @@ interface TierDraft {
   slug: string;
   description: string;
   promoCode: string;
+  promoDiscountIdr: string;
   priceIdr: string;
   originalPriceIdr: string;
   duration: string;
@@ -27,6 +28,7 @@ const emptyDraft: TierDraft = {
   slug: '',
   description: '',
   promoCode: '',
+  promoDiscountIdr: '',
   priceIdr: '',
   originalPriceIdr: '',
   duration: '6',
@@ -150,6 +152,7 @@ await browserClient().PATCH('/api/v1/admin/access-tiers/{tierId}', {
                 slug: tier.slug,
                 description: tier.description ?? '',
                 promoCode: tier.promoCode ?? '',
+                promoDiscountIdr: tier.promoDiscountIdr === null ? '' : String(tier.promoDiscountIdr),
                 priceIdr: String(tier.priceIdr),
                 originalPriceIdr: tier.originalPriceIdr === null ? '' : String(tier.originalPriceIdr),
                 duration: tier.isLifetime ? 'lifetime' : String(tier.durationMonths),
@@ -243,6 +246,7 @@ function TierFields({
       <label className="field"><span>Urutan</span><input type="number" min={0} value={draft.position} onChange={(e) => update({ position: e.target.value })} /></label>
       <label className="field tierDescription"><span>Deskripsi</span><textarea rows={3} value={draft.description} onChange={(e) => update({ description: e.target.value })} /></label>
       <label className="field"><span>Kode promo paket</span><input value={draft.promoCode} placeholder="Contoh: AIPRENEUR2026" maxLength={80} onChange={(e) => update({ promoCode: e.target.value.toUpperCase() })} /><span className="fieldHint">Kode ini dapat dimasukkan calon pembeli saat mendaftar.</span></label>
+      <label className="field"><span>Potongan promo (Rupiah)</span><input type="number" min={0} value={draft.promoDiscountIdr} placeholder="Contoh: 100000" onChange={(e) => update({ promoDiscountIdr: e.target.value })} /><span className="fieldHint">Potongan berlaku saat kode promo yang sesuai digunakan.</span></label>
       <fieldset className="tierCourses">
         <legend>Kursus dalam paket</legend>
         <div className="tierCourseTools">
@@ -290,6 +294,7 @@ function payload(draft: TierDraft) {
     slug: draft.slug,
     description: draft.description || undefined,
     promoCode: draft.promoCode.trim() || null,
+    promoDiscountIdr: draft.promoDiscountIdr.trim() === '' ? null : Number(draft.promoDiscountIdr),
     priceIdr: Number(draft.priceIdr),
     originalPriceIdr: draft.originalPriceIdr.trim() === '' ? null : Number(draft.originalPriceIdr),
     durationMonths: draft.duration === 'lifetime' ? null : Number(draft.duration),

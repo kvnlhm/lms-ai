@@ -16700,6 +16700,10 @@
             "type": "string",
             "nullable": true
           },
+          "promoDiscountIdr": {
+            "type": "number",
+            "nullable": true
+          },
           "priceIdr": {
             "type": "number"
           },
@@ -16977,6 +16981,11 @@
             "nullable": true,
             "description": "Kode promo yang dapat dimasukkan calon pembeli."
           },
+          "promoDiscountIdr": {
+            "type": "number",
+            "nullable": true,
+            "description": "Potongan tetap dalam Rupiah."
+          },
           "priceIdr": {
             "type": "number",
             "example": 1499000
@@ -17034,6 +17043,11 @@
             "type": "string",
             "nullable": true,
             "description": "Kode promo yang dapat dimasukkan calon pembeli."
+          },
+          "promoDiscountIdr": {
+            "type": "number",
+            "nullable": true,
+            "description": "Potongan tetap dalam Rupiah."
           },
           "priceIdr": {
             "type": "number",

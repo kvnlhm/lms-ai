@@ -41,6 +41,14 @@ export class CreateAccessTierDto {
   @MaxLength(80)
   promoCode?: string | null;
 
+  @ApiPropertyOptional({ type: Number, nullable: true, description: 'Potongan tetap dalam Rupiah.' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(2_000_000_000)
+  promoDiscountIdr?: number | null;
+
   @ApiProperty({ example: 1_499_000 })
   @Type(() => Number)
   @IsInt()

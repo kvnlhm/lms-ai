@@ -185,10 +185,15 @@ await browserClient().POST('/api/v1/registration/checkout', {
         {terpilih ? (
           <div className="regTotal">
             <span>{terpilih.name}</span>
+            {promoCode.trim() && (terpilih.promoDiscountIdr ?? 0) > 0 ? (
+              <span className="regPromoSaving">
+                Potongan promo: {formatRupiah(terpilih.promoDiscountIdr ?? 0)}
+              </span>
+            ) : null}
             {hargaCoret(terpilih) !== null ? (
               <s className="regTotalWas">{formatRupiah(hargaCoret(terpilih)!)}</s>
             ) : null}
-            <strong>{formatRupiah(terpilih.priceIdr)}</strong>
+            <strong>{formatRupiah(hargaSetelahPromo(terpilih, promoCode))}</strong>
             <small>
               {terpilih.isLifetime
                 ? 'Akses selamanya, sekali bayar'
@@ -215,6 +220,11 @@ await browserClient().POST('/api/v1/registration/checkout', {
 function hargaCoret(tier: Tier): number | null {
   const normal = tier.originalPriceIdr;
   return typeof normal === 'number' && normal > tier.priceIdr ? normal : null;
+}
+
+function hargaSetelahPromo(tier: Tier, code: string): number {
+  const discount = code.trim() ? tier.promoDiscountIdr ?? 0 : 0;
+  return Math.max(0, tier.priceIdr - discount);
 }
 
 function formatRupiah(value: number): string {

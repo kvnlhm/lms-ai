@@ -108,6 +108,7 @@ export class CommerceService {
   async createTier(input: CreateAccessTierDto) {
     await this.assertCourses(input.courseIds);
     assertHargaNormalMasukAkal(input.originalPriceIdr, input.priceIdr);
+    assertPromoDiscount(input.promoDiscountIdr, input.priceIdr);
     try {
       const tier = await this.prisma.accessTier.create({
         data: {
@@ -115,6 +116,7 @@ export class CommerceService {
           slug: input.slug,
           description: input.description?.trim() || null,
           promoCode: input.promoCode?.trim().toUpperCase() || null,
+          promoDiscountIdr: input.promoDiscountIdr ?? null,
           priceIdr: input.priceIdr,
           originalPriceIdr: input.originalPriceIdr ?? null,
           durationMonths: input.durationMonths ?? null,
@@ -142,6 +144,10 @@ export class CommerceService {
       input.originalPriceIdr !== undefined ? input.originalPriceIdr : sekarang.originalPriceIdr,
       input.priceIdr !== undefined ? input.priceIdr : sekarang.priceIdr,
     );
+    assertPromoDiscount(
+      input.promoDiscountIdr !== undefined ? input.promoDiscountIdr : sekarang.promoDiscountIdr,
+      input.priceIdr !== undefined ? input.priceIdr : sekarang.priceIdr,
+    );
     try {
       const tier = await this.prisma.$transaction(async (tx) => {
         if (input.courseIds) {
@@ -157,6 +163,9 @@ export class CommerceService {
               : {}),
             ...(input.promoCode !== undefined
               ? { promoCode: input.promoCode?.trim().toUpperCase() || null }
+              : {}),
+            ...(input.promoDiscountIdr !== undefined
+              ? { promoDiscountIdr: input.promoDiscountIdr }
               : {}),
             ...(input.priceIdr !== undefined ? { priceIdr: input.priceIdr } : {}),
             ...(input.originalPriceIdr !== undefined
@@ -200,6 +209,8 @@ export class CommerceService {
     if (promoCode && promoCode !== tier.promoCode) {
       throw AppError.validation({ promoCode: ['Kode promo tidak sesuai untuk paket ini.'] });
     }
+    const discount = promoCode ? tier.promoDiscountIdr ?? 0 : 0;
+    const amount = Math.max(0, tier.priceIdr - discount);
     const orderCode = `REG-${randomUUID().replaceAll('-', '')}`;
     const expiresAt = new Date(Date.now() + this.config.commerce.orderTtlMinutes * 60_000);
     const order = await this.prisma.registrationOrder.create({
@@ -210,14 +221,14 @@ export class CommerceService {
         email: input.email.trim().toLowerCase(),
         phone: normalizePhone(input.phone),
         promoCode: promoCode || null,
-        grossAmount: tier.priceIdr,
+        grossAmount: amount,
         expiresAt,
       },
     });
     try {
       const snap = await this.midtrans.createSnap({
         orderCode,
-        amount: tier.priceIdr,
+        amount,
         itemName: tier.name,
         fullName: order.fullName,
         email: order.email,
@@ -649,13 +660,13 @@ export class CommerceService {
 
   private async assertTier(
     tierId: string,
-  ): Promise<{ priceIdr: number; originalPriceIdr: number | null }> {
+  ): Promise<{ priceIdr: number; originalPriceIdr: number | null; promoDiscountIdr: number | null }> {
     const tier = await this.prisma.accessTier.findUnique({
       where: { id: tierId },
-      select: { id: true, priceIdr: true, originalPriceIdr: true },
+      select: { id: true, priceIdr: true, originalPriceIdr: true, promoDiscountIdr: true },
     });
     if (!tier) throw AppError.notFound();
-    return { priceIdr: tier.priceIdr, originalPriceIdr: tier.originalPriceIdr };
+    return { priceIdr: tier.priceIdr, originalPriceIdr: tier.originalPriceIdr, promoDiscountIdr: tier.promoDiscountIdr };
   }
 
   private async assertCourses(courseIds: string[]): Promise<void> {
@@ -685,6 +696,7 @@ export class CommerceService {
       name: tier.name,
       description: tier.description,
       promoCode: publishedOnly ? null : tier.promoCode,
+      promoDiscountIdr: tier.promoDiscountIdr,
       priceIdr: tier.priceIdr,
       originalPriceIdr: tier.originalPriceIdr,
       durationMonths: tier.durationMonths,
@@ -833,5 +845,12 @@ function assertHargaNormalMasukAkal(
     throw AppError.validation({
       originalPriceIdr: ['Harga normal harus lebih tinggi daripada harga jual.'],
     });
+  }
+}
+
+function assertPromoDiscount(discount: number | null | undefined, priceIdr: number): void {
+  if (discount === null || discount === undefined) return;
+  if (discount >= priceIdr) {
+    throw AppError.validation({ promoDiscountIdr: ['Potongan promo harus lebih kecil daripada harga paket.'] });
   }
 }

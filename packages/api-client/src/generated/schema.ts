@@ -3536,6 +3536,7 @@ export interface components {
             name: string;
             description?: string | null;
             promoCode?: string | null;
+            promoDiscountIdr?: number | null;
             priceIdr: number;
             originalPriceIdr?: number | null;
             durationMonths?: number | null;
@@ -3622,6 +3623,8 @@ export interface components {
             description?: string;
             /** @description Kode promo yang dapat dimasukkan calon pembeli. */
             promoCode?: string | null;
+            /** @description Potongan tetap dalam Rupiah. */
+            promoDiscountIdr?: number | null;
             /** @example 1499000 */
             priceIdr: number;
             /**
@@ -3648,6 +3651,8 @@ export interface components {
             description?: string;
             /** @description Kode promo yang dapat dimasukkan calon pembeli. */
             promoCode?: string | null;
+            /** @description Potongan tetap dalam Rupiah. */
+            promoDiscountIdr?: number | null;
             /** @example 1499000 */
             priceIdr?: number;
             /**
