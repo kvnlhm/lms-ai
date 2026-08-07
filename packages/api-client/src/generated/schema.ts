@@ -4017,7 +4017,7 @@ export interface components {
         CommunityPostDto: {
             id: string;
             /** @description Judul khusus item checklist. */
-            checklistTitle: string | null;
+            title: string | null;
             body: string;
             isPinned: boolean;
             commentCount: number;
@@ -4051,7 +4051,7 @@ export interface components {
         CommunityChecklistItemDto: {
             id: string;
             /** @description Judul khusus item checklist. */
-            checklistTitle: string | null;
+            title: string | null;
             body: string;
             isPinned: boolean;
             commentCount: number;
@@ -4089,7 +4089,7 @@ export interface components {
         CommunityPostBodyDto: {
             body: string;
             /** @description Judul item; wajib untuk post dalam sub-channel CHECKLIST. */
-            checklistTitle?: string;
+            title?: string;
             /** @description Id unggahan composer yang akan diikat ke postingan ini. Urutannya menjadi urutan tampilnya. */
             attachmentIds?: string[];
         };

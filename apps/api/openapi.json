@@ -18249,7 +18249,7 @@
           "id": {
             "type": "string"
           },
-          "checklistTitle": {
+          "title": {
             "type": "string",
             "nullable": true,
             "description": "Judul khusus item checklist."
@@ -18330,7 +18330,7 @@
         },
         "required": [
           "id",
-          "checklistTitle",
+          "title",
           "body",
           "isPinned",
           "commentCount",
@@ -18356,7 +18356,7 @@
           "id": {
             "type": "string"
           },
-          "checklistTitle": {
+          "title": {
             "type": "string",
             "nullable": true,
             "description": "Judul khusus item checklist."
@@ -18451,7 +18451,7 @@
         },
         "required": [
           "id",
-          "checklistTitle",
+          "title",
           "body",
           "isPinned",
           "commentCount",
@@ -18481,7 +18481,7 @@
           "body": {
             "type": "string"
           },
-          "checklistTitle": {
+          "title": {
             "type": "string",
             "description": "Judul item; wajib untuk post dalam sub-channel CHECKLIST."
           },

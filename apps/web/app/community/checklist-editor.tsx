@@ -10,7 +10,7 @@ import type { ChecklistDetailData } from './checklist-detail';
 export function ChecklistEditor({ item, detailUrl }: { item: ChecklistDetailData; detailUrl: string }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
-  const [title, setTitle] = useState(item.checklistTitle ?? '');
+  const [title, setTitle] = useState(item.title ?? '');
   const [body, setBody] = useState(item.body);
   const [file, setFile] = useState<File | null>(null);
   const [removeAttachment, setRemoveAttachment] = useState(false);
@@ -22,7 +22,7 @@ export function ChecklistEditor({ item, detailUrl }: { item: ChecklistDetailData
     setMessage('');
     try {
       const client = browserClient();
-      unwrap(await client.PATCH('/api/v1/community/posts/{postId}', { params: { path: { postId: item.id } }, body: { checklistTitle: title.trim(), body: body.trim() } }));
+      unwrap(await client.PATCH('/api/v1/community/posts/{postId}', { params: { path: { postId: item.id } }, body: { title: title.trim(), body: body.trim() } }));
       if (removeAttachment && item.attachment) ensureSuccess(await client.DELETE('/api/v1/community/checklist/{postId}/attachment', { params: { path: { postId: item.id } } }));
       if (file) await uploadChecklistAttachment(item.id, file, setProgress);
       router.push(detailUrl);

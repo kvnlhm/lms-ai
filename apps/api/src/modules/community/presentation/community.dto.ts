@@ -11,7 +11,7 @@ export class CommunityPageQueryDto {
 export class CommunityPostBodyDto {
   @ApiProperty() @IsString() @MinLength(1) @MaxLength(5000) body!: string;
   @ApiPropertyOptional({ description: 'Judul item; wajib untuk post dalam sub-channel CHECKLIST.' })
-  @IsOptional() @IsString() @MinLength(1) @MaxLength(160) checklistTitle?: string;
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(160) title?: string;
   @ApiPropertyOptional({ type: [String], description: 'Id unggahan composer yang akan diikat ke postingan ini. Urutannya menjadi urutan tampilnya.' })
   @IsOptional() @IsArray() @ArrayMaxSize(5) @IsUUID('4', { each: true }) attachmentIds?: string[];
 }
@@ -122,7 +122,7 @@ export class CommunityCommentDto {
 
 export class CommunityPostDto {
   @ApiProperty() id!: string;
-  @ApiProperty({ type: String, nullable: true, description: 'Judul khusus item checklist.' }) checklistTitle!: string | null;
+  @ApiProperty({ type: String, nullable: true, description: 'Judul khusus item checklist.' }) title!: string | null;
   @ApiProperty() body!: string;
   @ApiProperty() isPinned!: boolean;
   @ApiProperty() commentCount!: number;

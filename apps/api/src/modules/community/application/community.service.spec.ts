@@ -178,7 +178,7 @@ describe('CommunityService hierarchy invariants', () => {
 
   test('setiap item checklist menyimpan judul dan kontennya secara terpisah', async () => {
     const create = jest.fn().mockResolvedValue({
-      id: 'post-1', checklistTitle: 'Lengkapi profil', body: 'Tambahkan foto dan bio.',
+      id: 'post-1', title: 'Lengkapi profil', body: 'Tambahkan foto dan bio.',
       author: { id: 'master-1' }, comments: [], reactions: [], checklistCompletions: [],
       channel: { id: 'sub-1', type: 'CHECKLIST', group: { slug: 'welcome', name: 'Welcome' } },
     });
@@ -194,10 +194,10 @@ describe('CommunityService hierarchy invariants', () => {
     await expect(service.createPost(
       'master-1', 'sub-1', 'Tambahkan foto dan bio.', true, 'Lengkapi profil',
     )).resolves.toMatchObject({
-      checklistTitle: 'Lengkapi profil', body: 'Tambahkan foto dan bio.',
+      title: 'Lengkapi profil', body: 'Tambahkan foto dan bio.',
     });
     expect(create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ checklistTitle: 'Lengkapi profil', body: 'Tambahkan foto dan bio.' }),
+      data: expect.objectContaining({ title: 'Lengkapi profil', body: 'Tambahkan foto dan bio.' }),
     }));
   });
 
@@ -206,7 +206,7 @@ describe('CommunityService hierarchy invariants', () => {
     // sementara lampirannya menyusul — dan lampiran yang ditolak meninggalkan
     // tulisan yang sudah terbaca orang tanpa gambarnya.
     const created = {
-      id: 'post-9', checklistTitle: null, body: 'Ini gambarnya.',
+      id: 'post-9', title: null, body: 'Ini gambarnya.',
       author: { id: 'pelajar-1' }, comments: [], reactions: [], checklistCompletions: [],
       channel: { id: 'sub-2', type: 'POSTS', group: { slug: 'komunitas', name: 'Komunitas' } },
       attachments: [],
@@ -242,7 +242,7 @@ describe('CommunityService hierarchy invariants', () => {
     const service = new CommunityService({
       communityPost: {
         findFirst: jest.fn().mockResolvedValue({
-          id: 'post-2', checklistTitle: 'Langkah kedua', body: 'Baca isi ini.',
+          id: 'post-2', title: 'Langkah kedua', body: 'Baca isi ini.',
           author: { id: 'master-1' }, comments: [], reactions: [], checklistCompletions: [],
           channel: { id: 'sub-1', type: 'CHECKLIST', group: { slug: 'welcome', name: 'Welcome' } },
         }),
@@ -272,13 +272,13 @@ describe('CommunityService hierarchy invariants', () => {
 
   test('Master dapat menyunting item checklist meskipun dibuat pengguna lain', async () => {
     const update = jest.fn().mockResolvedValue({
-      id: 'post-1', checklistTitle: 'Judul baru', body: 'Isi baru', author: { id: 'student-1' }, comments: [], reactions: [], checklistCompletions: [],
+      id: 'post-1', title: 'Judul baru', body: 'Isi baru', author: { id: 'student-1' }, comments: [], reactions: [], checklistCompletions: [],
       channel: { id: 'sub-1', type: 'CHECKLIST', group: { slug: 'welcome', name: 'Welcome' } },
     });
     const record = jest.fn();
     const service = new CommunityService({
       communityPost: {
-        findFirst: jest.fn().mockResolvedValue({ id: 'post-1', authorId: 'student-1', checklistTitle: 'Judul lama', body: 'Isi lama', channelId: 'sub-1', channel: { type: 'CHECKLIST' } }),
+        findFirst: jest.fn().mockResolvedValue({ id: 'post-1', authorId: 'student-1', title: 'Judul lama', body: 'Isi lama', channelId: 'sub-1', channel: { type: 'CHECKLIST' } }),
         update,
       },
     } as never, { record } as never, {} as never);
@@ -287,8 +287,8 @@ describe('CommunityService hierarchy invariants', () => {
       .resolves.toMatchObject({ body: 'Isi baru', canEdit: true });
     expect(record).toHaveBeenCalledWith(expect.objectContaining({
       action: 'community.checklist_item.update', targetId: 'post-1',
-      before: expect.objectContaining({ checklistTitle: 'Judul lama', body: 'Isi lama' }),
-      after: { checklistTitle: 'Judul baru', body: 'Isi baru' },
+      before: expect.objectContaining({ title: 'Judul lama', body: 'Isi lama' }),
+      after: { title: 'Judul baru', body: 'Isi baru' },
     }));
   });
 

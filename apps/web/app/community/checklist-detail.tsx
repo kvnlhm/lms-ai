@@ -43,7 +43,7 @@ export function ChecklistDetail({ item, listUrl }: { item: ChecklistDetailData; 
     <header className="checklistArticleHeader">
       <Link className="checklistArticleBack" href={listUrl}>← Kembali ke daftar checklist</Link>
       <div className="checklistArticleProgress"><span>Langkah {item.position} dari {item.total}</span><span>{item.channel.groupName} / {item.channel.name}</span></div>
-      <h1>{item.checklistTitle ?? 'Checklist tanpa judul'}</h1>
+      <h1>{item.title ?? 'Checklist tanpa judul'}</h1>
       <p>Oleh {item.author.fullName} · {new Date(item.createdAt).toLocaleDateString('id-ID', { dateStyle: 'long' })}</p>
     </header>
 

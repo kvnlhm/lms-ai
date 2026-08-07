@@ -23,7 +23,7 @@ export type CommunityComment = {
   canEdit: boolean; canDelete: boolean;
 };
 export type CommunityPost = {
-  id: string; checklistTitle: string | null; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
+  id: string; title: string | null; body: string; isPinned: boolean; commentCount: number; reactionCount: number;
   reactedByMe: boolean; completedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
   canEdit: boolean; canDelete: boolean; canPin: boolean;
   channel: Pick<CommunitySubchannel, 'id' | 'slug' | 'name' | 'type' | 'isReadOnly' | 'allowReplies'> & { groupSlug: string; groupName: string };
@@ -97,7 +97,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   const subchannels = useMemo(() => channels.flatMap((group) => group.subchannels.map((item) => ({ ...item, groupSlug: group.slug, groupName: group.name }))), [channels]);
   const [channelId, setChannelId] = useState(() => subchannels.find((item) => item.slug === activeSubchannelSlug && item.groupSlug === activeChannelSlug)?.id ?? subchannels.find((item) => item.type !== 'ANNOUNCEMENTS' && !item.isReadOnly)?.id ?? subchannels.find((item) => item.type !== 'ANNOUNCEMENTS')?.id ?? subchannels[0]?.id ?? '');
   const [body, setBody] = useState('');
-  const [checklistTitle, setChecklistTitle] = useState('');
+  const [title, setTitle] = useState('');
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
   const [pending, startTransition] = useTransition();
@@ -211,13 +211,13 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
 
   function publish() {
     if (!channelId || !body.trim()) return;
-    if (selected?.type === 'CHECKLIST' && !checklistTitle.trim()) return;
+    if (selected?.type === 'CHECKLIST' && !title.trim()) return;
     startTransition(async () => {
       try {
-        const result = await browserClient().POST('/api/v1/community/subchannels/{subchannelId}/posts', { params: { path: { subchannelId: channelId } }, body: { body: body.trim(), ...(selected?.type === 'CHECKLIST' ? { checklistTitle: checklistTitle.trim() } : {}) } });
+        const result = await browserClient().POST('/api/v1/community/subchannels/{subchannelId}/posts', { params: { path: { subchannelId: channelId } }, body: { body: body.trim(), ...(selected?.type === 'CHECKLIST' ? { title: title.trim() } : {}) } });
         const created = unwrap<CommunityPost>(result);
         setPosts((current) => [created, ...current]); setTotal((current) => current + 1);
-        setBody(''); setChecklistTitle(''); setMessage(activeSubchannelSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
+        setBody(''); setTitle(''); setMessage(activeSubchannelSlug ? 'Pesan terkirim.' : 'Post berhasil diterbitkan.');
       } catch (error) { setMessage(error instanceof Error ? error.message : activeSubchannelSlug ? 'Pesan gagal dikirim.' : 'Post gagal diterbitkan.'); }
     });
   }
@@ -258,10 +258,10 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
     try {
       const hasil = unwrap<CommunityPost>(
         await browserClient().PATCH('/api/v1/community/posts/{postId}', {
-          params: { path: { postId: post.id } }, body: { body: bodyBaru, ...(judulChecklist ? { checklistTitle: judulChecklist } : {}) },
+          params: { path: { postId: post.id } }, body: { body: bodyBaru, ...(judulChecklist ? { title: judulChecklist } : {}) },
         }),
       );
-      gantiPost(post.id, (lama) => ({ ...lama, checklistTitle: hasil.checklistTitle, body: hasil.body, editedAt: hasil.editedAt }));
+      gantiPost(post.id, (lama) => ({ ...lama, title: hasil.title, body: hasil.body, editedAt: hasil.editedAt }));
       return true;
     } catch (error) {
       void notifier.error('Perubahan tidak tersimpan', { text: error instanceof Error ? error.message : undefined });
@@ -277,7 +277,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
       });
       // `null` berarti dibatalkan; teks yang sama persis tidak perlu dikirim.
       if (baru === null || baru === post.body) return;
-      await simpanPost(post, baru, post.channel.type === 'CHECKLIST' ? post.checklistTitle ?? undefined : undefined);
+      await simpanPost(post, baru, post.channel.type === 'CHECKLIST' ? post.title ?? undefined : undefined);
     })();
   }
 
@@ -436,7 +436,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   }, [posts, subchannels]);
 
   if (activeChannelSlug && activeSubchannelSlug && selected?.type === 'CHECKLIST') {
-    return <ChecklistPage posts={posts} selected={selected} currentUserName={currentUserName} pending={pending} message={message} canPost={Boolean(canPost)} checklistTitle={checklistTitle} setChecklistTitle={setChecklistTitle} body={body} setBody={setBody} publish={publish} hapusPost={hapusPost} adaYangLebihLama={posts.length < total} memuatLama={memuatLama} muatLebihLama={muatLebihLama} />;
+    return <ChecklistPage posts={posts} selected={selected} currentUserName={currentUserName} pending={pending} message={message} canPost={Boolean(canPost)} title={title} setTitle={setTitle} body={body} setBody={setBody} publish={publish} hapusPost={hapusPost} adaYangLebihLama={posts.length < total} memuatLama={memuatLama} muatLebihLama={muatLebihLama} />;
   }
 
   if (activeChannelSlug && activeSubchannelSlug && selected?.type === 'CHAT') {
@@ -531,15 +531,15 @@ function ChecklistFeedCard({ channel }: { channel: CommunitySubchannel & { group
   </article>;
 }
 
-function ChecklistPage({ posts, selected, currentUserName, pending, message, canPost, checklistTitle, setChecklistTitle, body, setBody, publish, hapusPost, adaYangLebihLama, memuatLama, muatLebihLama }: {
+function ChecklistPage({ posts, selected, currentUserName, pending, message, canPost, title, setTitle, body, setBody, publish, hapusPost, adaYangLebihLama, memuatLama, muatLebihLama }: {
   posts: CommunityPost[];
   selected: CommunitySubchannel & { groupSlug: string; groupName: string };
   currentUserName?: string;
   pending: boolean;
   message: string;
   canPost: boolean;
-  checklistTitle: string;
-  setChecklistTitle: (value: string) => void;
+  title: string;
+  setTitle: (value: string) => void;
   body: string;
   setBody: (value: string) => void;
   publish: () => void;
@@ -565,14 +565,14 @@ function ChecklistPage({ posts, selected, currentUserName, pending, message, can
           <summary><span>{selected.description || selected.name}</span><small>{posts.length} topik</small></summary>
           <div className="checklistTopics">{topics.map((post, index) => <div className={post.completedByMe ? 'checklistTopic completed' : 'checklistTopic'} key={post.id}>
             <span className={post.completedByMe ? 'checklistStatus completed' : 'checklistStatus'} aria-label={post.completedByMe ? 'Sudah selesai' : 'Belum selesai'}>{post.completedByMe ? '✓' : ''}</span>
-            <div className="checklistTopicMain"><Link className="checklistTopicLink" href={`/community/${selected.groupSlug}/${selected.slug}/${post.id}`}><span className="checklistTopicNumber">{index + 1}</span><span>{post.checklistTitle ?? 'Checklist tanpa judul'}<Diedit at={post.editedAt} /></span><span aria-hidden="true">›</span></Link></div>
+            <div className="checklistTopicMain"><Link className="checklistTopicLink" href={`/community/${selected.groupSlug}/${selected.slug}/${post.id}`}><span className="checklistTopicNumber">{index + 1}</span><span>{post.title ?? 'Checklist tanpa judul'}<Diedit at={post.editedAt} /></span><span aria-hidden="true">›</span></Link></div>
             <div className="checklistTopicActions">{post.canEdit ? <Link href={`/community/${selected.groupSlug}/${selected.slug}/${post.id}/edit`}>Sunting</Link> : null}{post.canDelete ? <button type="button" onClick={() => hapusPost(post)}>Hapus</button> : null}</div>
           </div>)}</div>
         </details>
       </section>
       {posts.length === 0 ? <div className="checklistEmpty"><strong>Belum ada topik.</strong><span>{canPost ? 'Tambahkan item pertama melalui form di bawah.' : 'Master belum menambahkan item checklist.'}</span></div> : null}
       {adaYangLebihLama ? <button className="btnSecondary checklistLoad" type="button" disabled={memuatLama} onClick={muatLebihLama}>{memuatLama ? 'Memuat…' : 'Muat topik lainnya'}</button> : null}
-      {canPost ? <div className="checklistComposer"><button className="btn checklistAddToggle" type="button" aria-expanded={composerTerbuka} onClick={() => setComposerTerbuka((terbuka) => !terbuka)}>{composerTerbuka ? 'Tutup form' : 'Tambah checklist'}</button>{composerTerbuka ? <div className="checklistComposerForm"><label htmlFor="checklist-new-title">Judul checklist</label><input id="checklist-new-title" value={checklistTitle} onChange={(event) => setChecklistTitle(event.target.value)} placeholder="Judul checklist" maxLength={160} /><label htmlFor="checklist-new-topic">Konten</label><textarea id="checklist-new-topic" value={body} rows={5} onChange={(event) => setBody(event.target.value)} placeholder="Tulis penjelasan atau arahan untuk checklist ini…" maxLength={5000} /><div className="checklistComposerFoot"><span className="checklistComposerCount">{body.length}/5000</span><button className="btn" type="button" disabled={pending || !checklistTitle.trim() || !body.trim()} onClick={publish}>Tambahkan</button></div></div> : null}</div> : null}
+      {canPost ? <div className="checklistComposer"><button className="btn checklistAddToggle" type="button" aria-expanded={composerTerbuka} onClick={() => setComposerTerbuka((terbuka) => !terbuka)}>{composerTerbuka ? 'Tutup form' : 'Tambah checklist'}</button>{composerTerbuka ? <div className="checklistComposerForm"><label htmlFor="checklist-new-title">Judul checklist</label><input id="checklist-new-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Judul checklist" maxLength={160} /><label htmlFor="checklist-new-topic">Konten</label><textarea id="checklist-new-topic" value={body} rows={5} onChange={(event) => setBody(event.target.value)} placeholder="Tulis penjelasan atau arahan untuk checklist ini…" maxLength={5000} /><div className="checklistComposerFoot"><span className="checklistComposerCount">{body.length}/5000</span><button className="btn" type="button" disabled={pending || !title.trim() || !body.trim()} onClick={publish}>Tambahkan</button></div></div> : null}</div> : null}
       {message ? <p className="communityMessage" role="status">{message}</p> : null}
     </div>
   </section>;

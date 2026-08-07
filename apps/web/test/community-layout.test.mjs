@@ -258,7 +258,7 @@ test('editor checklist menerima satu foto, video, atau PDF dan halaman bacaan me
 });
 
 test('setiap checklist memiliki judul yang menuju halaman kontennya', () => {
-  assert.match(channel, /checklistTitle: string \| null/);
+  assert.match(channel, /title: string \| null/);
   assert.match(channel, /id="checklist-new-title"/);
   assert.match(channel, /className="checklistTopicLink"/);
   assert.match(checklistDetail, /className="checklistArticleBody"/);

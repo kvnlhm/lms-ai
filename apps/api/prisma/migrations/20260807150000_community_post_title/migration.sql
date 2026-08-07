@@ -1,0 +1,14 @@
+-- Judul postingan menjadi milik semua postingan, bukan hanya checklist.
+--
+-- Composer baru punya kolom "Judul (opsional)" untuk setiap postingan.
+-- Menyimpannya di kolom bernama `checklist_title` akan membuat kolom itu
+-- berbohong tentang isinya, dan menambah kolom kedua berarti dua tempat
+-- menyimpan hal yang sama.
+--
+-- Aturannya sendiri tidak berubah: judul tetap wajib untuk postingan di
+-- sub-channel CHECKLIST dan tetap opsional di luar itu. Yang berubah hanya
+-- namanya.
+--
+-- RENAME, bukan tambah-salin-buang: seluruh nilai lama terbawa apa adanya dan
+-- tidak ada jendela waktu ketika kedua kolom bisa berbeda isi.
+ALTER TABLE "community_posts" RENAME COLUMN "checklist_title" TO "title";
