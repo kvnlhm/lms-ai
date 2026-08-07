@@ -1,5 +1,4 @@
-import { FileText } from '../components/icons';
-import { X } from '../components/icons';
+import { ArrowLeft, ArrowRight, FileText, X } from '../components/icons';
 import { useEffect, useState } from 'react';
 
 export type LampiranPost = { id: string; originalName: string; mimeType: string; sizeBytes: string; position: number };
@@ -35,18 +34,29 @@ const alamat = (id: string) => `/api/v1/community/attachments/${id}`;
  * objeknya tidak pernah sampai ke klien.
  */
 export function PostAttachments({ attachments }: { attachments: LampiranPost[] }) {
-  const [zoom, setZoom] = useState<LampiranPost | null>(null);
-  useEffect(() => {
-    if (!zoom) return;
-    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setZoom(null); };
-    document.addEventListener('keydown', close);
-    return () => document.removeEventListener('keydown', close);
-  }, [zoom]);
-  if (attachments.length === 0) return null;
   const media = attachments
     .filter((item) => item.mimeType.startsWith('image/') || item.mimeType.startsWith('video/'))
     .sort((a, b) => a.position - b.position);
+  const gambar = media.filter((item) => item.mimeType.startsWith('image/'));
   const berkas = attachments.filter((item) => !item.mimeType.startsWith('image/') && !item.mimeType.startsWith('video/'));
+  const [zoom, setZoom] = useState<LampiranPost | null>(null);
+  const pindah = (arah: -1 | 1) => {
+    if (!zoom || gambar.length < 2) return;
+    const index = gambar.findIndex((item) => item.id === zoom.id);
+    const berikutnya = gambar[(index + arah + gambar.length) % gambar.length];
+    if (berikutnya) setZoom(berikutnya);
+  };
+  useEffect(() => {
+    if (!zoom) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setZoom(null);
+      if (event.key === 'ArrowLeft') pindah(-1);
+      if (event.key === 'ArrowRight') pindah(1);
+    };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, [zoom, gambar]);
+  if (attachments.length === 0) return null;
 
   return <div className="postAttachments">
     {media.length ? <div className={media.length === 1 ? 'postMedia postMediaSingle' : 'postMedia postMediaRow'}>
@@ -58,8 +68,10 @@ export function PostAttachments({ attachments }: { attachments: LampiranPost[] }
       <small>{ukuranTerbaca(item.sizeBytes)}</small>
     </a>)}
     {zoom ? <div className="postLightboxBackdrop" role="dialog" aria-modal="true" aria-label={`Pratinjau ${zoom.originalName}`} onClick={(event) => { if (event.target === event.currentTarget) setZoom(null); }}>
+      {gambar.length > 1 ? <button type="button" className="postLightboxNav postLightboxPrev" aria-label="Foto sebelumnya" onClick={() => pindah(-1)}><ArrowLeft size={28} /></button> : null}
       <button type="button" className="postLightboxClose" aria-label="Tutup gambar" onClick={() => setZoom(null)}><X size={22} /></button>
       <img className="postLightboxImage" src={alamat(zoom.id)} alt={zoom.originalName} />
+      {gambar.length > 1 ? <button type="button" className="postLightboxNav postLightboxNext" aria-label="Foto berikutnya" onClick={() => pindah(1)}><ArrowRight size={28} /></button> : null}
     </div> : null}
   </div>;
 }

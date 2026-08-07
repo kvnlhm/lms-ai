@@ -178,6 +178,14 @@ test('gambar lampiran dibuka sebagai zoom satu layar dengan tombol tutup, bukan 
   assert.match(css, /\.postLightboxBackdrop\{/);
 });
 
+test('lightbox foto memiliki navigasi sebelumnya dan berikutnya', () => {
+  assert.match(attachments, /aria-label="Foto sebelumnya"/);
+  assert.match(attachments, /aria-label="Foto berikutnya"/);
+  assert.match(attachments, /event\.key === 'ArrowLeft'/);
+  assert.match(attachments, /event\.key === 'ArrowRight'/);
+  assert.match(css, /\.postLightboxNav\{/);
+});
+
 test('hapus postingan dan balasan menerima respons 204 tanpa body', () => {
   assert.match(channel, /ensureSuccess\(await browserClient\(\)\.DELETE\('\/api\/v1\/community\/posts\/\{postId\}'/);
   assert.match(channel, /ensureSuccess\(await browserClient\(\)\.DELETE\('\/api\/v1\/community\/comments\/\{commentId\}'/);
