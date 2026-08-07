@@ -14,6 +14,27 @@ export class CommunityPostBodyDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(160) title?: string;
   @ApiPropertyOptional({ type: [String], description: 'Id unggahan composer yang akan diikat ke postingan ini. Urutannya menjadi urutan tampilnya.' })
   @IsOptional() @IsArray() @ArrayMaxSize(5) @IsUUID('4', { each: true }) attachmentIds?: string[];
+  @ApiPropertyOptional({ type: [String], description: 'Pilihan jajak pendapat, 2 sampai 6. Kosongkan bila postingan ini bukan polling.' })
+  @IsOptional() @IsArray() @ArrayMaxSize(6) @IsString({ each: true }) @MaxLength(120, { each: true }) pollOptions?: string[];
+}
+
+export class CommunityPollVoteDto {
+  @ApiProperty() @IsUUID('4') optionId!: string;
+}
+
+export class CommunityPollOptionDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() label!: string;
+  @ApiProperty() position!: number;
+  @ApiProperty() voteCount!: number;
+}
+
+export class CommunityPollDto {
+  @ApiProperty() id!: string;
+  @ApiProperty({ type: () => [CommunityPollOptionDto] }) options!: CommunityPollOptionDto[];
+  @ApiProperty() totalVotes!: number;
+  @ApiProperty({ type: String, nullable: true, description: 'Pilihan yang disuarakan pembaca ini, bila sudah memilih.' })
+  myOptionId!: string | null;
 }
 
 export class CreateCommunityChannelDto {
@@ -144,6 +165,7 @@ export class CommunityPostDto {
   attachment!: CommunityAttachmentDto | null;
   @ApiProperty({ type: () => [CommunityAttachmentDto], description: 'Seluruh lampiran, urut sesuai pilihan penulisnya.' })
   attachments!: CommunityAttachmentDto[];
+  @ApiProperty({ type: () => CommunityPollDto, nullable: true }) poll!: CommunityPollDto | null;
 }
 
 export class CommunityAttachmentDto {

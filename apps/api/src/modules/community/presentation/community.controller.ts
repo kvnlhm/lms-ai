@@ -8,7 +8,7 @@ import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { CommunityService } from '../application/community.service';
 import { CommunityAttachmentService } from '../application/community-attachment.service';
-import { CommunityAttachmentDto, CommunityChannelDto, CommunityChecklistItemDto, CommunityChecklistResultDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityChecklistDto, SetCommunityPinnedDto } from './community.dto';
+import { CommunityAttachmentDto, CommunityChannelDto, CommunityChecklistItemDto, CommunityChecklistResultDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPollDto, CommunityPollVoteDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityChecklistDto, SetCommunityPinnedDto } from './community.dto';
 
 /** Pemegang izin moderasi diskusi; dipakai berulang di controller ini. */
 function moderator(user: AuthenticatedUser): boolean {
@@ -94,9 +94,15 @@ export class CommunityController {
     response.status(200).end();
   }
 
+  @Post('posts/:postId/poll/vote') @HttpCode(200) @ApiEnvelope(CommunityPollDto)
+  @ApiOperation({ summary: 'Memberi atau memindahkan suara pada jajak pendapat' }) @ApiErrors(401, 404, 422)
+  votePoll(@Param('postId', new ParseUUIDPipe()) postId: string, @Body() dto: CommunityPollVoteDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.community.votePoll(user.id, postId, dto.optionId);
+  }
+
   @Post('subchannels/:subchannelId/posts') @HttpCode(201) @ApiEnvelope(CommunityPostDto) @ApiErrors(401, 403, 404, 422)
   createPost(@Param('subchannelId', new ParseUUIDPipe()) subchannelId: string, @Body() dto: CommunityPostBodyDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.community.createPost(user.id, subchannelId, dto.body, moderator(user), dto.title, dto.attachmentIds ?? []);
+    return this.community.createPost(user.id, subchannelId, dto.body, moderator(user), dto.title, dto.attachmentIds ?? [], dto.pollOptions);
   }
 
   @Get('channels/:channelSlug/:subchannelSlug/pinned') @ApiOperation({ summary: 'Tulisan tersemat pada sebuah sub-channel' }) @ApiEnvelopeArray(CommunityPostDto) @ApiErrors(401)

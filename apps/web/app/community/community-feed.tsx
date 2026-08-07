@@ -6,6 +6,7 @@ import { useNotifier } from '../components/notifier';
 import { browserClient, unwrap, unwrapList } from '../lib/browser-api';
 import { PostComposer } from './post-composer';
 import { PostAttachments, type LampiranPost } from './post-attachments';
+import { PostPoll, type Poll } from './post-poll';
 
 /** Satu tarikan pesan atau balasan; dipakai baik saat memuat lama maupun menyegarkan. */
 const UKURAN_HALAMAN = 30;
@@ -29,6 +30,7 @@ export type CommunityPost = {
   reactedByMe: boolean; completedByMe: boolean; editedAt: string | null; createdAt: string; author: Person;
   canEdit: boolean; canDelete: boolean; canPin: boolean;
   attachments?: LampiranPost[];
+  poll?: Poll | null;
   channel: Pick<CommunitySubchannel, 'id' | 'slug' | 'name' | 'type' | 'isReadOnly' | 'allowReplies'> & { groupSlug: string; groupName: string };
   comments: CommunityComment[];
   attachment: { id: string; originalName: string; mimeType: string; sizeBytes: string; createdAt: string } | null;
@@ -228,12 +230,12 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
    * menutup dan mengosongkan isinya kalau server benar-benar menerima. Kalau
    * tidak, apa yang sudah diketik dan diunggah ikut hilang bersama galatnya.
    */
-  async function kirimPost({ title: judul, body: isi, attachmentIds }: { title: string; body: string; attachmentIds: string[] }) {
+  async function kirimPost({ title: judul, body: isi, attachmentIds, pollOptions }: { title: string; body: string; attachmentIds: string[]; pollOptions?: string[] }) {
     if (!channelId || !isi) return false;
     try {
       const result = await browserClient().POST('/api/v1/community/subchannels/{subchannelId}/posts', {
         params: { path: { subchannelId: channelId } },
-        body: { body: isi, ...(judul ? { title: judul } : {}), ...(attachmentIds.length ? { attachmentIds } : {}) },
+        body: { body: isi, ...(judul ? { title: judul } : {}), ...(attachmentIds.length ? { attachmentIds } : {}), ...(pollOptions?.length ? { pollOptions } : {}) },
       });
       const created = unwrap<CommunityPost>(result);
       setPosts((current) => [created, ...current]); setTotal((current) => current + 1);
@@ -506,6 +508,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
               {post.title ? <h2 className="postTitle">{post.title}</h2> : null}
               <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
               <PostAttachments attachments={post.attachments ?? []} />
+              {post.poll ? <PostPoll postId={post.id} poll={post.poll} /> : null}
               <div className="postActions">{post.channel.type === 'ANNOUNCEMENTS' ? <span>Pengumuman resmi</span> : <button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button>}{post.channel.allowReplies ? <span>◯ {post.commentCount} balasan</span> : <span>Balasan ditutup</span>}<PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
               {post.channel.allowReplies ? <><MuatBalasan post={post} aksi={aksi} />{balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}<div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div></> : null}
             </article>;

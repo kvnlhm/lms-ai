@@ -16,6 +16,7 @@ const checklistEditPage = await readFile(new URL('../app/community/[slug]/[subch
 const masterShortcuts = await readFile(new URL('../app/components/master-community-shortcuts.tsx', import.meta.url), 'utf8');
 const composer = await readFile(new URL('../app/community/post-composer.tsx', import.meta.url), 'utf8');
 const attachments = await readFile(new URL('../app/community/post-attachments.tsx', import.meta.url), 'utf8');
+const poll = await readFile(new URL('../app/community/post-poll.tsx', import.meta.url), 'utf8');
 
 test('shell Pelajar menyediakan sidebar desktop dan memindahkannya ke drawer pada mobile', () => {
   assert.match(css, /\.learnerShellBody\{[^}]*grid-template-columns:220px minmax\(0,1fr\)/);
@@ -338,4 +339,25 @@ test('batas lampiran di composer sejalan dengan batas server', () => {
   // berkasnya selesai terunggah dan ditolak server.
   assert.match(composer, /const MAKS_LAMPIRAN = 5;/);
   assert.match(composer, /const MAKS_BYTE = 26_214_400;/);
+});
+
+test('hasil polling terlihat sebelum orangnya memilih', () => {
+  // Menyembunyikan hasil sampai seseorang ikut memilih memaksa orang menekan
+  // pilihan hanya untuk dapat melihatnya — dan suara yang lahir dari rasa
+  // penasaran bukan pendapat.
+  assert.match(poll, /nilai\.totalVotes > 0 \? Math\.round/);
+  assert.doesNotMatch(poll, /myOptionId \? [\s\S]{0,40}persen/);
+});
+
+test('menekan pilihan yang sama tidak mengirim ulang suara', () => {
+  assert.match(poll, /if \(pending \|\| nilai\.myOptionId === optionId\) return;/);
+  assert.match(poll, /POST\('\/api\/v1\/community\/posts\/\{postId\}\/poll\/vote'/);
+});
+
+test('composer menolak menerbitkan polling berpilihan kurang dari dua', () => {
+  // API menolaknya 422. Kalau tombolnya tetap aktif, penulisnya baru tahu
+  // sesudah menekan Terbitkan dan kehilangan konteksnya.
+  assert.match(composer, /const pollingSiap = polling === null \|\|/);
+  assert.match(composer, /!pollingSiap/);
+  assert.match(composer, /const POLLING_MIN = 2;/);
 });

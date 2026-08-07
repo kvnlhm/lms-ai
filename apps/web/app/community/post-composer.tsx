@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Modal } from '../components/modal';
-import { FileText, ImageIcon, Plus, Trash, Video } from '../components/icons';
+import { BarChart, FileText, ImageIcon, Plus, Trash, Video } from '../components/icons';
 import { uploadDraftAttachment, type LampiranTerunggah } from '../lib/checklist-upload';
 import { browserClient, ensureSuccess } from '../lib/browser-api';
 import { ukuranTerbaca } from './post-attachments';
@@ -11,6 +11,9 @@ import { ukuranTerbaca } from './post-attachments';
 const MAKS_LAMPIRAN = 5;
 /** Sejalan dengan COMMUNITY_ATTACHMENT_MAX_DRAFT_UPLOAD_BYTES di API. */
 const MAKS_BYTE = 26_214_400;
+/** Sejalan dengan POLLING_MIN dan POLLING_MAKS di API. */
+const POLLING_MIN = 2;
+const POLLING_MAKS = 6;
 
 const TERIMA = {
   gambar: 'image/jpeg,image/png,image/webp',
@@ -30,7 +33,7 @@ export function PostComposer({ channelName, announcement, pending, onPublish }: 
   channelName: string;
   announcement: boolean;
   pending: boolean;
-  onPublish: (input: { title: string; body: string; attachmentIds: string[] }) => Promise<boolean>;
+  onPublish: (input: { title: string; body: string; attachmentIds: string[]; pollOptions?: string[] }) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -40,6 +43,8 @@ export function PostComposer({ channelName, announcement, pending, onPublish }: 
   const [galat, setGalat] = useState('');
   const berkasRef = useRef<HTMLInputElement>(null);
   const [terima, setTerima] = useState<string>(TERIMA.gambar);
+  /** `null` berarti postingan biasa; larik berarti composer sedang menyusun polling. */
+  const [polling, setPolling] = useState<string[] | null>(null);
 
   const sibuk = pending || progres !== null;
   const penuh = lampiran.length >= MAKS_LAMPIRAN;
@@ -75,11 +80,16 @@ export function PostComposer({ channelName, announcement, pending, onPublish }: 
     }
   }
 
+  const pollingSiap = polling === null || polling.map((item) => item.trim()).filter(Boolean).length >= POLLING_MIN;
+
   async function terbitkan() {
     setGalat('');
-    const berhasil = await onPublish({ title: title.trim(), body: body.trim(), attachmentIds: lampiran.map((item) => item.id) });
+    const berhasil = await onPublish({
+      title: title.trim(), body: body.trim(), attachmentIds: lampiran.map((item) => item.id),
+      ...(polling ? { pollOptions: polling.map((item) => item.trim()).filter(Boolean) } : {}),
+    });
     if (!berhasil) return;
-    setTitle(''); setBody(''); setLampiran([]); setOpen(false);
+    setTitle(''); setBody(''); setLampiran([]); setPolling(null); setOpen(false);
   }
 
   function tutup() {
@@ -112,6 +122,18 @@ export function PostComposer({ channelName, announcement, pending, onPublish }: 
           </li>)}
         </ul> : null}
 
+        {polling ? <div className="composerPoll">
+          <div className="composerPollHead"><strong>Jajak pendapat</strong><button type="button" onClick={() => setPolling(null)}>Buang polling</button></div>
+          {polling.map((nilai, index) => <input
+            key={index}
+            value={nilai}
+            maxLength={120}
+            placeholder={`Pilihan ${index + 1}`}
+            onChange={(event) => setPolling((current) => (current ?? []).map((item, i) => (i === index ? event.target.value : item)))}
+          />)}
+          {polling.length < POLLING_MAKS ? <button type="button" className="composerPollAdd" onClick={() => setPolling((current) => [...(current ?? []), ''])}>+ Tambah pilihan</button> : null}
+        </div> : null}
+
         {progres !== null ? <p className="composerProgress" role="status">Mengunggah… {progres}%</p> : null}
         {galat ? <p className="composerError" role="alert">{galat}</p> : null}
 
@@ -127,8 +149,9 @@ export function PostComposer({ channelName, announcement, pending, onPublish }: 
           <button type="button" disabled={sibuk || penuh} onClick={() => pilih('gambar')}><ImageIcon size={18} /><span className="srOnly">Tambah gambar</span></button>
           <button type="button" disabled={sibuk || penuh} onClick={() => pilih('video')}><Video size={18} /><span className="srOnly">Tambah video</span></button>
           <button type="button" disabled={sibuk || penuh} onClick={() => pilih('dokumen')}><FileText size={18} /><span className="srOnly">Tambah dokumen PDF</span></button>
+          <button type="button" className={polling ? 'aktif' : ''} disabled={sibuk} aria-pressed={Boolean(polling)} onClick={() => setPolling((current) => (current ? null : ['', '']))}><BarChart size={18} /><span className="srOnly">Jajak pendapat</span></button>
           <span className="composerCount">{lampiran.length}/{MAKS_LAMPIRAN} berkas · {body.length}/5000</span>
-          <button className="btn" type="button" disabled={sibuk || !body.trim()} onClick={() => void terbitkan()}>Terbitkan</button>
+          <button className="btn" type="button" disabled={sibuk || !body.trim() || !pollingSiap} onClick={() => void terbitkan()}>Terbitkan</button>
         </div>
       </div>
     </Modal> : null}

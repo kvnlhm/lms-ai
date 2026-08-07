@@ -1539,6 +1539,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/community/posts/{postId}/poll/vote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Memberi atau memindahkan suara pada jajak pendapat */
+        post: operations["CommunityController_votePoll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/community/subchannels/{subchannelId}/posts": {
         parameters: {
             query?: never;
@@ -4014,6 +4031,19 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        CommunityPollOptionDto: {
+            id: string;
+            label: string;
+            position: number;
+            voteCount: number;
+        };
+        CommunityPollDto: {
+            id: string;
+            options: components["schemas"]["CommunityPollOptionDto"][];
+            totalVotes: number;
+            /** @description Pilihan yang disuarakan pembaca ini, bila sudah memilih. */
+            myOptionId: string | null;
+        };
         CommunityPostDto: {
             id: string;
             /** @description Judul khusus item checklist. */
@@ -4047,6 +4077,7 @@ export interface components {
             attachment: components["schemas"]["CommunityAttachmentDto"] | null;
             /** @description Seluruh lampiran, urut sesuai pilihan penulisnya. */
             attachments: components["schemas"]["CommunityAttachmentDto"][];
+            poll: components["schemas"]["CommunityPollDto"] | null;
         };
         CommunityChecklistItemDto: {
             id: string;
@@ -4081,10 +4112,14 @@ export interface components {
             attachment: components["schemas"]["CommunityAttachmentDto"] | null;
             /** @description Seluruh lampiran, urut sesuai pilihan penulisnya. */
             attachments: components["schemas"]["CommunityAttachmentDto"][];
+            poll: components["schemas"]["CommunityPollDto"] | null;
             previousPostId: string | null;
             nextPostId: string | null;
             position: number;
             total: number;
+        };
+        CommunityPollVoteDto: {
+            optionId: string;
         };
         CommunityPostBodyDto: {
             body: string;
@@ -4092,6 +4127,8 @@ export interface components {
             title?: string;
             /** @description Id unggahan composer yang akan diikat ke postingan ini. Urutannya menjadi urutan tampilnya. */
             attachmentIds?: string[];
+            /** @description Pilihan jajak pendapat, 2 sampai 6. Kosongkan bila postingan ini bukan polling. */
+            pollOptions?: string[];
         };
         SetCommunityPinnedDto: {
             isPinned: boolean;
@@ -9769,6 +9806,58 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_votePoll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommunityPollVoteDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CommunityPollDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -3485,3 +3485,26 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .composerCount{order:3;width:100%;margin-left:0}
   .postImageGrid3{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* ── Jajak pendapat ──────────────────────────────────────────────────────
+   Batangnya berada di belakang teks, bukan di atasnya: hasil dan label harus
+   terbaca bersamaan, dan bar terpisah menuntut baris kedua yang tidak ada. */
+.composerPoll{display:grid;gap:7px;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--surface-2)}
+.composerPollHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.composerPollHead>strong{font-size:13px}
+.composerPollHead>button,.composerPollAdd{border:0;background:transparent;color:var(--primary);font:inherit;font-size:12px;cursor:pointer;padding:0}
+.composerPollHead>button{color:var(--muted)}
+.composerPollAdd{justify-self:start}
+.composerToolbar>button.aktif{background:var(--accent-soft);color:var(--accent-text)}
+
+.postPoll{display:grid;gap:8px;margin:14px 0}
+.postPoll ul{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.postPoll button{position:relative;display:flex;align-items:center;gap:10px;width:100%;overflow:hidden;padding:11px 13px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.postPoll button:hover:not(:disabled){border-color:var(--primary)}
+.postPoll button.chosen{border-color:var(--primary)}
+.postPoll button:disabled{cursor:progress}
+.pollFill{position:absolute;inset:0 auto 0 0;background:color-mix(in srgb,var(--primary) 20%,transparent);transition:width .25s ease}
+.pollLabel{position:relative;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.pollPercent{position:relative;margin-left:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.postPoll button.chosen .pollPercent{color:var(--text);font-weight:700}
+.postPoll>small{color:var(--muted);font-size:12px}

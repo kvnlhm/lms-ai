@@ -185,6 +185,7 @@ model User {
   communityPosts         CommunityPost[]         @relation("CommunityPostAuthor")
   communityComments      CommunityComment[]      @relation("CommunityCommentAuthor")
   communityAttachments   CommunityPostAttachment[] @relation("CommunityAttachmentUploader")
+  communityPollVotes     CommunityPollVote[]     @relation("CommunityPollVoter")
   communityReactions     CommunityReaction[]     @relation("CommunityReactionUser")
   communityChecklistCompletions CommunityChecklistCompletion[] @relation("CommunityChecklistCompletionUser")
 
@@ -271,6 +272,7 @@ model CommunityPost {
   reactions CommunityReaction[]
   checklistCompletions CommunityChecklistCompletion[]
   attachments CommunityPostAttachment[]
+  poll        CommunityPoll?
 
   @@index([channelId, deletedAt, isPinned, lastActivityAt])
   @@index([authorId, createdAt])
@@ -304,6 +306,58 @@ model CommunityPostAttachment {
   @@index([postId, position])
   @@index([uploaderId, postId, createdAt])
   @@map("community_post_attachments")
+}
+
+/// Jajak pendapat yang menempel pada satu postingan.
+///
+/// Bukan jenis postingan tersendiri: polling tetap punya badan tulisan,
+/// balasan, dan reaksi seperti postingan lain. Yang ditambahkan hanya
+/// pertanyaannya, dan pertanyaannya adalah judul postingan itu sendiri.
+model CommunityPoll {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @unique @map("post_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  post    CommunityPost         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  options CommunityPollOption[]
+  votes   CommunityPollVote[]
+
+  @@map("community_polls")
+}
+
+model CommunityPollOption {
+  id       String @id @default(uuid()) @db.Uuid
+  pollId   String @map("poll_id") @db.Uuid
+  label    String
+  position Int    @default(0)
+
+  poll  CommunityPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes CommunityPollVote[]
+
+  @@index([pollId, position])
+  @@map("community_poll_options")
+}
+
+/// Satu suara.
+///
+/// `pollId` disimpan ulang di sini walau sudah dapat ditelusuri lewat
+/// `optionId`. Itulah yang membuat "satu suara per orang per polling" dapat
+/// ditegakkan basis data lewat UNIQUE, bukan dijaga kode aplikasi yang akan
+/// kalah oleh dua permintaan yang tiba bersamaan.
+model CommunityPollVote {
+  id        String   @id @default(uuid()) @db.Uuid
+  pollId    String   @map("poll_id") @db.Uuid
+  optionId  String   @map("option_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  poll   CommunityPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option CommunityPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User                @relation("CommunityPollVoter", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+  @@index([optionId])
+  @@map("community_poll_votes")
 }
 
 model CommunityComment {

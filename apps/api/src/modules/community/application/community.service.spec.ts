@@ -354,3 +354,72 @@ describe('CommunityService hierarchy invariants', () => {
     expect(groupBy).not.toHaveBeenCalled();
   });
 });
+
+describe('jajak pendapat', () => {
+  function layanan(prismaExtra: Record<string, unknown> = {}) {
+    const prisma = {
+      communityChannel: { findFirst: jest.fn().mockResolvedValue({ id: 'sub-2', type: 'POSTS', isReadOnly: false }) },
+      communityPost: {
+        create: jest.fn().mockResolvedValue({ id: 'post-9' }),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          id: 'post-9', title: null, body: 'Pilih satu.', author: { id: 'pelajar-1' },
+          comments: [], reactions: [], checklistCompletions: [], attachments: [], poll: null,
+          channel: { id: 'sub-2', type: 'POSTS', group: { slug: 'g', name: 'G' } },
+        }),
+      },
+      communityPoll: { create: jest.fn(), findUniqueOrThrow: jest.fn() },
+      communityPollOption: { findFirst: jest.fn() },
+      communityPollVote: { upsert: jest.fn() },
+      $transaction: (jalankan: (tx: unknown) => unknown) => jalankan(prisma),
+      ...prismaExtra,
+    };
+    return { prisma, service: new CommunityService(prisma as never, {} as never, { bind: jest.fn() } as never) };
+  }
+
+  test('pilihan kosong dan kembar dibuang sebelum jumlahnya diperiksa', async () => {
+    // ["Ya", "Ya", ""] adalah satu pilihan sungguhan, bukan tiga. Menerimanya
+    // berarti menerbitkan polling yang tidak dapat dijawab.
+    const { service, prisma } = layanan();
+    await expect(service.createPost('pelajar-1', 'sub-2', 'Pilih satu.', false, undefined, [], ['Ya', 'Ya', '  ']))
+      .rejects.toMatchObject({ status: 422 });
+    expect(prisma.communityPoll.create).not.toHaveBeenCalled();
+  });
+
+  test('pilihan yang sah dibuat berurutan bersama postingannya', async () => {
+    const { service, prisma } = layanan();
+    await service.createPost('pelajar-1', 'sub-2', 'Pilih satu.', false, undefined, [], ['Ya', 'Tidak']);
+    expect(prisma.communityPoll.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        postId: 'post-9',
+        options: { create: [{ label: 'Ya', position: 0 }, { label: 'Tidak', position: 1 }] },
+      }),
+    }));
+  });
+
+  test('postingan tanpa polling tidak membuat baris polling', async () => {
+    const { service, prisma } = layanan();
+    await service.createPost('pelajar-1', 'sub-2', 'Tulisan biasa.', false);
+    expect(prisma.communityPoll.create).not.toHaveBeenCalled();
+  });
+
+  test('memilih ulang memindahkan suara, bukan menambah yang kedua', async () => {
+    const upsert = jest.fn();
+    const { service } = layanan({
+      communityPollOption: { findFirst: jest.fn().mockResolvedValue({ id: 'opt-2', pollId: 'poll-1' }) },
+      communityPollVote: { upsert },
+      communityPoll: { findUniqueOrThrow: jest.fn().mockResolvedValue({ id: 'poll-1', options: [], votes: [] }), create: jest.fn() },
+    });
+
+    await service.votePoll('pelajar-1', 'post-9', 'opt-2');
+
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { pollId_userId: { pollId: 'poll-1', userId: 'pelajar-1' } },
+      update: { optionId: 'opt-2' },
+    }));
+  });
+
+  test('pilihan milik polling lain ditolak 404', async () => {
+    const { service } = layanan({ communityPollOption: { findFirst: jest.fn().mockResolvedValue(null) } });
+    await expect(service.votePoll('pelajar-1', 'post-9', 'opt-asing')).rejects.toMatchObject({ status: 404 });
+  });
+});

@@ -7738,6 +7738,89 @@
         ]
       }
     },
+    "/api/v1/community/posts/{postId}/poll/vote": {
+      "post": {
+        "operationId": "CommunityController_votePoll",
+        "parameters": [
+          {
+            "name": "postId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunityPollVoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommunityPollDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Memberi atau memindahkan suara pada jajak pendapat",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/v1/community/subchannels/{subchannelId}/posts": {
       "post": {
         "operationId": "CommunityController_createPost",
@@ -18243,6 +18326,57 @@
           "createdAt"
         ]
       },
+      "CommunityPollOptionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "position": {
+            "type": "number"
+          },
+          "voteCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "position",
+          "voteCount"
+        ]
+      },
+      "CommunityPollDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunityPollOptionDto"
+            }
+          },
+          "totalVotes": {
+            "type": "number"
+          },
+          "myOptionId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pilihan yang disuarakan pembaca ini, bila sudah memilih."
+          }
+        },
+        "required": [
+          "id",
+          "options",
+          "totalVotes",
+          "myOptionId"
+        ]
+      },
       "CommunityPostDto": {
         "type": "object",
         "properties": {
@@ -18326,6 +18460,14 @@
             "items": {
               "$ref": "#/components/schemas/CommunityAttachmentDto"
             }
+          },
+          "poll": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunityPollDto"
+              }
+            ]
           }
         },
         "required": [
@@ -18347,7 +18489,8 @@
           "channel",
           "comments",
           "attachment",
-          "attachments"
+          "attachments",
+          "poll"
         ]
       },
       "CommunityChecklistItemDto": {
@@ -18434,6 +18577,14 @@
               "$ref": "#/components/schemas/CommunityAttachmentDto"
             }
           },
+          "poll": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunityPollDto"
+              }
+            ]
+          },
           "previousPostId": {
             "type": "string",
             "nullable": true
@@ -18469,10 +18620,22 @@
           "comments",
           "attachment",
           "attachments",
+          "poll",
           "previousPostId",
           "nextPostId",
           "position",
           "total"
+        ]
+      },
+      "CommunityPollVoteDto": {
+        "type": "object",
+        "properties": {
+          "optionId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "optionId"
         ]
       },
       "CommunityPostBodyDto": {
@@ -18487,6 +18650,13 @@
           },
           "attachmentIds": {
             "description": "Id unggahan composer yang akan diikat ke postingan ini. Urutannya menjadi urutan tampilnya.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pollOptions": {
+            "description": "Pilihan jajak pendapat, 2 sampai 6. Kosongkan bila postingan ini bukan polling.",
             "type": "array",
             "items": {
               "type": "string"

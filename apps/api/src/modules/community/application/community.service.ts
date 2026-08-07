@@ -10,6 +10,16 @@ const authorSelect = { id: true, fullName: true, avatarUrl: true } as const;
 /** Balasan yang ikut terbawa bersama tulisannya; sisanya diambil terpisah. */
 const PRATINJAU_BALASAN = 6;
 
+type PollRow = {
+  id: string;
+  options: { id: string; label: string; position: number; _count: { votes: number } }[];
+  votes: { optionId: string }[];
+};
+
+/** Pilihan polling: minimal dua, karena satu pilihan bukan pertanyaan. */
+const POLLING_MIN = 2;
+const POLLING_MAKS = 6;
+
 const commentSelect = {
   id: true, body: true, editedAt: true, createdAt: true, author: { select: authorSelect },
 } as const;
@@ -111,6 +121,11 @@ export class CommunityService {
       } },
       author: { select: authorSelect },
       attachments: { orderBy: { position: 'asc' as const }, select: { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true } },
+      poll: { select: {
+        id: true,
+        options: { orderBy: { position: 'asc' as const }, select: { id: true, label: true, position: true, _count: { select: { votes: true } } } },
+        votes: { where: { userId }, select: { optionId: true } },
+      } },
       reactions: { where: { userId }, select: { userId: true } },
       checklistCompletions: { where: { userId }, select: { userId: true } },
       comments: {
@@ -144,12 +159,13 @@ export class CommunityService {
     userId: string,
     canModerate: boolean,
   ) {
-    const { reactions, checklistCompletions, comments, channel, attachments, ...post } = row as T & { channel?: { type?: CommunityChannelType; group?: { slug: string; name: string } }; attachments?: { sizeBytes: bigint }[] };
+    const { reactions, checklistCompletions, comments, channel, attachments, poll, ...post } = row as T & { channel?: { type?: CommunityChannelType; group?: { slug: string; name: string } }; attachments?: { sizeBytes: bigint }[]; poll?: PollRow | null };
     const hakTulisan = this.hakTulisan(row.author.id, userId, canModerate);
     const daftarLampiran = (attachments ?? []).map((item) => ({ ...item, sizeBytes: item.sizeBytes.toString() }));
     return {
       ...post,
       attachments: daftarLampiran,
+      poll: poll ? this.sajikanPoll(poll) : null,
       // Checklist berlampir satu berkas dan antarmukanya membacanya sebagai satu
       // nilai. Dipertahankan supaya halaman checklist tidak perlu tahu bahwa
       // modelnya berubah menjadi jamak.
@@ -265,11 +281,12 @@ export class CommunityService {
    * dan lampiran yang ditolak — milik orang lain, atau sudah dipakai postingan
    * lain — meninggalkan tulisan yang sudah terbaca orang tanpa gambarnya.
    */
-  async createPost(userId: string, channelId: string, body: string, canModerate: boolean, title?: string, attachmentIds: string[] = []) {
+  async createPost(userId: string, channelId: string, body: string, canModerate: boolean, title?: string, attachmentIds: string[] = [], pollOptions?: string[]) {
     const channel = await this.prisma.communityChannel.findFirst({ where: { id: channelId, archivedAt: null, group: { archivedAt: null } } });
     if (!channel) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
     if ((channel.isReadOnly || channel.type === CommunityChannelType.ANNOUNCEMENTS) && !canModerate) throw new AppError('PERMISSION_DENIED', 403, 'Channel ini hanya dapat ditulis oleh Master.');
     if (channel.type === CommunityChannelType.CHECKLIST && !title?.trim()) throw new AppError('VALIDATION_ERROR', 422, 'Judul checklist wajib diisi.');
+    const pilihan = this.pilihanPolling(pollOptions);
     const row = await this.prisma.$transaction(async (tx) => {
       const created = await tx.communityPost.create({
         data: {
@@ -279,9 +296,82 @@ export class CommunityService {
         select: { id: true },
       });
       await this.attachments.bind(tx, created.id, userId, attachmentIds);
+      if (pilihan) {
+        await tx.communityPoll.create({
+          data: { postId: created.id, options: { create: pilihan.map((label, position) => ({ label, position })) } },
+        });
+      }
       return tx.communityPost.findUniqueOrThrow({ where: { id: created.id }, select: this.postSelect(userId) });
     });
     return this.sajikanPost(row, userId, canModerate);
+  }
+
+  /**
+   * Bentuk polling untuk klien.
+   *
+   * Jumlah suara ikut dikirim sebelum orangnya memilih. Menyembunyikannya
+   * sampai seseorang ikut memilih memaksa orang menekan pilihan hanya untuk
+   * dapat melihat hasilnya — dan suara yang lahir dari rasa penasaran bukan
+   * pendapat.
+   */
+  private sajikanPoll(poll: PollRow) {
+    const options = poll.options.map((option) => ({
+      id: option.id, label: option.label, position: option.position, voteCount: option._count.votes,
+    }));
+    return {
+      id: poll.id,
+      options,
+      totalVotes: options.reduce((jumlah, option) => jumlah + option.voteCount, 0),
+      myOptionId: poll.votes[0]?.optionId ?? null,
+    };
+  }
+
+  /**
+   * Memberi atau memindahkan suara.
+   *
+   * `upsert` pada pasangan (polling, pemilih): memilih ulang memindahkan suara
+   * alih-alih menambah yang kedua. UNIQUE di basis data yang menegakkannya,
+   * jadi dua permintaan yang tiba bersamaan pun tidak dapat menghasilkan dua
+   * suara dari orang yang sama.
+   */
+  async votePoll(userId: string, postId: string, optionId: string) {
+    const option = await this.prisma.communityPollOption.findFirst({
+      where: { id: optionId, poll: { post: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } } } },
+      select: { id: true, pollId: true },
+    });
+    if (!option) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Pilihan polling tidak ditemukan.');
+
+    await this.prisma.communityPollVote.upsert({
+      where: { pollId_userId: { pollId: option.pollId, userId } },
+      create: { pollId: option.pollId, optionId: option.id, userId },
+      update: { optionId: option.id },
+    });
+
+    const poll = await this.prisma.communityPoll.findUniqueOrThrow({
+      where: { id: option.pollId },
+      select: {
+        id: true,
+        options: { orderBy: { position: 'asc' }, select: { id: true, label: true, position: true, _count: { select: { votes: true } } } },
+        votes: { where: { userId }, select: { optionId: true } },
+      },
+    });
+    return this.sajikanPoll(poll);
+  }
+
+  /**
+   * Membersihkan pilihan polling, atau menolaknya.
+   *
+   * Pilihan kosong dan kembar dibuang lebih dulu, baru jumlahnya diperiksa:
+   * mengirim ["Ya", "Ya", ""] adalah satu pilihan sungguhan, bukan tiga, dan
+   * menerimanya berarti menerbitkan polling yang tidak dapat dijawab.
+   */
+  private pilihanPolling(options?: string[]) {
+    if (!options || options.length === 0) return undefined;
+    const bersih = [...new Set(options.map((item) => item.trim()).filter(Boolean))];
+    if (bersih.length < POLLING_MIN || bersih.length > POLLING_MAKS) {
+      throw new AppError('VALIDATION_ERROR', 422, `Polling perlu ${POLLING_MIN} sampai ${POLLING_MAKS} pilihan yang berbeda.`);
+    }
+    return bersih;
   }
 
   async addComment(userId: string, postId: string, body: string) {
