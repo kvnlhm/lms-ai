@@ -7,9 +7,9 @@ tersimpan di mana pun kecuali di kepala orang yang baru saja mengerjakannya:
 keadaan produksi hari ini, apa yang sudah ditutup, dan apa yang sengaja
 dibiarkan terbuka beserta alasannya.
 
-Terakhir diperbarui: **7 Agustus 2026**, setelah checklist diringkas menjadi satu
-kartu di feed dan materi video dipindahkan ke penandaan manual, deployment 217
-terverifikasi.
+Terakhir diperbarui: **7 Agustus 2026**, setelah sidebar Pelajar dirapikan dan
+postingan komunitas mendapat lampiran banyak beserta jajak pendapat, deployment
+**221** terverifikasi.
 
 ---
 
@@ -24,7 +24,7 @@ sedang dibangun menuju rilis; ini proyek yang sedang berjalan.
 | Repo | `kvnlhm/lms-ai`, cabang `feat/walking-skeleton-and-master` — **publik** |
 | VPS | Hostinger `31.97.105.104`, 7 GB RAM, sisa disk ±64 G dari 96 G |
 | Orkestrasi | Coolify 4.1.2, aplikasi UUID `e1b4fo52n9tnzjpm5m2i5k8l` |
-| Deploy terakhir | commit `797baf5`, deployment **217**, selesai dan terverifikasi |
+| Deploy terakhir | commit `e9af445`, deployment **221**, selesai dan terverifikasi |
 | Pembayaran | Midtrans **Production** (bukan sandbox) |
 | Email | Resend, domain pengirim `send.aipreneur.co.id` |
 | Pemantauan | UptimeRobot, `HEAD /api/v1/health/ready` tiap 5 menit |
@@ -33,14 +33,16 @@ Snapshot data produksi, dibaca langsung dari basis data pada 7 Agustus 2026
 sesudah deployment 217:
 
 ```
-migrasi terpasang   41
-users                4
-courses             38
-lessons            185
-enrollments        143
-video_assets       195
-community_posts      6   (aktif, belum terhapus)
-registration_orders  6   (PAID 3, FAILED 2, EXPIRED 1)
+migrasi terpasang            44
+users                         4
+courses                      38
+lessons                     185
+enrollments                 143
+video_assets                195
+community_posts               9   (aktif, belum terhapus)
+community_post_attachments    2   (keduanya terikat postingan)
+community_polls               0
+registration_orders           6   (PAID 3, FAILED 2, EXPIRED 1)
 ```
 
 `lesson_materials` masih 0 baris — jadi volume `material-data` yang kosong itu
@@ -74,6 +76,8 @@ terbaru. Alur yang sekarang menjadi acuan:
    bukan sekadar disembunyikan di antarmuka.
 
 Lampiran yang diizinkan: JPEG, PNG, WebP, MP4, WebM, dan PDF, maksimum 100 MB.
+Batas 100 MB itu **khusus checklist** dan sengaja dipertahankan ketika lampiran
+postingan biasa lahir dengan batas 25 MB; lihat §1e.
 Berkas disimpan di volume `community-attachment-data`, bukan di object key yang
 terlihat oleh klien. Endpoint utamanya:
 
@@ -179,6 +183,90 @@ sebelum dan sesudah migrasi.
 Verifikasi deployment 217 berhasil untuk gateway, web, API, worker, Postgres,
 Redis, homepage HTTP 200, readiness DB/Redis, seluruh 41 migrasi, dan tidak ada
 runtime error sejak API start.
+
+## 1d. Sidebar Pelajar diratakan menjadi daftar minimalis
+
+Deployment 218 (`a1c4b3b`) dan 219 (`1f09848`), 7 Agustus. Perubahan tampilan
+saja; tidak ada migrasi.
+
+Nama Channel dulu berupa tombol accordion dengan chevron dan baris
+"3 sub-channel" di bawahnya, dan tiap sub-channel membawa keterangannya sendiri
+sebagai baris kedua. Empat channel sudah memenuhi layar padahal isinya hanya
+sepuluh tautan. Rujukannya tangkapan layar Circle.so dari pemiliknya.
+
+Nama Channel kini menjadi label kelompok seperti pintasan komunitas di sidebar
+Master: seluruh sub-channel langsung terlihat, satu baris, ikon plus nama.
+Penanda halaman aktif memakai latar lembut, bukan bilah biru di tepi kiri.
+Glif teks `#`, `▤`, `!`, `✓` diganti ikon garis dari sistem ikon — glif itu
+diambil dari font berbeda-beda per sistem sehingga tingginya tidak pernah
+sejajar dengan ikon Monitoring di kolom yang sama.
+
+Satu jebakan yang sudah dikunci test dan **jangan dilepas**: `.channelGroup`
+wajib ber-`flex:none`. Sidebar adalah flex column setinggi layar, dan
+`overflow:hidden` menihilkan ukuran minimum otomatis, sehingga label kelompok
+mengerut sampai tinggi 0 begitu daftarnya melebihi layar — labelnya hilang sama
+sekali, bukan terpotong.
+
+Halaman chat dan checklist tidak tersentuh.
+
+## 1e. Postingan komunitas menerima lampiran banyak dan jajak pendapat
+
+Deployment 221 (`e9af445`), 7 Agustus. Tiga migrasi:
+`20260807140000_community_post_multiple_attachments`,
+`20260807150000_community_post_title`, `20260807160000_community_polls`.
+
+Diminta pemiliknya dengan rujukan composer Circle.so. Cakupannya diputuskan
+lewat empat pertanyaan: gambar, video, PDF, dan polling; Master **dan** Pelajar
+boleh melampirkan; maksimum 5 berkas 25 MB per postingan; composer berbentuk
+modal dengan judul opsional.
+
+Yang berubah pada modelnya:
+
+- `CommunityPostAttachment` dulu terkunci satu lampiran per postingan lewat
+  UNIQUE pada `post_id`, dan hanya untuk channel CHECKLIST. Sekarang `post_id`
+  **boleh kosong**: composer mengunggah sebelum postingannya ada. Menerbitkan
+  dulu lalu mengunggah berarti setiap pembaca melihat tulisan tanpa gambarnya
+  selama unggahan berjalan, dan tulisan itu tinggal selamanya bila unggahannya
+  gagal.
+- `uploader_id` diisi mundur dari penulis postingannya; dipakai memeriksa
+  pengikatan dan menyapu unggahan tergantung.
+- `position` menyimpan urutan pilihan penulisnya. Tanpa itu urutan gambar
+  mengikuti `created_at`, yang berubah sendiri setiap kali unggahan paralel
+  selesai dengan kecepatan berbeda.
+- `community_posts.checklist_title` di-RENAME menjadi `title`. Composer punya
+  kolom judul untuk semua postingan, sedangkan `createPost` dulu membuang judul
+  itu diam-diam untuk channel non-checklist. RENAME, bukan tambah-salin-buang,
+  supaya tidak ada jendela waktu ketika dua kolom bisa berbeda isi. Aturannya
+  tidak berubah: judul tetap wajib di CHECKLIST, opsional di luar itu.
+
+Pengikatan lampiran berada **di dalam transaksi** pembuatan postingan. Lampiran
+milik orang lain, atau yang sudah dipakai postingan lain, ditolak 422 alih-alih
+dilewati diam-diam.
+
+Unggahan yang tidak pernah diterbitkan disapu `StaleUploadSweeper` lewat port
+pemulih yang sudah ada. Lariknya dipindah ke `StorageModule`: token yang sama
+disediakan dua modul **tidak bergabung** — yang belakangan menimpa yang duluan,
+dan penyapu akan kehilangan salah satu pemulihnya tanpa satu pun galat.
+
+Batasnya sengaja dipisah dua. Checklist tetap 100 MB
+(`COMMUNITY_ATTACHMENT_MAX_UPLOAD_BYTES`), dikurasi Master. Postingan biasa
+25 MB (`COMMUNITY_ATTACHMENT_MAX_DRAFT_UPLOAD_BYTES`) dan lima berkas
+(`COMMUNITY_ATTACHMENT_MAX_PER_POST`), karena di sana Pelajar ikut mengunggah ke
+disk VPS yang juga menampung basis data beserta cadangannya.
+
+Jajak pendapat menempel pada postingan biasa, bukan jenis postingan tersendiri.
+`community_poll_votes.poll_id` sengaja menyimpan ulang apa yang dapat ditelusuri
+lewat `option_id`; itulah yang membuat "satu suara per orang per polling"
+ditegakkan basis data lewat UNIQUE, bukan dijaga kode aplikasi yang akan kalah
+oleh dua permintaan yang tiba bersamaan. Memilih ulang memindahkan suara lewat
+`upsert`. Hasilnya terlihat sejak awal, sebelum orangnya memilih — menyembunyikan
+hasil memaksa orang menekan pilihan hanya untuk dapat melihatnya.
+
+**Satu pilihan per orang.** Polling banyak-jawaban tidak dibuat; menambahkannya
+berarti kolom `allowMultiple` dan penggantian UNIQUE-nya.
+
+Halaman chat dan checklist tidak tersentuh — keduanya punya composer sendiri
+yang memang bukan modal.
 
 ---
 
@@ -366,6 +454,15 @@ rujukan dari sesi lama tetap dapat ditemukan.
     deployment 215 dan 216. Detail di §1b.
 11. **Materi video dipindahkan ke penandaan manual** — `797baf5`, deployment 217,
     migrasi `20260807020000_video_lessons_manual_completion`. Detail di §1c.
+12. **Sidebar Pelajar diratakan** — `a1c4b3b`, `4e39611`, `1f09848`, deployment
+    218 dan 219. Detail di §1d.
+13. **Lampiran banyak dan jajak pendapat pada postingan** — `ef7375f`, `58eee5b`,
+    `ee71c72`, `e9af445`, deployment 221. Detail di §1e.
+14. **`community-attachment-data` ternyata tidak hilang.** Manifest 6 Agustus
+    mencatatnya `volume_dicari_tapi_hilang` semata karena saat itu belum ada satu
+    pun lampiran, sehingga Docker belum benar-benar membuat volumenya. Checkpoint
+    7 Agustus 05:25 mencatat `volume_dicari_tapi_hilang: tidak ada` dan memuat
+    `community-attachment-data.tar.gz`. Jangan diangkat lagi sebagai temuan.
 
 Tiga koreksi yang perlu diingat supaya tidak diulang sebagai "temuan":
 
@@ -375,6 +472,11 @@ Tiga koreksi yang perlu diingat supaya tidak diulang sebagai "temuan":
 - **Cadangan bukan tidak pernah dipulihkan.** Drill 1 Agustus sudah membuktikan
   databasenya pulih dan jumlah barisnya cocok. Yang memang belum, dan baru
   ditutup 5 Agustus, adalah volume unggahan dan pemeriksaan isi.
+- **`LMS_APP_UUID` tidak hilang dari konfigurasi cadangan.** Ia memang tidak ada
+  di `/etc/lms-backup.env`, tetapi diset sebagai variabel **crontab** berikut
+  `LMS_ALERT_TO`. Menjalankan `lms-backup` dengan hanya me-`source` env file akan
+  gagal dengan "LMS_APP_UUID belum diset" — itu kekurangan shell yang memanggil,
+  bukan cacat konfigurasi. Jangan "memperbaiki"-nya.
 - **Aturan `VIDEO_PERCENTAGE` tidak dicabut.** Sesudah migrasi 7 Agustus tidak ada
   lagi pelajaran yang memakainya, tetapi aturan, penegakannya di server, dan
   opsinya di editor semuanya masih ada dan memang disengaja. Nol pemakai bukan
@@ -456,16 +558,30 @@ diputuskan.
   terakhir `20260806160000_community_checklist_content` dan tabel penting
   (`users 4`, `enrollments 143`, `lesson_progress 51`, `registration_orders 6`,
   `video_assets 195`, `forum_topics 2`).
-- **`community-attachment-data` tercatat `volume_dicari_tapi_hilang`** di manifest
-  checkpoint 6 Agustus 23:50. Inilah pemeriksaan yang dulu diminta pada butir ini,
-  dan hasilnya bukan yang diharapkan. Belum ditelusuri — jangan dianggap sudah
-  beres hanya karena butirnya pernah disebut. Jangan pula menganggap ketiadaan
-  `video-data` sebagai kegagalan; itu pengecualian yang disengaja dan sudah
-  dijelaskan di `docs/operations/BACKUP_RESTORE.md`.
-- Manifest checkpoint yang sama mencatat `migration_terakhir`
+- Ketiadaan `video-data` di arsip **bukan** kegagalan; itu pengecualian yang
+  disengaja dan sudah dijelaskan di `docs/operations/BACKUP_RESTORE.md`.
+- Cron cadangan 6 Agustus 18:30 **gagal** dengan `no space left on device` saat
+  mengarsipkan `video-data`; checkpoint 6 Agustus 23:50 adalah hasil jalan manual.
+  Sesudah pengecualian volume video berlaku, jalan manual 7 Agustus 05:25 selesai
+  dalam 30 detik dan hanya 24 MB. Periksa `/var/backups/lms-ai/cron.log` bila
+  ragu apakah cron malam berhasil — status "checkpoint terbaru ada" saja tidak
+  membuktikan cron-nya sehat.
+- Manifest checkpoint 6 Agustus mencatat `migration_terakhir`
   `20260806160000_community_checklist_content`, padahal produksi saat itu sudah
   memasang `20260806173000_community_checklist_attachments`. Selisih ini belum
-  dijelaskan dan layak diperiksa bersama butir di atas.
+  dijelaskan. Manifest 7 Agustus mencatat `20260807020000_...` dan cocok dengan
+  produksi saat itu, jadi selisihnya tidak berulang.
+- **Deployment 220 gagal, 221 berhasil dengan commit yang sama.** Build 220 sudah
+  sampai `Generating static pages (9/9)` lalu Coolify melapor
+  `No such container` untuk container helper build-nya sendiri. Tidak ada jejak
+  OOM di kernel, disk 57 GB kosong, dan perekaman resource selama build 221
+  menunjukkan memori bebas tidak pernah turun di bawah 4,8 GB dari 7 GB. Kegagalan
+  transien Coolify, bukan kode maupun kapasitas. Baru sekali terjadi — kejar
+  sebagai masalah nyata hanya bila berulang.
+- **Volume lampiran mulai tumbuh.** Pelajar kini dapat menaruh berkas di disk
+  VPS. Per 7 Agustus `community-attachment-data` berisi 5,8 MB dari dua lampiran.
+  Penahannya: 25 MB × 5 berkas per postingan, dan penyapu yang membuang unggahan
+  yang tidak jadi diterbitkan. Layak dipantau bersama disk.
 - Keadaan aturan penyelesaian pelajaran video sebelum migrasi 7 Agustus disimpan
   di `/var/backups/lms-ai/pre-migration/`, di luar repo. Lihat §1c.
 
@@ -495,14 +611,16 @@ rtk git log -8 --oneline --decorate
 rtk sed -n '1,200p' docs/PROJECT_STATUS.md   # §1 sampai §3; sisanya sesuai kebutuhan
 ```
 
-Berkasnya kini ±525 baris. Bagian yang wajib dibaca lebih dulu adalah §1 sampai
+Berkasnya kini ±670 baris. Bagian yang wajib dibaca lebih dulu adalah §1 sampai
 §3 — keadaan hari ini, cara bekerja di mesin ini, dan aturan yang tidak boleh
 dilanggar. §4 dan §5 dibaca ketika hendak menyentuh area yang bersangkutan.
 
 Lalu baca `docs/DOCUMENTATION_INDEX.md`, `docs/PRD.md`, ADR/domain yang relevan,
 dan `docs/testing/DEFINITION_OF_DONE.md`. Untuk perubahan Community Checklist,
 mulai dari ADR-031 dan cek kontrak API, migrasi, volume Docker, serta backup
-scope secara bersamaan.
+scope secara bersamaan. Untuk lampiran postingan dan polling, mulai dari §1e lalu
+`community-attachment.service.ts` — batas ukuran, penyapuan, dan pengikatan saat
+publish semuanya di sana.
 
 Sebelum deploy:
 
@@ -524,6 +642,10 @@ Sebelum deploy:
   direkonstruksi, simpan snapshot terarah di `/var/backups/lms-ai/pre-migration/`
   sebelum deploy — restore seluruh basis data terlalu mahal untuk membatalkan satu
   kolom;
+- untuk deploy yang membawa migrasi, ambil checkpoint segar lebih dulu:
+  `. /etc/lms-backup.env; LMS_APP_UUID=e1b4fo52n9tnzjpm5m2i5k8l lms-backup`.
+  Checkpoint harian bisa tertinggal beberapa deployment, dan yang basi tidak
+  berguna untuk membatalkan migrasi hari ini;
 - deploy lewat Coolify, lalu jalankan `scripts/verify-deploy.sh`;
 - periksa disk VPS dan status deployment queue; jangan mengulang deploy bila
   queue sebelumnya masih berjalan;
