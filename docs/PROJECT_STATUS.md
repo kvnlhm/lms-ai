@@ -77,7 +77,7 @@ terbaru. Alur yang sekarang menjadi acuan:
 
 Lampiran yang diizinkan: JPEG, PNG, WebP, MP4, WebM, dan PDF, maksimum 100 MB.
 Batas 100 MB itu **khusus checklist** dan sengaja dipertahankan ketika lampiran
-postingan biasa lahir dengan batas 25 MB; lihat §1e.
+postingan biasa lahir dengan batas 10 MB; lihat §1e.
 Berkas disimpan di volume `community-attachment-data`, bukan di object key yang
 terlihat oleh klien. Endpoint utamanya:
 
@@ -217,7 +217,7 @@ Deployment 221 (`e9af445`), 7 Agustus. Tiga migrasi:
 
 Diminta pemiliknya dengan rujukan composer Circle.so. Cakupannya diputuskan
 lewat empat pertanyaan: gambar, video, PDF, dan polling; Master **dan** Pelajar
-boleh melampirkan; maksimum 5 berkas 25 MB per postingan; composer berbentuk
+boleh melampirkan; maksimum 10 berkas 10 MB per postingan; composer berbentuk
 modal dengan judul opsional.
 
 Yang berubah pada modelnya:
@@ -250,7 +250,7 @@ dan penyapu akan kehilangan salah satu pemulihnya tanpa satu pun galat.
 
 Batasnya sengaja dipisah dua. Checklist tetap 100 MB
 (`COMMUNITY_ATTACHMENT_MAX_UPLOAD_BYTES`), dikurasi Master. Postingan biasa
-25 MB (`COMMUNITY_ATTACHMENT_MAX_DRAFT_UPLOAD_BYTES`) dan lima berkas
+10 MB (`COMMUNITY_ATTACHMENT_MAX_DRAFT_UPLOAD_BYTES`) dan sepuluh berkas
 (`COMMUNITY_ATTACHMENT_MAX_PER_POST`), karena di sana Pelajar ikut mengunggah ke
 disk VPS yang juga menampung basis data beserta cadangannya.
 
@@ -580,7 +580,7 @@ diputuskan.
   sebagai masalah nyata hanya bila berulang.
 - **Volume lampiran mulai tumbuh.** Pelajar kini dapat menaruh berkas di disk
   VPS. Per 7 Agustus `community-attachment-data` berisi 5,8 MB dari dua lampiran.
-  Penahannya: 25 MB × 5 berkas per postingan, dan penyapu yang membuang unggahan
+  Penahannya: 10 MB × 10 berkas per postingan, dan penyapu yang membuang unggahan
   yang tidak jadi diterbitkan. Layak dipantau bersama disk.
 - Keadaan aturan penyelesaian pelajaran video sebelum migrasi 7 Agustus disimpan
   di `/var/backups/lms-ai/pre-migration/`, di luar repo. Lihat §1c.

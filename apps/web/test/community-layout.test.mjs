@@ -194,6 +194,8 @@ test('editor dapat menambahkan beberapa lampiran sekaligus', () => {
   assert.match(editForm, /type="file"[\s\S]*multiple/);
   assert.match(editForm, /Array\.from\(event\.target\.files/);
   assert.match(editForm, /for \(const file of files/);
+  assert.match(editForm, /const MAKS_LAMPIRAN = 10;/);
+  assert.match(editForm, /const MAKS_BYTE = 10_485_760;/);
 });
 
 test('isi yang lebih lama punya jalan menuju ke sana, dan penyegaran tidak membuangnya', () => {
@@ -412,8 +414,8 @@ test('gambar dan video berada dalam satu deret, urut sesuai position', () => {
 test('batas lampiran di composer sejalan dengan batas server', () => {
   // Dua angka di dua tempat. Kalau melenceng, penulisnya baru tahu setelah
   // berkasnya selesai terunggah dan ditolak server.
-  assert.match(composer, /const MAKS_LAMPIRAN = 5;/);
-  assert.match(composer, /const MAKS_BYTE = 26_214_400;/);
+  assert.match(composer, /const MAKS_LAMPIRAN = 10;/);
+  assert.match(composer, /const MAKS_BYTE = 10_485_760;/);
 });
 
 test('hasil polling terlihat sebelum orangnya memilih', () => {

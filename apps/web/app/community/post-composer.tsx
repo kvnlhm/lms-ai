@@ -8,9 +8,9 @@ import { browserClient, ensureSuccess } from '../lib/browser-api';
 import { ukuranTerbaca } from './post-attachments';
 
 /** Sejalan dengan COMMUNITY_ATTACHMENT_MAX_PER_POST di API. */
-const MAKS_LAMPIRAN = 5;
+const MAKS_LAMPIRAN = 10;
 /** Sejalan dengan COMMUNITY_ATTACHMENT_MAX_DRAFT_UPLOAD_BYTES di API. */
-const MAKS_BYTE = 26_214_400;
+const MAKS_BYTE = 10_485_760;
 /** Sejalan dengan POLLING_MIN dan POLLING_MAKS di API. */
 const POLLING_MIN = 2;
 const POLLING_MAKS = 6;

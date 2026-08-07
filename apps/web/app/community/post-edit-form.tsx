@@ -8,8 +8,8 @@ import { browserClient, ensureSuccess } from '../lib/browser-api';
 import { ukuranTerbaca, type LampiranPost } from './post-attachments';
 
 const TERIMA = 'image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf';
-const MAKS_LAMPIRAN = 5;
-const MAKS_BYTE = 26_214_400;
+const MAKS_LAMPIRAN = 10;
+const MAKS_BYTE = 10_485_760;
 
 export function PostEditForm({ title: initialTitle, body: initialBody, attachments, onSave, onClose }: {
   title: string; body: string; attachments: LampiranPost[];

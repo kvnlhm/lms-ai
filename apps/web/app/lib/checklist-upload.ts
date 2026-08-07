@@ -11,7 +11,7 @@ export type LampiranTerunggah = {
  * Mengunggah satu berkas sebagai badan permintaan mentah.
  *
  * `XMLHttpRequest`, bukan `fetch`: hanya XHR yang melaporkan kemajuan unggahan,
- * dan tanpa itu berkas 25 MB tampak seperti antarmuka yang menggantung.
+ * dan tanpa itu berkas 10 MB tampak seperti antarmuka yang menggantung.
  */
 function kirim<T>(path: string, file: File, onProgress: (percent: number) => void): Promise<T | undefined> {
   return new Promise((resolve, reject) => {
