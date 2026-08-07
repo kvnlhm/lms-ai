@@ -177,6 +177,12 @@ test('gambar lampiran dibuka sebagai zoom satu layar dengan tombol tutup, bukan 
   assert.match(css, /\.postLightboxBackdrop\{/);
 });
 
+test('hapus postingan dan balasan menerima respons 204 tanpa body', () => {
+  assert.match(channel, /ensureSuccess\(await browserClient\(\)\.DELETE\('\/api\/v1\/community\/posts\/\{postId\}'/);
+  assert.match(channel, /ensureSuccess\(await browserClient\(\)\.DELETE\('\/api\/v1\/community\/comments\/\{commentId\}'/);
+  assert.doesNotMatch(channel, /unwrap\(await browserClient\(\)\.DELETE\('\/api\/v1\/community\/(posts|comments)/);
+});
+
 test('isi yang lebih lama punya jalan menuju ke sana, dan penyegaran tidak membuangnya', () => {
   // Tanpa penggabungan, penyegaran lima detik akan menghapus pesan lama yang
   // baru saja ditarik pengguna — tombolnya ada, tetapi hasilnya lenyap.

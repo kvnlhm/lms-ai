@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useNotifier } from '../components/notifier';
-import { browserClient, unwrap, unwrapList } from '../lib/browser-api';
+import { browserClient, ensureSuccess, unwrap, unwrapList } from '../lib/browser-api';
 import { PostComposer } from './post-composer';
 import { PostAttachments, type LampiranPost } from './post-attachments';
 import { PostPoll, type Poll } from './post-poll';
@@ -314,7 +314,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
       );
       if (!lanjut) return;
       try {
-        unwrap(await browserClient().DELETE('/api/v1/community/posts/{postId}', { params: { path: { postId: post.id } } }));
+        ensureSuccess(await browserClient().DELETE('/api/v1/community/posts/{postId}', { params: { path: { postId: post.id } } }));
         setPosts((current) => current.filter((item) => item.id !== post.id));
         setTersemat((current) => current.filter((item) => item.id !== post.id));
         setTotal((current) => Math.max(0, current - 1));
@@ -362,7 +362,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
       );
       if (!lanjut) return;
       try {
-        unwrap(await browserClient().DELETE('/api/v1/community/comments/{commentId}', { params: { path: { commentId: comment.id } } }));
+        ensureSuccess(await browserClient().DELETE('/api/v1/community/comments/{commentId}', { params: { path: { commentId: comment.id } } }));
         const tanpaYangDihapus = (daftar: CommunityComment[]) => daftar.filter((item) => item.id !== comment.id);
         setPosts((current) => current.map((post) => (
           post.comments.some((item) => item.id === comment.id) || komentarPenuh[post.id]?.items.some((item) => item.id === comment.id)
