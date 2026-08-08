@@ -3,11 +3,16 @@
 import { useRef, useState } from 'react';
 import { FileText, ImageIcon, Trash, Video } from '../components/icons';
 import { Modal } from '../components/modal';
-import { uploadDraftAttachment, type LampiranTerunggah } from '../lib/checklist-upload';
+import { uploadDraftAttachment, uploadDraftVideo, type LampiranTerunggah } from '../lib/checklist-upload';
 import { browserClient, ensureSuccess } from '../lib/browser-api';
 import { ukuranTerbaca, type LampiranPost } from './post-attachments';
 
-const TERIMA = 'image/jpeg,image/png,image/webp,video/mp4,video/webm,application/pdf';
+/** Sama persis dengan composer; keduanya menyunting isi yang sama. */
+const TERIMA = {
+  gambar: 'image/jpeg,image/png,image/webp',
+  video: 'video/mp4,video/webm',
+  dokumen: 'application/pdf',
+} as const;
 const MAKS_LAMPIRAN = 10;
 const MAKS_BYTE = 10_485_760;
 
@@ -22,12 +27,24 @@ export function PostEditForm({ title: initialTitle, body: initialBody, attachmen
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const input = useRef<HTMLInputElement>(null);
+
+  function pilih(jenis: keyof typeof TERIMA) {
+    // Nilai input dikosongkan supaya memilih berkas yang sama dua kali tetap
+    // memicu `change`; tanpa ini, mencoba ulang setelah gagal tidak berbuat apa apa.
+    if (input.current) { input.current.value = ''; input.current.accept = TERIMA[jenis]; input.current.click(); }
+  }
+
   async function upload(files: File[]) {
     setError(''); setBusy(true);
     for (const file of files.slice(0, MAKS_LAMPIRAN - lampiran.length)) {
       if (file.size > MAKS_BYTE) { setError(`Ukuran maksimal ${ukuranTerbaca(MAKS_BYTE)} per berkas.`); continue; }
       try {
-        const hasil = await uploadDraftAttachment(file, () => {});
+        // Jalur yang sama dengan composer. Tanpa cabang ini, video yang
+        // ditambahkan lewat sunting akan tersimpan sebagai berkas lokal dan
+        // melewati penyedia sepenuhnya — dua jalur unggah yang menyimpang.
+        const hasil = file.type.startsWith('video/')
+          ? await uploadDraftVideo(file, () => {})
+          : await uploadDraftAttachment(file, () => {});
         setLampiran((items) => [...items, hasil]);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Lampiran gagal diunggah.');
@@ -55,8 +72,17 @@ export function PostEditForm({ title: initialTitle, body: initialBody, attachmen
         <span className="composerAttachmentName">{item.originalName}</span><small>{ukuranTerbaca(item.sizeBytes)}</small><button type="button" aria-label={`Buang ${item.originalName}`} onClick={() => void remove(item.id)}><Trash size={15} /></button>
       </li>)}</ul> : null}
       {error ? <p className="composerError" role="alert">{error}</p> : null}
-      <input ref={input} className="srOnly" type="file" multiple accept={TERIMA} onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) void upload(files); event.currentTarget.value = ''; }} />
-      <div className="composerToolbar"><button type="button" disabled={busy || lampiran.length >= MAKS_LAMPIRAN} onClick={() => input.current?.click()}><ImageIcon size={18} /><span className="srOnly">Tambah lampiran</span></button><span className="composerCount">{lampiran.length}/{MAKS_LAMPIRAN} berkas · {body.length}/5000</span><button className="btn" type="button" disabled={busy || !body.trim()} onClick={() => void save()}>Simpan perubahan</button></div>
+      <input ref={input} className="srOnly" type="file" multiple accept={TERIMA.gambar} onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) void upload(files); event.currentTarget.value = ''; }} />
+      <div className="composerToolbar">
+        {/* Tiga tombol yang sama dengan composer. Jajak pendapat sengaja tidak
+            ada: menyunting postingan tidak mengubah jajak pendapatnya, dan
+            tombol yang tidak berbuat apa-apa lebih buruk daripada tidak ada. */}
+        <button type="button" disabled={busy || lampiran.length >= MAKS_LAMPIRAN} onClick={() => pilih('gambar')}><ImageIcon size={18} /><span className="srOnly">Tambah gambar</span></button>
+        <button type="button" disabled={busy || lampiran.length >= MAKS_LAMPIRAN} onClick={() => pilih('video')}><Video size={18} /><span className="srOnly">Tambah video</span></button>
+        <button type="button" disabled={busy || lampiran.length >= MAKS_LAMPIRAN} onClick={() => pilih('dokumen')}><FileText size={18} /><span className="srOnly">Tambah dokumen PDF</span></button>
+        <span className="composerCount">{lampiran.length}/{MAKS_LAMPIRAN} berkas · {body.length}/5000</span>
+        <button className="btn" type="button" disabled={busy || !body.trim()} onClick={() => void save()}>Simpan perubahan</button>
+      </div>
     </div>
   </Modal>;
 }
