@@ -2645,7 +2645,7 @@ export interface components {
     schemas: {
         ApiErrorBodyDto: {
             /** @enum {string} */
-            code: "AUTHENTICATION_REQUIRED" | "INVALID_CREDENTIALS" | "ACCOUNT_INACTIVE" | "ACCOUNT_SUSPENDED" | "MFA_REQUIRED" | "TOKEN_EXPIRED" | "PERMISSION_DENIED" | "RESOURCE_NOT_FOUND" | "VALIDATION_ERROR" | "EMAIL_ALREADY_USED" | "ENROLLMENT_ALREADY_EXISTS" | "ENROLLMENT_INACTIVE" | "COURSE_NOT_PUBLISHED" | "LESSON_LOCKED" | "LESSON_ALREADY_COMPLETED" | "IDEMPOTENCY_CONFLICT" | "DISCUSSION_LOCKED" | "FILE_NOT_AVAILABLE" | "REPORT_NOT_READY" | "RATE_LIMITED" | "CSRF_TOKEN_INVALID" | "INTERNAL_ERROR";
+            code: "AUTHENTICATION_REQUIRED" | "INVALID_CREDENTIALS" | "ACCOUNT_INACTIVE" | "ACCOUNT_SUSPENDED" | "MFA_REQUIRED" | "TOKEN_EXPIRED" | "PERMISSION_DENIED" | "RESOURCE_NOT_FOUND" | "VALIDATION_ERROR" | "EMAIL_ALREADY_USED" | "ENROLLMENT_ALREADY_EXISTS" | "ENROLLMENT_INACTIVE" | "COURSE_NOT_PUBLISHED" | "LESSON_LOCKED" | "LESSON_ALREADY_COMPLETED" | "MEMBERSHIP_REQUIRED" | "IDEMPOTENCY_CONFLICT" | "DISCUSSION_LOCKED" | "FILE_NOT_AVAILABLE" | "REPORT_NOT_READY" | "RATE_LIMITED" | "CSRF_TOKEN_INVALID" | "INTERNAL_ERROR";
             message: string;
             fields?: {
                 [key: string]: string[];
@@ -3728,6 +3728,8 @@ export interface components {
             estimatedMinutes: number;
             /** @description Benar bila kursus dibuka sebagai pratinjau karena belum terbit. */
             preview: boolean;
+            /** @description Benar bila pembacanya berhak atas isi pelajaran. Salah berarti akun gratis: kurikulumnya terlihat, isinya menuntut keanggotaan berbayar (ADR-032). */
+            entitled: boolean;
         };
         LearnLessonItemDto: {
             /** Format: uuid */
@@ -3742,6 +3744,8 @@ export interface components {
             status: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
             /** Format: date-time */
             completedAt?: string | null;
+            /** @description Benar bila isi pelajaran ini menuntut keanggotaan berbayar yang belum dimiliki. Kurikulumnya tetap terlihat; membukanya dijawab 402 MEMBERSHIP_REQUIRED. */
+            locked: boolean;
         };
         LearnModuleDto: {
             /** Format: uuid */
@@ -4054,6 +4058,8 @@ export interface components {
             isReadOnly: boolean;
             allowReplies: boolean;
             postCount: number;
+            /** @description Benar bila peminta boleh menulis di sini. */
+            canWrite: boolean;
             checklistCompletedCount: number;
             showInSidebar: boolean;
         };

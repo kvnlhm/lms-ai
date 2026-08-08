@@ -33,18 +33,25 @@ export class LearningDeliveryService {
       },
     });
 
-    const progressRows = await this.prisma.lessonProgress.findMany({
-      where: { enrollmentId: access.enrollmentId },
-      select: { lessonId: true, status: true, completedAt: true },
-    });
+    // Akun gratis tidak punya wadah progres, jadi tidak ada yang perlu dibaca.
+    // Dua kueri ini dilewati, bukan dijalankan dengan penyaring yang sudah
+    // pasti tidak menemukan apa pun.
+    const progressRows = access.enrollmentId
+      ? await this.prisma.lessonProgress.findMany({
+          where: { enrollmentId: access.enrollmentId },
+          select: { lessonId: true, status: true, completedAt: true },
+        })
+      : [];
     const statusByLesson = new Map(progressRows.map((row) => [row.lessonId, row]));
     const completed = new Set(
       progressRows.filter((row) => row.status === LessonProgressStatus.COMPLETED).map((row) => row.lessonId),
     );
 
-    const courseProgress = await this.prisma.courseProgress.findUnique({
-      where: { enrollmentId: access.enrollmentId },
-    });
+    const courseProgress = access.enrollmentId
+      ? await this.prisma.courseProgress.findUnique({
+          where: { enrollmentId: access.enrollmentId },
+        })
+      : null;
 
     const ordered = flattenLessons(course.modules);
 
@@ -56,6 +63,7 @@ export class LearningDeliveryService {
         shortDescription: course.shortDescription,
         estimatedMinutes: course.estimatedMinutes,
         preview: access.preview,
+        entitled: access.berhakIsi,
       },
       modules: course.modules.map((module) => ({
         id: module.id,
@@ -71,6 +79,9 @@ export class LearningDeliveryService {
           isRequired: lesson.isRequired,
           status: statusByLesson.get(lesson.id)?.status ?? LessonProgressStatus.NOT_STARTED,
           completedAt: statusByLesson.get(lesson.id)?.completedAt ?? null,
+          // Dihitung di server, bukan disimpulkan klien dari `entitled` dan
+          // sebuah kolom `isPreview` yang tidak pernah dikirim ke sini.
+          locked: !access.berhakIsi && !lesson.isPreview,
         })),
       })),
       progress: {
@@ -99,10 +110,12 @@ export class LearningDeliveryService {
       },
     });
 
-    const progressRows = await this.prisma.lessonProgress.findMany({
-      where: { enrollmentId: access.enrollmentId },
-      select: { lessonId: true, status: true },
-    });
+    const progressRows = access.enrollmentId
+      ? await this.prisma.lessonProgress.findMany({
+          where: { enrollmentId: access.enrollmentId },
+          select: { lessonId: true, status: true },
+        })
+      : [];
     const completed = new Set(
       progressRows.filter((row) => row.status === LessonProgressStatus.COMPLETED).map((row) => row.lessonId),
     );
@@ -123,10 +136,12 @@ export class LearningDeliveryService {
     const { previousLessonId, nextLessonId } = neighbours(ordered, lessonId);
 
     const [courseProgress, bookmarked] = await Promise.all([
-      this.prisma.courseProgress.findUnique({
-        where: { enrollmentId: access.enrollmentId },
-        select: { progressPercent: true },
-      }),
+      access.enrollmentId
+        ? this.prisma.courseProgress.findUnique({
+            where: { enrollmentId: access.enrollmentId },
+            select: { progressPercent: true },
+          })
+        : null,
       this.prisma.userBookmark.count({ where: { userId, lessonId } }),
     ]);
 

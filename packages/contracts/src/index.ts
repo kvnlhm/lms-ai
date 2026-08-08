@@ -22,6 +22,13 @@ export const ERROR_CODES = [
   'COURSE_NOT_PUBLISHED',
   'LESSON_LOCKED',
   'LESSON_ALREADY_COMPLETED',
+  /**
+   * Ditolak karena belum menjadi anggota berbayar, dan dapat diselesaikan
+   * dengan membayar. Dipisahkan dari `PERMISSION_DENIED` justru karena itu:
+   * web memakainya untuk mengarahkan ke halaman bayar, sedangkan penolakan
+   * 403 tidak punya jalan keluar yang dapat ditawarkan (ADR-032).
+   */
+  'MEMBERSHIP_REQUIRED',
   'IDEMPOTENCY_CONFLICT',
   'DISCUSSION_LOCKED',
   'FILE_NOT_AVAILABLE',

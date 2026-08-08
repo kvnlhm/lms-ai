@@ -55,7 +55,7 @@ export class LiveSessionService {
    * berakhir, supaya tautan lama tidak terus beredar setelah kelasnya usai.
    */
   async forLearner(userId: string, courseId: string) {
-    await this.access.assertActiveAccess(userId, courseId);
+    const access = await this.access.assertActiveAccess(userId, courseId);
     const now = new Date();
     const sessions = await this.prisma.liveSession.findMany({
       where: { OR: [{ courseId }, { courseId: null }], cancelledAt: null },
@@ -84,7 +84,10 @@ export class LiveSessionService {
         durationMinutes: session.durationMinutes,
         endsAt,
         status: hasEnded ? ('ENDED' as const) : joinable ? ('LIVE' as const) : ('UPCOMING' as const),
-        joinUrl: hasEnded ? null : session.joinUrl,
+        // Jadwalnya terbuka untuk semua — itu bagian dari yang ditawarkan.
+        // Tautan gabungnya tidak: kelas langsung adalah isi yang dibayar, dan
+        // tautan yang terlihat adalah tautan yang dapat dipakai (ADR-032).
+        joinUrl: hasEnded || !access.berhakIsi ? null : session.joinUrl,
       };
     });
   }

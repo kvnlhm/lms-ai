@@ -171,6 +171,8 @@ model User {
   playbackSessions       VideoPlaybackSession[]
   notificationPreference NotificationPreference?
   registrationOrders     RegistrationOrder[]     @relation("ProvisionedRegistrationUser")
+  manualAccessGrant      ManualAccessGrant?      @relation("ManualAccessGrantUser")
+  manualAccessGrantsGiven ManualAccessGrant[]    @relation("ManualAccessGrantIssuer")
   forumTopics            ForumTopic[]            @relation("ForumTopicAuthor")
   forumReplies           ForumReply[]            @relation("ForumReplyAuthor")
   forumReactions         ForumReaction[]         @relation("ForumReactionUser")
@@ -908,6 +910,30 @@ model RegistrationOrder {
   @@map("registration_orders")
 }
 
+/// Akses berbayar yang diberikan Master di luar Midtrans: pembeli via transfer
+/// bank, staf, dan akun uji.
+///
+/// Tabel tersendiri, bukan `registration_orders` ber-provider MANUAL, karena
+/// pemberian akses bukan penjualan. Menaruhnya di tabel pesanan membuat setiap
+/// laporan pendapatan menghitung barang yang tidak pernah dibeli — dan laporan
+/// itu yang dipakai pemiliknya mengambil keputusan (ADR-032).
+model ManualAccessGrant {
+  userId String @id @map("user_id") @db.Uuid
+  /// Kosong berarti selamanya. Diisi berarti akses berhenti pada tanggal itu,
+  /// mengikuti aturan yang sama seperti `access_ends_at` pada pesanan.
+  grantedUntil DateTime? @map("granted_until") @db.Timestamptz(6)
+  reason       String?
+  grantedBy    String    @map("granted_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user   User @relation("ManualAccessGrantUser", fields: [userId], references: [id], onDelete: Cascade)
+  issuer User @relation("ManualAccessGrantIssuer", fields: [grantedBy], references: [id], onDelete: Restrict)
+
+  @@index([grantedUntil])
+  @@map("manual_access_grants")
+}
+
 model PaymentWebhookEvent {
   id               String    @id @default(uuid()) @db.Uuid
   orderId          String    @map("order_id") @db.Uuid
@@ -966,7 +992,10 @@ model VideoPlaybackSession {
   /// pelajaran lain yang kebetulan memakai video sama.
   lessonId        String         @map("lesson_id") @db.Uuid
   userId          String         @map("user_id") @db.Uuid
-  enrollmentId    String         @map("enrollment_id") @db.Uuid
+  /// Kosong untuk akun gratis yang menonton pelajaran pratinjau: ia tidak
+  /// memiliki enrollment sama sekali (ADR-032). Sesinya tetap dicatat atas nama
+  /// penggunanya, sehingga pembatasan perangkat dan masa berlaku tetap berlaku.
+  enrollmentId    String?        @map("enrollment_id") @db.Uuid
   deviceId        String?        @map("device_id")
   status          PlaybackStatus @default(ACTIVE)
   expiresAt       DateTime       @map("expires_at") @db.Timestamptz(6)
@@ -977,7 +1006,7 @@ model VideoPlaybackSession {
   videoAsset VideoAsset @relation(fields: [videoAssetId], references: [id], onDelete: Restrict)
   lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Restrict)
   user       User       @relation(fields: [userId], references: [id], onDelete: Restrict)
-  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
+  enrollment Enrollment? @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
 
   @@index([userId, status, expiresAt])
   @@index([videoAssetId, status])

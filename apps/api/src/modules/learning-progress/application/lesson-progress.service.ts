@@ -9,7 +9,7 @@ import {
 import { PrismaService, type PrismaTransaction } from '../../../infrastructure/prisma/prisma.service';
 import { OutboxWriter } from '../../../infrastructure/outbox/outbox.writer';
 import { AppError } from '../../../shared/errors/app-error';
-import type { CourseAccess } from '../../enrollment/application/enrollment-access.service';
+import type { CourseAccessWithProgress } from '../../enrollment/application/enrollment-access.service';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
 import { flattenLessons, nextIncomplete } from '../../learning-delivery/application/lesson-navigation';
 import { periksaAturanPenyelesaian } from './completion-rule';
@@ -40,7 +40,19 @@ export class LessonProgressService {
 
   /** Menandai pelajaran sudah dibuka. Aman dipanggil berulang. */
   async open(userId: string, lessonId: string, sessionId?: string): Promise<{ status: LessonProgressStatus }> {
-    const access = await this.access.assertLessonAccess(userId, lessonId);
+    const dibuka = await this.access.assertLessonAccess(userId, lessonId);
+
+    // Akun gratis yang membuka pelajaran pratinjau: tidak ada wadah progres,
+    // jadi tidak ada yang dicatat. Sengaja bukan 402 — halaman pelajaran
+    // memanggil ini sendiri saat dimuat, dan menolaknya akan memunculkan galat
+    // pada pelajaran yang justru memang boleh ia baca.
+    if (!dibuka.enrollmentId || !dibuka.status) {
+      return { status: LessonProgressStatus.NOT_STARTED };
+    }
+    // Disalin ke bentuk yang sudah pasti punya wadah progres: penyempitan tipe
+    // tidak ikut terbawa ke dalam closure transaksi di bawah.
+    const access = { ...dibuka, enrollmentId: dibuka.enrollmentId, status: dibuka.status };
+
     const now = new Date();
     const lesson = await this.prisma.lesson.findUniqueOrThrow({
       where: { id: lessonId },
@@ -120,7 +132,7 @@ export class LessonProgressService {
    * dilewati dengan satu permintaan biasa ke endpoint ini.
    */
   async complete(command: CompleteLessonCommand): Promise<CompleteLessonResult> {
-    const access = await this.access.assertLessonAccess(command.userId, command.lessonId);
+    const access = await this.access.assertProgressAccess(command.userId, command.lessonId);
 
     const lesson = await this.prisma.lesson.findUniqueOrThrow({
       where: { id: command.lessonId },
@@ -155,7 +167,7 @@ export class LessonProgressService {
    */
   async completeWithin(
     tx: PrismaTransaction,
-    access: CourseAccess,
+    access: CourseAccessWithProgress,
     command: CompleteLessonCommand,
   ): Promise<CompleteLessonResult> {
     const now = new Date();

@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Schemas } from '@lms/api-client';
 import { AppShell } from '../../../components/app-shell';
-import { ArrowLeft, ArrowRight } from '../../../components/icons';
+import { ArrowLeft, ArrowRight, Lock } from '../../../components/icons';
 import { PreviewBanner } from '../../../components/preview-banner';
+import { MembershipBanner } from '../../../components/membership-banner';
 import { ApiError, serverClient, unwrap } from '../../../lib/api';
 import { requireUser } from '../../../lib/session';
 import { CompleteButton } from './complete-button';
@@ -94,6 +95,10 @@ export default async function LessonPage({ params }: Props) {
   } catch (error) {
     if (error instanceof ApiError) {
       if (error.isNotFound) notFound();
+      // Akun gratis pada pelajaran yang bukan pratinjau. Diarahkan ke halaman
+      // penawaran, bukan dipantulkan ke daftar kursus: penolakan ini punya jalan
+      // keluar, dan menyembunyikannya sama saja menyembunyikan barangnya.
+      if (error.isMembershipRequired) redirect(`/register?dari=${encodeURIComponent(path)}`);
       // Prasyarat belum terpenuhi atau akses dicabut: kembalikan ke halaman
       // kursus, yang menjelaskan keadaannya, alih-alih halaman kosong.
       if (error.isForbidden) redirect(`/courses/${courseId}`);
@@ -116,6 +121,7 @@ export default async function LessonPage({ params }: Props) {
         <div className="playerMain">
           <div className="playerStage">
             {course.course.preview ? <PreviewBanner /> : null}
+            {course.course.entitled ? null : <MembershipBanner dari={path} />}
             <Link href={`/courses/${courseId}`} className="pill playerBack">
               <ArrowLeft size={13} /> {course.course.title}
             </Link>
@@ -215,10 +221,15 @@ function DrawerLesson({
 }) {
   const done = lesson.status === 'COMPLETED';
 
+  // Pelajaran terkunci tetap sebuah tautan, bukan teks mati. Membukanya
+  // mengantar ke penawaran — dan itu jawaban yang lebih berguna daripada
+  // tombol yang tidak menanggapi sentuhan sama sekali.
   return (
     <Link
       href={`/learn/${courseId}/${lesson.id}`}
-      className={current ? 'drawerLesson drawerLessonCurrent' : 'drawerLesson'}
+      className={
+        `drawerLesson${current ? ' drawerLessonCurrent' : ''}${lesson.locked ? ' drawerLessonLocked' : ''}`
+      }
       aria-current={current ? 'page' : undefined}
     >
       <span
@@ -236,6 +247,12 @@ function DrawerLesson({
           {lesson.isRequired ? ' · Wajib' : ''}
         </span>
       </span>
+      {lesson.locked ? (
+        <span className="drawerLessonLock" title="Perlu akses berbayar">
+          <Lock size={14} />
+          <span className="srOnly">Perlu akses berbayar</span>
+        </span>
+      ) : null}
       {done ? <span className="srOnly">Selesai</span> : null}
     </Link>
   );

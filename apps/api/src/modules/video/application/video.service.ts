@@ -868,6 +868,9 @@ export class VideoService implements LessonVideoCleanupPort, StaleUploadReconcil
         // Konteks pelajaran ikut disimpan; lihat komentar pada kolomnya.
         lessonId,
         userId,
+        // Kosong untuk akun gratis yang menonton pelajaran pratinjau: ia tidak
+        // punya enrollment, dan sesi playback tetap perlu tercatat atas namanya
+        // supaya pembatasan perangkat dan masa berlaku tetap berlaku untuknya.
         enrollmentId: access.enrollmentId,
         deviceId,
         expiresAt,

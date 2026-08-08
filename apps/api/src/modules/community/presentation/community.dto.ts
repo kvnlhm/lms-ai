@@ -86,6 +86,17 @@ export class CommunitySubchannelDto {
   @ApiProperty() allowReplies!: boolean;
   @ApiProperty() postCount!: number;
   /**
+   * Benar bila peminta boleh menulis di komunitas. Akun gratis membaca tetapi
+   * tidak menulis (ADR-032).
+   *
+   * Dijawab server, sebangun dengan `canEdit` dan `canDelete` pada tulisan:
+   * antarmuka tidak menyimpulkan kewenangan sendiri, ia diberi tahu. Pemegang
+   * izin moderasi tetap boleh menulis meski nilainya di sini salah — gerbangnya
+   * di server yang memutuskan, dan ia melewatkan moderator.
+   */
+  @ApiProperty({ description: 'Benar bila peminta boleh menulis di sini.' })
+  canWrite!: boolean;
+  /**
    * Item checklist yang sudah diselesaikan pengguna yang sedang meminta, dipakai
    * feed untuk menampilkan progres tanpa menghitung dari tulisan yang termuat.
    *

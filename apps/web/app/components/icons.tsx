@@ -114,6 +114,13 @@ export const Maximize = (props: IconProps) => (
   </Base>
 );
 
+export const Lock = (props: IconProps) => (
+  <Base {...props}>
+    <rect x="4" y="10" width="16" height="11" rx="2" />
+    <path d="M8 10V7a4 4 0 018 0v3" />
+  </Base>
+);
+
 export const Minimize = (props: IconProps) => (
   <Base {...props}>
     <path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5" />

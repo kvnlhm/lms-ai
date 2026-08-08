@@ -36,6 +36,17 @@ export class ApiError extends Error {
   get isNotFound(): boolean {
     return this.status === 404;
   }
+
+  /**
+   * Ditolak karena belum menjadi anggota berbayar.
+   *
+   * Dibedakan dari `isForbidden` karena penanganannya berbeda: yang ini punya
+   * jalan keluar yang dapat ditawarkan, sehingga halaman mengarahkan ke
+   * pembayaran alih-alih memantulkan orangnya kembali (ADR-032).
+   */
+  get isMembershipRequired(): boolean {
+    return this.code === 'MEMBERSHIP_REQUIRED' || this.status === 402;
+  }
 }
 
 export function createApiClient(baseUrl: string, headers?: Record<string, string>) {

@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CommunityChannelType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AuditService } from '../../../shared/audit/audit.service';
 import { AppError } from '../../../shared/errors/app-error';
 import { CommunityAttachmentService } from './community-attachment.service';
+import { MEMBERSHIP_ACCESS, type MembershipAccessPort } from '../../../shared/access/membership.port';
 
 const authorSelect = { id: true, fullName: true, avatarUrl: true } as const;
 
@@ -35,7 +36,22 @@ export class CommunityService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly attachments: CommunityAttachmentService,
+    @Inject(MEMBERSHIP_ACCESS) private readonly keanggotaan: MembershipAccessPort,
   ) {}
+
+  /**
+   * Menulis di komunitas menuntut keanggotaan berbayar; membaca tidak (ADR-032).
+   *
+   * Moderator dilewatkan tanpa pertanyaan: kewenangannya justru berasal dari
+   * permission, dan Master tidak selalu punya pesanan berbayar atas namanya.
+   */
+  private async assertBolehMenulis(userId: string, canModerate = false): Promise<void> {
+    if (canModerate) return;
+    if (await this.keanggotaan.anggotaBerbayar(userId)) return;
+    throw AppError.membershipRequired(
+      'Komunitas terbuka untuk dibaca, tetapi menulis di dalamnya untuk anggota berbayar.',
+    );
+  }
 
   /**
    * Berapa item checklist yang sudah diselesaikan pengguna ini, per sub-channel.
@@ -74,10 +90,14 @@ export class CommunityService {
       },
     });
     const selesai = await this.checklistCompletedCounts(userId, checklistChannelIds(groups));
+    // Ditanyakan sekali untuk seluruh daftar, bukan sekali per sub-channel:
+    // jawabannya sama untuk semuanya.
+    const bolehMenulis = userId ? await this.keanggotaan.anggotaBerbayar(userId) : false;
     return groups.map((group) => ({
       ...group,
       subchannels: group.subchannels.map(({ _count, ...subchannel }) => ({
         ...subchannel, postCount: _count.posts,
+        canWrite: bolehMenulis,
         checklistCompletedCount: subchannel.type === CommunityChannelType.CHECKLIST ? selesai.get(subchannel.id) ?? 0 : 0,
       })),
     }));
@@ -102,10 +122,14 @@ export class CommunityService {
       },
     });
     const selesai = await this.checklistCompletedCounts(userId, checklistChannelIds(groups));
+    // Ditanyakan sekali untuk seluruh daftar, bukan sekali per sub-channel:
+    // jawabannya sama untuk semuanya.
+    const bolehMenulis = userId ? await this.keanggotaan.anggotaBerbayar(userId) : false;
     return groups.map((group) => ({
       ...group,
       subchannels: group.subchannels.map(({ _count, ...subchannel }) => ({
         ...subchannel, postCount: _count.posts,
+        canWrite: bolehMenulis,
         checklistCompletedCount: subchannel.type === CommunityChannelType.CHECKLIST ? selesai.get(subchannel.id) ?? 0 : 0,
       })),
     }));
@@ -291,6 +315,7 @@ export class CommunityService {
    * lain — meninggalkan tulisan yang sudah terbaca orang tanpa gambarnya.
    */
   async createPost(userId: string, channelId: string, body: string, canModerate: boolean, title?: string, attachmentIds: string[] = [], pollOptions?: string[]) {
+    await this.assertBolehMenulis(userId, canModerate);
     const channel = await this.prisma.communityChannel.findFirst({ where: { id: channelId, archivedAt: null, group: { archivedAt: null } } });
     if (!channel) throw new AppError('RESOURCE_NOT_FOUND', 404, 'Channel tidak ditemukan.');
     if ((channel.isReadOnly || channel.type === CommunityChannelType.ANNOUNCEMENTS) && !canModerate) throw new AppError('PERMISSION_DENIED', 403, 'Channel ini hanya dapat ditulis oleh Master.');
@@ -344,6 +369,7 @@ export class CommunityService {
    * suara dari orang yang sama.
    */
   async votePoll(userId: string, postId: string, optionId: string) {
+    await this.assertBolehMenulis(userId);
     const option = await this.prisma.communityPollOption.findFirst({
       where: { id: optionId, poll: { post: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } } } },
       select: { id: true, pollId: true },
@@ -384,6 +410,7 @@ export class CommunityService {
   }
 
   async addComment(userId: string, postId: string, body: string) {
+    await this.assertBolehMenulis(userId);
     const post = await this.prisma.communityPost.findFirst({
       where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } },
       select: { id: true, channel: { select: { type: true, allowReplies: true } } },
@@ -590,6 +617,7 @@ export class CommunityService {
   }
 
   async toggleReaction(userId: string, postId: string) {
+    await this.assertBolehMenulis(userId);
     const post = await this.prisma.communityPost.findFirst({
       where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } },
       select: { id: true, channel: { select: { type: true } } },
@@ -608,6 +636,7 @@ export class CommunityService {
   }
 
   async setChecklistCompleted(userId: string, postId: string, completed: boolean) {
+    await this.assertBolehMenulis(userId);
     const post = await this.prisma.communityPost.findFirst({
       where: { id: postId, deletedAt: null, channel: { archivedAt: null, group: { archivedAt: null } } },
       select: { id: true, channel: { select: { type: true } } },

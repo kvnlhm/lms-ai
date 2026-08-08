@@ -14,6 +14,12 @@ export class LearnCourseSummaryDto {
     description: 'Benar bila kursus dibuka sebagai pratinjau karena belum terbit.',
   })
   preview!: boolean;
+  @ApiProperty({
+    description:
+      'Benar bila pembacanya berhak atas isi pelajaran. Salah berarti akun gratis: ' +
+      'kurikulumnya terlihat, isinya menuntut keanggotaan berbayar (ADR-032).',
+  })
+  entitled!: boolean;
 }
 
 export class LearnLessonItemDto {
@@ -25,6 +31,12 @@ export class LearnLessonItemDto {
   @ApiProperty() isRequired!: boolean;
   @ApiProperty({ enum: LESSON_STATUSES }) status!: string;
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true }) completedAt!: string | null;
+  @ApiProperty({
+    description:
+      'Benar bila isi pelajaran ini menuntut keanggotaan berbayar yang belum dimiliki. ' +
+      'Kurikulumnya tetap terlihat; membukanya dijawab 402 MEMBERSHIP_REQUIRED.',
+  })
+  locked!: boolean;
 }
 
 export class LearnModuleDto {

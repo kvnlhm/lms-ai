@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
-import type { CourseAccess } from '../../enrollment/application/enrollment-access.service';
+import type { CourseAccessWithProgress } from '../../enrollment/application/enrollment-access.service';
 import { EnrollmentAccessService } from '../../enrollment/application/enrollment-access.service';
 import type { CompleteLessonResult } from '../../learning-progress/application/lesson-progress.service';
 import { LessonProgressService } from '../../learning-progress/application/lesson-progress.service';
@@ -32,7 +32,7 @@ export class QuizTakingService {
 
   /** Soal beserta keadaan percobaan pelajar ini. */
   async forLearner(userId: string, lessonId: string) {
-    const access = await this.access.assertLessonAccess(userId, lessonId);
+    const access = await this.access.assertProgressAccess(userId, lessonId);
     const quiz = await this.loadForLearner(lessonId);
     const riwayat = await this.attemptState(quiz.id, access.enrollmentId, quiz.maxAttempts);
 
@@ -63,7 +63,7 @@ export class QuizTakingService {
    * berkurang tetapi pelajaran belum tercatat selesai.
    */
   async submit(command: SubmitQuizCommand) {
-    const access = await this.access.assertLessonAccess(command.userId, command.lessonId);
+    const access = await this.access.assertProgressAccess(command.userId, command.lessonId);
 
     const quiz = await this.prisma.quiz.findUnique({
       where: { lessonId: command.lessonId },
@@ -167,7 +167,7 @@ export class QuizTakingService {
    * tidak menolongnya — nomornya memang berbeda, hanya saja melewati jatah.
    */
   private async simpanPercobaan(params: {
-    access: CourseAccess & { lessonId: string };
+    access: CourseAccessWithProgress & { lessonId: string };
     command: SubmitQuizCommand;
     quizId: string;
     maxAttempts: number | null;

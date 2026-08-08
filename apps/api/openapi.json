@@ -13732,6 +13732,7 @@
               "COURSE_NOT_PUBLISHED",
               "LESSON_LOCKED",
               "LESSON_ALREADY_COMPLETED",
+              "MEMBERSHIP_REQUIRED",
               "IDEMPOTENCY_CONFLICT",
               "DISCUSSION_LOCKED",
               "FILE_NOT_AVAILABLE",
@@ -17275,6 +17276,10 @@
           "preview": {
             "type": "boolean",
             "description": "Benar bila kursus dibuka sebagai pratinjau karena belum terbit."
+          },
+          "entitled": {
+            "type": "boolean",
+            "description": "Benar bila pembacanya berhak atas isi pelajaran. Salah berarti akun gratis: kurikulumnya terlihat, isinya menuntut keanggotaan berbayar (ADR-032)."
           }
         },
         "required": [
@@ -17282,7 +17287,8 @@
           "slug",
           "title",
           "estimatedMinutes",
-          "preview"
+          "preview",
+          "entitled"
         ]
       },
       "LearnLessonItemDto": {
@@ -17326,6 +17332,10 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "Benar bila isi pelajaran ini menuntut keanggotaan berbayar yang belum dimiliki. Kurikulumnya tetap terlihat; membukanya dijawab 402 MEMBERSHIP_REQUIRED."
           }
         },
         "required": [
@@ -17335,7 +17345,8 @@
           "contentType",
           "estimatedMinutes",
           "isRequired",
-          "status"
+          "status",
+          "locked"
         ]
       },
       "LearnModuleDto": {
@@ -18376,6 +18387,10 @@
           "postCount": {
             "type": "number"
           },
+          "canWrite": {
+            "type": "boolean",
+            "description": "Benar bila peminta boleh menulis di sini."
+          },
           "checklistCompletedCount": {
             "type": "number"
           },
@@ -18393,6 +18408,7 @@
           "isReadOnly",
           "allowReplies",
           "postCount",
+          "canWrite",
           "checklistCompletedCount",
           "showInSidebar"
         ]

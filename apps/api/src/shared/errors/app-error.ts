@@ -62,6 +62,17 @@ export class AppError extends Error {
     return new AppError('LESSON_LOCKED', 403, message);
   }
 
+  /**
+   * 402, bukan 403. Keduanya penolakan, tetapi hanya yang ini punya jalan
+   * keluar yang dapat ditawarkan kepada orangnya — dan web membedakan keduanya
+   * untuk memutuskan apakah mengarahkan ke halaman bayar (ADR-032).
+   */
+  static membershipRequired(
+    message = 'Bagian ini hanya untuk anggota berbayar.',
+  ): AppError {
+    return new AppError('MEMBERSHIP_REQUIRED', 402, message);
+  }
+
   static idempotencyConflict(): AppError {
     return new AppError(
       'IDEMPOTENCY_CONFLICT',

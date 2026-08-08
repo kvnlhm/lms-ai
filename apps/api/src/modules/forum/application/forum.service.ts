@@ -62,7 +62,17 @@ export class ForumService {
   }
 
   private async assertCanWrite(userId: string, courseId: string): Promise<void> {
-    await this.access.assertActiveAccess(userId, courseId);
+    const access = await this.access.assertActiveAccess(userId, courseId);
+
+    // Akun gratis membaca diskusi tetapi tidak menulisnya (ADR-032). Jawabannya
+    // sudah dibawa `assertActiveAccess`, jadi forum tidak perlu menanyakan
+    // keanggotaan sendiri ke modul commerce.
+    if (!access.berhakIsi) {
+      throw AppError.membershipRequired(
+        'Diskusi kursus terbuka untuk anggota berbayar. Ambil aksesnya untuk ikut menulis.',
+      );
+    }
+
     const ban = await this.activeBan(userId, courseId);
     if (!ban) return;
     const until = ban.expiresAt

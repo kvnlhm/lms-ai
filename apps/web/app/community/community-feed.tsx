@@ -19,7 +19,7 @@ export const COMMUNITY_CHANNEL_TYPES: Record<CommunityChannelType, { label: stri
   ANNOUNCEMENTS: { label: 'Pengumuman', icon: '!', description: 'Kabar satu arah yang hanya diterbitkan Master.' },
   CHECKLIST: { label: 'Checklist', icon: '✓', description: 'Daftar langkah ringkas, misalnya Welcome Checklist.' },
 };
-export type CommunitySubchannel = { id: string; slug: string; name: string; description: string | null; type: CommunityChannelType; isReadOnly: boolean; allowReplies: boolean; postCount: number; checklistCompletedCount: number; showInSidebar: boolean; archivedAt?: string | null; position?: number };
+export type CommunitySubchannel = { id: string; slug: string; name: string; description: string | null; type: CommunityChannelType; isReadOnly: boolean; allowReplies: boolean; canWrite: boolean; postCount: number; checklistCompletedCount: number; showInSidebar: boolean; archivedAt?: string | null; position?: number };
 export type CommunityChannel = { id: string; slug: string; name: string; description: string | null; showInSidebar: boolean; position?: number; archivedAt?: string | null; subchannels: CommunitySubchannel[] };
 type Person = { id: string; fullName: string; avatarUrl: string | null };
 export type CommunityComment = {
@@ -120,7 +120,15 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
   const [pending, startTransition] = useTransition();
   const refreshing = useRef(false);
   const selected = useMemo(() => subchannels.find((item) => item.id === channelId), [subchannels, channelId]);
-  const canPost = selected && (!selected.isReadOnly || canModerate);
+  /**
+   * Akun gratis membaca komunitas tetapi tidak menulis di dalamnya (ADR-032).
+   *
+   * Nilainya datang dari server pada setiap sub-channel — sama untuk semuanya,
+   * karena ini fakta tentang orangnya, bukan tentang ruangnya. Moderator
+   * dilewatkan: kewenangannya berasal dari permission.
+   */
+  const bolehTulis = canModerate || subchannels.some((item) => item.canWrite);
+  const canPost = selected && (!selected.isReadOnly || canModerate) && bolehTulis;
   const announcementPage = selected?.type === 'ANNOUNCEMENTS';
 
   useEffect(() => {
@@ -504,7 +512,7 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
                 saja tanpa memberi tahu apa pun. Langkah checklist ditambahkan
                 lewat form "Tambah checklist" di halaman checklist-nya. */}
             {!activeSubchannelSlug ? <div className="composerChannelPicker" role="group" aria-label="Pilih sub-channel tujuan">{subchannels.filter((channel) => channel.type !== 'ANNOUNCEMENTS' && channel.type !== 'CHECKLIST').map((channel) => <button key={channel.id} className={channel.id === channelId ? 'active' : ''} type="button" onClick={() => setChannelId(channel.id)}>{channel.groupName} / {COMMUNITY_CHANNEL_TYPES[channel.type].icon} {channel.name}</button>)}</div> : null}
-            {canPost ? <PostComposer channelName={selected?.name ?? 'channel'} announcement={announcementPage} pending={pending} onPublish={(isi) => new Promise((selesai) => startTransition(async () => selesai(await kirimPost(isi))))} /> : <p className="communityMuted">{announcementPage ? 'Hanya Master yang dapat menerbitkan pengumuman.' : 'Channel ini hanya dapat ditulis oleh Master.'}</p>}
+            {canPost ? <PostComposer channelName={selected?.name ?? 'channel'} announcement={announcementPage} pending={pending} onPublish={(isi) => new Promise((selesai) => startTransition(async () => selesai(await kirimPost(isi))))} /> : !bolehTulis ? <AjakanAkses /> : <p className="communityMuted">{announcementPage ? 'Hanya Master yang dapat menerbitkan pengumuman.' : 'Channel ini hanya dapat ditulis oleh Master.'}</p>}
           </div>
         ) : null}
         {message ? <p className="communityMessage" role="status">{message}</p> : null}
@@ -518,8 +526,8 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
               <p className="postBody">{post.body}<Diedit at={post.editedAt} /></p>
               <PostAttachments attachments={post.attachments ?? []} />
               {post.poll ? <PostPoll postId={post.id} poll={post.poll} /> : null}
-              <div className="postActions">{post.channel.type === 'ANNOUNCEMENTS' ? <span>Pengumuman resmi</span> : <button type="button" className={post.reactedByMe ? 'reacted' : ''} onClick={() => react(post.id)}>♡ {post.reactionCount}</button>}{post.channel.allowReplies ? <span>◯ {post.commentCount} balasan</span> : <span>Balasan ditutup</span>}<PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
-              {post.channel.allowReplies ? <><MuatBalasan post={post} aksi={aksi} />{balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}<div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div></> : null}
+              <div className="postActions">{post.channel.type === 'ANNOUNCEMENTS' ? <span>Pengumuman resmi</span> : <button type="button" className={post.reactedByMe ? 'reacted' : ''} disabled={!bolehTulis} title={bolehTulis ? undefined : 'Perlu akses berbayar'} onClick={() => react(post.id)}>♡ {post.reactionCount}</button>}{post.channel.allowReplies ? <span>◯ {post.commentCount} balasan</span> : <span>Balasan ditutup</span>}<PesanAksi canEdit={post.canEdit} canDelete={post.canDelete} onEdit={() => suntingPost(post)} onDelete={() => hapusPost(post)} pin={{ canPin: post.canPin, isPinned: post.isPinned, onPin: () => sematkan(post) }} /></div>
+              {post.channel.allowReplies ? <><MuatBalasan post={post} aksi={aksi} />{balasan(post).length > 0 ? <div className="commentList">{balasan(post).map((item) => <div className="comment" key={item.id}><Avatar person={item.author} /><p><strong>{item.author.fullName}</strong><span>{item.body}</span><Diedit at={item.editedAt} /></p><PesanAksi canEdit={item.canEdit} canDelete={item.canDelete} onEdit={() => suntingKomentar(item)} onDelete={() => hapusKomentar(item)} /></div>)}</div> : null}{!bolehTulis ? <AjakanAkses /> : <div className="commentComposer"><span className="replyIcon" aria-hidden="true">↳</span><input value={commentDrafts[post.id] ?? ''} onChange={(event) => setCommentDrafts((current) => ({ ...current, [post.id]: event.target.value }))} placeholder="Balas post ini…" maxLength={5000} onKeyDown={(event) => { if (event.key === 'Enter') comment(post.id); }} /><button type="button" disabled={pending || !commentDrafts[post.id]?.trim()} onClick={() => comment(post.id)}>Kirim</button></div>}</> : null}
             </article>;
           })}
           {entriFeed.length === 0 ? <div className="card empty"><p>{announcementPage ? 'Belum ada pengumuman.' : 'Belum ada post. Jadilah yang pertama memulai percakapan.'}</p></div> : null}
@@ -800,3 +808,19 @@ function PesanAksi({ canEdit, canDelete, onEdit, onDelete, pin }: {
 
 function Avatar({ person }: { person: Person }) { return <span className="postAvatar">{person.avatarUrl ? <img src={person.avatarUrl} alt="" /> : person.fullName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()}</span>; }
 function formatDate(value: string) { return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
+
+/**
+ * Pengganti kolom tulis bagi akun gratis.
+ *
+ * Sengaja bukan kolom yang dinonaktifkan: kolom yang terlihat dapat diisi lalu
+ * menolak isinya adalah janji yang ditarik kembali. Yang ditawarkan justru
+ * jalan keluarnya.
+ */
+function AjakanAkses() {
+  return (
+    <p className="communityMuted communityUpgrade">
+      Menulis di komunitas untuk anggota berbayar.{' '}
+      <Link href="/register?dari=%2Fcommunity">Ambil akses</Link>
+    </p>
+  );
+}
