@@ -19,9 +19,31 @@ export function VideoPlayer({ lessonId }: { lessonId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
+  /** Posisi tontonan yang harus dilanjutkan sesudah sesi diperbarui. */
+  const lanjutDari = useRef(0);
+  /** Waktu pemulihan terakhir, untuk membedakan token habis dari berkas rusak. */
+  const pulihTerakhir = useRef(0);
+
   // Dibungkus useCallback: tanpa itu identitasnya berubah tiap render dan
   // efek di dalam `HlsVideo` akan membongkar-pasang pemutarnya terus-menerus.
-  const gagalDiputar = useCallback(() => {
+  const gagalDiputar = useCallback((posisi: number) => {
+    // URL playback bertanda tangan dan bermasa berlaku. Ketika masanya habis di
+    // tengah tontonan, CDN menolak segmen berikutnya dan hls.js melaporkannya
+    // sebagai galat fatal — padahal berkasnya baik-baik saja. Yang dibutuhkan
+    // sekadar sesi baru, dan itu tidak perlu diminta dari penontonnya.
+    //
+    // Pemulihan hanya dicoba bila yang sebelumnya sudah cukup lama berselang.
+    // Tanpa penjaga itu, video yang memang rusak akan memutar ulang permintaan
+    // sesi tanpa henti.
+    const sekarang = Date.now();
+    if (sekarang - pulihTerakhir.current > 30_000) {
+      pulihTerakhir.current = sekarang;
+      lanjutDari.current = posisi;
+      setAttempt((value) => value + 1);
+      return;
+    }
+
+    lanjutDari.current = 0;
     setSession(null);
     setError(
       'Video tersedia di kursus, tetapi file tidak dapat diputar. Minta Master mengunggah ulang video MP4.',
@@ -89,7 +111,7 @@ await browserClient().POST('/api/v1/learn/lessons/{lessonId}/playback-sessions',
 
   return (
     <div className="protectedVideoFrame" onContextMenu={(event) => event.preventDefault()}>
-      <CourseVideo src={session.playbackUrl} hls={session.kind === 'HLS'} lessonId={lessonId} onFailure={gagalDiputar} />
+      <CourseVideo src={session.playbackUrl} hls={session.kind === 'HLS'} lessonId={lessonId} mulaiDari={lanjutDari.current} onFailure={gagalDiputar} />
     </div>
   );
 }
@@ -129,7 +151,7 @@ function lacak(lessonId: string, video: HTMLVideoElement): void {
  * dipakai karena pemutar bawaannya lebih hemat baterai dan mendukung
  * pemutaran layar penuh milik sistem.
  */
-function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; hls: boolean; lessonId: string; onFailure: () => void }) {
+function CourseVideo({ src, hls: useHls, lessonId, mulaiDari, onFailure }: { src: string; hls: boolean; lessonId: string; mulaiDari: number; onFailure: (posisi: number) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
   const hlsRef = useRef<import('hls.js').default | null>(null);
@@ -164,7 +186,7 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
     void import('hls.js').then(({ default: Hls }) => {
       if (dibatalkan || !videoRef.current) return;
       if (!Hls.isSupported()) {
-        onFailure();
+        onFailure(0);
         return;
       }
       hls = new Hls({ enableWorker: true });
@@ -182,7 +204,7 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
       hls.on(Hls.Events.ERROR, (_event, data) => {
         // Hanya kegagalan fatal yang dilaporkan; hls.js memulihkan sendiri
         // gangguan jaringan sesaat, dan itu justru gunanya memakai HLS.
-        if (data.fatal) onFailure();
+        if (data.fatal) onFailure(videoRef.current?.currentTime ?? 0);
       });
     });
 
@@ -349,7 +371,7 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
 
   return (
     <div ref={frameRef} className={`courseVideoPlayer${playing ? ' isPlaying' : ''}`} tabIndex={0} onKeyDown={keyboard} aria-label="Pemutar video pelajaran">
-      <video ref={videoRef} controlsList="nodownload noremoteplayback" disablePictureInPicture disableRemotePlayback playsInline preload="metadata" onClick={togglePlay} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)} onDurationChange={(event) => setDuration(event.currentTarget.duration)} onError={onFailure} onTimeUpdate={(event) => { setCurrentTime(event.currentTarget.currentTime); lacak(lessonId, event.currentTarget); }}>
+      <video ref={videoRef} controlsList="nodownload noremoteplayback" disablePictureInPicture disableRemotePlayback playsInline preload="metadata" onClick={togglePlay} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onLoadedMetadata={(event) => { setDuration(event.currentTarget.duration); if (mulaiDari > 0) { event.currentTarget.currentTime = mulaiDari; void event.currentTarget.play(); } }} onDurationChange={(event) => setDuration(event.currentTarget.duration)} onError={() => onFailure(videoRef.current?.currentTime ?? 0)} onTimeUpdate={(event) => { setCurrentTime(event.currentTarget.currentTime); lacak(lessonId, event.currentTarget); }}>
         Browser kamu tidak mendukung pemutar video HTML5.
       </video>
       {!playing ? <button className="courseVideoCenterPlay" type="button" onClick={togglePlay} aria-label="Putar video"><Play size={30} /></button> : null}
