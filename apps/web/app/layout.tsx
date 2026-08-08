@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { NotifierProvider } from './components/notifier';
 import './styles.css';
-import lambangGelap from './icon-gelap.png';
 
 /**
  * Lingkungan tempat salinan ini berjalan.
@@ -37,18 +36,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="id">
-      {/* Ikon tab kedua, untuk bilah tab mode gelap. Lambang bertinta gelap
-          nyaris hilang di sana, jadi satu berkas saja berarti separuh pengguna
-          melihat ruang kosong di tabnya.
-
-          Ditulis sebagai `<link>` alih-alih lewat `metadata.icons`, karena
-          mengisi `metadata.icons` mematikan tautan bawaan yang disisipkan Next
-          dari `app/icon.png` — dan tautan bawaan itulah yang membawa sidik jari
-          isi berkas. Tanpa sidik jari, `/icon.png` polos dilayani
-          `immutable, max-age=31536000` dan lambang yang sudah diganti tetap
-          tampil versi lama tanpa cara memberi tahu browser. Berkas gelapnya
-          diimpor supaya alamatnya ikut ber-sidik jari. */}
-      <link rel="icon" type="image/png" href={lambangGelap.src} media="(prefers-color-scheme: dark)" />
       <body>
         {/* Penanda yang sulit dilewatkan. Tanpanya, staging dan produksi tampak
             persis sama — dan orang akan mengira sudah menghapus sesuatu di
