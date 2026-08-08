@@ -64,3 +64,21 @@ test('video postingan memakai pemutar kustom, bukan kontrol bawaan peramban', as
   // Video Bunny tidak boleh kembali memakai `controls` bawaan.
   assert.doesNotMatch(lampiran, /<video\s+ref=\{videoRef\}[^>]*\scontrols/);
 });
+
+test('pemutar postingan membawa lompat dan pintasan yang sama dengan pemutar pelajaran', async () => {
+  // Orang membawa refleks dari satu pemutar ke pemutar lain. Peta yang berbeda
+  // membuat pemutarnya terasa rusak meski setiap tombolnya bekerja.
+  const lampiran = await read('../app/community/post-attachments.tsx');
+
+  assert.match(lampiran, /courseVideoSkip/);
+  assert.match(lampiran, /lompat\(-10\)/);
+  assert.match(lampiran, /lompat\(10\)/);
+  // Panah 5 detik, J dan L 10 detik — sama dengan pemutar pelajaran.
+  assert.match(lampiran, /case 'arrowleft': lompat\(-5\)/);
+  assert.match(lampiran, /case 'j': lompat\(-10\)/);
+  assert.match(lampiran, /case 'l': lompat\(10\)/);
+  // Pintasan hanya hidup saat pemutarnya dipegang fokus; umpan penuh kolom
+  // balasan, dan spasi tidak boleh direbut dari orang yang sedang mengetik.
+  assert.match(lampiran, /onKeyDown=\{pintasan\}/);
+  assert.match(lampiran, /asal === 'INPUT' \|\| asal === 'SELECT' \|\| asal === 'TEXTAREA'/);
+});

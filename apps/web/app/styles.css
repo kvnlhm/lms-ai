@@ -3676,6 +3676,7 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 /* Kontrol muncul saat disentuh atau di-hover, dan selalu tampil sebelum
    diputar — sama dengan pemutar pelajaran. */
 .postVideoPlayer .courseVideoControls{padding:28px 12px 9px}
-/* Tombol putar di kiri, sisanya di kanan — pemutar pelajaran mengumpulkan
-   semuanya di kanan karena barisnya memuat lebih banyak kontrol. */
-.postVideoPlayer .courseVideoControlRow>button:first-child{margin-right:auto}
+/* Putar dan lompat di kiri, sisanya di kanan. Dorongannya dipasang pada
+   penunjuk waktu, bukan pada tombol tertentu, supaya menambah atau mengurangi
+   tombol di kiri tidak menuntut angka `nth-child` disesuaikan ulang. */
+.postVideoPlayer .courseVideoTime{margin-left:auto}

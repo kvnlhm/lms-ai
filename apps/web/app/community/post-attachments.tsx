@@ -1,5 +1,5 @@
-import { ArrowLeft, ArrowRight, FileText, Maximize, Minimize, Pause, Play, Settings, Volume, VolumeOff, X } from '../components/icons';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { ArrowLeft, ArrowRight, FastForward, FileText, Maximize, Minimize, Pause, Play, Rewind, Settings, Volume, VolumeOff, X } from '../components/icons';
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 export type LampiranPost = {
   id: string; originalName: string; mimeType: string; sizeBytes: string; position: number;
@@ -179,6 +179,12 @@ function VideoPenyedia({ item }: { item: LampiranPost }) {
     );
   }
 
+  const lompat = (detik: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = Math.min(video.duration || 0, Math.max(0, video.currentTime + detik));
+  };
+
   const putar = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -192,11 +198,54 @@ function VideoPenyedia({ item }: { item: LampiranPost }) {
     else void bingkai.requestFullscreen();
   };
 
+  /**
+   * Pintasan papan tik, mengikuti kebiasaan YouTube dan sama persis dengan
+   * pemutar pelajaran — panah 5 detik, J dan L 10 detik, angka melompat ke
+   * persentase. Orang membawa refleks itu dari satu tempat ke tempat lain, dan
+   * pemutar yang menafsirkannya berbeda terasa rusak meski setiap tombolnya
+   * bekerja.
+   *
+   * Hanya hidup ketika pemutarnya dipegang fokus, bukan dipasang pada dokumen.
+   * Umpan komunitas penuh kolom balasan; spasi yang selalu menjeda video akan
+   * merebut spasi dari orang yang sedang mengetik.
+   */
+  const pintasan = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const asal = (event.target as HTMLElement).tagName;
+    if (asal === 'INPUT' || asal === 'SELECT' || asal === 'TEXTAREA') return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+    const GULIR = [' ', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+    if (GULIR.includes(event.key)) event.preventDefault();
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (/^[0-9]$/.test(event.key)) {
+      video.currentTime = ((video.duration || 0) * Number(event.key)) / 10;
+      return;
+    }
+
+    switch (event.key.toLowerCase()) {
+      case ' ':
+      case 'k': putar(); break;
+      case 'arrowleft': lompat(-5); break;
+      case 'arrowright': lompat(5); break;
+      case 'j': lompat(-10); break;
+      case 'l': lompat(10); break;
+      case 'm': video.muted = !video.muted; break;
+      case 'f': layarPenuh(); break;
+      default: break;
+    }
+  };
+
   return (
     <div
       ref={bingkaiRef}
       className={`postMediaItem courseVideoPlayer postVideoPlayer${diputar ? ' isPlaying' : ''}`}
       onDoubleClick={layarPenuh}
+      tabIndex={0}
+      onKeyDown={pintasan}
+      aria-label={`Pemutar video ${item.originalName}`}
     >
       <video
         ref={videoRef}
@@ -234,6 +283,12 @@ function VideoPenyedia({ item }: { item: LampiranPost }) {
         <div className="courseVideoControlRow">
           <button type="button" onClick={putar} aria-label={diputar ? 'Jeda' : 'Putar'}>
             {diputar ? <Pause size={18} /> : <Play size={18} />}
+          </button>
+          <button className="courseVideoSkip" type="button" onClick={() => lompat(-10)} title="Mundur 10 detik (j)" aria-label="Mundur 10 detik">
+            <Rewind size={18} /><span aria-hidden="true">10</span>
+          </button>
+          <button className="courseVideoSkip" type="button" onClick={() => lompat(10)} title="Maju 10 detik (l)" aria-label="Maju 10 detik">
+            <FastForward size={18} /><span aria-hidden="true">10</span>
           </button>
           <span className="courseVideoTime">{waktu(posisi)} / {waktu(durasi)}</span>
           <button
