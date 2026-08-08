@@ -54,6 +54,12 @@ export interface AppConfig {
     mfaIssuer: string;
     /** Kunci AES-256 dalam base64 untuk rahasia TOTP. */
     mfaEncryptionKey: string;
+    /**
+     * Client ID OAuth Google, sekaligus `aud` yang dituntut pada ID token.
+     * Kosong berarti masuk dengan Google dimatikan — bukan diterima tanpa
+     * pemeriksaan.
+     */
+    googleClientId: string;
   };
   video: {
     provider: 'SELF_HOSTED' | 'BUNNY_STREAM';
@@ -274,6 +280,7 @@ export function loadConfig(): AppConfig {
       requireMasterMfa: bool('REQUIRE_MASTER_MFA', true),
       mfaIssuer: process.env.MFA_ISSUER ?? 'LMS Akademi Online',
       mfaEncryptionKey: required('MFA_ENCRYPTION_KEY'),
+      googleClientId: process.env.GOOGLE_OAUTH_CLIENT_ID ?? '',
     },
     video: {
       provider: videoProvider as 'SELF_HOSTED' | 'BUNNY_STREAM',

@@ -2,9 +2,30 @@
 
 import type { Schemas } from '@lms/api-client';
 import { useState, type FormEvent } from 'react';
+import { GoogleSignIn } from '../components/google-sign-in';
 import { useNotifier } from '../components/notifier';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
 import Link from 'next/link';
+
+/**
+ * Membaca nama dan email dari ID token, hanya untuk mengisi formulir.
+ *
+ * Tanda tangannya sengaja tidak diperiksa di sini dan tidak perlu: nilai ini
+ * cuma ditampilkan. Yang menentukan email pada pesanan adalah server, yang
+ * memverifikasi ulang token yang sama dan mengabaikan apa pun isi formulir.
+ */
+function bacaTokenUntukTampilan(idToken: string): { email: string; name: string } | null {
+  try {
+    const bagian = idToken.split('.')[1];
+    if (!bagian) return null;
+    const json = atob(bagian.replace(/-/g, '+').replace(/_/g, '/'));
+    const klaim = JSON.parse(json) as { email?: string; name?: string };
+    if (!klaim.email) return null;
+    return { email: klaim.email, name: klaim.name ?? '' };
+  } catch {
+    return null;
+  }
+}
 
 type Tier = Schemas['AccessTierDto'];
 type Checkout = Schemas['CheckoutResponseDto'];
@@ -25,7 +46,7 @@ declare global {
   }
 }
 
-export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
+export function RegistrationForm({ tiers, googleClientId }: { tiers: Tier[]; googleClientId: string }) {
   const [tierId, setTierId] = useState(tiers[0]?.id ?? '');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -35,6 +56,25 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
   const [busy, setBusy] = useState(false);
   const notifier = useNotifier();
   const [message, setMessage] = useState<string | null>(null);
+  const [googleToken, setGoogleToken] = useState<string | null>(null);
+
+  function terimaGoogle(idToken: string) {
+    const klaim = bacaTokenUntukTampilan(idToken);
+    if (!klaim) {
+      void notifier.error('Token Google tidak terbaca', { text: 'Coba lagi, atau isi formulir manual.' });
+      return;
+    }
+    setGoogleToken(idToken);
+    setEmail(klaim.email);
+    if (klaim.name) setFullName(klaim.name);
+  }
+
+  function batalkanGoogle() {
+    setGoogleToken(null);
+    setEmail('');
+    setFullName('');
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -43,7 +83,17 @@ export function RegistrationForm({ tiers }: { tiers: Tier[] }) {
     try {
       const checkout = unwrap<Checkout>(
 await browserClient().POST('/api/v1/registration/checkout', {
-          body: { tierId, fullName, email, phone, promoCode: promoCode.trim() || undefined, termsAccepted },
+          body: {
+            tierId,
+            fullName,
+            email,
+            phone,
+            promoCode: promoCode.trim() || undefined,
+            // Server memverifikasi ulang token ini dan memakai email di
+            // dalamnya, bukan yang ada di formulir.
+            googleIdToken: googleToken ?? undefined,
+            termsAccepted,
+          },
         }),
   );
       await loadSnap(checkout.clientKey, checkout.isProduction);
@@ -129,14 +179,34 @@ await browserClient().POST('/api/v1/registration/checkout', {
           <h2>Data akun</h2>
           <p className="pageSub">Gunakan email dan WhatsApp aktif untuk menerima akses.</p>
         </div>
+
+        {/*
+          Google hanya membuktikan identitas pendaftar; ia tidak memberi akses
+          apa pun. Nomor WhatsApp dan pembayaran tetap harus dilalui, karena
+          Google tidak memberikan nomor telepon dan akun baru dibuat sesudah
+          pembayaran lunas.
+        */}
+        {!googleToken ? (
+          <div className="regGoogle">
+            <GoogleSignIn clientId={googleClientId} text="signup_with" onToken={terimaGoogle} disabled={busy} />
+            <div className="authDivider"><span>atau isi manual</span></div>
+          </div>
+        ) : (
+          <p className="notice noticeInfo" role="status">
+            Identitas terverifikasi lewat Google sebagai <strong>{email}</strong>. Lengkapi nomor
+            WhatsApp untuk menerima akses.{' '}
+            <button type="button" className="btnTiny" onClick={batalkanGoogle}>Ganti</button>
+          </p>
+        )}
+
         <div className="registrationFields">
           <label className="field">
             <span>Nama lengkap</span>
-            <input required minLength={3} value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            <input required minLength={3} value={fullName} readOnly={Boolean(googleToken)} onChange={(e) => setFullName(e.target.value)} />
           </label>
           <label className="field">
             <span>Email</span>
-            <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input required type="email" value={email} readOnly={Boolean(googleToken)} onChange={(e) => setEmail(e.target.value)} />
           </label>
           <label className="field">
             <span>Nomor WhatsApp</span>

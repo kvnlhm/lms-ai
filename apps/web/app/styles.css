@@ -3593,3 +3593,14 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .pollPercent{position:relative;margin-left:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 .postPoll button.chosen .pollPercent{color:var(--text);font-weight:700}
 .postPoll>small{color:var(--muted);font-size:12px}
+
+/* ── Masuk dengan Google ──────────────────────────────────────
+   Tombolnya dirender Google di dalam iframe dengan lebarnya sendiri, jadi yang
+   diatur di sini hanya penempatannya. Memaksa lebarnya lewat CSS tidak bekerja
+   dan pada beberapa versi justru memotong tombolnya. */
+.googleSignIn{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:14px}
+.googleSignIn>div{min-height:44px}
+.authDivider{display:flex;align-items:center;gap:12px;margin:18px 0 4px;color:var(--muted);font-size:12px}
+.authDivider::before,.authDivider::after{content:"";flex:1;height:1px;background:var(--border)}
+.regGoogle{margin-bottom:6px}
+.regGoogle .googleSignIn{margin-top:0}

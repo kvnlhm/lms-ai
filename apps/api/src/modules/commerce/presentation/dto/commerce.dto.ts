@@ -133,6 +133,20 @@ export class CreateCheckoutDto {
   @MaxLength(80)
   promoCode?: string;
 
+  /**
+   * ID token dari tombol Google, bila pendaftarnya memilih jalur itu.
+   *
+   * Kehadirannya membuat `email` dan `fullName` dari formulir diabaikan dan
+   * diganti nilai dari token. Nomor telepon tetap dari formulir — Google tidak
+   * memberikannya, sedangkan aktivasi WhatsApp membutuhkannya.
+   */
+  @ApiPropertyOptional({ description: 'ID token Google; bila diisi, email diambil dari token dan bukan dari formulir.' })
+  @IsOptional()
+  @IsString()
+  @MinLength(16)
+  @MaxLength(4096)
+  googleIdToken?: string;
+
   @ApiProperty({ example: true })
   @IsBoolean()
   termsAccepted!: boolean;

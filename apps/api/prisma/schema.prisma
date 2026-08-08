@@ -143,6 +143,10 @@ model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String     @unique @db.Citext
   passwordHash    String     @map("password_hash")
+  /// Subject dari Google, penanda akun yang tidak berubah walau pemiliknya
+  /// mengganti alamat emailnya. Email tidak dipakai sebagai kunci tautan
+  /// justru karena ia dapat berpindah tangan; `sub` tidak.
+  googleSub       String?    @unique @map("google_sub")
   fullName        String     @map("full_name")
   phone           String?
   bio             String?
@@ -858,6 +862,10 @@ model RegistrationOrder {
   email                  String             @db.Citext
   phone                  String
   promoCode              String?            @map("promo_code")
+  /// Diisi bila pendaftarnya memakai Google saat checkout. Ditahan di pesanan
+  /// karena akunnya baru dibuat webhook pembayaran, jauh sesudah identitas itu
+  /// dibuktikan — tanpa ini tautannya hilang di antara keduanya.
+  googleSub              String?            @map("google_sub")
   grossAmount            Int                @map("gross_amount")
   status                 PaymentOrderStatus @default(PENDING)
   paymentProvider        PaymentProvider    @default(MIDTRANS) @map("payment_provider")

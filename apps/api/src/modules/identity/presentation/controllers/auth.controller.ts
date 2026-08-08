@@ -34,6 +34,7 @@ import {
   AcceptInvitationDto,
   ChangePasswordDto,
   ForgotPasswordDto,
+  GoogleLoginDto,
   LoginDto,
   MfaCodeDto,
   ResetPasswordDto,
@@ -169,6 +170,34 @@ export class AuthController {
     const result = await this.auth.login({
       email: dto.email,
       password: dto.password,
+      deviceName: dto.deviceName,
+      ipAddress: clientIp(request),
+      userAgent: request.header('user-agent') ?? undefined,
+    });
+
+    this.setSessionCookies(response, result.sessionId, result.csrfToken);
+    return { user: result.user };
+  }
+
+  @Public()
+  @Post('google')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Masuk dengan akun Google',
+    description:
+      'Menerima ID token dari tombol Google di browser. Tidak pernah membuat akun: ' +
+      'akun hanya lahir dari webhook pembayaran, sehingga pendaftar yang belum ' +
+      'membayar dibalas 401 dan bukan dibuatkan akun.',
+  })
+  @ApiEnvelope(LoginResponseDto, 'Berhasil masuk; cookie session dan CSRF disetel.')
+  @ApiErrors(401, 403, 422, 429)
+  async loginWithGoogle(@Body() dto: GoogleLoginDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    // Rotasi session yang sama dengan masuk memakai kata sandi (ADR-010).
+    const existing = request.cookies?.[this.app.session.cookieName] as string | undefined;
+    if (existing) await this.sessions.destroy(existing);
+
+    const result = await this.auth.loginWithGoogle({
+      idToken: dto.idToken,
       deviceName: dto.deviceName,
       ipAddress: clientIp(request),
       userAgent: request.header('user-agent') ?? undefined,

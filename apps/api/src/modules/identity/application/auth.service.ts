@@ -10,6 +10,7 @@ import { EmailService } from '../../../shared/email/email.service';
 import { AppError } from '../../../shared/errors/app-error';
 import type { AuthenticatedUser } from '../domain/session';
 import { CredentialTokenService } from './credential-token.service';
+import { GoogleIdentityService } from './google-identity.service';
 import { LoginRateLimiter } from './login-rate-limiter';
 import { PasswordResetRateLimiter } from './password-reset-rate-limiter';
 import { PasswordService } from './password.service';
@@ -22,6 +23,23 @@ export interface LoginCommand {
   deviceName?: string;
   ipAddress: string;
   userAgent?: string;
+}
+
+export interface GoogleLoginCommand {
+  /** ID token dari tombol Google di browser, belum dipercaya. */
+  idToken: string;
+  deviceName?: string;
+  ipAddress: string;
+  userAgent?: string;
+}
+
+/** Bentuk minimum yang dibutuhkan `terbitkanSesi`, apa pun cara masuknya. */
+interface PenggunaUntukSesi {
+  id: string;
+  email: string;
+  fullName: string;
+  status: UserStatus;
+  roles: { role: { code: string; permissions: { permission: { code: string } }[] } }[];
 }
 
 export interface LoginResult {
@@ -54,6 +72,7 @@ export class AuthService {
     private readonly email: EmailService,
     private readonly audit: AuditService,
     config: ConfigService<{ app: AppConfig }, true>,
+    private readonly google: GoogleIdentityService,
   ) {
     this.app = config.get('app', { infer: true });
   }
@@ -127,6 +146,54 @@ export class AuthService {
 
     // Status diperiksa setelah kata sandi benar, supaya status akun tidak
     // dapat disimpulkan hanya dengan menebak email.
+    const hasil = await this.terbitkanSesi(user, command, { googleSub: null });
+    await this.rateLimiter.reset(command.ipAddress, email);
+    return hasil;
+  }
+
+  /**
+   * Masuk dengan akun Google.
+   *
+   * Tidak pernah membuat akun. Di sistem ini akun hanya lahir dari webhook
+   * pembayaran, jadi tidak adanya akun yang cocok berarti pendaftarnya memang
+   * belum membayar — dan jawabannya penolakan, bukan pembuatan. Menjadikan
+   * tombol ini pintu kedua yang dapat membuat akun akan membatalkan seluruh
+   * aturan akses berbayar tanpa satu pun galat.
+   *
+   * Sesudah identitasnya terbukti, jalurnya menyatu ke `terbitkanSesi` yang
+   * sama dengan masuk memakai kata sandi. Itu disengaja: pemeriksaan status,
+   * role, dan MFA hanya ada di satu tempat, sehingga pintu ini tidak dapat
+   * diam-diam menjadi lebih longgar daripada pintu satunya.
+   */
+  async loginWithGoogle(command: GoogleLoginCommand): Promise<LoginResult> {
+    const identitas = await this.google.periksa(command.idToken);
+
+    // Dicari lewat `googleSub` maupun email: yang pertama untuk akun yang sudah
+    // tertaut, yang kedua untuk akun berbayar yang belum pernah memakai Google.
+    // Penautan lewat email hanya aman karena `GoogleIdentityService` menolak
+    // token yang emailnya belum diverifikasi Google.
+    const user = await this.prisma.user.findFirst({
+      where: { deletedAt: null, OR: [{ googleSub: identitas.sub }, { email: identitas.email }] },
+      include: { roles: { include: { role: { include: { permissions: { include: { permission: true } } } } } } },
+    });
+    if (!user) throw AppError.invalidCredentials();
+
+    return this.terbitkanSesi(user, command, {
+      googleSub: user.googleSub ? null : identitas.sub,
+    });
+  }
+
+  /**
+   * Bagian masuk yang tidak bergantung pada cara identitasnya dibuktikan.
+   *
+   * `tautkan.googleSub` diisi hanya ketika akun berbayar yang sudah ada baru
+   * pertama kali dikenali sebagai milik sebuah akun Google.
+   */
+  private async terbitkanSesi(
+    user: PenggunaUntukSesi,
+    command: { ipAddress: string; userAgent?: string; deviceName?: string },
+    tautkan: { googleSub: string | null },
+  ): Promise<LoginResult> {
     if (user.status === UserStatus.SUSPENDED) throw AppError.accountSuspended();
     if (user.status !== UserStatus.ACTIVE) throw AppError.accountInactive();
 
@@ -164,9 +231,19 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() },
+      data: {
+        lastLoginAt: new Date(),
+        ...(tautkan.googleSub ? { googleSub: tautkan.googleSub } : {}),
+      },
     });
-    await this.rateLimiter.reset(command.ipAddress, email);
+    if (tautkan.googleSub) {
+      await this.audit.record({
+        actorUserId: user.id,
+        action: 'identity.google.linked',
+        targetType: 'User',
+        targetId: user.id,
+      });
+    }
 
     return {
       sessionId,

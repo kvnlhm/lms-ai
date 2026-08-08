@@ -103,7 +103,7 @@ await client.GET('/api/v1/registration/tiers')
         </p>
       </section>
 
-      <RegistrationForm tiers={tiers} />
+      <RegistrationForm tiers={tiers} googleClientId={process.env.GOOGLE_OAUTH_CLIENT_ID ?? ""} />
 
       <section className="regSection">
         <h2>Apa yang akan kalian pelajari?</h2>

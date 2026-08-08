@@ -37,7 +37,7 @@ export default async function LoginPage({ searchParams }: Props) {
         </h1>
         <p className="authLead">Lanjutkan belajar dari pelajaran terakhir yang kamu buka.</p>
 
-        <LoginForm nextPath={nextPath} />
+        <LoginForm nextPath={nextPath} googleClientId={process.env.GOOGLE_OAUTH_CLIENT_ID ?? ""} />
         <p className="authFootnote">
           <Link href="/forgot-password">Lupa kata sandi?</Link>
         </p>

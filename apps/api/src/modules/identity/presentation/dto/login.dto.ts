@@ -20,6 +20,27 @@ export class LoginDto {
   deviceName?: string;
 }
 
+export class GoogleLoginDto {
+  /**
+   * ID token dari Google Identity Services di browser.
+   *
+   * Batas panjangnya longgar dan sengaja tidak diperketat menjadi bentuk JWT:
+   * yang menentukan sah atau tidaknya adalah verifikasi tanda tangan terhadap
+   * kunci Google, bukan tebakan bentuk di lapisan ini.
+   */
+  @ApiProperty({ description: 'ID token dari tombol Google di browser.' })
+  @IsString()
+  @MinLength(16)
+  @MaxLength(4096)
+  idToken!: string;
+
+  @ApiPropertyOptional({ example: 'Chrome di macOS' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  deviceName?: string;
+}
+
 export class MfaCodeDto {
   @ApiProperty({ example: '123456', minLength: 6, maxLength: 6 })
   @IsString()

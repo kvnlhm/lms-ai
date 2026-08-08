@@ -58,6 +58,10 @@ services:
       MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?}
       AUTH_RATE_LIMIT_WINDOW_SECONDS: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:-300}
       AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-10}
+      # Kosong berarti masuk dengan Google mati, dan matinya fail closed:
+      # token apa pun ditolak. Karena itu tidak memakai `:?` — fitur ini
+      # memang boleh tidak dikonfigurasi.
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       VIDEO_PROVIDER: SELF_HOSTED
       VIDEO_STORAGE_PATH: /data/videos
       VIDEO_MAX_UPLOAD_BYTES: ${VIDEO_MAX_UPLOAD_BYTES:-2147483648}
@@ -148,6 +152,11 @@ services:
       API_URL: http://api:3001
       # Dibaca komponen server: menentukan penanda lingkungan dan noindex.
       APP_ENV: ${APP_ENV:-production}
+      # Dibaca halaman login dan pendaftaran saat permintaan datang, lalu
+      # diteruskan sebagai prop ke tombol Google. Sengaja bukan
+      # `NEXT_PUBLIC_*`, yang ditanam Next.js saat build sehingga mengganti
+      # client id akan menuntut rebuild.
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
     depends_on:
       api:
         condition: service_healthy

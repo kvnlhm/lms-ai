@@ -13,6 +13,7 @@ import type { AppConfig } from '../../../config/configuration';
 import { OutboxWriter } from '../../../infrastructure/outbox/outbox.writer';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
+import { GoogleIdentityService } from '../../identity/application/google-identity.service';
 import { UserCredentialService } from '../../identity/application/user-credential.service';
 import { ActivationNotifierService } from '../infrastructure/activation-notifier.service';
 import { MidtransService, type MidtransStatus } from '../infrastructure/midtrans.service';
@@ -81,6 +82,7 @@ export class CommerceService {
     private readonly midtrans: MidtransService,
     private readonly notifier: ActivationNotifierService,
     config: ConfigService<{ app: AppConfig }, true>,
+    private readonly google: GoogleIdentityService,
   ) {
     this.config = config.get('app', { infer: true });
   }
@@ -213,14 +215,23 @@ export class CommerceService {
     const amount = Math.max(0, tier.priceIdr - discount);
     const orderCode = `REG-${randomUUID().replaceAll('-', '')}`;
     const expiresAt = new Date(Date.now() + this.config.commerce.orderTtlMinutes * 60_000);
+
+    // Pendaftar yang memakai Google: emailnya diambil dari token, bukan dari
+    // formulir. Kalau yang tersimpan email ketikan, seseorang dapat masuk
+    // dengan akun Google sendiri lalu mengetikkan email orang lain — dan
+    // webhook pembayaran akan menautkan `googleSub`-nya ke akun berbayar milik
+    // orang itu. Nomor telepon tetap dari formulir; Google tidak memberikannya.
+    const identitas = input.googleIdToken ? await this.google.periksa(input.googleIdToken) : null;
+
     const order = await this.prisma.registrationOrder.create({
       data: {
         orderCode,
         tierId: tier.id,
-        fullName: input.fullName.trim(),
-        email: input.email.trim().toLowerCase(),
+        fullName: (identitas?.name ?? input.fullName).trim(),
+        email: identitas?.email ?? input.email.trim().toLowerCase(),
         phone: normalizePhone(input.phone),
         promoCode: promoCode || null,
+        googleSub: identitas?.sub ?? null,
         grossAmount: amount,
         expiresAt,
       },
@@ -468,9 +479,21 @@ export class CommerceService {
               phone: order.phone,
               status: UserStatus.ACTIVE,
               passwordHash: unusablePassword,
+              // Pendaftar yang memakai Google tidak pernah menetapkan kata
+              // sandi; tautannya dibawa dari pesanan supaya ia dapat langsung
+              // masuk lewat tombol yang sama.
+              googleSub: order.googleSub,
               roles: { create: { roleId: studentRole.id } },
             },
             select: { id: true, emailVerifiedAt: true },
+          });
+        } else if (order.googleSub) {
+          // Akun berbayar yang sudah ada dan membeli lagi memakai Google:
+          // tautkan bila belum tertaut, tetapi jangan pernah menimpa tautan
+          // yang sudah ada dengan akun Google yang berbeda.
+          await tx.user.updateMany({
+            where: { id: user.id, googleSub: null },
+            data: { googleSub: order.googleSub },
           });
         }
 

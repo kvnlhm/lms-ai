@@ -425,6 +425,91 @@
         ]
       }
     },
+    "/api/v1/auth/google": {
+      "post": {
+        "description": "Menerima ID token dari tombol Google di browser. Tidak pernah membuat akun: akun hanya lahir dari webhook pembayaran, sehingga pendaftar yang belum membayar dibalas 401 dan bukan dibuatkan akun.",
+        "operationId": "AuthController_loginWithGoogle",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Berhasil masuk; cookie session dan CSRF disetel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoginResponseDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Masuk dengan akun Google",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/logout": {
       "post": {
         "operationId": "AuthController_logout",
@@ -13839,6 +13924,22 @@
           "password"
         ]
       },
+      "GoogleLoginDto": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "ID token dari tombol Google di browser."
+          },
+          "deviceName": {
+            "type": "string",
+            "example": "Chrome di macOS"
+          }
+        },
+        "required": [
+          "idToken"
+        ]
+      },
       "LogoutAllResponseDto": {
         "type": "object",
         "properties": {
@@ -16794,6 +16895,10 @@
           "promoCode": {
             "type": "string",
             "description": "Kode promo opsional dari penyelenggara."
+          },
+          "googleIdToken": {
+            "type": "string",
+            "description": "ID token Google; bila diisi, email diambil dari token dan bukan dari formulir."
           },
           "termsAccepted": {
             "type": "boolean",

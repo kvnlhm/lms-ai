@@ -123,6 +123,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Masuk dengan akun Google
+         * @description Menerima ID token dari tombol Google di browser. Tidak pernah membuat akun: akun hanya lahir dari webhook pembayaran, sehingga pendaftar yang belum membayar dibalas 401 dan bukan dibuatkan akun.
+         */
+        post: operations["AuthController_loginWithGoogle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/logout": {
         parameters: {
             query?: never;
@@ -2682,6 +2702,12 @@ export interface components {
             /** @example Chrome di macOS */
             deviceName?: string;
         };
+        GoogleLoginDto: {
+            /** @description ID token dari tombol Google di browser. */
+            idToken: string;
+            /** @example Chrome di macOS */
+            deviceName?: string;
+        };
         LogoutAllResponseDto: {
             /** @example 3 */
             revokedSessions: number;
@@ -3563,6 +3589,8 @@ export interface components {
             phone: string;
             /** @description Kode promo opsional dari penyelenggara. */
             promoCode?: string;
+            /** @description ID token Google; bila diisi, email diambil dari token dan bukan dari formulir. */
+            googleIdToken?: string;
             /** @example true */
             termsAccepted: boolean;
         };
@@ -5096,6 +5124,65 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["LoginDto"];
+            };
+        };
+        responses: {
+            /** @description Berhasil masuk; cookie session dan CSRF disetel. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["LoginResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_loginWithGoogle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleLoginDto"];
             };
         };
         responses: {

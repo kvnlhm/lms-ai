@@ -2,15 +2,18 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { GoogleSignIn } from '../components/google-sign-in';
 import { useNotifier } from '../components/notifier';
 import { PasswordInput } from '../components/password-input';
 import { ApiError, browserClient, unwrap } from '../lib/browser-api';
 
 interface Props {
   nextPath: string;
+  /** Client ID Google; kosong berarti tombolnya tidak ditampilkan. */
+  googleClientId: string;
 }
 
-export function LoginForm({ nextPath }: Props) {
+export function LoginForm({ nextPath, googleClientId }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,6 +64,54 @@ export function LoginForm({ nextPath }: Props) {
       if (error instanceof ApiError) {
         void notifier.error('Gagal masuk', { text: error.message });
         if (error.fields) setFields(error.fields);
+        return;
+      }
+      void notifier.error('Tidak dapat menghubungi server', {
+        text: 'Periksa koneksimu lalu coba lagi.',
+      });
+    }
+  }
+
+  /**
+   * Masuk memakai ID token dari tombol Google.
+   *
+   * Sesudah token diserahkan, sisanya persis sama dengan masuk memakai kata
+   * sandi — termasuk cabang MFA — karena server memang menyatukan keduanya
+   * pada jalur yang sama.
+   */
+  async function handleGoogle(idToken: string) {
+    if (busy) return;
+    setBusy(true);
+    setFields({});
+    try {
+      const login = unwrap(
+        await browserClient().POST('/api/v1/auth/google', {
+          body: { idToken, deviceName: describeDevice() },
+        }),
+      );
+
+      if (login.user.requiresMfa) {
+        if (login.user.mfaSetupRequired) {
+          const setup = unwrap(await browserClient().POST('/api/v1/auth/mfa/setup', {}));
+          setMfaSecret(setup.secret);
+          setMfaMode('setup');
+        } else {
+          setMfaMode('verify');
+        }
+        setBusy(false);
+        return;
+      }
+
+      router.replace(nextPath);
+      router.refresh();
+    } catch (error) {
+      setBusy(false);
+      if (error instanceof ApiError) {
+        // Akun hanya dibuat sesudah pembayaran, jadi 401 di sini hampir selalu
+        // berarti orangnya memang belum terdaftar — bukan salah kata sandi.
+        void notifier.error('Belum bisa masuk dengan Google', {
+          text: 'Akun dengan email Google itu belum terdaftar. Selesaikan pendaftaran dan pembayaran lebih dulu.',
+        });
         return;
       }
       void notifier.error('Tidak dapat menghubungi server', {
@@ -228,6 +279,9 @@ export function LoginForm({ nextPath }: Props) {
       <button type="submit" className="btn btnBlock" disabled={busy}>
         {busy ? 'Memproses…' : 'Masuk'}
       </button>
+
+      <div className="authDivider"><span>atau</span></div>
+      <GoogleSignIn clientId={googleClientId} onToken={(token) => void handleGoogle(token)} disabled={busy} />
     </form>
   );
 }

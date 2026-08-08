@@ -64,7 +64,21 @@ REQUIRE_MASTER_MFA
 MFA_ISSUER
 AUTH_RATE_LIMIT_WINDOW_SECONDS
 AUTH_RATE_LIMIT_MAX
+GOOGLE_OAUTH_CLIENT_ID
 ```
+
+`GOOGLE_OAUTH_CLIENT_ID` mengaktifkan masuk dengan akun Google. Nilainya
+dituntut sebagai `aud` pada setiap ID token, jadi ia harus sama persis dengan
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID` di web. Bukan rahasia — ia memang terkirim ke
+browser — tetapi salah nilai berarti seluruh token ditolak.
+
+Kosong berarti fitur ini mati, dan matinya *fail closed*: token apa pun
+ditolak, bukan diterima tanpa pemeriksaan. Itu disengaja, karena tanpa
+`audience` yang benar sebuah token terbitan aplikasi Google mana pun akan
+lolos.
+
+Masuk dengan Google **tidak pernah membuat akun**. Akun hanya lahir dari
+webhook pembayaran; pendaftar yang belum membayar dibalas 401.
 
 `REQUIRE_MASTER_MFA` default `true`. Nilai `false` melewati setup dan
 verifikasi TOTP untuk role Master. Gunakan hanya sebagai accepted deployment
