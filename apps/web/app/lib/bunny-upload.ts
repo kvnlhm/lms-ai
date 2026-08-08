@@ -51,7 +51,23 @@ export async function unggahKeBunny(
       body: { title: file.name },
     }),
   );
+  await unggahDenganTiket(file, ticket, onProgress);
+  return { videoId: ticket.videoId, title: file.name };
+}
 
+/**
+ * Bagian unggahnya sendiri, terpisah dari cara tiketnya diperoleh.
+ *
+ * Video kursus memintanya lewat endpoint admin, lampiran komunitas lewat
+ * endpointnya sendiri. Yang membedakan hanya itu — protokol, pemulihan
+ * sambungan putus, dan pelaporan kemajuannya sama persis, dan sebaiknya hanya
+ * ada satu salinan.
+ */
+export async function unggahDenganTiket(
+  file: File,
+  ticket: Ticket,
+  onProgress: (percent: number) => void,
+): Promise<void> {
   const buat = await fetch(ticket.endpoint, {
     method: 'POST',
     headers: {
@@ -105,8 +121,6 @@ export async function unggahKeBunny(
     offset = Number.isFinite(lanjut) && lanjut > offset ? lanjut : akhir;
     onProgress(Math.round((offset / file.size) * 100));
   }
-
-  return { videoId: ticket.videoId, title: file.name };
 }
 
 async function offsetTerkini(alamat: string, ticket: Ticket): Promise<number> {

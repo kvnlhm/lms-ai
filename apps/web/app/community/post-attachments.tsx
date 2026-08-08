@@ -1,7 +1,12 @@
 import { ArrowLeft, ArrowRight, FileText, X } from '../components/icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-export type LampiranPost = { id: string; originalName: string; mimeType: string; sizeBytes: string; position: number; width?: number | null; height?: number | null };
+export type LampiranPost = {
+  id: string; originalName: string; mimeType: string; sizeBytes: string; position: number;
+  width?: number | null; height?: number | null;
+  /** Terisi hanya untuk video yang dititipkan ke penyedia luar. */
+  video?: { status: string; playbackUrl: string | null } | null;
+};
 
 export function ukuranTerbaca(bytes: string | number): string {
   const nilai = typeof bytes === 'string' ? Number(bytes) : bytes;
@@ -78,6 +83,9 @@ export function PostAttachments({ attachments }: { attachments: LampiranPost[] }
 
 function MediaItem({ item, onZoom }: { item: LampiranPost; onZoom: (item: LampiranPost) => void }) {
   if (item.mimeType.startsWith('video/')) {
+    // Video yang dititipkan ke penyedia luar dikenali dari adanya `video`.
+    // Yang lama tetap diputar dari berkas kita, tanpa perubahan apa pun.
+    if (item.video) return <VideoPenyedia item={item} />;
     // Tidak dibungkus tautan: pembungkusnya akan menelan klik pada tombol putar.
     return <video className="postMediaItem" controls preload="metadata" src={alamat(item.id)} />;
   }
@@ -88,4 +96,53 @@ function MediaItem({ item, onZoom }: { item: LampiranPost; onZoom: (item: Lampir
   return <button type="button" className="postMediaItem" onClick={() => onZoom(item)} aria-label={`Perbesar ${item.originalName}`}>
     <img src={alamat(item.id)} alt={item.originalName} loading="lazy" decoding="async" width={item.width ?? undefined} height={item.height ?? undefined} />
   </button>;
+}
+
+/**
+ * Video yang diantar CDN penyedia.
+ *
+ * Selama penyedia masih mentranscode, yang ditampilkan keterangan — bukan
+ * pemutar yang dibuka pada berkas yang belum ada, yang hanya menghasilkan
+ * galat tanpa penjelasan.
+ *
+ * Safari dan iOS memutar HLS secara bawaan; di sana `hls.js` sengaja tidak
+ * dimuat karena pemutar bawaannya lebih hemat baterai dan mendukung layar
+ * penuh milik sistem. Aturan yang sama dipakai pemutar pelajaran.
+ */
+function VideoPenyedia({ item }: { item: LampiranPost }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const src = item.video?.playbackUrl ?? null;
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !src) return;
+
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = src;
+      return;
+    }
+
+    let hls: import('hls.js').default | null = null;
+    let dibatalkan = false;
+    void import('hls.js').then(({ default: Hls }) => {
+      if (dibatalkan || !videoRef.current || !Hls.isSupported()) return;
+      hls = new Hls({ enableWorker: true });
+      hls.loadSource(src);
+      hls.attachMedia(videoRef.current);
+    });
+
+    return () => { dibatalkan = true; hls?.destroy(); };
+  }, [src]);
+
+  if (!src) {
+    const gagal = item.video?.status === 'FAILED';
+    return (
+      <div className="postMediaItem postVideoMenunggu" role="status">
+        <span>{gagal ? 'Video gagal diproses.' : 'Video sedang disiapkan…'}</span>
+        <small>{gagal ? 'Coba unggah ulang.' : 'Muat ulang halaman sebentar lagi.'}</small>
+      </div>
+    );
+  }
+
+  return <video ref={videoRef} className="postMediaItem" controls preload="metadata" playsInline />;
 }

@@ -1,10 +1,12 @@
 'use client';
 
 import { ApiError } from '@lms/api-client';
-import { browserApiUrl, readCsrfToken } from './browser-api';
+import { browserApiUrl, browserClient, readCsrfToken, unwrap } from './browser-api';
 
 export type LampiranTerunggah = {
   id: string; originalName: string; mimeType: string; sizeBytes: string; position: number; createdAt: string;
+  /** Terisi hanya untuk lampiran video yang dititipkan ke penyedia luar. */
+  video?: { status: string; playbackUrl: string | null } | null;
 };
 
 /**
@@ -51,4 +53,27 @@ export async function uploadDraftAttachment(file: File, onProgress: (percent: nu
   const hasil = await kirim<LampiranTerunggah>('/api/v1/community/attachments', file, onProgress);
   if (!hasil) throw new ApiError('INTERNAL_ERROR', 0, 'Server tidak mengembalikan lampiran.');
   return hasil;
+}
+
+/**
+ * Menyiapkan lampiran video, lalu mengunggah berkasnya langsung ke penyedia.
+ *
+ * Berbeda dari lampiran lain, bytenya tidak melewati server akademi sama
+ * sekali: server hanya menerbitkan izin unggah, dan peramban yang mengirimkan
+ * berkasnya. Sesudah unggahan selesai, penyedia masih perlu waktu untuk
+ * mentranscode — lampirannya kembali berstatus PROCESSING, bukan langsung
+ * siap ditonton.
+ */
+export async function uploadDraftVideo(
+  file: File,
+  onProgress: (percent: number) => void,
+): Promise<LampiranTerunggah> {
+  const { unggahDenganTiket } = await import('./bunny-upload');
+  const siap = unwrap(
+    await browserClient().PUT('/api/v1/community/attachments/video', {
+      body: { originalName: file.name, sizeBytes: file.size },
+    }),
+  );
+  await unggahDenganTiket(file, siap.tiket as never, onProgress);
+  return siap.attachment as LampiranTerunggah;
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal } from '../components/modal';
 import { BarChart, FileText, ImageIcon, Plus, Trash, Video } from '../components/icons';
-import { uploadDraftAttachment, type LampiranTerunggah } from '../lib/checklist-upload';
+import { uploadDraftAttachment, uploadDraftVideo, type LampiranTerunggah } from '../lib/checklist-upload';
 import { browserClient, ensureSuccess, unwrap } from '../lib/browser-api';
 import { ukuranTerbaca } from './post-attachments';
 
@@ -77,7 +77,11 @@ export function PostComposer({ channelName, announcement, pending, onPublish }: 
       if (file.size > MAKS_BYTE) { setGalat(`Ukuran maksimal ${ukuranTerbaca(MAKS_BYTE)} per berkas.`); continue; }
       setProgres(0);
       try {
-        const hasil = await uploadDraftAttachment(file, setProgres);
+        // Video menempuh jalur berbeda: bytenya diunggah langsung ke penyedia,
+        // tidak melewati server akademi.
+        const hasil = file.type.startsWith('video/')
+          ? await uploadDraftVideo(file, setProgres)
+          : await uploadDraftAttachment(file, setProgres);
         setLampiran((current) => [...current, hasil]);
       } catch (error) {
         setGalat(error instanceof Error ? error.message : 'Lampiran gagal diunggah.');

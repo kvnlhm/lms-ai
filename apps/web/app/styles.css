@@ -3658,3 +3658,8 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .regGoogleVerified{align-items:center}
 .regGoogleVerified>span{flex:1;min-width:0;overflow-wrap:anywhere}
 .regGoogleVerified>.btnTiny{flex:0 0 auto}
+/* Video yang penyedianya masih mentranscode. Ukurannya mengikuti kartu media
+   supaya deretnya tidak melompat ketika videonya akhirnya siap. */
+.postVideoMenunggu{display:grid;align-content:center;justify-items:center;gap:4px;min-height:180px;padding:20px;background:var(--surface-2);color:var(--muted);text-align:center}
+.postVideoMenunggu>span{color:var(--text);font-size:14px}
+.postVideoMenunggu>small{font-size:12px}
