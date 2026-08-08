@@ -112,9 +112,17 @@ function MediaItem({ item, onZoom }: { item: LampiranPost; onZoom: (item: Lampir
 function VideoPenyedia({ item }: { item: LampiranPost }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const src = item.video?.playbackUrl ?? null;
+  // URL-nya bertanda tangan dan bermasa berlaku, jadi ia dapat berganti tanpa
+  // videonya berganti. Memasang ulang pemutar setiap kali tandatangannya
+  // diperbarui akan melempar tontonan kembali ke detik nol; yang menentukan
+  // perlu-tidaknya memasang ulang adalah identitas lampirannya, bukan URL-nya.
+  const srcRef = useRef(src);
+  srcRef.current = src;
+  const siap = Boolean(src);
 
   useEffect(() => {
     const video = videoRef.current;
+    const src = srcRef.current;
     if (!video || !src) return;
 
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -132,7 +140,7 @@ function VideoPenyedia({ item }: { item: LampiranPost }) {
     });
 
     return () => { dibatalkan = true; hls?.destroy(); };
-  }, [src]);
+  }, [item.id, siap]);
 
   if (!src) {
     const gagal = item.video?.status === 'FAILED';

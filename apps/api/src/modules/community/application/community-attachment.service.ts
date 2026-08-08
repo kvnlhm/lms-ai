@@ -500,7 +500,20 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
    */
   private sajikanVideo(aset: { status: string; providerVideoId: string }) {
     const siap = aset.status === 'AVAILABLE';
-    const berlaku = new Date(Date.now() + this.video.playbackTtlSeconds * 1000);
+    // Masa berlakunya dibulatkan ke jendela, bukan dihitung dari detik ini.
+    //
+    // Umpan komunitas menyegarkan dirinya tiap lima detik. Tanda tangan yang
+    // dihitung ulang setiap permintaan menghasilkan URL yang selalu berbeda,
+    // `src` pada elemen video ikut berubah, pemutarnya dipasang ulang, dan
+    // tontonan kembali ke detik nol — tiap lima detik. Dengan jendela, URL yang
+    // sama diterbitkan berulang kali sehingga elemen videonya tidak tersentuh;
+    // CDN pun dapat memanfaatkan cache-nya.
+    //
+    // Jendelanya setengah TTL, dan TTL penuh tetap ditambahkan di atasnya, agar
+    // URL yang diterbitkan di ujung jendela tidak kedaluwarsa hampir seketika.
+    const ttl = this.video.playbackTtlSeconds * 1000;
+    const jendela = ttl / 2;
+    const berlaku = new Date(Math.floor(Date.now() / jendela) * jendela + ttl);
     return {
       status: aset.status,
       playbackUrl: siap
