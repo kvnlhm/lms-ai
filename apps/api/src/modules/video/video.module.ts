@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { STALE_UPLOAD_RECONCILER } from '../../shared/storage/stale-upload.port';
 import { EnrollmentModule } from '../enrollment/enrollment.module';
 import { LESSON_VIDEO_CLEANUP } from '../learning-catalog/application/lesson-video-cleanup.port';
 import { VideoService } from './application/video.service';
