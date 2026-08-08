@@ -9,6 +9,7 @@ import { serverClient, unwrapList } from '../../lib/api';
 import { ambilSemuaKursus } from '../../lib/all-courses';
 import { requirePermission } from '../../lib/session';
 import { CourseOrder } from './course-order';
+import { TombolHapusKursus } from './hapus-kursus';
 
 export const metadata: Metadata = { title: 'Kelola Kursus · Academy AIPreneur' };
 export const dynamic = 'force-dynamic';
@@ -289,6 +290,7 @@ export default async function MasterCoursesPage({ searchParams }: Props) {
                           >
                             Kelola peserta
                           </Link>
+                          <TombolHapusKursus course={course} />
                         </ActionMenu>
                       </td>
                     </tr>

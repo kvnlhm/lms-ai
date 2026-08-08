@@ -48,6 +48,31 @@ test('halaman kelola kursus menyediakan menu aksi dan pratinjau langsung', async
   assert.match(editor, /Pratinjau materi/);
 });
 
+test('menu aksi daftar kursus dapat menghapus kursus, dengan aturan yang sama seperti editor', async () => {
+  const [listPage, hapus, editor] = await Promise.all([
+    read('../app/master/courses/page.tsx'),
+    read('../app/master/courses/hapus-kursus.tsx'),
+    read('../app/master/courses/[courseId]/course-editor.tsx'),
+  ]);
+
+  assert.match(listPage, /from '\.\/hapus-kursus'/);
+  assert.match(listPage, /<TombolHapusKursus course=\{course\} \/>/);
+
+  // Konfirmasi, permintaan hapus, dan tawaran hapus paksa saat server menolak
+  // dengan 409 tinggal di satu berkas. Daftar dan editor memanggil yang sama,
+  // supaya peringatan yang dibaca Master tidak berbeda tergantung dari mana ia
+  // menekan tombolnya.
+  assert.match(hapus, /notifier\.confirm/);
+  assert.match(hapus, /DELETE\('\/api\/v1\/admin\/courses\/\{courseId\}'/);
+  assert.match(hapus, /status === 409/);
+  assert.match(hapus, /query: force \? \{ force: true \} : \{\}/);
+  assert.match(hapus, /className="btnTiny btnDanger"/);
+
+  assert.match(editor, /konfirmasiHapusKursus/);
+  assert.doesNotMatch(editor, /jalankanHapus/);
+  assert.doesNotMatch(editor, /DELETE\('\/api\/v1\/admin\/courses\/\{courseId\}'/);
+});
+
 test('sortir kursus memakai dropdown dan label kartu mobile tetap terbaca', async () => {
   const [listPage, css] = await Promise.all([
     read('../app/master/courses/page.tsx'),

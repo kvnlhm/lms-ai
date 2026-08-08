@@ -18,6 +18,7 @@ import { Modal } from '../../../components/modal';
 import { VideoLibraryPicker } from '../../../components/video-library-picker';
 import { StatusPill } from '../../../components/status-pill';
 import { QuizEditor } from './quiz-editor';
+import { konfirmasiHapusKursus } from '../hapus-kursus';
 
 type CourseDetail = Schemas['AdminCourseDetailDto'];
 type Module = Schemas['AdminModuleWithLessonsDto'];
@@ -138,69 +139,20 @@ export function CourseEditor({ course }: { course: CourseDetail }) {
    *
    * Tidak memakai `run` karena halaman ini ikut hilang bersama kursusnya:
    * `router.refresh()` sesudahnya akan memuat ulang halaman yang sudah tidak
-   * ada. Karena itu kepindahannya ditentukan di sini.
-   *
-   * Server tetap pemegang aturannya. Kursus yang sudah memiliki enrollment
-   * ditolak dengan 409 dan diarahkan ke arsip, supaya riwayat belajar tidak
-   * ikut terhapus.
+   * ada. Karena itu kepindahannya ditentukan di sini, sementara konfirmasi dan
+   * penanganan penolakan 409 ditumpangkan pada alur yang sama dengan menu
+   * hapus di daftar kursus.
    */
   async function hapusKursus() {
     if (busy) return;
-    const lanjut = await notifier.confirm(`Hapus kursus "${course.title}"?`, {
-      text:
-        'Seluruh bagian, pelajaran, kuis, dan video di dalamnya ikut terhapus permanen. ' +
-        'Untuk kursus yang sudah pernah dipakai pelajar, gunakan arsip.',
-      confirmLabel: 'Hapus permanen',
-      danger: true,
-    });
-    if (!lanjut) return;
-
-    await jalankanHapus(false);
-  }
-
-  /**
-   * Mengirim permintaan hapus, dan menawarkan penghapusan paksa bila server
-   * menolak karena kursusnya sudah punya enrollment.
-   *
-   * Peringatannya datang dari server, bukan disalin ke sini — kalau aturannya
-   * berubah kelak, teks yang dibaca Master ikut berubah dengan sendirinya.
-   */
-  async function jalankanHapus(force: boolean) {
     setBusy('delete');
-    try {
-      ensureSuccess(
-        await client().DELETE('/api/v1/admin/courses/{courseId}', {
-          params: { path: { courseId: course.id }, query: force ? { force: true } : {} },
-        }),
-      );
-      router.replace('/master/courses');
-      router.refresh();
-      return;
-    } catch (caught) {
+    const terhapus = await konfirmasiHapusKursus(course, notifier);
+    if (!terhapus) {
       setBusy(null);
-
-      const terpakai = caught instanceof ApiError && caught.status === 409;
-      if (terpakai && !force) {
-        const tetap = await notifier.confirm('Tetap hapus kursus ini?', {
-          text:
-            `${caught.message} Bila diteruskan, seluruh pendaftaran pelajar pada kursus ini ` +
-            'ikut terhapus permanen beserta progres belajar dan percobaan kuisnya. ' +
-            'Tidak ada cara mengembalikannya selain dari backup.',
-          confirmLabel: 'Hapus berikut riwayatnya',
-          cancelLabel: 'Batal',
-          danger: true,
-        });
-        if (tetap) await jalankanHapus(true);
-        return;
-      }
-
-      void notifier.error('Kursus tidak dapat dihapus', {
-        text:
-          caught instanceof ApiError
-            ? caught.message
-            : 'Tidak dapat menghubungi server. Kursus belum terhapus.',
-      });
+      return;
     }
+    router.replace('/master/courses');
+    router.refresh();
   }
 
   const addModule = (title: string) =>
