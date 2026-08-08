@@ -403,8 +403,30 @@ Yang perlu diingat:
   fixture-nya gambar sungguhan.
 - **Backfill** ada di `apps/api/scripts/backfill-profile-and-thumbnail-images.mjs`,
   terpisah dari backfill lampiran karena keduanya dirujuk lewat kolom URL
-  (`courses.thumbnail_url`, `users.avatar_url`), bukan kunci objek. Aman diulang
-  — yang sudah `.webp` dilewati — dan punya `--dry-run`.
+  (`courses.thumbnail_url`, `users.avatar_url`), bukan kunci objek. Punya
+  `--dry-run`.
+
+  **Ekstensi bukan tanda "sudah diolah".** Versi pertama skrip ini menyaring
+  dengan `endsWith('.webp')` dan melewatkan justru berkas yang paling perlu
+  diolah: kode lama menyimpan unggahan WebP apa adanya, sehingga ada thumbnail
+  `.webp` sebesar 792 KB pada 1024×717 — dua puluh kali hasil olahan pada
+  dimensi yang sama, dan 40% dari seluruh volume sesudah backfill pertama.
+  Ketahuan saat memeriksa berkas terbesar yang tersisa, bukan dari skripnya
+  sendiri, yang melaporkan sukses.
+
+  Sekarang penggantinya diputuskan dari hasil, bukan dari nama: berkas baru
+  dipakai bila dimensinya berubah atau ukurannya turun di bawah 80% aslinya.
+  Itu sekaligus yang membuatnya aman diulang — mengolah ulang berkas yang sudah
+  mutu 82 menghasilkan ukuran yang nyaris sama sehingga ditolak sendiri, jadi
+  tidak ada kompresi berulang yang menggerus mutu tiap kali dijalankan.
+
+  Hasil production 8 Agustus 2026: thumbnail **24 MB → 1,2 MB** (32 berkas),
+  avatar **196 KB → 20 KB**. Nol baris menunjuk berkas yang tidak ada, nol
+  yatim.
+
+  Perbaikan skrip ini datang sesudah deployment 244, jadi salinan di dalam
+  kontainer masih versi lama sampai deploy berikutnya. Untuk sekarang jalankan
+  dari host bila perlu.
 
 ---
 

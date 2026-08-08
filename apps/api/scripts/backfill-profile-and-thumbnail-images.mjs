@@ -56,14 +56,28 @@ const TUGAS = [
   },
 ];
 
-async function jalankan(tugas) {
-  const semua = await tugas.antre();
-  // Yang sudah `.webp` sudah diolah — inilah yang membuat skrip ini aman
-  // dijalankan berulang kali.
-  const antre = semua.filter((baris) => !baris.url.endsWith('.webp'));
-  console.log(`\n${tugas.nama}: ${antre.length} dari ${semua.length} perlu diolah di ${tugas.storage}${kering ? ' (dry-run)' : ''}`);
+/**
+ * Ambang penggantian.
+ *
+ * Ekstensi tidak dapat dipakai sebagai tanda "sudah diolah": kode lama
+ * menyimpan unggahan WebP apa adanya, sehingga ada berkas `.webp` berukuran
+ * 792 KB pada 1024×717 — dua puluh kali hasil olahan pada dimensi yang sama.
+ * Menyaring dengan `endsWith('.webp')` melewatkan justru berkas yang paling
+ * perlu diolah.
+ *
+ * Gantinya diputuskan dari hasilnya sendiri: berkas baru dipakai bila
+ * dimensinya berubah atau ukurannya turun berarti. Mengolah ulang berkas yang
+ * sudah mutu 82 menghasilkan ukuran yang nyaris sama, jadi ambang ini juga yang
+ * membuat skrip aman diulang — tanpa itu setiap jalannya mengompresi ulang dan
+ * mutunya menurun sedikit demi sedikit.
+ */
+const AMBANG_SUSUT = 0.8;
 
-  let berhasil = 0, dilewati = 0, sebelum = 0, sesudah = 0;
+async function jalankan(tugas) {
+  const antre = await tugas.antre();
+  console.log(`\n${tugas.nama}: ${antre.length} berkas ditimbang di ${tugas.storage}${kering ? ' (dry-run)' : ''}`);
+
+  let berhasil = 0, dilewati = 0, tetap = 0, sebelum = 0, sesudah = 0;
   for (const baris of antre) {
     const namaLama = basename(baris.url);
     const lama = join(tugas.storage, namaLama);
@@ -74,12 +88,20 @@ async function jalankan(tugas) {
     const baru = join(tugas.storage, namaBaru);
     try {
       const asal = (await stat(lama)).size;
-      await sharp(lama)
+      const semula = await sharp(lama).metadata();
+      const hasil = await sharp(lama)
         .autoOrient()
         .resize({ width: tugas.sisiMaks, height: tugas.sisiMaks, fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 82 })
         .toFile(sementara);
       const ukuran = (await stat(sementara)).size;
+
+      const berubahDimensi = hasil.width !== semula.width || hasil.height !== semula.height;
+      if (!berubahDimensi && ukuran > asal * AMBANG_SUSUT) {
+        await rm(sementara, { force: true });
+        tetap += 1;
+        continue;
+      }
 
       if (kering) {
         await rm(sementara, { force: true });
@@ -90,14 +112,14 @@ async function jalankan(tugas) {
       }
 
       sebelum += asal; sesudah += ukuran; berhasil += 1;
-      console.log(`  ${namaLama} → ${namaBaru}  ${rapi(asal)} → ${rapi(ukuran)}`);
+      console.log(`  ${namaLama} → ${namaBaru}  ${rapi(asal)} → ${rapi(ukuran)}  ${hasil.width}x${hasil.height}`);
     } catch (error) {
       await rm(sementara, { force: true });
       dilewati += 1;
       console.warn(`  LEWAT ${namaLama}: ${error instanceof Error ? error.message : error}`);
     }
   }
-  console.log(`${tugas.nama} selesai: ${berhasil} diolah, ${dilewati} dilewati, ${rapi(sebelum)} → ${rapi(sesudah)}`);
+  console.log(`${tugas.nama} selesai: ${berhasil} diolah, ${tetap} sudah cukup ringan, ${dilewati} dilewati, ${rapi(sebelum)} → ${rapi(sesudah)}`);
 }
 
 async function main() {
