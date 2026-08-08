@@ -329,8 +329,19 @@ Yang perlu diingat:
   MP4 sebesar 71 MB yang memang tidak disentuh. Nol baris menunjuk berkas yang
   tidak ada, nol berkas yatim, nol gambar tanpa dimensi.
 
-  Dijalankan **dari host**, bukan dari kontainer API — image yang berjalan saat
-  itu belum punya `sharp`, jadi skripnya tidak dapat diimpor di sana. Caranya:
+  Backfill pertama dijalankan **dari host**, bukan dari kontainer API: image
+  yang berjalan saat itu dibangun sebelum `sharp` masuk ke `apps/api`, jadi
+  skripnya belum dapat diimpor di sana. Sesudah deploy, kontainer sudah
+  memilikinya dan sapuan berikutnya dijalankan dari dalam — itu cara yang benar
+  untuk menjalankannya lagi nanti:
+  `docker exec api-<uuid> sh -c 'cd /app/apps/api && node scripts/backfill-community-attachment-images.mjs'`.
+
+  Catatan untuk memeriksa dependensi di kontainer: pnpm **tidak** meng-hoist ke
+  `/app/node_modules`, jadi `ls node_modules/<paket>` di sana selalu menjawab
+  tidak ada dan menyesatkan. Yang benar `node -e "require('<paket>')"` dari
+  `/app/apps/api`.
+
+  Cara menjalankan dari host, bila suatu saat perlu lagi:
   `DATABASE_URL` diambil dari `printenv` kontainer API dengan hostname docker
   diganti IP kontainer postgres, dan `COMMUNITY_ATTACHMENT_STORAGE_PATH`
   menunjuk `/var/lib/docker/volumes/e1b4fo52n9tnzjpm5m2i5k8l_community-attachment-data/_data`.
@@ -347,15 +358,17 @@ Yang perlu diingat:
 - Pengodean ulang membuang EXIF, termasuk koordinat GPS yang dibawa foto ponsel
   tanpa disadari pengunggahnya. Itu perbaikan privasi yang datang cuma-cuma,
   bukan efek samping yang perlu dibatalkan.
-- **Skema database kini mendahului kode yang berjalan.** Migrasi sudah terpasang
-  di production dan backfill sudah jalan, tetapi perubahan kodenya **belum
-  di-commit dan belum dideploy**. Ini aman — kolomnya nullable dan kode lama
-  tidak pernah memilihnya — tetapi konsekuensinya harus dipegang sampai deploy:
-  gambar yang **baru** diunggah masih tersimpan mentah, `Cache-Control` di
-  Nginx production masih `no-store`, dan `width`/`height` sudah terisi di
-  database tetapi belum ikut pada respons API sehingga klien belum memakainya.
-  Sesudah deploy, jalankan backfill sekali lagi untuk menyapu gambar yang masuk
-  di sela ini.
+- **Sudah dideploy.** Commit `8a05a14`, deployment 243, 8 Agustus 2026.
+  Terverifikasi pada runtime yang berjalan, bukan pada repo: `dist` kontainer
+  API memuat `autoOrient().resize({...})`, controller terkompilasi memuat
+  `private, no-cache` dua kali (lampiran postingan dan lampiran checklist), dan
+  `nginx -T` di gateway mengembalikan `add_header Cache-Control "private,
+  no-cache"` pada blok `/protected-community-attachments/`. Backfill dijalankan
+  sekali lagi dari dalam kontainer sesudah deploy untuk menyapu gambar yang
+  masuk di sela antara backfill pertama dan deploy: nol tersisa.
+- **Blok `/protected-materials/` sengaja tetap `no-store`.** Ia melayani PDF
+  materi pelajaran, bukan lampiran komunitas, dan `lesson-material.e2e-spec.ts`
+  menguncinya. Jangan ikut diubah hanya karena letaknya bersebelahan.
 
 ---
 
