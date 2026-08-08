@@ -1,5 +1,5 @@
-import { ArrowLeft, ArrowRight, FileText, X } from '../components/icons';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, FileText, Maximize, Minimize, Pause, Play, Volume, VolumeOff, X } from '../components/icons';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 export type LampiranPost = {
   id: string; originalName: string; mimeType: string; sizeBytes: string; position: number;
@@ -111,7 +111,13 @@ function MediaItem({ item, onZoom }: { item: LampiranPost; onZoom: (item: Lampir
  */
 function VideoPenyedia({ item }: { item: LampiranPost }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const bingkaiRef = useRef<HTMLDivElement | null>(null);
   const src = item.video?.playbackUrl ?? null;
+  const [diputar, setDiputar] = useState(false);
+  const [posisi, setPosisi] = useState(0);
+  const [durasi, setDurasi] = useState(0);
+  const [bisu, setBisu] = useState(false);
+  const [penuh, setPenuh] = useState(false);
   // URL-nya bertanda tangan dan bermasa berlaku, jadi ia dapat berganti tanpa
   // videonya berganti. Memasang ulang pemutar setiap kali tandatangannya
   // diperbarui akan melempar tontonan kembali ke detik nol; yang menentukan
@@ -142,6 +148,13 @@ function VideoPenyedia({ item }: { item: LampiranPost }) {
     return () => { dibatalkan = true; hls?.destroy(); };
   }, [item.id, siap]);
 
+  useEffect(() => {
+    // Keluar layar penuh lewat Escape tidak melewati tombol kita.
+    const ikuti = () => setPenuh(document.fullscreenElement === bingkaiRef.current);
+    document.addEventListener('fullscreenchange', ikuti);
+    return () => document.removeEventListener('fullscreenchange', ikuti);
+  }, []);
+
   if (!src) {
     const gagal = item.video?.status === 'FAILED';
     return (
@@ -152,5 +165,82 @@ function VideoPenyedia({ item }: { item: LampiranPost }) {
     );
   }
 
-  return <video ref={videoRef} className="postMediaItem" controls preload="metadata" playsInline />;
+  const putar = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) void video.play(); else video.pause();
+  };
+
+  const layarPenuh = () => {
+    const bingkai = bingkaiRef.current;
+    if (!bingkai) return;
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void bingkai.requestFullscreen();
+  };
+
+  return (
+    <div
+      ref={bingkaiRef}
+      className={`postMediaItem courseVideoPlayer postVideoPlayer${diputar ? ' isPlaying' : ''}`}
+      onDoubleClick={layarPenuh}
+    >
+      <video
+        ref={videoRef}
+        preload="metadata"
+        playsInline
+        onClick={putar}
+        onPlay={() => setDiputar(true)}
+        onPause={() => setDiputar(false)}
+        onEnded={() => setDiputar(false)}
+        onTimeUpdate={(event) => setPosisi(event.currentTarget.currentTime)}
+        onLoadedMetadata={(event) => setDurasi(event.currentTarget.duration || 0)}
+        onVolumeChange={(event) => setBisu(event.currentTarget.muted)}
+      />
+
+      {!diputar ? (
+        <button className="courseVideoCenterPlay" type="button" onClick={putar} aria-label={`Putar ${item.originalName}`}>
+          <Play size={26} />
+        </button>
+      ) : null}
+
+      <div className="courseVideoControls">
+        <div className="courseVideoSeekWrap">
+          <input
+            className="courseVideoSeek"
+            type="range"
+            min="0"
+            max={durasi || 0}
+            step="0.1"
+            value={Math.min(posisi, durasi || 0)}
+            onChange={(event) => { if (videoRef.current) videoRef.current.currentTime = Number(event.target.value); }}
+            aria-label="Posisi video"
+            style={{ '--video-progress': `${durasi ? (posisi / durasi) * 100 : 0}%` } as CSSProperties}
+          />
+        </div>
+        <div className="courseVideoControlRow">
+          <button type="button" onClick={putar} aria-label={diputar ? 'Jeda' : 'Putar'}>
+            {diputar ? <Pause size={18} /> : <Play size={18} />}
+          </button>
+          <span className="courseVideoTime">{waktu(posisi)} / {waktu(durasi)}</span>
+          <button
+            type="button"
+            onClick={() => { if (videoRef.current) videoRef.current.muted = !videoRef.current.muted; }}
+            aria-label={bisu ? 'Aktifkan suara' : 'Bisukan'}
+          >
+            {bisu ? <VolumeOff size={18} /> : <Volume size={18} />}
+          </button>
+          <button type="button" onClick={layarPenuh} aria-label={penuh ? 'Keluar layar penuh' : 'Layar penuh'}>
+            {penuh ? <Minimize size={18} /> : <Maximize size={18} />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** `m:ss`, cukup untuk klip komunitas yang jarang melewati satu jam. */
+function waktu(detik: number): string {
+  if (!Number.isFinite(detik) || detik < 0) return '0:00';
+  const menit = Math.floor(detik / 60);
+  return `${menit}:${String(Math.floor(detik % 60)).padStart(2, '0')}`;
 }

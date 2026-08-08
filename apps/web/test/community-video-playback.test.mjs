@@ -48,3 +48,16 @@ test('video ditambahkan lewat composer maupun sunting menempuh jalur penyedia ya
     assert.match(sumber, /uploadDraftVideo/);
   }
 });
+
+test('video postingan memakai pemutar kustom, bukan kontrol bawaan peramban', async () => {
+  // Kontrol bawaan berbeda wujudnya di setiap peramban dan tidak dapat
+  // disesuaikan dengan tema. Pemutarnya memakai kelas styling video milik
+  // proyek yang sama dengan pemutar pelajaran.
+  const lampiran = await read('../app/community/post-attachments.tsx');
+
+  assert.match(lampiran, /courseVideoPlayer postVideoPlayer/);
+  assert.match(lampiran, /courseVideoControls/);
+  assert.match(lampiran, /courseVideoSeek/);
+  // Video Bunny tidak boleh kembali memakai `controls` bawaan.
+  assert.doesNotMatch(lampiran, /<video\s+ref=\{videoRef\}[^>]*\scontrols/);
+});

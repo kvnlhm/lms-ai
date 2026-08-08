@@ -3663,3 +3663,19 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .postVideoMenunggu{display:grid;align-content:center;justify-items:center;gap:4px;min-height:180px;padding:20px;background:var(--surface-2);color:var(--muted);text-align:center}
 .postVideoMenunggu>span{color:var(--text);font-size:14px}
 .postVideoMenunggu>small{font-size:12px}
+
+/* Pemutar video postingan.
+   Memakai styling video milik proyek — kelas `courseVideo*` dinamai mengikuti
+   pemakai pertamanya, pemutar pelajaran, tetapi isinya memang styling pemutar
+   pada umumnya. Yang ditambahkan di sini hanya penempatannya di dalam kartu
+   media, dan penghilangan hal-hal yang khusus pelajaran. */
+.postVideoPlayer{border-radius:12px;overflow:hidden}
+.postVideoPlayer video{cursor:pointer}
+.postMediaSingle .postVideoPlayer{width:100%;height:auto;max-height:min(125cqw,760px)}
+.postMediaRow .postVideoPlayer{height:100%;width:auto;aspect-ratio:16/9}
+/* Kontrol muncul saat disentuh atau di-hover, dan selalu tampil sebelum
+   diputar — sama dengan pemutar pelajaran. */
+.postVideoPlayer .courseVideoControls{padding:28px 12px 9px}
+/* Tombol putar di kiri, sisanya di kanan — pemutar pelajaran mengumpulkan
+   semuanya di kanan karena barisnya memuat lebih banyak kontrol. */
+.postVideoPlayer .courseVideoControlRow>button:first-child{margin-right:auto}
