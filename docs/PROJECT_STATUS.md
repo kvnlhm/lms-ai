@@ -430,6 +430,62 @@ Yang perlu diingat:
 
 ---
 
+## 1h. Masuk dan mendaftar dengan akun Google
+
+8 Agustus 2026. Commit `a1b71b1`, deployment 246. Migrasi
+`20260808120000_google_identity`.
+
+Diminta pemiliknya, yang menyebut sendiri bahwa ia bingung karena pendaftaran
+terikat pembayaran. Kebingungan itu beralasan: di sistem ini **pendaftaran sama
+dengan pembelian**, akun baru lahir dari webhook Midtrans, dan tidak ada akun
+gratis sama sekali. Jadi "daftar via Google" harus menjawab pertanyaan yang
+selama ini tidak perlu dijawab — apa yang terjadi bila seseorang masuk dengan
+Google tetapi belum membayar.
+
+Keputusan pemiliknya, ditegaskan dua kali: **selama belum membayar, tidak boleh
+masuk.** Google dipakai sebagai bukti identitas, bukan sebagai pintu akses.
+
+- `POST /auth/google` **tidak pernah memanggil `user.create`.** Tidak adanya
+  akun yang cocok berarti orangnya memang belum membayar, dan jawabannya 401.
+- Sesudah identitasnya terbukti, jalurnya menyatu ke `terbitkanSesi()` yang
+  sama dengan masuk memakai kata sandi. Itu disengaja: pemeriksaan status,
+  role, dan MFA hanya ada di satu tempat, sehingga pintu Google tidak dapat
+  diam-diam menjadi lebih longgar daripada pintu satunya.
+- Pada checkout, kehadiran ID token membuat **email dan nama diambil dari
+  token, bukan dari formulir**. Tanpa itu seseorang dapat masuk dengan akun
+  Google sendiri lalu mengetikkan email orang lain, dan webhook pembayaran akan
+  menautkan `googleSub` penyerang ke akun berbayar milik orang itu. Nomor
+  telepon tetap dari formulir; Google tidak memberikannya sedangkan aktivasi
+  WhatsApp membutuhkannya.
+- Penautan ke akun berbayar yang sudah ada dilakukan lewat email, dan itu hanya
+  aman karena token yang `email_verified`-nya bukan `true` ditolak lebih dulu.
+  Jangan pernah melonggarkan pemeriksaan itu.
+
+Yang perlu diingat:
+
+- **Client id dibaca Server Component saat permintaan datang, bukan
+  `NEXT_PUBLIC_*`.** Halaman login dan pendaftaran ber-`force-dynamic`,
+  jadi keduanya membaca `GOOGLE_OAUTH_CLIENT_ID` lalu meneruskannya sebagai
+  prop. Konsekuensinya baik: mengganti client id **tidak** menuntut rebuild.
+  Polanya sama dengan kunci publik Midtrans yang sudah dikirim saat runtime.
+- **Kosong berarti mati, dan matinya fail closed.** Tanpa client id, seluruh
+  token ditolak — bukan diterima tanpa pemeriksaan. Tanpa `audience` yang
+  benar, token terbitan aplikasi Google mana pun akan lolos.
+- Alurnya memakai ID token, bukan authorization code. Tidak ada redirect URI,
+  tidak ada callback, dan tidak ada client secret di mana pun. Di Google Cloud
+  Console hanya **Authorised JavaScript origins** yang diisi
+  (`https://academy.aipreneur.co.id`); kolom redirect dibiarkan kosong.
+- Consent screen harus berstatus **Published**, bukan Testing. Selama Testing,
+  hanya akun yang didaftarkan manual sebagai test user yang diterima Google.
+
+Terverifikasi di produksi, bukan hanya di test: tombolnya render di
+`/login` dan `/register` (artinya Google menerima client id dan origin-nya,
+karena origin yang tidak diizinkan membuat GSI menolak render), console bersih,
+dan `POST /auth/google` dengan token palsu membalas 401 tanpa menambah satu pun
+baris `users`.
+
+---
+
 ## 2. Cara bekerja di mesin ini
 
 Sesi Claude berjalan **langsung di VPS produksi**, bukan di laptop. Konsekuensinya
@@ -444,6 +500,24 @@ container `node:22-alpine` dengan repo di-mount ke `/w`, memakai `pg-test`
 ```bash
 docker exec coolify php artisan tinker --execute="echo queue_application_deployment(application: App\Models\Application::where('uuid','e1b4fo52n9tnzjpm5m2i5k8l')->first(), deployment_uuid: (string) Illuminate\Support\Str::uuid(), force_rebuild: false);"
 ```
+
+**Environment variable Coolify disimpan terenkripsi. Jangan pernah menulisnya
+lewat SQL langsung.** Menyisipkan baris teks biasa ke `environment_variables`
+membuat `decrypt()` Laravel melempar `DecryptException` saat build, dan yang
+gagal bukan variabel itu saja melainkan **seluruh deploy** (kejadian nyata:
+deployment 245). Produksi tidak ikut jatuh karena kegagalannya di tahap build,
+tetapi tidak ada deploy yang bisa lewat sampai barisnya dibuang. Yang benar
+lewat modelnya:
+
+```bash
+docker exec coolify php artisan tinker --execute="\$app = App\Models\Application::where('uuid','e1b4fo52n9tnzjpm5m2i5k8l')->firstOrFail(); App\Models\EnvironmentVariable::updateOrCreate(['key'=>'NAMA','resourceable_id'=>\$app->id,'resourceable_type'=>App\Models\Application::class],['value'=>'nilai','is_runtime'=>true,'is_buildtime'=>true,'is_preview'=>false]);"
+```
+
+Perhatikan `\$` yang di-escape: tanpa itu bash mengganti `$app` menjadi kosong
+sebelum sampai ke PHP, dan perintahnya gagal tanpa pesan yang jelas.
+
+Baris ganda untuk satu kunci adalah hal normal di instalasi ini — `WEB_URL` dan
+`MIDTRANS_ENVIRONMENT` pun begitu. Selama nilainya sama, tidak ada masalah.
 
 **Memantau deploy:**
 
