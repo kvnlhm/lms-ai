@@ -120,7 +120,7 @@ export class CommunityService {
         group: { select: { slug: true, name: true } },
       } },
       author: { select: authorSelect },
-      attachments: { orderBy: { position: 'asc' as const }, select: { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true, width: true, height: true } },
+      attachments: { orderBy: { position: 'asc' as const }, select: { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true, width: true, height: true, videoAsset: { select: { status: true, providerVideoId: true } } } },
       poll: { select: {
         id: true,
         options: { orderBy: { position: 'asc' as const }, select: { id: true, label: true, position: true, _count: { select: { votes: true } } } },
@@ -161,7 +161,10 @@ export class CommunityService {
   ) {
     const { reactions, checklistCompletions, comments, channel, attachments, poll, ...post } = row as T & { channel?: { type?: CommunityChannelType; group?: { slug: string; name: string } }; attachments?: { sizeBytes: bigint }[]; poll?: PollRow | null };
     const hakTulisan = this.hakTulisan(row.author.id, userId, canModerate);
-    const daftarLampiran = (attachments ?? []).map((item) => ({ ...item, sizeBytes: item.sizeBytes.toString() }));
+    // Dipetakan lewat service lampirannya, bukan disalin di sini: URL playback
+    // Bunny bertanda tangan dan bermasa berlaku, dan aturannya hanya boleh ada
+    // di satu tempat.
+    const daftarLampiran = (attachments ?? []).map((item) => this.attachments.sajikan(item as never));
     return {
       ...post,
       attachments: daftarLampiran,

@@ -14,6 +14,7 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
 import { AuditService } from '../../../shared/audit/audit.service';
 import { olahGambar } from '../../../shared/storage/image-processing';
+import { bunnySignedUrl } from '../../video/application/video.service';
 import type { StaleUploadReconcilerPort } from '../../../shared/storage/stale-upload.port';
 
 const JENIS = new Map([
@@ -27,7 +28,13 @@ const JENIS = new Map([
 type MimeLampiran = 'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm' | 'application/pdf';
 
 /** Kolom yang aman dikirim ke klien: `objectKey` sengaja tidak termasuk. */
-const pilih = { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true, width: true, height: true } satisfies Prisma.CommunityPostAttachmentSelect;
+const pilih = {
+  id: true, originalName: true, mimeType: true, sizeBytes: true, position: true,
+  createdAt: true, width: true, height: true,
+  // Diambil bersama lampirannya, bukan lewat kueri tambahan per baris: satu
+  // umpan dapat memuat puluhan lampiran sekaligus.
+  videoAsset: { select: { id: true, status: true, provider: true, providerVideoId: true } },
+} satisfies Prisma.CommunityPostAttachmentSelect;
 
 /**
  * Sisi terpanjang gambar sesudah diolah.
@@ -42,9 +49,12 @@ const SISI_MAKS = 1600;
 @Injectable()
 export class CommunityAttachmentService implements StaleUploadReconcilerPort {
   private readonly config: AppConfig['communityAttachment'];
+  private readonly video: AppConfig['video'];
 
   constructor(private readonly prisma: PrismaService, config: ConfigService<{ app: AppConfig }, true>, private readonly audit: AuditService) {
-    this.config = config.get('app', { infer: true }).communityAttachment;
+    const app = config.get('app', { infer: true });
+    this.config = app.communityAttachment;
+    this.video = app.video;
   }
 
   /**
@@ -344,7 +354,41 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
   }
 
   private namaAman(name: string) { return name.replace(/[^\w.\- ]/g, '_').slice(0, 255) || 'lampiran'; }
-  private sajikan(value: { id: string; originalName: string; mimeType: string; sizeBytes: bigint; position: number; createdAt: Date; width: number | null; height: number | null }) {
-    return { id: value.id, originalName: value.originalName, mimeType: value.mimeType, sizeBytes: value.sizeBytes.toString(), position: value.position, createdAt: value.createdAt, width: value.width, height: value.height };
+  /**
+   * Bentuk lampiran yang dikirim ke klien.
+   *
+   * `video` hanya terisi untuk lampiran yang isinya dititipkan ke penyedia
+   * luar. Lampiran berkas lokal mengembalikan `null`, sehingga postingan lama
+   * tampil persis seperti sebelumnya selama pemindahan berlangsung.
+   */
+  sajikan(value: {
+    id: string; originalName: string; mimeType: string; sizeBytes: bigint; position: number;
+    createdAt: Date; width: number | null; height: number | null;
+    videoAsset?: { status: string; providerVideoId: string } | null;
+  }) {
+    return {
+      id: value.id, originalName: value.originalName, mimeType: value.mimeType,
+      sizeBytes: value.sizeBytes.toString(), position: value.position,
+      createdAt: value.createdAt, width: value.width, height: value.height,
+      video: value.videoAsset ? this.sajikanVideo(value.videoAsset) : null,
+    };
+  }
+
+  /**
+   * URL playback hanya diterbitkan untuk video yang benar-benar siap.
+   *
+   * Menyerahkan tautan pada video yang masih diproses membuat pemutar dibuka
+   * pada berkas yang belum ada di CDN, dan yang dilihat pembaca adalah galat —
+   * bukan keterangan bahwa videonya sedang disiapkan.
+   */
+  private sajikanVideo(aset: { status: string; providerVideoId: string }) {
+    const siap = aset.status === 'AVAILABLE';
+    const berlaku = new Date(Date.now() + this.video.playbackTtlSeconds * 1000);
+    return {
+      status: aset.status,
+      playbackUrl: siap
+        ? bunnySignedUrl(this.video.bunny, aset.providerVideoId, 'playlist.m3u8', berlaku)
+        : null,
+    };
   }
 }

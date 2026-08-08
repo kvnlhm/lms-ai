@@ -4078,6 +4078,12 @@ export interface components {
             canDelete: boolean;
             author: components["schemas"]["CommunityPersonDto"];
         };
+        CommunityAttachmentVideoDto: {
+            /** @description CREATED, UPLOADING, PROCESSING, AVAILABLE, atau FAILED. */
+            status: string;
+            /** @description URL playlist HLS bertanda tangan dan bermasa berlaku. Null selama videonya belum siap. */
+            playbackUrl: string | null;
+        };
         CommunityAttachmentDto: {
             id: string;
             originalName: string;
@@ -4091,6 +4097,8 @@ export interface components {
             width: number | null;
             /** @description Tinggi gambar sesudah diolah. Null untuk video, PDF, dan lampiran lama. */
             height: number | null;
+            /** @description Terisi hanya untuk lampiran video yang dititipkan ke penyedia luar. Null untuk berkas yang disimpan sendiri. */
+            video: components["schemas"]["CommunityAttachmentVideoDto"] | null;
         };
         CommunityPollOptionDto: {
             id: string;

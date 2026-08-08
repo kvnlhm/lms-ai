@@ -177,6 +177,14 @@ export class CommunityAttachmentDto {
   @ApiProperty() createdAt!: Date;
   @ApiProperty({ type: Number, nullable: true, description: 'Lebar gambar sesudah diolah. Null untuk video, PDF, dan lampiran lama.' }) width!: number | null;
   @ApiProperty({ type: Number, nullable: true, description: 'Tinggi gambar sesudah diolah. Null untuk video, PDF, dan lampiran lama.' }) height!: number | null;
+  @ApiProperty({ type: () => CommunityAttachmentVideoDto, nullable: true, description: 'Terisi hanya untuk lampiran video yang dititipkan ke penyedia luar. Null untuk berkas yang disimpan sendiri.' })
+  video!: CommunityAttachmentVideoDto | null;
+}
+
+export class CommunityAttachmentVideoDto {
+  @ApiProperty({ description: 'CREATED, UPLOADING, PROCESSING, AVAILABLE, atau FAILED.' }) status!: string;
+  @ApiProperty({ type: String, nullable: true, description: 'URL playlist HLS bertanda tangan dan bermasa berlaku. Null selama videonya belum siap.' })
+  playbackUrl!: string | null;
 }
 
 export class CommunityChecklistItemDto extends CommunityPostDto {
