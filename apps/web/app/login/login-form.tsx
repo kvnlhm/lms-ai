@@ -281,8 +281,7 @@ export function LoginForm({ nextPath, googleClientId }: Props) {
       </button>
 
       <div className="authDivider"><span>atau</span></div>
-      {/* Kartu masuk lebarnya 364 px; 400 akan meluber keluar. */}
-      <GoogleSignIn clientId={googleClientId} width={360} onToken={(token) => void handleGoogle(token)} disabled={busy} />
+      <GoogleSignIn clientId={googleClientId} onToken={(token) => void handleGoogle(token)} disabled={busy} />
     </form>
   );
 }

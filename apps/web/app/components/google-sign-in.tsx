@@ -30,15 +30,6 @@ interface Props {
   onToken: (idToken: string) => void;
   /** Teks pada tombol; Google hanya menerima kata yang sudah ia sediakan. */
   text?: 'signin_with' | 'signup_with' | 'continue_with';
-  /**
-   * Lebar tombol dalam piksel, maksimum 400 menurut Google.
-   *
-   * Ini lebar *minimum*, dan Google menata isi tombolnya di dalam lebar itu —
-   * termasuk varian personalisasi yang memuat avatar, nama, dan alamat email
-   * lengkap. Angka yang kecil membuat varian itu terpotong, jadi default-nya
-   * sengaja maksimum. Turunkan hanya bila wadahnya memang lebih sempit.
-   */
-  width?: number;
   disabled?: boolean;
 }
 
@@ -56,6 +47,23 @@ declare global {
 const SUMBER = 'https://accounts.google.com/gsi/client';
 
 /**
+ * Lebar yang membuat Google memakai tombol standar, bukan varian personalisasi.
+ *
+ * Varian personalisasi — yang menyapa pengunjung dengan avatar, nama, dan
+ * alamat emailnya — isinya lebih lebar daripada yang dapat ditampung
+ * `renderButton`. Isinya terpotong di sisi kanan, dan itu tidak dapat
+ * diperbaiki dengan melebarkan tombol: 400 adalah maksimum yang diizinkan
+ * Google, dan pada 400 pun masih terpotong.
+ *
+ * Menurut dokumentasi Google, varian itu tidak ditampilkan bila lebarnya di
+ * bawah 200 piksel. Karena `width` adalah lebar *minimum* dan tombol standar
+ * secara alami sekitar 210 piksel, angka 199 tidak mengecilkan apa pun — ia
+ * hanya mematikan varian yang rusak. Yang hilang cuma sapaan nama pada
+ * tombolnya; alur masuknya sama persis.
+ */
+const LEBAR_TANPA_PERSONALISASI = 199;
+
+/**
  * Tema yang sedang berlaku, dengan aturan yang sama persis dengan `ThemeToggle`:
  * `data-theme` pada elemen root menang, dan tanpa itu preferensi sistem yang
  * dipakai. Menduplikasi aturannya di sini disengaja — mengangkatnya menjadi
@@ -67,7 +75,7 @@ function temaSaatIni(): 'light' | 'dark' {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
-export function GoogleSignIn({ clientId, onToken, text = 'signin_with', width = 400, disabled }: Props) {
+export function GoogleSignIn({ clientId, onToken, text = 'signin_with', disabled }: Props) {
   const wadah = useRef<HTMLDivElement>(null);
   const [gagal, setGagal] = useState(false);
   // Tombolnya hidup di dalam iframe milik Google, jadi ia tidak ikut berubah
@@ -117,7 +125,7 @@ export function GoogleSignIn({ clientId, onToken, text = 'signin_with', width = 
         size: 'large',
         text,
         shape: 'pill',
-        width,
+        width: LEBAR_TANPA_PERSONALISASI,
         locale: 'id',
       });
     };
@@ -142,7 +150,7 @@ export function GoogleSignIn({ clientId, onToken, text = 'signin_with', width = 
       skrip.removeEventListener('load', onLoad);
       skrip.removeEventListener('error', onError);
     };
-  }, [clientId, text, width, tema]);
+  }, [clientId, text, tema]);
 
   if (!clientId) return null;
 
