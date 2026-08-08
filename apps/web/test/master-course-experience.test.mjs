@@ -51,6 +51,43 @@ test('tombol layar penuh juga mengembalikan video ke ukuran semula', async () =>
   assert.match(source, /fullscreenchange/);
 });
 
+test('pintasan papan tik pemutar mengikuti kebiasaan YouTube', async () => {
+  const source = await read('../app/learn/[courseId]/[lessonId]/video-player.tsx');
+
+  // Panah atas dan bawah mengatur volume; sebelumnya keduanya hanya menggulir
+  // halaman di belakang pemutar.
+  assert.match(source, /ArrowUp/);
+  assert.match(source, /ArrowDown/);
+  assert.match(source, /geserVolume/);
+
+  // Panah kiri/kanan 5 detik, J/L 10 detik — pembagian yang sama seperti
+  // YouTube, bukan dua pasang tombol yang melakukan hal identik.
+  assert.match(source, /case 'arrowleft':\s*skip\(-5\)/);
+  assert.match(source, /case 'l':\s*skip\(10\)/);
+
+  // Angka melompat ke persepuluh durasi, Home/End ke ujung.
+  assert.match(source, /\/\^\[0-9\]\$\//);
+  assert.match(source, /case 'home'/);
+  assert.match(source, /case 'end'/);
+
+  // Kecepatan naik-turun lewat < dan >, memakai daftar yang sama dengan menu.
+  assert.match(source, /const SPEEDS/);
+  assert.match(source, /case '>'/);
+  assert.match(source, /case '<'/);
+
+  // Tombol yang menggulir halaman ditahan, jika tidak menekan spasi untuk jeda
+  // ikut melompatkan halaman pelajaran.
+  assert.match(source, /GULIR/);
+  assert.match(source, /preventDefault/);
+
+  // Slider volume dan posisi memakai panah yang sama. Tanpa penjaga ini satu
+  // tekanan berbuah dua perubahan: slider bergeser sendiri, pintasan menyusul.
+  assert.match(source, /INPUT|SELECT/);
+
+  // Ctrl+F dan Cmd+L milik browser, bukan milik pemutar.
+  assert.match(source, /event\.ctrlKey \|\| event\.metaKey \|\| event\.altKey/);
+});
+
 test('halaman kelola kursus menyediakan menu aksi dan pratinjau langsung', async () => {
   const [listPage, detailPage, editor] = await Promise.all([
     read('../app/master/courses/page.tsx'),

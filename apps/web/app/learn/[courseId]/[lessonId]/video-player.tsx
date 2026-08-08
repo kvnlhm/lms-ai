@@ -103,6 +103,15 @@ await browserClient().POST('/api/v1/learn/lessons/{lessonId}/playback-sessions',
  */
 const posisiTerakhir = new WeakMap<HTMLVideoElement, number>();
 
+/**
+ * Kecepatan yang ditawarkan, satu daftar untuk menu dan untuk pintasan `<` `>`.
+ *
+ * Kalau pintasan memakai kelipatan sendiri, ia dapat mendarat di angka yang
+ * tidak ada di menu — dan menu kecepatan lalu tampil kosong sementara videonya
+ * jelas berjalan lebih cepat.
+ */
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
 function lacak(lessonId: string, video: HTMLVideoElement): void {
   const sebelumnya = posisiTerakhir.get(video) ?? 0;
   catatKemajuan(lessonId, video.currentTime, video.duration, sebelumnya);
@@ -270,13 +279,72 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
     if (frameRef.current?.requestFullscreen) void frameRef.current.requestFullscreen();
   }
 
+  function geserVolume(delta: number) {
+    // Dibulatkan dua angka: 0,05 yang ditumpuk sepuluh kali meninggalkan sisa
+    // pecahan biner, dan slider volume mulai berhenti di angka aneh.
+    changeVolume(Number(Math.min(1, Math.max(0, volume + delta)).toFixed(2)));
+  }
+
+  function geserKecepatan(arah: number) {
+    const sekarang = SPEEDS.indexOf(speed);
+    const berikut = SPEEDS[Math.min(SPEEDS.length - 1, Math.max(0, sekarang + arah))];
+    if (berikut !== undefined) changeSpeed(berikut);
+  }
+
+  /**
+   * Pintasan papan tik, mengikuti kebiasaan YouTube.
+   *
+   * Pembagian panah dan J/L bukan pengulangan: panah bergerak 5 detik, J dan L
+   * 10 detik. Orang yang sudah terbiasa menonton di YouTube membawa refleks itu
+   * ke sini, dan pemutar yang menafsirkannya berbeda terasa rusak meski setiap
+   * tombolnya bekerja.
+   *
+   * Pintasan ini hanya hidup ketika pemutarnya dipegang fokus — bukan dipasang
+   * pada dokumen. Halaman pelajaran punya kolom isian dan diskusi sendiri, dan
+   * spasi yang selalu menjeda video akan merebut spasi dari orang yang sedang
+   * mengetik atau sekadar menggulir halaman.
+   */
   function keyboard(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === ' ' || event.key === 'k') { event.preventDefault(); togglePlay(); }
-    if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'j') skip(-10);
-    if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'l') skip(10);
-    if (event.key.toLowerCase() === 'm') toggleMute();
-    if (event.key.toLowerCase() === 'f') fullscreen();
-    if (event.key === 'Escape') setSettingsOpen(false);
+    // Penggeser posisi dan volume adalah `input[type=range]`: panah kiri-kanan
+    // dan atas-bawah sudah menjadi miliknya. Tanpa penjaga ini satu tekanan
+    // berbuah dua perubahan — slider bergeser sendiri, lalu pintasan menyusul
+    // dengan langkah yang jauh lebih besar.
+    const asal = (event.target as HTMLElement).tagName;
+    if (asal === 'INPUT' || asal === 'SELECT' || asal === 'TEXTAREA') return;
+
+    // Ctrl+F mencari di halaman dan Cmd+L menuju bilah alamat. Tanpa penjaga
+    // ini keduanya juga melempar video ke layar penuh. Shift tetap diloloskan:
+    // `<` dan `>` memang lahir darinya.
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+    // Tanpa ini spasi dan panah menggulir halaman pelajaran di belakang
+    // pemutar, dan menjeda video sekaligus melompatkan yang dibaca.
+    const GULIR = [' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'];
+    if (GULIR.includes(event.key)) event.preventDefault();
+
+    if (/^[0-9]$/.test(event.key)) {
+      seek((duration * Number(event.key)) / 10);
+      return;
+    }
+
+    switch (event.key.toLowerCase()) {
+      case ' ':
+      case 'k': togglePlay(); break;
+      case 'arrowleft': skip(-5); break;
+      case 'arrowright': skip(5); break;
+      case 'j': skip(-10); break;
+      case 'l': skip(10); break;
+      case 'arrowup': geserVolume(0.05); break;
+      case 'arrowdown': geserVolume(-0.05); break;
+      case 'm': toggleMute(); break;
+      case 'f': fullscreen(); break;
+      case 'home': seek(0); break;
+      case 'end': seek(duration); break;
+      case '>': geserKecepatan(1); break;
+      case '<': geserKecepatan(-1); break;
+      case 'escape': setSettingsOpen(false); break;
+      default: break;
+    }
   }
 
   return (
@@ -291,17 +359,19 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
           <input className="courseVideoSeek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} onChange={(event) => seek(Number(event.target.value))} aria-label="Posisi video" style={{ '--video-progress': `${duration ? currentTime / duration * 100 : 0}%` } as CSSProperties} />
         </div>
         <div className="courseVideoControlRow">
-          <button type="button" onClick={togglePlay} aria-label={playing ? 'Jeda video' : 'Putar video'}>{playing ? <Pause size={20} /> : <Play size={20} />}</button>
-          <button className="courseVideoSkip" type="button" onClick={() => skip(-10)} aria-label="Mundur 10 detik"><Rewind size={20} /><span aria-hidden="true">10</span></button>
-          <button className="courseVideoSkip" type="button" onClick={() => skip(10)} aria-label="Maju 10 detik"><FastForward size={20} /><span aria-hidden="true">10</span></button>
+          {/* `title` menyebutkan pintasannya. Pintasan yang tidak pernah
+              disebutkan di mana pun hanya berguna bagi yang menebaknya. */}
+          <button type="button" onClick={togglePlay} title={playing ? 'Jeda (k)' : 'Putar (k)'} aria-label={playing ? 'Jeda video' : 'Putar video'}>{playing ? <Pause size={20} /> : <Play size={20} />}</button>
+          <button className="courseVideoSkip" type="button" onClick={() => skip(-10)} title="Mundur 10 detik (j)" aria-label="Mundur 10 detik"><Rewind size={20} /><span aria-hidden="true">10</span></button>
+          <button className="courseVideoSkip" type="button" onClick={() => skip(10)} title="Maju 10 detik (l)" aria-label="Maju 10 detik"><FastForward size={20} /><span aria-hidden="true">10</span></button>
           <span className="courseVideoTime">{formatTime(currentTime)} / {formatTime(duration)}</span>
-          <div className="courseVideoVolume"><button type="button" onClick={toggleMute} aria-label={muted ? 'Aktifkan suara' : 'Bisukan'}>{muted ? <VolumeOff size={18} /> : <Volume size={18} />}</button><label><span className="srOnly">Volume</span><input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={(event) => changeVolume(Number(event.target.value))} /></label></div>
+          <div className="courseVideoVolume"><button type="button" onClick={toggleMute} title={muted ? 'Aktifkan suara (m)' : 'Bisukan (m)'} aria-label={muted ? 'Aktifkan suara' : 'Bisukan'}>{muted ? <VolumeOff size={18} /> : <Volume size={18} />}</button><label><span className="srOnly">Volume</span><input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} onChange={(event) => changeVolume(Number(event.target.value))} /></label></div>
           <span className="courseVideoProtected">Konten terlindungi</span>
           <div className="courseVideoSettings">
             <button type="button" aria-label="Pengaturan video" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((value) => !value)}><Settings size={20} /></button>
-            {settingsOpen ? <div className="courseVideoSettingsPanel"><label><span>Kecepatan</span><select value={speed} onChange={(event) => changeSpeed(Number(event.target.value))}>{[0.5, 0.75, 1, 1.25, 1.5, 2].map((value) => <option key={value} value={value}>{value === 1 ? 'Normal' : `${value}×`}</option>)}</select></label>{qualities.length ? <label><span>Kualitas</span><select value={quality} onChange={(event) => changeQuality(Number(event.target.value))}><option value={-1}>Otomatis</option>{qualities.map((item) => <option key={item.index} value={item.index}>{item.height}p</option>)}</select></label> : <p>Kualitas menyesuaikan koneksi secara otomatis.</p>}</div> : null}
+            {settingsOpen ? <div className="courseVideoSettingsPanel"><label><span>Kecepatan</span><select value={speed} onChange={(event) => changeSpeed(Number(event.target.value))}>{SPEEDS.map((value) => <option key={value} value={value}>{value === 1 ? 'Normal' : `${value}×`}</option>)}</select></label>{qualities.length ? <label><span>Kualitas</span><select value={quality} onChange={(event) => changeQuality(Number(event.target.value))}><option value={-1}>Otomatis</option>{qualities.map((item) => <option key={item.index} value={item.index}>{item.height}p</option>)}</select></label> : <p>Kualitas menyesuaikan koneksi secara otomatis.</p>}</div> : null}
           </div>
-          <button type="button" onClick={fullscreen} aria-label={layarPenuh ? 'Keluar dari layar penuh' : 'Layar penuh'}>{layarPenuh ? <Minimize size={20} /> : <Maximize size={20} />}</button>
+          <button type="button" onClick={fullscreen} title={layarPenuh ? 'Keluar dari layar penuh (f)' : 'Layar penuh (f)'} aria-label={layarPenuh ? 'Keluar dari layar penuh' : 'Layar penuh'}>{layarPenuh ? <Minimize size={20} /> : <Maximize size={20} />}</button>
         </div>
       </div>
     </div>
