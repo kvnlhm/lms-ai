@@ -3,11 +3,12 @@ import { CommunityChannelType, type Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { chmod, mkdir, rename, rm } from 'node:fs/promises';
+import { chmod, mkdir, rename, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
-import { Transform } from 'node:stream';
+import { PassThrough, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import sharp, { type OutputInfo } from 'sharp';
 import type { AppConfig } from '../../../config/configuration';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
@@ -25,7 +26,17 @@ const JENIS = new Map([
 type MimeLampiran = 'image/jpeg' | 'image/png' | 'image/webp' | 'video/mp4' | 'video/webm' | 'application/pdf';
 
 /** Kolom yang aman dikirim ke klien: `objectKey` sengaja tidak termasuk. */
-const pilih = { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true } satisfies Prisma.CommunityPostAttachmentSelect;
+const pilih = { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true, width: true, height: true } satisfies Prisma.CommunityPostAttachmentSelect;
+
+/**
+ * Sisi terpanjang gambar sesudah diolah.
+ *
+ * Kartu umpan paling lebar beberapa ratus piksel dan lightbox memakai lebar
+ * layar; 1600 menutupi keduanya termasuk pada layar 2x. Yang dikirim ponsel
+ * biasanya empat ribu piksel lebih, dan seluruh kelebihan itu diunduh pembaca
+ * hanya untuk dibuang oleh penskalaan browser.
+ */
+const SISI_MAKS = 1600;
 
 @Injectable()
 export class CommunityAttachmentService implements StaleUploadReconcilerPort {
@@ -62,10 +73,10 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
       throw AppError.validation({ file: [`Selesaikan atau buang unggahan yang tertunda dulu; maksimum ${this.config.maxPerPost} berkas.`] });
     }
 
-    const { objectKey, mime } = await this.simpan(stream, mimeType, contentLength, this.config.maxDraftUploadBytes);
+    const { objectKey, mime, sizeBytes, width, height } = await this.simpan(stream, mimeType, contentLength, this.config.maxDraftUploadBytes);
     try {
       const attachment = await this.prisma.communityPostAttachment.create({
-        data: { postId: null, uploaderId: userId, objectKey, originalName: this.namaAman(originalName), mimeType: mime, sizeBytes: BigInt(contentLength!) },
+        data: { postId: null, uploaderId: userId, objectKey, originalName: this.namaAman(originalName), mimeType: mime, sizeBytes, width, height },
         select: pilih,
       });
       return this.sajikan(attachment);
@@ -166,14 +177,14 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
    */
   async upload(postId: string, userId: string, canModerate: boolean, stream: Readable, mimeType: string | undefined, originalName: string, contentLength: number | undefined) {
     const post = await this.postChecklist(postId, userId, canModerate);
-    const { objectKey, mime } = await this.simpan(stream, mimeType, contentLength, this.config.maxUploadBytes);
+    const { objectKey, mime, sizeBytes, width, height } = await this.simpan(stream, mimeType, contentLength, this.config.maxUploadBytes);
 
     let attachment;
     try {
       attachment = await this.prisma.$transaction(async (tx) => {
         await tx.communityPostAttachment.deleteMany({ where: { postId } });
         return tx.communityPostAttachment.create({
-          data: { postId, uploaderId: userId, objectKey, originalName: this.namaAman(originalName), mimeType: mime, sizeBytes: BigInt(contentLength!) },
+          data: { postId, uploaderId: userId, objectKey, originalName: this.namaAman(originalName), mimeType: mime, sizeBytes, width, height },
           select: pilih,
         });
       });
@@ -187,7 +198,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     for (const lama of post.attachments) {
       if (lama.objectKey !== objectKey) await rm(join(this.config.storagePath, lama.objectKey), { force: true });
     }
-    await this.audit.record({ actorUserId: userId, action: 'community.checklist_attachment.update', targetType: 'CommunityPost', targetId: postId, after: { mimeType: mime, sizeBytes: String(contentLength) } });
+    await this.audit.record({ actorUserId: userId, action: 'community.checklist_attachment.update', targetType: 'CommunityPost', targetId: postId, after: { mimeType: mime, sizeBytes: String(sizeBytes) } });
     return this.sajikan(attachment);
   }
 
@@ -270,6 +281,12 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
    * Jenisnya tidak dipercayakan pada header `Content-Type`: byte awal berkas
    * diperiksa terhadap tanda tangan jenis yang dinyatakan, dan berkas hanya
    * di-`rename` ke tempat akhirnya sesudah seluruhnya lolos.
+   *
+   * Gambar diolah ulang sambil mengalir, bukan disimpan mentah: dikecilkan ke
+   * `SISI_MAKS` dan dikodekan ulang menjadi WebP. Batas unggahan tetap berlaku
+   * pada byte yang masuk — yang berubah hanyalah apa yang mendarat di disk dan
+   * karenanya apa yang diunduh setiap pembaca. Pengodean ulang sekaligus
+   * membuang EXIF, jadi orientasinya harus diterapkan lebih dulu.
    */
   private async simpan(stream: Readable, mimeType: string | undefined, contentLength: number | undefined, batasByte: number) {
     const jenis = mimeType ? JENIS.get(mimeType as MimeLampiran) : undefined;
@@ -278,7 +295,8 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
       throw AppError.validation({ file: [`Ukuran berkas harus antara 1 byte dan ${batasByte} byte.`] });
     }
 
-    const objectKey = `${randomUUID()}.${jenis.ext}`;
+    const gambar = mimeType!.startsWith('image/');
+    const objectKey = `${randomUUID()}.${gambar ? 'webp' : jenis.ext}`;
     const temporaryPath = join(this.config.storagePath, `${objectKey}.uploading`);
     const finalPath = join(this.config.storagePath, objectKey);
     await mkdir(this.config.storagePath, { recursive: true, mode: 0o755 });
@@ -291,19 +309,35 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
       if (awal.length < 16) awal = Buffer.concat([awal, chunk]).subarray(0, 16);
       callback(null, chunk);
     } });
+    // ponytail: satu mutu untuk semua gambar. Tangkapan layar berteks memang
+    // lebih baik dengan `nearLossless`, tetapi itu menuntut penebakan jenis isi
+    // yang belum terbukti perlu di sini.
+    const olah = gambar
+      ? sharp().autoOrient().resize({ width: SISI_MAKS, height: SISI_MAKS, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 })
+      : new PassThrough();
+    let hasil: OutputInfo | undefined;
+    olah.on('info', (info: OutputInfo) => { hasil = info; });
     try {
-      await pipeline(stream, pemeriksa, createWriteStream(temporaryPath, { flags: 'wx', mode: 0o644 }));
+      await pipeline(stream, pemeriksa, olah, createWriteStream(temporaryPath, { flags: 'wx', mode: 0o644 }));
       if (bytes !== contentLength || !jenis.cocok(awal)) throw new Error('Isi berkas tidak sesuai dengan jenisnya.');
       await rename(temporaryPath, finalPath);
     } catch (error) {
       await rm(temporaryPath, { force: true });
       throw AppError.validation({ file: [error instanceof Error ? error.message : 'Unggahan gagal.'] });
     }
-    return { objectKey, mime: mimeType as MimeLampiran };
+    return {
+      objectKey,
+      mime: (gambar ? 'image/webp' : mimeType) as MimeLampiran,
+      // Ukuran berkas yang benar-benar mendarat, bukan yang diunggah: sesudah
+      // pengolahan keduanya berbeda, dan angka inilah yang dilihat pembaca.
+      sizeBytes: BigInt((await stat(finalPath)).size),
+      width: hasil?.width ?? null,
+      height: hasil?.height ?? null,
+    };
   }
 
   private namaAman(name: string) { return name.replace(/[^\w.\- ]/g, '_').slice(0, 255) || 'lampiran'; }
-  private sajikan(value: { id: string; originalName: string; mimeType: string; sizeBytes: bigint; position: number; createdAt: Date }) {
-    return { id: value.id, originalName: value.originalName, mimeType: value.mimeType, sizeBytes: value.sizeBytes.toString(), position: value.position, createdAt: value.createdAt };
+  private sajikan(value: { id: string; originalName: string; mimeType: string; sizeBytes: bigint; position: number; createdAt: Date; width: number | null; height: number | null }) {
+    return { id: value.id, originalName: value.originalName, mimeType: value.mimeType, sizeBytes: value.sizeBytes.toString(), position: value.position, createdAt: value.createdAt, width: value.width, height: value.height };
   }
 }

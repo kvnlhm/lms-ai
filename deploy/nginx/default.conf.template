@@ -49,7 +49,8 @@ server {
     location /protected-community-attachments/ {
         internal;
         alias /data/community-attachments/;
-        add_header Cache-Control "private, no-store";
+        # Harus sama dengan yang dipasang API; lihat coolify.conf.template.
+        add_header Cache-Control "private, no-cache";
         add_header X-Content-Type-Options "nosniff";
         add_header Accept-Ranges bytes;
         types { image/jpeg jpg jpeg; image/png png; image/webp webp; video/mp4 mp4; video/webm webm; application/pdf pdf; }

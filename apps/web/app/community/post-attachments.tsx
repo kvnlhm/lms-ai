@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowRight, FileText, X } from '../components/icons';
 import { useEffect, useState } from 'react';
 
-export type LampiranPost = { id: string; originalName: string; mimeType: string; sizeBytes: string; position: number };
+export type LampiranPost = { id: string; originalName: string; mimeType: string; sizeBytes: string; position: number; width?: number | null; height?: number | null };
 
 export function ukuranTerbaca(bytes: string | number): string {
   const nilai = typeof bytes === 'string' ? Number(bytes) : bytes;
@@ -81,7 +81,11 @@ function MediaItem({ item, onZoom }: { item: LampiranPost; onZoom: (item: Lampir
     // Tidak dibungkus tautan: pembungkusnya akan menelan klik pada tombol putar.
     return <video className="postMediaItem" controls preload="metadata" src={alamat(item.id)} />;
   }
+  // `width` dan `height` memberitahu browser rasio gambarnya sebelum bytenya
+  // tiba, sehingga ruangnya sudah terpesan dan kartu di bawahnya tidak
+  // terdorong saat gambar selesai dimuat. Lampiran yang mendahului kolom ini
+  // tidak punya dimensi; perilakunya kembali seperti sebelumnya.
   return <button type="button" className="postMediaItem" onClick={() => onZoom(item)} aria-label={`Perbesar ${item.originalName}`}>
-    <img src={alamat(item.id)} alt={item.originalName} loading="lazy" />
+    <img src={alamat(item.id)} alt={item.originalName} loading="lazy" decoding="async" width={item.width ?? undefined} height={item.height ?? undefined} />
   </button>;
 }

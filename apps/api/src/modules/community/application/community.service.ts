@@ -120,7 +120,7 @@ export class CommunityService {
         group: { select: { slug: true, name: true } },
       } },
       author: { select: authorSelect },
-      attachments: { orderBy: { position: 'asc' as const }, select: { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true } },
+      attachments: { orderBy: { position: 'asc' as const }, select: { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true, width: true, height: true } },
       poll: { select: {
         id: true,
         options: { orderBy: { position: 'asc' as const }, select: { id: true, label: true, position: true, _count: { select: { votes: true } } } },

@@ -95,7 +95,14 @@ server {
     location /protected-community-attachments/ {
         internal;
         alias /data/community-attachments/;
-        add_header Cache-Control "private, no-store" always;
+        # `no-cache`, bukan `no-store`, dan harus sama dengan yang dipasang API.
+        # Blok ini menimpa header dari upstream, jadi `no-store` di sini membuat
+        # perubahan di NestJS tidak pernah sampai ke browser. Salinannya boleh
+        # disimpan tetapi wajib divalidasi ulang: otorisasi tetap berjalan pada
+        # setiap permintaan, sementara umpan yang digulir naik-turun berhenti
+        # mengunduh gambar yang sama berkali-kali. Nginx menjawab revalidasinya
+        # dengan 304 dari ETag berkas.
+        add_header Cache-Control "private, no-cache" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header Accept-Ranges bytes always;
         types { image/jpeg jpg jpeg; image/png png; image/webp webp; video/mp4 mp4; video/webm webm; application/pdf pdf; }

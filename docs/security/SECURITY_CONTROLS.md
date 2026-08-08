@@ -248,7 +248,24 @@ Saat `VIDEO_PROVIDER=SELF_HOSTED` sesuai ADR-014:
 - Allow-list MIME, magic-byte validation, batas 100 MB, nama yang disanitasi,
   penulisan streaming ke berkas sementara, dan atomic rename wajib diterapkan.
 - Object key acak tidak dikirim ke browser. Pembacaan memerlukan session dan
-  disajikan melalui lokasi internal Nginx dengan `nosniff` serta `no-store`.
+  disajikan melalui lokasi internal Nginx dengan `nosniff` serta `private,
+  no-cache`.
+- `no-cache`, bukan `no-store`. Keduanya sama-sama menuntut otorisasi pada
+  setiap permintaan — `no-cache` mewajibkan revalidasi, bukan mengizinkan
+  penyajian diam-diam dari cache — sehingga penghapusan postingan, pengarsipan
+  channel, dan pencabutan akses tetap berlaku pada permintaan berikutnya.
+  Bedanya: salinannya boleh tinggal di cache browser, dan revalidasi yang
+  cocok dijawab 304 tanpa mengirim ulang bytenya. Dengan `no-store`, umpan yang
+  digulir naik-turun mengunduh setiap gambar berkali-kali. Nilainya harus sama
+  di controller NestJS dan di blok `location` Nginx — blok itu menimpa header
+  upstream, jadi nilai yang berbeda membuat setelan API tidak pernah sampai ke
+  browser.
+- Lampiran gambar dikodekan ulang saat diunggah, bukan disimpan mentah. Selain
+  memperkecil unduhan pembaca, pengodean ulang membuang seluruh blok metadata —
+  termasuk koordinat GPS yang dibawa foto ponsel tanpa disadari pengunggahnya —
+  dan membuang muatan apa pun yang menumpang pada berkas gambar yang sah.
+  Dimensi masukan dibatasi `limitInputPixels` bawaan sharp, sehingga berkas
+  kecil yang membentang menjadi ratusan megapiksel ditolak, bukan didekode.
 - Volume lampiran masuk backup, restore drill, dan penyapu `.uploading`.
 - Account suspension dan enrollment expiry memblokir session baru.
 - Video tidak melewati bandwidth NestJS.

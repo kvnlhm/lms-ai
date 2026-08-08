@@ -4059,6 +4059,10 @@ export interface components {
             position: number;
             /** Format: date-time */
             createdAt: string;
+            /** @description Lebar gambar sesudah diolah. Null untuk video, PDF, dan lampiran lama. */
+            width: number | null;
+            /** @description Tinggi gambar sesudah diolah. Null untuk video, PDF, dan lampiran lama. */
+            height: number | null;
         };
         CommunityPollOptionDto: {
             id: string;

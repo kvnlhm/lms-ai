@@ -175,6 +175,8 @@ export class CommunityAttachmentDto {
   @ApiProperty({ description: 'Ukuran byte sebagai string agar aman untuk JSON.' }) sizeBytes!: string;
   @ApiProperty() position!: number;
   @ApiProperty() createdAt!: Date;
+  @ApiProperty({ type: Number, nullable: true, description: 'Lebar gambar sesudah diolah. Null untuk video, PDF, dan lampiran lama.' }) width!: number | null;
+  @ApiProperty({ type: Number, nullable: true, description: 'Tinggi gambar sesudah diolah. Null untuk video, PDF, dan lampiran lama.' }) height!: number | null;
 }
 
 export class CommunityChecklistItemDto extends CommunityPostDto {

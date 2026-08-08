@@ -18394,6 +18394,16 @@
           "createdAt": {
             "format": "date-time",
             "type": "string"
+          },
+          "width": {
+            "type": "number",
+            "nullable": true,
+            "description": "Lebar gambar sesudah diolah. Null untuk video, PDF, dan lampiran lama."
+          },
+          "height": {
+            "type": "number",
+            "nullable": true,
+            "description": "Tinggi gambar sesudah diolah. Null untuk video, PDF, dan lampiran lama."
           }
         },
         "required": [
@@ -18402,7 +18412,9 @@
           "mimeType",
           "sizeBytes",
           "position",
-          "createdAt"
+          "createdAt",
+          "width",
+          "height"
         ]
       },
       "CommunityPollOptionDto": {

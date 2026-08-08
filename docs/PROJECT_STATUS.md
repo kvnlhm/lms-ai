@@ -284,6 +284,81 @@ Perbaikan lanjutan pada alur lampiran postingan:
 
 ---
 
+## 1f. Gambar postingan berhenti terasa berat
+
+8 Agustus 2026. Migrasi `20260808100000_community_attachment_dimensions`.
+
+Diminta pemiliknya sesudah menanyakan apakah gambar perlu dipindahkan ke pihak
+ketiga seperti video ke Bunny Stream. Jawabannya tidak: bebannya bukan bandwidth
+melainkan tiga hal yang menumpuk, dan ketiganya diperbaiki di tempatnya sendiri.
+CDN pihak ketiga dibiarkan sebagai langkah yang dapat menyusul kapan saja.
+
+- **Gambar disimpan mentah.** `CommunityAttachmentService.simpan()` hanya
+  memeriksa magic byte lalu menulis byte aslinya. Foto ponsel 5 MB dikirim utuh
+  ke kartu selebar beberapa ratus piksel. Sekarang gambar diolah sambil
+  mengalir: `autoOrient`, dikecilkan ke sisi terpanjang 1600, dikodekan ulang
+  menjadi WebP mutu 82. Backfill dua berkas uji berukuran wajar menghasilkan
+  10,53 MB → 1,54 MB. Batas unggahan 10 MB tidak berubah; yang berubah adalah
+  apa yang mendarat di disk dan karenanya apa yang diunduh pembaca.
+- **`Cache-Control: private, no-store`.** Gambar postingan tidak pernah boleh
+  disimpan browser, jadi menggulir turun lalu naik mengunduh ulang semuanya.
+  Sekarang `private, no-cache`: salinannya boleh tinggal, tetapi wajib
+  divalidasi ulang, sehingga otorisasi tetap berjalan pada setiap permintaan
+  dan yang hilang hanyalah pengiriman ulang bytenya. Ini melonggarkan kontrol
+  yang tercatat di `SECURITY_CONTROLS.md`; diputuskan pemiliknya, dan alasannya
+  ikut dicatat di sana.
+- **Tidak ada dimensi.** `CommunityPostAttachment` kini menyimpan `width` dan
+  `height` (nullable — video, PDF, dan lampiran lama tetap null), dan
+  `post-attachments.tsx` memasangnya pada `<img>` sehingga ruang gambar sudah
+  terpesan sebelum bytenya tiba.
+
+Yang perlu diingat:
+
+- **Header cache ada di dua tempat dan harus sama.** Blok `location
+  /protected-community-attachments/` pada kedua template Nginx memasang ulang
+  `Cache-Control` dan menimpa header dari upstream. Selama blok itu masih
+  `no-store`, perubahan di controller NestJS tidak pernah sampai ke browser —
+  dan e2e tetap hijau, karena supertest memukul NestJS langsung, bukan Nginx.
+  Keduanya sudah disamakan; jangan mengubah salah satunya saja.
+- **Backfill gambar lama** ada di
+  `apps/api/scripts/backfill-community-attachment-images.mjs`. Aman diulang
+  (baris ber-`width` dilewati) dan punya `--dry-run`.
+
+  **Sudah dijalankan pada production 8 Agustus 2026: 111 gambar, 170,26 MB →
+  9,47 MB.** Volume lampiran turun dari 242 MB ke 81 MB; sisanya sembilan video
+  MP4 sebesar 71 MB yang memang tidak disentuh. Nol baris menunjuk berkas yang
+  tidak ada, nol berkas yatim, nol gambar tanpa dimensi.
+
+  Dijalankan **dari host**, bukan dari kontainer API — image yang berjalan saat
+  itu belum punya `sharp`, jadi skripnya tidak dapat diimpor di sana. Caranya:
+  `DATABASE_URL` diambil dari `printenv` kontainer API dengan hostname docker
+  diganti IP kontainer postgres, dan `COMMUNITY_ATTACHMENT_STORAGE_PATH`
+  menunjuk `/var/lib/docker/volumes/e1b4fo52n9tnzjpm5m2i5k8l_community-attachment-data/_data`.
+  API berjalan sebagai root dan berkasnya `root:root 0644`, sama dengan yang
+  ditulis host, jadi tidak ada beda kepemilikan.
+
+  Mutunya diperiksa sebelum yang asli dihapus, bukan sesudah. Isi produksi
+  ternyata didominasi tangkapan layar, bukan foto ponsel — dan WebP lossy pada
+  teks adalah tempat mutu biasanya jatuh. Potongan 1:1 dari kasus tipikal
+  (0,92 MB → 44 KB) dan kasus paling ekstrem (5,95 MB → 0,12 MB, 50×)
+  dibandingkan berdampingan: teks tetap tajam, tidak ada ringing, tekstur
+  terjaga. `nearLossless` menghasilkan 459 KB untuk berkas yang sama — sepuluh
+  kali lebih besar tanpa beda yang terlihat, jadi mutu 82 dipertahankan.
+- Pengodean ulang membuang EXIF, termasuk koordinat GPS yang dibawa foto ponsel
+  tanpa disadari pengunggahnya. Itu perbaikan privasi yang datang cuma-cuma,
+  bukan efek samping yang perlu dibatalkan.
+- **Skema database kini mendahului kode yang berjalan.** Migrasi sudah terpasang
+  di production dan backfill sudah jalan, tetapi perubahan kodenya **belum
+  di-commit dan belum dideploy**. Ini aman — kolomnya nullable dan kode lama
+  tidak pernah memilihnya — tetapi konsekuensinya harus dipegang sampai deploy:
+  gambar yang **baru** diunggah masih tersimpan mentah, `Cache-Control` di
+  Nginx production masih `no-store`, dan `width`/`height` sudah terisi di
+  database tetapi belum ikut pada respons API sehingga klien belum memakainya.
+  Sesudah deploy, jalankan backfill sekali lagi untuk menyapu gambar yang masuk
+  di sela ini.
+
+---
+
 ## 2. Cara bekerja di mesin ini
 
 Sesi Claude berjalan **langsung di VPS produksi**, bukan di laptop. Konsekuensinya
@@ -495,6 +570,11 @@ Tiga koreksi yang perlu diingat supaya tidak diulang sebagai "temuan":
   lagi pelajaran yang memakainya, tetapi aturan, penegakannya di server, dan
   opsinya di editor semuanya masih ada dan memang disengaja. Nol pemakai bukan
   berarti kode mati yang perlu dibersihkan.
+- **Paket `uji-internal-wa` "Uji Internal" Rp10.000 sengaja aktif dan sengaja
+  tampil di `/api/v1/registration/tiers`.** Pemiliknya memakainya untuk mencoba
+  alur pembayaran sungguhan di Midtrans Production. Dikonfirmasi 8 Agustus 2026
+  sesudah dilaporkan sebagai temuan. Jangan dinonaktifkan dan jangan diangkat
+  lagi sebagai celah.
 
 ---
 

@@ -60,7 +60,7 @@ export class CommunityController {
     return this.attachments.remove(postId, user.id, moderator(user));
   }
 
-  @Get('checklist/:postId/attachment') @Header('Cache-Control', 'private, no-store') @Header('X-Content-Type-Options', 'nosniff') @ApiErrors(401, 404)
+  @Get('checklist/:postId/attachment') @Header('Cache-Control', 'private, no-cache') @Header('X-Content-Type-Options', 'nosniff') @ApiErrors(401, 404)
   async checklistAttachment(@Param('postId', new ParseUUIDPipe()) postId: string, @Res() response: Response) {
     const attachment = await this.attachments.authorised(postId);
     response.setHeader('X-Accel-Redirect', `/protected-community-attachments/${attachment.objectKey}`);
@@ -89,7 +89,11 @@ export class CommunityController {
     return this.attachments.removeDraft(attachmentId, user.id);
   }
 
-  @Get('attachments/:attachmentId') @Header('Cache-Control', 'private, no-store') @Header('X-Content-Type-Options', 'nosniff')
+  // `no-cache`, bukan `no-store`: salinan boleh disimpan browser tetapi wajib
+  // divalidasi ulang, sehingga otorisasi tetap dijalankan pada setiap
+  // permintaan sementara bytenya tidak dikirim ulang. `no-store` membuat umpan
+  // yang digulir naik-turun mengunduh setiap gambar berkali-kali.
+  @Get('attachments/:attachmentId') @Header('Cache-Control', 'private, no-cache') @Header('X-Content-Type-Options', 'nosniff')
   @ApiOperation({ summary: 'Membaca satu lampiran postingan' }) @ApiErrors(401, 404)
   async attachment(@Param('attachmentId', new ParseUUIDPipe()) attachmentId: string, @CurrentUser() user: AuthenticatedUser, @Res() response: Response) {
     const attachment = await this.attachments.authorisedById(attachmentId, user.id);

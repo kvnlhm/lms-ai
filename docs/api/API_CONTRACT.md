@@ -2567,6 +2567,16 @@ memerlukan sesi aktif.
 - `GET /community/checklist/{postId}/attachment` — menyajikan lampiran aktif
   kepada pengguna login melalui internal redirect; object key tidak pernah
   dikirim ke browser.
+- Lampiran gambar tidak disimpan mentah. Batas unggahan berlaku pada byte yang
+  masuk, lalu gambarnya diputar sesuai EXIF, dikecilkan ke sisi terpanjang 1600
+  piksel, dan dikodekan ulang menjadi WebP. Akibatnya `mimeType` yang
+  dikembalikan selalu `image/webp` berapa pun yang diunggah, `sizeBytes` adalah
+  ukuran berkas hasil olahan dan bukan ukuran unggahan, dan `width` serta
+  `height` terisi. Video, PDF, dan lampiran yang tersimpan sebelum ini
+  mengembalikan `width` dan `height` bernilai `null`.
+- Kedua endpoint penyajian memakai `Cache-Control: private, no-cache`: setiap
+  permintaan tetap melewati otorisasi, tetapi revalidasi yang cocok dijawab 304
+  sehingga bytenya tidak dikirim ulang.
 - `POST /community/posts/{postId}/comments` — membalas post; ditolak bila
   `allowReplies=false` (termasuk seluruh `ANNOUNCEMENTS`) dan selalu ditolak
   untuk item `CHECKLIST`.
