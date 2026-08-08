@@ -49,4 +49,14 @@ export interface VideoProvisionerPort {
    * lebih baik melihat "sedang diproses" daripada halaman yang gagal.
    */
   selaraskan(videoAssetId: string): Promise<string>;
+
+  /**
+   * Membuang aset beserta videonya di penyedia.
+   *
+   * Dipanggil ketika lampiran yang menunjuknya dihapus. Kegagalan menghubungi
+   * penyedia tidak melempar: barisnya tetap ditandai terhapus, dan video yang
+   * tertinggal di sana adalah sampah yang dapat disapu belakangan — jauh lebih
+   * ringan daripada penghapusan lampiran yang gagal di depan penggunanya.
+   */
+  hapus(videoAssetId: string): Promise<void>;
 }

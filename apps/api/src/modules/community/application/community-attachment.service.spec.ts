@@ -231,12 +231,21 @@ describe('CommunityAttachmentService', () => {
     const update = jest.fn().mockResolvedValue({});
     const deleteMany = jest.fn().mockResolvedValue({ count: 1 });
     const findMany = jest.fn()
-      .mockResolvedValueOnce([{ id: 'lama', objectKey: 'lama.png' }])
+      .mockResolvedValueOnce([
+        { id: 'lama', objectKey: 'lama.png', videoAssetId: null },
+        { id: 'video-lama', objectKey: null, videoAssetId: 'aset-1' },
+      ])
       .mockResolvedValueOnce([{ id: 'baru' }]);
     const { value } = service();
 
+    // Yang dikembalikan cukup untuk membuang kedua jenis isi: berkas di volume
+    // kita, dan video di penyedia luar. Mengembalikan kunci berkas saja akan
+    // meninggalkan video yang dibuang tetap ditagih di penyedia.
     await expect(value.replace({ communityPostAttachment: { findMany, deleteMany, update } } as never, 'post-1', 'pelajar-1', ['baru']))
-      .resolves.toEqual(['lama.png']);
+      .resolves.toEqual([
+        { objectKey: 'lama.png', videoAssetId: null },
+        { objectKey: null, videoAssetId: 'aset-1' },
+      ]);
     expect(deleteMany).toHaveBeenCalledWith({ where: { postId: 'post-1', id: { notIn: ['baru'] } } });
   });
 

@@ -120,7 +120,7 @@ export class CommunityService {
         group: { select: { slug: true, name: true } },
       } },
       author: { select: authorSelect },
-      attachments: { orderBy: { position: 'asc' as const }, select: { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true, width: true, height: true, videoAsset: { select: { status: true, providerVideoId: true } } } },
+      attachments: { orderBy: { position: 'asc' as const }, select: { id: true, originalName: true, mimeType: true, sizeBytes: true, position: true, createdAt: true, width: true, height: true, videoAsset: { select: { id: true, status: true, providerVideoId: true } } } },
       poll: { select: {
         id: true,
         options: { orderBy: { position: 'asc' as const }, select: { id: true, label: true, position: true, _count: { select: { votes: true } } } },
@@ -158,13 +158,14 @@ export class CommunityService {
     row: T,
     userId: string,
     canModerate: boolean,
+    terkini?: Map<string, string>,
   ) {
     const { reactions, checklistCompletions, comments, channel, attachments, poll, ...post } = row as T & { channel?: { type?: CommunityChannelType; group?: { slug: string; name: string } }; attachments?: { sizeBytes: bigint }[]; poll?: PollRow | null };
     const hakTulisan = this.hakTulisan(row.author.id, userId, canModerate);
     // Dipetakan lewat service lampirannya, bukan disalin di sini: URL playback
     // Bunny bertanda tangan dan bermasa berlaku, dan aturannya hanya boleh ada
     // di satu tempat.
-    const daftarLampiran = (attachments ?? []).map((item) => this.attachments.sajikan(item as never));
+    const daftarLampiran = (attachments ?? []).map((item) => this.attachments.sajikan(item as never, terkini));
     return {
       ...post,
       attachments: daftarLampiran,
@@ -220,7 +221,12 @@ export class CommunityService {
         skip: (page - 1) * pageSize, take: pageSize, select: this.postSelect(userId),
       }),
     ]);
-    return { total, posts: rows.map((row) => this.sajikanPost(row, userId, canModerate)) };
+    // Status video diselaraskan sekali untuk seluruh halaman, bukan per post:
+    // satu umpan dapat memuat puluhan lampiran dari aset yang sama.
+    const terkini = await this.attachments.selaraskanVideoTertunda(
+      rows.flatMap((row) => (row as { attachments?: { videoAsset?: { id: string; status: string } | null }[] }).attachments ?? []),
+    );
+    return { total, posts: rows.map((row) => this.sajikanPost(row, userId, canModerate, terkini)) };
   }
 
   async getChecklistItem(userId: string, postId: string, canModerate: boolean) {
@@ -418,7 +424,7 @@ export class CommunityService {
     if (post.authorId !== userId && !mengelolaChecklist) throw AppError.permissionDenied();
     if (post.channel.type === CommunityChannelType.CHECKLIST && !title?.trim()) throw new AppError('VALIDATION_ERROR', 422, 'Judul checklist wajib diisi.');
 
-    let removed: string[] = [];
+    let removed: { objectKey: string | null; videoAssetId: string | null }[] = [];
     const updateData = {
       body: body.trim(), editedAt: new Date(),
       ...(title !== undefined ? { title: title.trim() || null } : {}),
@@ -434,7 +440,8 @@ export class CommunityService {
         removed = await this.attachments.replace(tx, postId, userId, attachmentIds);
         return updated;
       });
-    for (const objectKey of removed) await this.attachments.removeObject(objectKey);
+    // Berkas maupun video di penyedia, keduanya lewat pintu yang sama.
+    for (const lampiran of removed) await this.attachments.buangIsi(lampiran);
     if (post.authorId !== userId) {
       await this.audit.record({
         actorUserId: userId,
@@ -533,7 +540,10 @@ export class CommunityService {
       take: 10,
       select: this.postSelect(userId),
     });
-    return rows.map((row) => this.sajikanPost(row, userId, canModerate));
+    const terkini = await this.attachments.selaraskanVideoTertunda(
+      rows.flatMap((row) => (row as { attachments?: { videoAsset?: { id: string; status: string } | null }[] }).attachments ?? []),
+    );
+    return rows.map((row) => this.sajikanPost(row, userId, canModerate, terkini));
   }
 
   async updateComment(userId: string, commentId: string, body: string) {

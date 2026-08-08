@@ -47,6 +47,18 @@ const pilih = {
  */
 const SISI_MAKS = 1600;
 
+/** Status video yang tidak akan berubah lagi. */
+const VIDEO_TERMINAL = new Set(['AVAILABLE', 'FAILED', 'DELETED']);
+
+/**
+ * Batas aset yang ditanyakan ke penyedia dalam satu pembacaan.
+ *
+ * Satu umpan dapat memuat puluhan lampiran; tanpa batas ini, membuka halaman
+ * komunitas berubah menjadi puluhan permintaan keluar. Sisanya menyusul pada
+ * pembacaan berikutnya, dan itu cukup — transcode memang butuh waktu.
+ */
+const MAKS_SELARAS_SEKALI = 10;
+
 @Injectable()
 export class CommunityAttachmentService implements StaleUploadReconcilerPort {
   private readonly config: AppConfig['communityAttachment'];
@@ -73,6 +85,19 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
   async removeObject(objectKey: string | null): Promise<void> {
     if (!objectKey) return;
     await rm(join(this.config.storagePath, objectKey), { force: true });
+  }
+
+  /**
+   * Membuang isi sebuah lampiran, di mana pun ia disimpan.
+   *
+   * Satu pintu untuk kedua jenis: berkas di volume kita, atau aset video di
+   * penyedia luar. Jalur penghapusan mana pun cukup memanggil ini, sehingga
+   * tidak ada yang perlu diingat memanggil dua hal berbeda — dan video yang
+   * terlupakan di penyedia tetap ditagih walau tidak ada yang menunjuknya.
+   */
+  async buangIsi(lampiran: { objectKey: string | null; videoAssetId?: string | null }): Promise<void> {
+    await this.removeObject(lampiran.objectKey);
+    if (lampiran.videoAssetId) await this.penyedia.hapus(lampiran.videoAssetId);
   }
 
   // ─────────────────────────────────────────────
@@ -165,7 +190,8 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
       orderBy: { createdAt: 'asc' },
       select: pilih,
     });
-    return drafts.map((draft) => this.sajikan(draft));
+    const terkini = await this.selaraskanVideoTertunda(drafts);
+    return drafts.map((draft) => this.sajikan(draft, terkini));
   }
 
   /** Membuang unggahan yang belum diterbitkan, dari composer. */
@@ -173,7 +199,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     const attachment = await this.prisma.communityPostAttachment.findFirst({ where: { id: attachmentId, uploaderId: userId, postId: null } });
     if (!attachment) throw AppError.notFound();
     await this.prisma.communityPostAttachment.delete({ where: { id: attachment.id } });
-    await this.removeObject(attachment.objectKey);
+    await this.buangIsi(attachment);
   }
 
   /**
@@ -204,14 +230,14 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
   }
 
   /** Mengganti seluruh lampiran post; id lama boleh dipertahankan, id baru harus unggahan draf penulis. */
-  async replace(tx: Prisma.TransactionClient, postId: string, userId: string, attachmentIds: string[]): Promise<string[]> {
+  async replace(tx: Prisma.TransactionClient, postId: string, userId: string, attachmentIds: string[]): Promise<{ objectKey: string | null; videoAssetId: string | null }[]> {
     if (attachmentIds.length > this.config.maxPerPost) {
       throw AppError.validation({ attachmentIds: [`Maksimum ${this.config.maxPerPost} lampiran per postingan.`] });
     }
     const unik = [...new Set(attachmentIds)];
     if (unik.length !== attachmentIds.length) throw AppError.validation({ attachmentIds: ['Ada lampiran yang disebut lebih dari sekali.'] });
 
-    const lama = await tx.communityPostAttachment.findMany({ where: { postId }, select: { id: true, objectKey: true } });
+    const lama = await tx.communityPostAttachment.findMany({ where: { postId }, select: { id: true, objectKey: true, videoAssetId: true } });
     const tersedia = await tx.communityPostAttachment.findMany({
       where: { id: { in: unik }, OR: [{ postId }, { postId: null, uploaderId: userId }] },
       select: { id: true },
@@ -225,8 +251,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     const dipertahankan = new Set(unik);
     return lama
       .filter((item) => !dipertahankan.has(item.id))
-      .map((item) => item.objectKey)
-      .filter((kunci): kunci is string => kunci !== null);
+      .map(({ objectKey, videoAssetId }) => ({ objectKey, videoAssetId }));
   }
 
   // ─────────────────────────────────────────────
@@ -236,7 +261,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
   private async postChecklist(postId: string, userId: string, canModerate: boolean) {
     const post = await this.prisma.communityPost.findFirst({
       where: { id: postId, deletedAt: null, channel: { type: CommunityChannelType.CHECKLIST, archivedAt: null, group: { archivedAt: null } } },
-      select: { id: true, authorId: true, attachments: { select: { id: true, objectKey: true } } },
+      select: { id: true, authorId: true, attachments: { select: { id: true, objectKey: true, videoAssetId: true } } },
     });
     if (!post) throw AppError.notFound();
     if (post.authorId !== userId && !canModerate) throw AppError.permissionDenied();
@@ -271,7 +296,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     // mati di antara keduanya meninggalkan baris yang menunjuk berkas yang
     // sudah tidak ada — kegagalan yang baru terlihat saat pembaca membukanya.
     for (const lama of post.attachments) {
-      if (lama.objectKey !== objectKey) await this.removeObject(lama.objectKey);
+      if (lama.objectKey !== objectKey) await this.buangIsi(lama);
     }
     await this.audit.record({ actorUserId: userId, action: 'community.checklist_attachment.update', targetType: 'CommunityPost', targetId: postId, after: { mimeType: mime, sizeBytes: String(sizeBytes) } });
     return this.sajikan(attachment);
@@ -283,7 +308,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     if (attachments.length === 0) return;
     await this.prisma.communityPostAttachment.deleteMany({ where: { postId } });
     for (const attachment of attachments) {
-      await this.removeObject(attachment.objectKey);
+      await this.buangIsi(attachment);
       await this.audit.record({ actorUserId: userId, action: 'community.checklist_attachment.delete', targetType: 'CommunityPost', targetId: postId, before: { mimeType: attachment.mimeType, sizeBytes: attachment.sizeBytes.toString() } });
     }
   }
@@ -338,11 +363,11 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
   async closeStaleUploads(batas: Date): Promise<number> {
     const basi = await this.prisma.communityPostAttachment.findMany({
       where: { postId: null, createdAt: { lt: batas } },
-      select: { id: true, objectKey: true },
+      select: { id: true, objectKey: true, videoAssetId: true },
     });
     if (basi.length === 0) return 0;
     await this.prisma.communityPostAttachment.deleteMany({ where: { id: { in: basi.map((row) => row.id) } } });
-    for (const row of basi) await this.removeObject(row.objectKey);
+    for (const row of basi) await this.buangIsi(row);
     return basi.length;
   }
 
@@ -414,16 +439,55 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
    * luar. Lampiran berkas lokal mengembalikan `null`, sehingga postingan lama
    * tampil persis seperti sebelumnya selama pemindahan berlangsung.
    */
+  /**
+   * Menanyakan status terkini video yang masih diproses penyedia.
+   *
+   * Penyedia tidak mengabari kita ketika transcode selesai, dan tidak ada
+   * pekerja yang menanyakannya. Video kursus lolos karena penyelarasannya
+   * menumpang pada perpustakaan video yang dibuka Master — tetapi tidak ada
+   * Pelajar yang membuka perpustakaan admin. Jadi di komunitas penyelarasan
+   * menumpang di sini: tempat pembacanya memang sedang menunggu.
+   *
+   * Mengembalikan peta id aset ke status terbarunya. Aset yang gagal
+   * ditanyakan tidak masuk peta, sehingga status tersimpannya yang dipakai.
+   */
+  async selaraskanVideoTertunda(
+    baris: { videoAsset?: { id: string; status: string } | null }[],
+  ): Promise<Map<string, string>> {
+    const tertunda = [...new Map(
+      baris
+        .map((item) => item.videoAsset)
+        .filter((aset): aset is { id: string; status: string } => !!aset && !VIDEO_TERMINAL.has(aset.status))
+        .map((aset) => [aset.id, aset] as const),
+    ).keys()].slice(0, MAKS_SELARAS_SEKALI);
+
+    const terkini = new Map<string, string>();
+    await Promise.all(tertunda.map(async (id) => {
+      try {
+        terkini.set(id, await this.penyedia.selaraskan(id));
+      } catch {
+        // Penyedia yang sedang tidak dapat dihubungi bukan alasan menjatuhkan
+        // halaman yang sedang dibaca orang.
+      }
+    }));
+    return terkini;
+  }
+
   sajikan(value: {
     id: string; originalName: string; mimeType: string; sizeBytes: bigint; position: number;
     createdAt: Date; width: number | null; height: number | null;
-    videoAsset?: { status: string; providerVideoId: string } | null;
-  }) {
+    videoAsset?: { id?: string; status: string; providerVideoId: string } | null;
+  }, terkini?: Map<string, string>) {
     return {
       id: value.id, originalName: value.originalName, mimeType: value.mimeType,
       sizeBytes: value.sizeBytes.toString(), position: value.position,
       createdAt: value.createdAt, width: value.width, height: value.height,
-      video: value.videoAsset ? this.sajikanVideo(value.videoAsset) : null,
+      video: value.videoAsset
+        ? this.sajikanVideo({
+            ...value.videoAsset,
+            status: (value.videoAsset.id && terkini?.get(value.videoAsset.id)) || value.videoAsset.status,
+          })
+        : null,
     };
   }
 

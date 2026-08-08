@@ -179,6 +179,26 @@ export class BunnyStreamClient {
   }
 
   /**
+   * Membuang satu video dari library penyedia.
+   *
+   * Video yang tidak dihapus tetap menempati penyimpanan dan tetap ditagih,
+   * padahal tidak ada satu pun yang menunjuknya lagi. Untuk video kursus yang
+   * sedikit dan dikurasi Master itu dapat diabaikan; untuk lampiran komunitas
+   * yang diunggah siapa saja, draf yang ditinggalkan akan menumpuk tanpa henti.
+   *
+   * Video yang memang sudah tidak ada dianggap berhasil dihapus: yang kita
+   * inginkan keadaan akhirnya, bukan siapa yang menghapusnya.
+   */
+  async deleteVideo(videoId: string): Promise<void> {
+    try {
+      await this.minta(`/videos/${encodeURIComponent(videoId)}`, { method: 'DELETE' });
+    } catch (error) {
+      if (error instanceof AppError && error.status === 404) return;
+      throw error;
+    }
+  }
+
+  /**
    * Izin unggah TUS untuk satu video, berlaku terbatas.
    *
    * Rumus tanda tangannya ditentukan Bunny: SHA256 atas

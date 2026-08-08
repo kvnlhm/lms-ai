@@ -41,6 +41,30 @@ export class VideoProvisionerService implements VideoProvisionerPort {
     return { videoAssetId: aset.id, tiket: this.bunny.uploadTicket(providerVideoId) };
   }
 
+  async hapus(videoAssetId: string): Promise<void> {
+    const aset = await this.prisma.videoAsset.findFirst({
+      where: { id: videoAssetId, deletedAt: null },
+      select: { id: true, provider: true, providerVideoId: true },
+    });
+    if (!aset) return;
+
+    if (aset.provider === VideoProvider.BUNNY_STREAM) {
+      try {
+        await this.bunny.deleteVideo(aset.providerVideoId);
+      } catch (error) {
+        // Video yang tertinggal di penyedia adalah sampah yang dapat disapu
+        // belakangan; penghapusan lampiran yang gagal di depan penggunanya
+        // jauh lebih buruk.
+        this.logger.warn(`Gagal menghapus video ${aset.providerVideoId} di penyedia: ${error instanceof Error ? error.message : error}`);
+      }
+    }
+
+    await this.prisma.videoAsset.update({
+      where: { id: aset.id },
+      data: { status: VideoStatus.DELETED, deletedAt: new Date() },
+    });
+  }
+
   async selaraskan(videoAssetId: string): Promise<string> {
     const aset = await this.prisma.videoAsset.findFirst({
       where: { id: videoAssetId, deletedAt: null },
