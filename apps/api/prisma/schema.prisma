@@ -296,7 +296,14 @@ model CommunityPostAttachment {
   id           String   @id @default(uuid()) @db.Uuid
   postId       String?  @map("post_id") @db.Uuid
   uploaderId   String   @map("uploader_id") @db.Uuid
-  objectKey    String   @unique @map("object_key")
+  /// Berkas di volume kita. Kosong untuk lampiran yang isinya dititipkan ke
+  /// penyedia luar — video kini ditampung Bunny Stream, dan bytenya tidak
+  /// pernah melewati VPS ini.
+  objectKey    String?  @unique @map("object_key")
+  /// Terisi hanya untuk lampiran video. Memakai ulang `VideoAsset` alih-alih
+  /// menyalin kolom penyedia ke sini: status transcode, pemantau Bunny, dan
+  /// abstraksi provider pada ADR-013 sudah bekerja di sana.
+  videoAssetId String?  @map("video_asset_id") @db.Uuid
   originalName String   @map("original_name")
   mimeType     String   @map("mime_type")
   sizeBytes    BigInt   @map("size_bytes")
@@ -308,7 +315,8 @@ model CommunityPostAttachment {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  post     CommunityPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post       CommunityPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  videoAsset VideoAsset?    @relation("CommunityAttachmentVideo", fields: [videoAssetId], references: [id], onDelete: Restrict)
   uploader User           @relation("CommunityAttachmentUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
 
   @@index([postId, position])
@@ -940,6 +948,7 @@ model VideoAsset {
   creator          User                   @relation("VideoAssetCreator", fields: [createdBy], references: [id], onDelete: Restrict)
   playbackSessions VideoPlaybackSession[]
   lessons          Lesson[]               @relation("LessonVideo")
+  communityAttachments CommunityPostAttachment[] @relation("CommunityAttachmentVideo")
 
   @@index([status])
   @@map("video_assets")

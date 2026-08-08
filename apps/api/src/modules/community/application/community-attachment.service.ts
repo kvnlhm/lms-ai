@@ -47,7 +47,15 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     this.config = config.get('app', { infer: true }).communityAttachment;
   }
 
-  async removeObject(objectKey: string): Promise<void> {
+  /**
+   * Menghapus berkas milik sebuah lampiran, bila memang ada.
+   *
+   * Lampiran video kini dititipkan ke Bunny Stream dan `objectKey`-nya kosong;
+   * tidak ada yang perlu dihapus di volume kita. Penjaga null ini sengaja
+   * berada di satu tempat supaya setiap jalur penghapusan mewarisinya.
+   */
+  async removeObject(objectKey: string | null): Promise<void> {
+    if (!objectKey) return;
     await rm(join(this.config.storagePath, objectKey), { force: true });
   }
 
@@ -102,7 +110,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     const attachment = await this.prisma.communityPostAttachment.findFirst({ where: { id: attachmentId, uploaderId: userId, postId: null } });
     if (!attachment) throw AppError.notFound();
     await this.prisma.communityPostAttachment.delete({ where: { id: attachment.id } });
-    await rm(join(this.config.storagePath, attachment.objectKey), { force: true });
+    await this.removeObject(attachment.objectKey);
   }
 
   /**
@@ -152,7 +160,10 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
       await tx.communityPostAttachment.update({ where: { id }, data: { postId, position } });
     }
     const dipertahankan = new Set(unik);
-    return lama.filter((item) => !dipertahankan.has(item.id)).map((item) => item.objectKey);
+    return lama
+      .filter((item) => !dipertahankan.has(item.id))
+      .map((item) => item.objectKey)
+      .filter((kunci): kunci is string => kunci !== null);
   }
 
   // ─────────────────────────────────────────────
@@ -197,7 +208,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     // mati di antara keduanya meninggalkan baris yang menunjuk berkas yang
     // sudah tidak ada — kegagalan yang baru terlihat saat pembaca membukanya.
     for (const lama of post.attachments) {
-      if (lama.objectKey !== objectKey) await rm(join(this.config.storagePath, lama.objectKey), { force: true });
+      if (lama.objectKey !== objectKey) await this.removeObject(lama.objectKey);
     }
     await this.audit.record({ actorUserId: userId, action: 'community.checklist_attachment.update', targetType: 'CommunityPost', targetId: postId, after: { mimeType: mime, sizeBytes: String(sizeBytes) } });
     return this.sajikan(attachment);
@@ -209,7 +220,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     if (attachments.length === 0) return;
     await this.prisma.communityPostAttachment.deleteMany({ where: { postId } });
     for (const attachment of attachments) {
-      await rm(join(this.config.storagePath, attachment.objectKey), { force: true });
+      await this.removeObject(attachment.objectKey);
       await this.audit.record({ actorUserId: userId, action: 'community.checklist_attachment.delete', targetType: 'CommunityPost', targetId: postId, before: { mimeType: attachment.mimeType, sizeBytes: attachment.sizeBytes.toString() } });
     }
   }
@@ -268,7 +279,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
     });
     if (basi.length === 0) return 0;
     await this.prisma.communityPostAttachment.deleteMany({ where: { id: { in: basi.map((row) => row.id) } } });
-    for (const row of basi) await rm(join(this.config.storagePath, row.objectKey), { force: true });
+    for (const row of basi) await this.removeObject(row.objectKey);
     return basi.length;
   }
 

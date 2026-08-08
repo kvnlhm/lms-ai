@@ -22,7 +22,7 @@ describe('Lampiran komunitas', () => {
   afterAll(async () => {
     const sisa = await h.prisma.communityPostAttachment.findMany({ select: { objectKey: true } });
     await h.prisma.communityPostAttachment.deleteMany({});
-    await Promise.all(sisa.map((row) => rm(join(storage, row.objectKey), { force: true })));
+    await Promise.all(sisa.filter((row) => row.objectKey).map((row) => rm(join(storage, row.objectKey!), { force: true })));
     await h.close();
   });
 
