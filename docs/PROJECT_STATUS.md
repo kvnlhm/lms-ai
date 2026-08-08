@@ -7,8 +7,8 @@ tersimpan di mana pun kecuali di kepala orang yang baru saja mengerjakannya:
 keadaan produksi hari ini, apa yang sudah ditutup, dan apa yang sengaja
 dibiarkan terbuka beserta alasannya.
 
-Terakhir diperbarui: **8 Agustus 2026**, setelah hapus kursus tersedia langsung
-dari daftar kursus Master, deployment **256** terverifikasi.
+Terakhir diperbarui: **8 Agustus 2026**, setelah tombol layar penuh pemutar
+kursus dapat dipakai keluar juga, deployment **257** terverifikasi.
 
 ---
 
@@ -817,6 +817,20 @@ rujukan dari sesi lama tetap dapat ditemukan.
     dua salinan yang dapat menyimpang diam-diam. Yang terjadi sesudahnya sengaja
     berbeda: editor berpindah karena halamannya ikut hilang, daftar memuat ulang
     dirinya.
+16. **Tombol layar penuh pemutar kursus kini dua arah** — `8165ab9`, deployment
+    257. Juga dari laporan pemiliknya.
+
+    Tombolnya hanya pernah memanggil `requestFullscreen`, jadi klik kedua
+    meminta hal yang sama pada elemen yang sudah berada di sana dan tidak
+    terjadi apa-apa; satu-satunya jalan keluar adalah Escape, yang tidak
+    disebutkan di mana pun dan tidak ada di ponsel. Keadaannya kini dibaca dari
+    `fullscreenchange`, bukan dicatat saat tombol ditekan — Escape dan tombol
+    layar penuh milik browser keluar tanpa melewati tombol kita.
+
+    Belum ditutup: di iPhone, Safari tidak punya `requestFullscreen` untuk
+    elemen biasa, sehingga penjaganya membuat tombol itu diam saja di sana.
+    Perlu `webkitEnterFullscreen` pada elemen `<video>`, dengan konsekuensi
+    kontrol kita digantikan kontrol bawaan iOS.
 
 Tiga koreksi yang perlu diingat supaya tidak diulang sebagai "temuan":
 
