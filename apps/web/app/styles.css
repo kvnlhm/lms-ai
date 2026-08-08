@@ -711,8 +711,23 @@ table.data tbody tr:hover { background: var(--raised); }
 
 @media (max-width: 800px) {
   .registrationSectionTitle { text-align: left; }
-  .tierGrid { grid-template-columns: 1fr; }
-  .tierCard { min-height: auto; }
+  /* Ditumpuk ke bawah, dua paket membuat halaman sangat panjang di ponsel dan
+     perbandingan harganya tidak pernah terlihat bersamaan. Deret geser
+     mendatar memakai idiom yang sama dengan `.postMediaRow`: kartu berikutnya
+     sengaja mengintip di tepi supaya terlihat bahwa deretnya dapat digeser.
+     `justify-content` dikembalikan ke awal — nilai `center` dari aturan dasar
+     membuat kartu pertama tidak terjangkau begitu deretnya melebihi layar. */
+  .tierGrid {
+    display: flex;
+    justify-content: flex-start;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    padding-bottom: 6px;
+  }
+  .tierCard { flex: 0 0 86%; scroll-snap-align: center; min-height: auto; }
   .registrationFields, .tierAdminLayout, .tierFieldGrid { grid-template-columns: 1fr; }
   .registrationFields .field:last-child, .tierDescription, .tierCourses, .tierFieldGrid > .checkRow { grid-column: auto; }
   .tierAdminForm { position: static; }
