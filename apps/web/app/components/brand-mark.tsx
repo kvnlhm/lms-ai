@@ -1,5 +1,3 @@
-import lambang from '../icon.png';
-
 /**
  * Lambang merek.
  *
@@ -7,23 +5,22 @@ import lambang from '../icon.png';
  * teks — dua inisial berbeda sempat beredar berdampingan di halaman yang
  * berlainan.
  *
- * Sumbernya berkas yang sama dengan ikon tab, sehingga hanya ada satu gambar
- * yang perlu diganti bila lambangnya berubah kelak.
+ * Gambarnya dipasang lewat CSS, bukan sebagai `<img>`, karena lambangnya kini
+ * punya dua versi: tinta gelap untuk latar terang, tinta terang untuk latar
+ * gelap. `<picture>` dengan `media` tidak cukup di sini — ia hanya membaca
+ * preferensi sistem, sedangkan tema aplikasi ini dapat dipaksa lewat tombol
+ * dan disimpan sebagai `data-theme` pada elemen root. Dengan CSS, pemilihannya
+ * memakai selektor yang sama persis dengan seluruh warna lain, sehingga
+ * lambangnya tidak pernah berselisih dengan latarnya.
  *
- * Berkasnya diimpor, bukan ditulis sebagai `/icon.png`. Alamat polos itu
- * dilayani dengan `immutable, max-age=31536000`, jadi browser menyimpannya
- * setahun penuh dan tidak pernah menanyakannya lagi: lambang yang sudah
- * diganti tetap tampil versi lama, dan tidak ada cara memberitahu browser
- * bahwa ia berubah. Ikon tab selamat dari itu karena Next menambahkan hash
- * pada tautannya sendiri — `<img>` di sini tidak mendapat perlakuan yang sama.
- * Dengan diimpor, alamatnya ikut membawa sidik jari isi berkasnya, sehingga
- * penggantian lambang berikutnya langsung terlihat tanpa siapa pun perlu
- * membersihkan cache.
+ * Alamat berkasnya ikut membawa sidik jari isi berkas karena diproses
+ * bundler dari `url()` di stylesheet — sama seperti ketika ia masih diimpor
+ * sebagai modul. Itu penting: `/icon.png` polos dilayani dengan
+ * `immutable, max-age=31536000`, jadi lambang yang sudah diganti akan tetap
+ * tampil versi lama selama setahun tanpa cara memberi tahu browser.
  */
 export function BrandMark({ size = 30 }: { size?: number }) {
   return (
-    <span className="brandMark" aria-hidden="true" style={{ width: size, height: size }}>
-      <img src={lambang.src} alt="" width={size} height={size} />
-    </span>
+    <span className="brandMark" aria-hidden="true" style={{ width: size, height: size }} />
   );
 }

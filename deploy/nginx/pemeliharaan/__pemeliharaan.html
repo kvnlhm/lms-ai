@@ -47,17 +47,19 @@
         padding: 32px;
         text-align: center;
       }
+      /* Lambang dipasang lewat CSS supaya dapat mengikuti tema halaman ini,
+         yang punya versi terang dan gelap seperti aplikasinya. Kotak biru yang
+         dulu menjadi alasnya dihapus: lambang barunya berdiri sendiri. */
       .tanda {
-        display: inline-grid;
-        place-items: center;
+        display: block;
         width: 48px;
         height: 48px;
-        border-radius: 12px;
-        background: #2f6feb;
-        margin-bottom: 20px;
-        overflow: hidden;
+        margin: 0 auto 20px;
+        background: url("/__brand.webp") center / contain no-repeat;
       }
-      .tanda img { display: block; width: 48px; height: 48px; object-fit: cover; }
+      @media (prefers-color-scheme: dark) {
+        .tanda { background-image: url("/__brand-gelap.webp"); }
+      }
       h1 { font-size: 1.35rem; margin: 0 0 12px; }
       p { margin: 0 0 8px; color: var(--redup); }
       .kecil { font-size: 0.875rem; margin-top: 20px; }
@@ -65,9 +67,7 @@
   </head>
   <body>
     <main>
-      <span class="tanda" aria-hidden="true">
-        <img src="/__brand.png" alt="" width="48" height="48" />
-      </span>
+      <span class="tanda" aria-hidden="true"></span>
       <h1>Sedang diperbarui</h1>
       <p>Akademi sedang memasang pembaruan. Biasanya selesai dalam beberapa detik.</p>
       <p>Progres belajarmu aman dan tidak terpengaruh.</p>

@@ -186,10 +186,16 @@ test('halaman pemeliharaan memakai logo aplikasi yang dilayani gateway sendiri',
     read('../../../deploy/nginx/Dockerfile.coolify'),
     read('../../../deploy/nginx/coolify.conf.template'),
   ]);
-  assert.match(source, /<img src="\/__brand\.png"/);
   assert.doesNotMatch(source, />AI</);
-  assert.match(dockerfile, /COPY apps\/web\/app\/icon\.png \/usr\/share\/nginx\/pemeliharaan\/__brand\.png/);
-  assert.match(nginx, /location = \/__brand\.png/);
+  // Dua varian: halaman ini punya mode terang dan gelap seperti aplikasinya,
+  // dan ia justru muncul ketika tidak ada yang dapat memperbaikinya dari sisi
+  // aplikasi.
+  assert.match(source, /url\("\/__brand\.webp"\)/);
+  assert.match(source, /prefers-color-scheme: dark[\s\S]*__brand-gelap\.webp/);
+  assert.match(dockerfile, /COPY apps\/web\/app\/logo-terang\.webp \/usr\/share\/nginx\/pemeliharaan\/__brand\.webp/);
+  assert.match(dockerfile, /COPY apps\/web\/app\/logo-gelap\.webp \/usr\/share\/nginx\/pemeliharaan\/__brand-gelap\.webp/);
+  assert.match(nginx, /location = \/__brand\.webp/);
+  assert.match(nginx, /location = \/__brand-gelap\.webp/);
 });
 
 test('materi video baru berbawaan ditandai manual, bukan ambang tontonan', async () => {

@@ -239,7 +239,13 @@ test('lambang merek dirujuk lewat impor, bukan alamat polos', async () => {
   // yang pernah membukanya, dan tidak ada cara memberitahunya. Impor membuat
   // alamatnya membawa sidik jari isi berkas, sehingga penggantian berikutnya
   // langsung terlihat.
-  const berkas = await readFile(new URL('components/brand-mark.tsx', web), 'utf8');
-  assert.match(berkas, /^import \w+ from '\.\.\/icon\.png';/m, 'lambang tidak diimpor');
-  assert.doesNotMatch(berkas, /src="\/icon\.png"/, 'lambang masih memakai alamat polos');
+  const [komponen, css] = await Promise.all([
+    readFile(new URL('components/brand-mark.tsx', web), 'utf8'),
+    readFile(new URL('styles.css', web), 'utf8'),
+  ]);
+  // Lambangnya kini dipasang lewat CSS supaya dapat mengikuti tema, dan
+  // `url()` di stylesheet diproses bundler yang sama — sidik jarinya tetap ada.
+  assert.match(css, /\.brandMark \{[^}]*url\('\.\/logo-terang\.webp'\)/);
+  assert.doesNotMatch(komponen, /src="\/(icon|logo)[^"]*"/, 'lambang memakai alamat polos');
+  assert.doesNotMatch(css, /url\('\/(icon|logo)/, 'stylesheet memakai alamat polos');
 });

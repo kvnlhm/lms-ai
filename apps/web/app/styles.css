@@ -216,15 +216,19 @@ input, select, textarea { min-width: 0; }
   border-bottom: 1px solid var(--line);
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.015em; }
+/* Lambang merek. Bawaannya versi tinta gelap, yang benar untuk latar terang;
+   versi tinta terang menyusul di bawah, dipilih dengan selektor tema yang sama
+   seperti seluruh warna lain di berkas ini. Kotak biru yang dulu ada dihapus:
+   lambang barunya berdiri sendiri tanpa alas. */
 .brandMark {
-  width: 30px; height: 30px; border-radius: 8px;
-  display: grid; place-items: center; overflow: hidden; flex: none;
-  background: linear-gradient(150deg, var(--accent-hot), var(--accent));
-  color: var(--accent-ink); font-size: 12px; font-weight: 700;
+  width: 30px; height: 30px; flex: none;
+  background: url('./logo-terang.webp') center / contain no-repeat;
 }
-/* Gambar lambang mengisi kotaknya; gradien di belakangnya tetap ada sebagai
-   cadangan bila gambarnya gagal dimuat. */
-.brandMark img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: inherit; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .brandMark { background-image: url('./logo-gelap.webp'); }
+}
+:root[data-theme='dark'] .brandMark { background-image: url('./logo-gelap.webp'); }
+:root[data-theme='light'] .brandMark { background-image: url('./logo-terang.webp'); }
 .mainNav { display: flex; gap: 4px; margin: 0 auto; }
 .mainNav .navLink {
   /* Navigasi adalah label pendek. `body` sengaja memakai overflow-wrap:anywhere
