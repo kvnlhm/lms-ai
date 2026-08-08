@@ -504,12 +504,14 @@ deployment 247):
 - `/register` **tidak punya tombol tema**, jadi ia murni mengikuti
   `prefers-color-scheme`. Untuk mengujinya di browser otomatis:
   `agent-browser set media dark`.
-- **`width` pada `renderButton` adalah lebar *minimum*, bukan maksimum**
-  (maksimumnya 400). Google menata isi tombol di dalam lebar itu. Patokan 320
-  cukup untuk varian standar tetapi tidak untuk **varian personalisasi**, yang
-  memuat avatar, nama, dan alamat email — isinya meluber dan logonya terdorong
-  keluar batas tombol. Patokannya dibuang pada `04b9ceb`; tanpa itu Google
-  memilih lebar yang muat sendiri (211–213 px untuk varian standar).
+- **`width` pada `renderButton` adalah lebar *minimum*, maksimumnya 400.**
+  Google menata isi tombol di dalam lebar itu, jadi angka yang kecil memotong
+  isinya. **Naikkan, jangan dibuang.** Membuangnya (`04b9ceb`) membuat Google
+  memakai ukuran terkecil, 211 px — lebih sempit dari patokan 320 sebelumnya,
+  sehingga varian personalisasi justru makin terpotong. Dikoreksi pada
+  `cdde8f3` menjadi 400, dengan prop untuk wadah yang lebih sempit: `/login`
+  memakai 360 karena kartunya 364 px. Terukur sesudah deploy 249: 400 px pada
+  `/register` dan 360 px pada `/login`, keduanya tidak meluber keluar kartu.
 - **Varian personalisasi tidak dapat direproduksi di browser otomatis.** Ia
   hanya muncul bila pengunjung punya sesi Google aktif **dan** pernah masuk ke
   situs ini, sehingga setiap pemeriksaan di sini selalu memperoleh varian
