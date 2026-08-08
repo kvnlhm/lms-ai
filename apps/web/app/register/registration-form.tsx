@@ -192,11 +192,19 @@ await browserClient().POST('/api/v1/registration/checkout', {
             <div className="authDivider"><span>atau isi manual</span></div>
           </div>
         ) : (
-          <p className="notice noticeInfo" role="status">
-            Identitas terverifikasi lewat Google sebagai <strong>{email}</strong>. Lengkapi nomor
-            WhatsApp untuk menerima akses.{' '}
+          /*
+            `.notice` adalah flex container, jadi anak inline apa pun menjadi
+            flex item tersendiri dan kalimatnya terpecah menjadi kolom-kolom.
+            Seluruh teks dibungkus satu `<span>` supaya ia mengalir sebagai
+            satu paragraf, dan tombolnya menjadi item kedua di ujung.
+          */
+          <div className="notice noticeInfo regGoogleVerified" role="status">
+            <span>
+              Identitas terverifikasi lewat Google sebagai <strong>{email}</strong>. Lengkapi nomor
+              WhatsApp untuk menerima akses.
+            </span>
             <button type="button" className="btnTiny" onClick={batalkanGoogle}>Ganti</button>
-          </p>
+          </div>
         )}
 
         <div className="registrationFields">

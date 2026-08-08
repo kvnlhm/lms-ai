@@ -3604,3 +3604,8 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 .authDivider::before,.authDivider::after{content:"";flex:1;height:1px;background:var(--border)}
 .regGoogle{margin-bottom:6px}
 .regGoogle .googleSignIn{margin-top:0}
+/* Notice identitas Google: teksnya satu paragraf, tombolnya di ujung. Email
+   panjang dibiarkan patah di mana pun agar tidak melebarkan kotaknya. */
+.regGoogleVerified{align-items:center}
+.regGoogleVerified>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.regGoogleVerified>.btnTiny{flex:0 0 auto}

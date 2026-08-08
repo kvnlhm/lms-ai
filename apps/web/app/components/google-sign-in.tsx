@@ -46,16 +46,45 @@ declare global {
 
 const SUMBER = 'https://accounts.google.com/gsi/client';
 
+/**
+ * Tema yang sedang berlaku, dengan aturan yang sama persis dengan `ThemeToggle`:
+ * `data-theme` pada elemen root menang, dan tanpa itu preferensi sistem yang
+ * dipakai. Menduplikasi aturannya di sini disengaja — mengangkatnya menjadi
+ * konteks bersama hanya untuk satu pembaca tambahan belum sepadan.
+ */
+function temaSaatIni(): 'light' | 'dark' {
+  const dipilih = document.documentElement.dataset.theme;
+  if (dipilih === 'light' || dipilih === 'dark') return dipilih;
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
 export function GoogleSignIn({ clientId, onToken, text = 'signin_with', disabled }: Props) {
   const wadah = useRef<HTMLDivElement>(null);
   const [gagal, setGagal] = useState(false);
+  // Tombolnya hidup di dalam iframe milik Google, jadi ia tidak ikut berubah
+  // ketika tema halaman berganti. Satu-satunya cara menyesuaikannya adalah
+  // merender ulang dengan varian tema yang lain.
+  const [tema, setTema] = useState<'light' | 'dark' | null>(null);
+
+  useEffect(() => {
+    setTema(temaSaatIni());
+    const perbarui = () => setTema(temaSaatIni());
+    const pengamat = new MutationObserver(perbarui);
+    pengamat.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    const media = window.matchMedia('(prefers-color-scheme: light)');
+    media.addEventListener('change', perbarui);
+    return () => {
+      pengamat.disconnect();
+      media.removeEventListener('change', perbarui);
+    };
+  }, []);
   // Callback disimpan pada ref supaya `initialize` tidak perlu dijalankan
   // ulang setiap kali induknya render; Google hanya membaca callback sekali.
   const simpanan = useRef(onToken);
   simpanan.current = onToken;
 
   useEffect(() => {
-    if (!clientId || !wadah.current) return;
+    if (!clientId || !wadah.current || !tema) return;
 
     let batal = false;
     const pasang = () => {
@@ -67,12 +96,18 @@ export function GoogleSignIn({ clientId, onToken, text = 'signin_with', disabled
           if (response.credential) simpanan.current(response.credential);
         },
       });
+      // `renderButton` menambahkan, bukan mengganti. Tanpa dikosongkan dulu,
+      // berganti tema meninggalkan tombol lama di bawah yang baru.
+      wadah.current.replaceChildren();
       id.renderButton(wadah.current, {
         type: 'standard',
-        theme: 'outline',
+        // `filled_black` adalah varian gelap resmi Google. Memakai `outline`
+        // yang berlatar putih di halaman gelap membuat tombolnya tampak
+        // seperti tempelan dari situs lain.
+        theme: tema === 'dark' ? 'filled_black' : 'outline',
         size: 'large',
         text,
-        shape: 'rectangular',
+        shape: 'pill',
         width: 320,
         locale: 'id',
       });
@@ -98,7 +133,7 @@ export function GoogleSignIn({ clientId, onToken, text = 'signin_with', disabled
       skrip.removeEventListener('load', onLoad);
       skrip.removeEventListener('error', onError);
     };
-  }, [clientId, text]);
+  }, [clientId, text, tema]);
 
   if (!clientId) return null;
 
