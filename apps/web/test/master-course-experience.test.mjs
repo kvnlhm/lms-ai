@@ -36,6 +36,21 @@ test('pemutar video mengizinkan fullscreen tanpa menawarkan unduhan', async () =
   assert.match(css, /\.courseVideoSettingsPanel\{[^}]*right:-38px/);
 });
 
+test('tombol layar penuh juga mengembalikan video ke ukuran semula', async () => {
+  const source = await read('../app/learn/[courseId]/[lessonId]/video-player.tsx');
+
+  // Menekan tombolnya sekali lagi harus keluar, bukan meminta layar penuh
+  // untuk kedua kalinya — permintaan yang tidak melakukan apa-apa karena
+  // elemennya memang sudah di sana.
+  assert.match(source, /document\.exitFullscreen/);
+  assert.match(source, /document\.fullscreenElement/);
+
+  // Labelnya ikut berubah. "Layar penuh" saat sudah layar penuh menyesatkan
+  // pembaca layar, dan itu satu-satunya keterangan yang dipunyai tombol ini.
+  assert.match(source, /Keluar dari layar penuh/);
+  assert.match(source, /fullscreenchange/);
+});
+
 test('halaman kelola kursus menyediakan menu aksi dan pratinjau langsung', async () => {
   const [listPage, detailPage, editor] = await Promise.all([
     read('../app/master/courses/page.tsx'),

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react';
 import type { Schemas } from '@lms/api-client';
-import { FastForward, Maximize, Pause, Play, Rewind, Settings, Volume, VolumeOff } from '../../../components/icons';
+import { FastForward, Maximize, Minimize, Pause, Play, Rewind, Settings, Volume, VolumeOff } from '../../../components/icons';
 import { ApiError, browserClient, unwrap } from '../../../lib/browser-api';
 import { catatKemajuan } from './watch-progress';
 
@@ -134,6 +134,7 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
   const [qualities, setQualities] = useState<Array<{ index: number; height: number }>>([]);
   const [quality, setQuality] = useState(-1);
   const [seekPreview, setSeekPreview] = useState<{ left: number; time: number } | null>(null);
+  const [layarPenuh, setLayarPenuh] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -191,6 +192,16 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
     return () => document.removeEventListener('visibilitychange', hentikanSaatTersembunyi);
   }, []);
 
+  // Keadaan layar penuh dibaca dari dokumen, bukan dicatat saat tombolnya
+  // ditekan. Escape dan tombol layar penuh milik browser juga keluar tanpa
+  // melewati tombol kita, dan label yang dicatat sendiri akan tertinggal
+  // menyebut "Keluar" pada pemutar yang sudah kembali ke ukuran semula.
+  useEffect(() => {
+    const ikuti = () => setLayarPenuh(document.fullscreenElement === frameRef.current);
+    document.addEventListener('fullscreenchange', ikuti);
+    return () => document.removeEventListener('fullscreenchange', ikuti);
+  }, []);
+
   function togglePlay() {
     const video = videoRef.current;
     if (!video) return;
@@ -243,7 +254,19 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
     setSeekPreview({ left: ratio * 100, time: ratio * duration });
   }
 
+  /**
+   * Satu tombol untuk masuk dan keluar.
+   *
+   * Sebelumnya hanya meminta layar penuh. Klik kedua meminta hal yang sama
+   * pada elemen yang sudah berada di sana, jadi tidak terjadi apa-apa dan
+   * satu-satunya jalan keluar adalah Escape — yang tidak terlihat di mana pun,
+   * dan tidak ada sama sekali di ponsel.
+   */
   function fullscreen() {
+    if (document.fullscreenElement) {
+      if (document.exitFullscreen) void document.exitFullscreen();
+      return;
+    }
     if (frameRef.current?.requestFullscreen) void frameRef.current.requestFullscreen();
   }
 
@@ -278,7 +301,7 @@ function CourseVideo({ src, hls: useHls, lessonId, onFailure }: { src: string; h
             <button type="button" aria-label="Pengaturan video" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((value) => !value)}><Settings size={20} /></button>
             {settingsOpen ? <div className="courseVideoSettingsPanel"><label><span>Kecepatan</span><select value={speed} onChange={(event) => changeSpeed(Number(event.target.value))}>{[0.5, 0.75, 1, 1.25, 1.5, 2].map((value) => <option key={value} value={value}>{value === 1 ? 'Normal' : `${value}×`}</option>)}</select></label>{qualities.length ? <label><span>Kualitas</span><select value={quality} onChange={(event) => changeQuality(Number(event.target.value))}><option value={-1}>Otomatis</option>{qualities.map((item) => <option key={item.index} value={item.index}>{item.height}p</option>)}</select></label> : <p>Kualitas menyesuaikan koneksi secara otomatis.</p>}</div> : null}
           </div>
-          <button type="button" onClick={fullscreen} aria-label="Layar penuh"><Maximize size={20} /></button>
+          <button type="button" onClick={fullscreen} aria-label={layarPenuh ? 'Keluar dari layar penuh' : 'Layar penuh'}>{layarPenuh ? <Minimize size={20} /> : <Maximize size={20} />}</button>
         </div>
       </div>
     </div>

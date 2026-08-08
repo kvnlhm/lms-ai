@@ -114,6 +114,12 @@ export const Maximize = (props: IconProps) => (
   </Base>
 );
 
+export const Minimize = (props: IconProps) => (
+  <Base {...props}>
+    <path d="M3 8h5V3M21 8h-5V3M3 16h5v5M21 16h-5v5" />
+  </Base>
+);
+
 export const Rewind = (props: IconProps) => (
   <Base {...props}>
     <path d="M11 19l-8-7 8-7v14zM21 19l-8-7 8-7v14z" />
