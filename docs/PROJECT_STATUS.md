@@ -541,6 +541,60 @@ deployment 247):
 
 ---
 
+## 1i. Video postingan komunitas pindah ke Bunny Stream
+
+8 Agustus 2026. Deployment 255. Migrasi `20260808140000_community_video_via_bunny`.
+
+Diminta pemiliknya sesudah menyadari video lampiran komunitas tidak pernah
+ditranscode. Pemeriksaan menemukan kesembilan video di production kebetulan
+sudah H.264 dan `moov`-nya di depan, jadi belum ada yang rusak — tetapi
+validasinya hanya memeriksa `ftyp`, dan MP4 berisi HEVC punya tanda tangan yang
+sama persis. Pengunggah dari iPhone akan lolos lalu videonya gagal diputar
+diam-diam di Chrome desktop, tanpa pesan apa pun.
+
+Dipilih Bunny, bukan transcode sendiri: transcoding memakan CPU berat di VPS
+yang sama dengan API, worker, dan database — persis beban yang dulu mendorong
+video kursus pindah ke sana.
+
+Kendala yang ditetapkan pemiliknya: **jangan ganggu tampilan pengguna.** Itu
+menentukan urutan kerjanya, dan urutan itu tidak boleh dibalik:
+
+1. jalur baca lebih dulu, sehingga klien dapat menampilkan kedua jenis lampiran;
+2. deploy dan buktikan;
+3. baru pindahkan video lama.
+
+Memindahkan lebih dulu berarti klien belum tahu cara menampilkan lampiran
+ber-Bunny, dan postingan yang sedang tayang rusak.
+
+Yang perlu diingat:
+
+- **`objectKey` kini nullable, dengan constraint `satu_sumber`** yang menjamin
+  tepat satu sumber isi per lampiran: berkas milik kita, atau aset video di
+  penyedia. Constraint itu juga yang memaksa pemindahan bersifat atomik — tidak
+  mungkin ada baris yang setengah pindah. Sudah dibuktikan menolak di production.
+- **Komunitas tidak menyentuh `BunnyStreamClient`.** Yang menyeberang batas
+  modul adalah `VIDEO_PROVISIONER`, port yang bentuknya tidak menyebut penyedia
+  mana pun (ADR-013).
+- **Penyelarasan status menumpang di jalur baca komunitas.**
+  `segarkanAsetBunnyTertunda()` milik modul video hanya berjalan saat
+  perpustakaan admin dibuka — tidak ada Pelajar yang membukanya, jadi tanpa ini
+  video postingan tercatat PROCESSING selamanya. Dibatasi sepuluh aset per
+  pembacaan.
+- **Video kini dihapus dari penyedia.** Sebelumnya tidak pernah, bahkan untuk
+  video kursus. Untuk kursus yang sedikit dan dikurasi itu dapat diabaikan;
+  untuk lampiran komunitas yang diunggah siapa saja, draf yang ditinggalkan
+  menumpuk dan terus ditagih. Seluruh jalur penghapusan lewat satu pintu
+  `buangIsi`. Dua jalur nyaris terlewat: `remove()` checklist, dan `replace()`
+  yang dulu hanya mengembalikan kunci berkas sehingga video yang dibuang saat
+  **menyunting** postingan tertinggal di penyedia.
+- **Sembilan video lama sengaja belum dipindah** dan masih diputar dari volume
+  kita. Skrip pemindahannya belum ada; urutannya unggah ke Bunny → tunggu siap →
+  tukar dalam satu update → baru hapus berkas lokal.
+- Biaya: setiap video yang diunggah Pelajar masuk library Bunny dan ditagih.
+  Pagarnya batas 10 MB per berkas dan 10 draf menggantung per orang.
+
+---
+
 ## 2. Cara bekerja di mesin ini
 
 Sesi Claude berjalan **langsung di VPS produksi**, bukan di laptop. Konsekuensinya
