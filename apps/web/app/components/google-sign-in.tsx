@@ -108,7 +108,12 @@ export function GoogleSignIn({ clientId, onToken, text = 'signin_with', disabled
         size: 'large',
         text,
         shape: 'pill',
-        width: 320,
+        // `width` sengaja tidak diisi. Ia adalah lebar *minimum*, dan Google
+        // menata isi tombolnya di dalam lebar itu — termasuk varian
+        // personalisasi yang menampilkan avatar, nama, dan alamat email bagi
+        // pengunjung yang sudah pernah masuk. Patokan 320 membuat varian itu
+        // tidak cukup ruang sehingga logonya terdorong keluar batas tombol.
+        // Tanpa patokan, Google memilih lebar yang memang muat.
         locale: 'id',
       });
     };
