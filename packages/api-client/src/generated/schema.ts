@@ -21,6 +21,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/free-registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mendaftar gratis tanpa pembayaran
+         * @description Membuat akun tanpa pesanan dan tanpa enrollment, lalu mengirim tautan pembuktian alamat email. Sengaja bukan checkout berharga nol: pesanan PAID adalah definisi anggota berbayar, sehingga paket Rp 0 akan memberi akses penuh (ADR-032).
+         */
+        post: operations["AuthController_daftarGratis"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/email-verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Membuktikan alamat email dengan token sekali pakai */
+        post: operations["AuthController_verifikasiEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/forgot-password": {
         parameters: {
             query?: never;
@@ -2645,7 +2682,7 @@ export interface components {
     schemas: {
         ApiErrorBodyDto: {
             /** @enum {string} */
-            code: "AUTHENTICATION_REQUIRED" | "INVALID_CREDENTIALS" | "ACCOUNT_INACTIVE" | "ACCOUNT_SUSPENDED" | "MFA_REQUIRED" | "TOKEN_EXPIRED" | "PERMISSION_DENIED" | "RESOURCE_NOT_FOUND" | "VALIDATION_ERROR" | "EMAIL_ALREADY_USED" | "ENROLLMENT_ALREADY_EXISTS" | "ENROLLMENT_INACTIVE" | "COURSE_NOT_PUBLISHED" | "LESSON_LOCKED" | "LESSON_ALREADY_COMPLETED" | "MEMBERSHIP_REQUIRED" | "IDEMPOTENCY_CONFLICT" | "DISCUSSION_LOCKED" | "FILE_NOT_AVAILABLE" | "REPORT_NOT_READY" | "RATE_LIMITED" | "CSRF_TOKEN_INVALID" | "INTERNAL_ERROR";
+            code: "AUTHENTICATION_REQUIRED" | "INVALID_CREDENTIALS" | "ACCOUNT_INACTIVE" | "ACCOUNT_SUSPENDED" | "MFA_REQUIRED" | "TOKEN_EXPIRED" | "PERMISSION_DENIED" | "RESOURCE_NOT_FOUND" | "VALIDATION_ERROR" | "EMAIL_ALREADY_USED" | "ENROLLMENT_ALREADY_EXISTS" | "ENROLLMENT_INACTIVE" | "COURSE_NOT_PUBLISHED" | "LESSON_LOCKED" | "LESSON_ALREADY_COMPLETED" | "MEMBERSHIP_REQUIRED" | "EMAIL_NOT_VERIFIED" | "IDEMPOTENCY_CONFLICT" | "DISCUSSION_LOCKED" | "FILE_NOT_AVAILABLE" | "REPORT_NOT_READY" | "RATE_LIMITED" | "CSRF_TOKEN_INVALID" | "INTERNAL_ERROR";
             message: string;
             fields?: {
                 [key: string]: string[];
@@ -2668,6 +2705,24 @@ export interface components {
             token: string;
             password: string;
             passwordConfirmation: string;
+        };
+        FreeRegistrationResponseDto: {
+            /** @example true */
+            registered: boolean;
+        };
+        FreeRegistrationDto: {
+            fullName: string;
+            /** @example pelajar@akademionline.id */
+            email: string;
+            password: string;
+            passwordConfirmation: string;
+        };
+        EmailVerifiedResponseDto: {
+            /** @example true */
+            verified: boolean;
+        };
+        VerifyEmailDto: {
+            token: string;
         };
         ForgotPasswordResponseDto: {
             /** @example true */
@@ -4950,6 +5005,83 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["InvitationAcceptedDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_daftarGratis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreeRegistrationDto"];
+            };
+        };
+        responses: {
+            /** @description Selalu sama, terdaftar atau tidak. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["FreeRegistrationResponseDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_verifikasiEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyEmailDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EmailVerifiedResponseDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
                 };

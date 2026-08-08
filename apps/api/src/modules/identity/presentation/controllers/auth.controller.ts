@@ -10,6 +10,8 @@ import {
   CurrentUserResponseDto,
   DeviceSessionDto,
   ForgotPasswordResponseDto,
+  FreeRegistrationResponseDto,
+  EmailVerifiedResponseDto,
   InvitationAcceptedDto,
   LoginResponseDto,
   LogoutAllResponseDto,
@@ -28,6 +30,7 @@ import { AvatarService } from '../../application/avatar.service';
 import { MfaService } from '../../application/mfa.service';
 import { SessionService } from '../../application/session.service';
 import { UserCredentialService } from '../../application/user-credential.service';
+import { FreeRegistrationService } from '../../application/free-registration.service';
 import type { ActiveSession, AuthenticatedUser } from '../../domain/session';
 import { AllowPendingMfa, CurrentSession, CurrentUser, Public } from '../decorators';
 import {
@@ -39,6 +42,8 @@ import {
   MfaCodeDto,
   ResetPasswordDto,
   UpdateCurrentUserDto,
+  FreeRegistrationDto,
+  VerifyEmailDto,
 } from '../dto/login.dto';
 
 @ApiTags('auth')
@@ -51,6 +56,7 @@ export class AuthController {
     private readonly sessions: SessionService,
     private readonly mfa: MfaService,
     private readonly credentials: UserCredentialService,
+    private readonly pendaftaranGratis: FreeRegistrationService,
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly avatars: AvatarService,
@@ -69,6 +75,38 @@ export class AuthController {
     this.assertPasswordConfirmation(dto.password, dto.passwordConfirmation);
     await this.credentials.acceptInvitation(dto.token, dto.password);
     return { accepted: true };
+  }
+
+  @Public()
+  @Post('free-registrations')
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Mendaftar gratis tanpa pembayaran',
+    description:
+      'Membuat akun tanpa pesanan dan tanpa enrollment, lalu mengirim tautan pembuktian ' +
+      'alamat email. Sengaja bukan checkout berharga nol: pesanan PAID adalah definisi ' +
+      'anggota berbayar, sehingga paket Rp 0 akan memberi akses penuh (ADR-032).',
+  })
+  @ApiEnvelope(FreeRegistrationResponseDto, 'Selalu sama, terdaftar atau tidak.')
+  @ApiErrors(422, 429)
+  async daftarGratis(@Body() dto: FreeRegistrationDto, @Req() request: Request) {
+    this.assertPasswordConfirmation(dto.password, dto.passwordConfirmation);
+    return this.pendaftaranGratis.daftar({
+      fullName: dto.fullName,
+      email: dto.email,
+      password: dto.password,
+      ipAddress: clientIp(request),
+    });
+  }
+
+  @Public()
+  @Post('email-verifications')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Membuktikan alamat email dengan token sekali pakai' })
+  @ApiEnvelope(EmailVerifiedResponseDto)
+  @ApiErrors(422)
+  async verifikasiEmail(@Body() dto: VerifyEmailDto) {
+    return this.pendaftaranGratis.verifikasi(dto.token);
   }
 
   @Public()

@@ -24,6 +24,32 @@ export function activationEmail(input: {
 }
 
 /**
+ * Pembuktian alamat email untuk pendaftar gratis.
+ *
+ * Nadanya berbeda dari email aktivasi: yang ini bukan tanda pembayaran berhasil,
+ * melainkan satu langkah kecil yang tersisa sebelum akunnya dapat dipakai.
+ */
+export function emailVerificationEmail(input: {
+  to: string;
+  fullName: string;
+  verifyUrl: string;
+}): OutgoingEmail {
+  return {
+    to: input.to,
+    subject: 'Buktikan alamat emailmu · Academy AIPreneur',
+    html: layout([
+      `<p>Halo ${escapeHtml(input.fullName)},</p>`,
+      '<p>Akun gratismu sudah dibuat. Satu langkah lagi supaya dapat dipakai:</p>',
+      `<p><a href="${escapeHtml(input.verifyUrl)}">Buktikan alamat email ini</a></p>`,
+      '<p>Sesudah itu kamu dapat menjelajahi katalog dan membuka materi contoh.</p>',
+      // Sama seperti email pemulihan sandi: yang tidak merasa mendaftar tidak
+      // perlu melakukan apa pun, dan itu perlu dikatakan.
+      '<p>Jika kamu tidak merasa mendaftar, abaikan saja email ini.</p>',
+    ]),
+  };
+}
+
+/**
  * Peringatan galat baru untuk operator.
  *
  * Isinya sengaja memuat pesan dan jejak tumpukan apa adanya: penerimanya adalah

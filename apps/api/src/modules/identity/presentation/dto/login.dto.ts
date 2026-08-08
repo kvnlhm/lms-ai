@@ -71,6 +71,46 @@ export class AcceptInvitationDto {
 
 export class ResetPasswordDto extends AcceptInvitationDto {}
 
+/**
+ * Pendaftaran gratis: nama, email, sandi.
+ *
+ * Tanpa nomor telepon dan tanpa kolom lain. Setiap kolom tambahan pada
+ * formulir gratis adalah alasan tambahan untuk menutup tab — dan yang dibutuhkan
+ * untuk melihat katalog memang hanya sebuah alamat yang terbukti.
+ */
+export class FreeRegistrationDto {
+  @ApiProperty({ minLength: 2, maxLength: 120 })
+  @IsString()
+  @MinLength(2, { message: 'fullName minimal 2 karakter' })
+  @MaxLength(120)
+  fullName!: string;
+
+  @ApiProperty({ example: 'pelajar@akademionline.id' })
+  @IsEmail({}, { message: 'email harus berupa alamat email yang valid' })
+  @MaxLength(255)
+  email!: string;
+
+  @ApiProperty({ minLength: 12 })
+  @IsString()
+  @MinLength(12, { message: 'password minimal 12 karakter' })
+  @MaxLength(128)
+  password!: string;
+
+  @ApiProperty({ minLength: 12 })
+  @IsString()
+  @MinLength(12)
+  @MaxLength(128)
+  passwordConfirmation!: string;
+}
+
+export class VerifyEmailDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(32)
+  @MaxLength(200)
+  token!: string;
+}
+
 export class ForgotPasswordDto {
   @ApiProperty({ example: 'pelajar@akademionline.id' })
   @IsEmail({}, { message: 'email harus berupa alamat email yang valid' })

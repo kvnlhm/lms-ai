@@ -4,6 +4,7 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
 import { COURSE_PREVIEW_ACCESS, type CoursePreviewAccessPort } from './course-preview.port';
 import { MEMBERSHIP_ACCESS, type MembershipAccessPort } from '../../../shared/access/membership.port';
+import { EMAIL_VERIFICATION_STATUS, type EmailVerificationStatusPort } from './email-verification.port';
 
 export interface CourseAccess {
   /**
@@ -60,6 +61,7 @@ export class EnrollmentAccessService {
     private readonly prisma: PrismaService,
     @Inject(COURSE_PREVIEW_ACCESS) private readonly pratinjau: CoursePreviewAccessPort,
     @Inject(MEMBERSHIP_ACCESS) private readonly keanggotaan: MembershipAccessPort,
+    @Inject(EMAIL_VERIFICATION_STATUS) private readonly verifikasi: EmailVerificationStatusPort,
   ) {}
 
   async assertActiveAccess(userId: string, courseId: string): Promise<CourseAccess> {
@@ -213,6 +215,18 @@ export class EnrollmentAccessService {
     if (!access.berhakIsi && !lesson.isPreview) {
       throw AppError.membershipRequired(
         'Pelajaran ini hanya untuk anggota berbayar. Ambil aksesnya untuk membukanya.',
+      );
+    }
+
+    // Materi contoh menuntut alamat email yang terbukti. Tanpa ini, pendaftaran
+    // gratis dapat dipanen massal dengan alamat yang tidak pernah dimiliki
+    // siapa pun, dan setiap panenan itu memperoleh materi contoh secara utuh.
+    //
+    // Ditanyakan hanya di cabang ini: anggota berbayar sudah terbukti sejak
+    // alamatnya menerima tautan aktivasi, dan tidak pernah menanggung biayanya.
+    if (!access.berhakIsi && !(await this.verifikasi.emailSudahTerbukti(userId))) {
+      throw AppError.emailNotVerified(
+        'Buktikan alamat emailmu lewat tautan yang kami kirim untuk membuka materi contoh.',
       );
     }
 

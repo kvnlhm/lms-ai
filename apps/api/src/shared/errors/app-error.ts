@@ -73,6 +73,17 @@ export class AppError extends Error {
     return new AppError('MEMBERSHIP_REQUIRED', 402, message);
   }
 
+  /**
+   * Akun gratis yang emailnya belum dibuktikan. 403 karena keadaannya nyata dan
+   * tidak dapat diselesaikan dengan membayar — yang dibutuhkan hanya membuka
+   * tautan yang sudah dikirim (ADR-032).
+   */
+  static emailNotVerified(
+    message = 'Buktikan alamat emailmu dulu lewat tautan yang kami kirim.',
+  ): AppError {
+    return new AppError('EMAIL_NOT_VERIFIED', 403, message);
+  }
+
   static idempotencyConflict(): AppError {
     return new AppError(
       'IDEMPOTENCY_CONFLICT',

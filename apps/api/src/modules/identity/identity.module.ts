@@ -12,7 +12,10 @@ import { AvatarService } from './application/avatar.service';
 import { GoogleIdentityService } from './application/google-identity.service';
 import { ProfilePreferencesController } from './presentation/controllers/profile-preferences.controller';
 import { CoursePreviewAccessService } from './application/course-preview-access.service';
+import { FreeRegistrationService } from './application/free-registration.service';
 import { COURSE_PREVIEW_ACCESS } from '../enrollment/application/course-preview.port';
+import { EMAIL_VERIFICATION_STATUS } from '../enrollment/application/email-verification.port';
+import { EmailVerificationStatusService } from './application/email-verification-status.service';
 
 @Module({
   controllers: [AuthController, ProfilePreferencesController],
@@ -28,8 +31,10 @@ import { COURSE_PREVIEW_ACCESS } from '../enrollment/application/course-preview.
     AvatarService,
     GoogleIdentityService,
     { provide: COURSE_PREVIEW_ACCESS, useClass: CoursePreviewAccessService },
+    { provide: EMAIL_VERIFICATION_STATUS, useClass: EmailVerificationStatusService },
+    FreeRegistrationService,
   ],
   // Facade credential diekspor agar Users tidak mengakses persistence identity.
-  exports: [SessionService, UserCredentialService, GoogleIdentityService, COURSE_PREVIEW_ACCESS],
+  exports: [SessionService, UserCredentialService, GoogleIdentityService, COURSE_PREVIEW_ACCESS, EMAIL_VERIFICATION_STATUS],
 })
 export class IdentityModule {}

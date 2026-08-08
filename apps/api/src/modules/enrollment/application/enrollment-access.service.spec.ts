@@ -1,6 +1,7 @@
 import { EnrollmentStatus, PublicationStatus } from '@prisma/client';
 import type { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import type { MembershipAccessPort } from '../../../shared/access/membership.port';
+import type { EmailVerificationStatusPort } from './email-verification.port';
 import type { CoursePreviewAccessPort } from './course-preview.port';
 import { EnrollmentAccessService } from './enrollment-access.service';
 
@@ -19,6 +20,7 @@ interface Setelan {
   existing?: { id: string; status: EnrollmentStatus } | null;
   bolehPratinjau?: boolean;
   berbayar?: boolean;
+  emailTerbukti?: boolean;
   pelajaran?: { id: string; isActive: boolean; isPreview: boolean; courseId?: string } | null;
 }
 
@@ -29,6 +31,7 @@ function buat({
   existing = null,
   bolehPratinjau = false,
   berbayar = true,
+  emailTerbukti = true,
   pelajaran = { id: 'lesson-1', isActive: true, isPreview: false },
 }: Setelan = {}) {
   const tx = {
@@ -67,13 +70,17 @@ function buat({
   const keanggotaan: MembershipAccessPort = {
     anggotaBerbayar: jest.fn().mockResolvedValue(berbayar),
   };
+  const verifikasi: EmailVerificationStatusPort = {
+    emailSudahTerbukti: jest.fn().mockResolvedValue(emailTerbukti),
+  };
 
   return {
-    service: new EnrollmentAccessService(prisma, pratinjau, keanggotaan),
+    service: new EnrollmentAccessService(prisma, pratinjau, keanggotaan, verifikasi),
     tx,
     prisma,
     pratinjau,
     keanggotaan,
+    verifikasi,
   };
 }
 
@@ -228,5 +235,58 @@ describe('EnrollmentAccessService pratinjau kursus belum terbit', () => {
       code: 'RESOURCE_NOT_FOUND',
     });
     expect(pratinjau.bolehPratinjauKursus).not.toHaveBeenCalled();
+  });
+});
+
+describe('EnrollmentAccessService gerbang verifikasi email', () => {
+  it('menolak materi contoh sampai alamat emailnya terbukti', async () => {
+    // Tanpa gerbang ini, pendaftaran gratis dapat dipanen massal dengan alamat
+    // yang tidak pernah dimiliki siapa pun, dan setiap panenan memperoleh
+    // materi contoh secara utuh.
+    const { service } = buat({
+      berbayar: false,
+      emailTerbukti: false,
+      pelajaran: { id: 'lesson-1', isActive: true, isPreview: true },
+    });
+
+    await expect(service.assertLessonAccess('user-1', 'lesson-1')).rejects.toMatchObject({
+      code: 'EMAIL_NOT_VERIFIED',
+      status: 403,
+    });
+  });
+
+  it('membuka materi contoh sesudah alamatnya terbukti', async () => {
+    const { service } = buat({
+      berbayar: false,
+      emailTerbukti: true,
+      pelajaran: { id: 'lesson-1', isActive: true, isPreview: true },
+    });
+
+    await expect(service.assertLessonAccess('user-1', 'lesson-1')).resolves.toMatchObject({
+      lessonId: 'lesson-1',
+    });
+  });
+
+  it('tidak menanyakan verifikasi kepada anggota berbayar', async () => {
+    const { service, verifikasi } = buat({ berbayar: true });
+
+    await service.assertLessonAccess('user-1', 'lesson-1');
+
+    expect(verifikasi.emailSudahTerbukti).not.toHaveBeenCalled();
+  });
+
+  it('keanggotaan diperiksa sebelum verifikasi', async () => {
+    // Akun gratis pada pelajaran berbayar harus mendengar "ambil aksesnya",
+    // bukan "buktikan emailmu" — nasihat yang benar tetapi tidak menyelesaikan
+    // apa pun bagi orang itu.
+    const { service } = buat({
+      berbayar: false,
+      emailTerbukti: false,
+      pelajaran: { id: 'lesson-1', isActive: true, isPreview: false },
+    });
+
+    await expect(service.assertLessonAccess('user-1', 'lesson-1')).rejects.toMatchObject({
+      code: 'MEMBERSHIP_REQUIRED',
+    });
   });
 });

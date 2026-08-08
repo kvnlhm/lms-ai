@@ -72,6 +72,22 @@ export class PasswordResetDto {
 }
 
 /**
+ * Balasan pendaftaran gratis.
+ *
+ * Seperti `ForgotPasswordResponseDto`, ia sengaja tidak membawa keterangan apa
+ * pun tentang akunnya: nilainya selalu `true`, terdaftar maupun tidak. Balasan
+ * yang berbeda akan mengubah formulir pendaftaran menjadi alat memeriksa siapa
+ * saja yang punya akun di sini.
+ */
+export class FreeRegistrationResponseDto {
+  @ApiProperty({ example: true }) registered!: boolean;
+}
+
+export class EmailVerifiedResponseDto {
+  @ApiProperty({ example: true }) verified!: boolean;
+}
+
+/**
  * Rahasia TOTP hanya dikirim sekali, saat penyiapan. Sesudah dikonfirmasi ia
  * tidak pernah keluar lagi dari server.
  */

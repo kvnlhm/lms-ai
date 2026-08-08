@@ -107,19 +107,63 @@ membuat angka itu berhenti berarti "pelajar berbayar" tanpa satu pun tanda bahwa
 artinya sudah berubah. Pratinjau adalah contoh barang, bukan bagian dari riwayat
 belajar seseorang.
 
+### 8. Pendaftaran gratis berdiri sendiri, bukan checkout berharga nol
+
+`POST /api/v1/auth/free-registrations` membuat akun tanpa menyentuh
+`registration_orders` sama sekali.
+
+Paket Rp 0 lewat alur checkout yang sudah ada tampak jalan termudah dan justru
+membatalkan seluruh keputusan di atas: ia melahirkan `RegistrationOrder`
+berstatus `PAID`, dan pesanan `PAID` itulah definisi anggota berbayar pada
+bagian 1 — setiap pendaftar gratis akan memperoleh akses penuh.
+
+### 9. Materi contoh menuntut alamat email yang terbukti
+
+Pendaftar gratis dapat masuk seketika, tetapi `is_preview` baru terbuka setelah
+tautan pembuktian ditekan. Tanpa itu pendaftaran gratis dapat dipanen massal
+dengan alamat yang tidak pernah dimiliki siapa pun, dan setiap panenan
+memperoleh materi contoh secara utuh.
+
+Penolakannya `403 EMAIL_NOT_VERIFIED`, dan pertanyaannya diajukan **hanya** pada
+cabang itu — anggota berbayar sudah terbukti sejak alamatnya menerima tautan
+aktivasi, sehingga tidak pernah menanggung biaya kueri tambahan.
+
+Status verifikasi ditanyakan langsung ke basis data lewat port
+`EMAIL_VERIFICATION_STATUS`, bukan dititipkan ke payload sesi. Sesi ini opaque
+dan berumur panjang; menyalin status ke dalamnya berarti orang yang baru saja
+menekan tautan verifikasi tetap ditolak sampai ia masuk ulang.
+
+### 10. Pintu gratis diletakkan di bawah tombol bayar
+
+Halaman `/register` tetap menjual paket berbayar seperti sebelumnya. Jalan
+gratis muncul sebagai satu baris di bawah tombolnya, bukan sebagai kartu setara
+di kepala halaman.
+
+Keputusan penjualan, bukan keputusan teknis, dan diambil Product Owner: yang
+sudah siap membayar tidak perlu ditawari alternatif, sedangkan yang ragu tetap
+menemukan sesuatu selain menutup tab.
+
 ## Konsekuensi
 
 - Migrasi menambah tabel `manual_access_grants`. Tidak ada kolom baru pada `users`
   dan tidak ada backfill.
-- `pelajar.testing@aipreneur.co.id` hidup di produksi tanpa pesanan berbayar dan
-  akan menjadi akun gratis begitu penegakan menyala. Baris grant dibuat terarah
-  sesudah deploy; emailnya tidak ditulis ke dalam migrasi karena repositori ini
-  publik.
+- `pelajar.testing@aipreneur.co.id` hidup di produksi tanpa pesanan berbayar,
+  sehingga menjadi akun gratis begitu penegakan menyala. Product Owner memutuskan
+  membiarkannya demikian: satu akun gratis sungguhan di produksi lebih berguna
+  untuk memeriksa perilakunya daripada satu baris grant.
 - `MEMBERSHIP_REQUIRED` masuk `ERROR_CODES`, sehingga kontrak API berubah dan
   klien OpenAPI ikut diregenerasi.
-- Penegakan dikerjakan dan dirilis **lebih dulu**, pendaftaran gratis menyusul.
-  Urutan sebaliknya melahirkan akun yang langsung memperoleh akses permanen ke
-  seluruh kursus — lubang yang justru sedang ditutup.
+- Penegakan dikerjakan dan dirilis **lebih dulu** (deployment 267), pendaftaran
+  gratis menyusul. Urutan sebaliknya melahirkan akun yang langsung memperoleh
+  akses permanen ke seluruh kursus — lubang yang justru sedang ditutup.
+- `EMAIL_NOT_VERIFIED` menyusul masuk `ERROR_CODES`, dan
+  `CredentialTokenPurpose` memperoleh nilai `EMAIL_VERIFICATION`.
+- Belum ada antarmuka Master untuk membuat `manual_access_grants`. Selama itu
+  belum ada, pembeli di luar Midtrans hanya dapat diberi akses lewat SQL — dan
+  itu pekerjaan berikutnya yang paling mendesak.
+- Selama belum ada satu pun pelajaran bertanda `is_preview`, akun gratis melihat
+  kurikulum penuh tanpa dapat membuka apa pun. Penawaran gratisnya baru punya
+  daya tarik setelah Master menandai materi contohnya.
 
 ## Alternatif yang ditolak
 

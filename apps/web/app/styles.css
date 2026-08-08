@@ -2764,6 +2764,17 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 .regLoginHint { margin: 0; text-align: center; color: var(--muted); font-size: 13.5px; }
 .regLoginHint a { color: var(--accent-text); text-decoration: underline; }
+/* Sebaris di atas tautan masuk, dipisahkan garis tipis: cukup terlihat oleh
+   yang mencarinya, tidak cukup menonjol untuk menyaingi tombol bayar. */
+.regFreeHint {
+  margin: 0 0 12px; padding-top: 14px; border-top: 1px solid var(--border);
+  text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.55;
+}
+.regFreeHint a { color: var(--accent-text); text-decoration: underline; }
+/* Batas akun gratis, disebut sebelum orangnya mendaftar. */
+.freeScope { margin: 0 0 10px; padding-left: 20px; color: var(--text-2); font-size: 13.5px; line-height: 1.7; }
+.freeScopeNote { margin: 0 0 20px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.freeScopeNote a { color: var(--accent-text); text-decoration: underline; }
 .checkRow a { color: var(--accent-text); text-decoration: underline; }
 .termsContent { gap: 22px; }
 .termsPage .regHero { width: min(100%, 760px); }

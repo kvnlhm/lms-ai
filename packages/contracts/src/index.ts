@@ -29,6 +29,12 @@ export const ERROR_CODES = [
    * 403 tidak punya jalan keluar yang dapat ditawarkan (ADR-032).
    */
   'MEMBERSHIP_REQUIRED',
+  /**
+   * Akun ada tetapi alamat emailnya belum dibuktikan. Dipisahkan dari
+   * `ACCOUNT_INACTIVE` karena jalan keluarnya berbeda dan dapat ditempuh
+   * sendiri: membuka tautan verifikasi, atau meminta tautannya dikirim ulang.
+   */
+  'EMAIL_NOT_VERIFIED',
   'IDEMPOTENCY_CONFLICT',
   'DISCUSSION_LOCKED',
   'FILE_NOT_AVAILABLE',

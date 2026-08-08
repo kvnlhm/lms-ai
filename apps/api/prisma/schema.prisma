@@ -76,6 +76,10 @@ enum CompletionRule {
 enum CredentialTokenPurpose {
   INVITATION
   PASSWORD_RESET
+  /// Membuktikan alamat email pendaftar gratis. Tanpanya akun gratis dapat
+  /// dipanen massal dengan alamat yang tidak pernah dimiliki siapa pun
+  /// (ADR-032).
+  EMAIL_VERIFICATION
 }
 
 enum MfaMethodType {

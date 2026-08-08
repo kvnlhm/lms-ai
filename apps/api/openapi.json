@@ -55,6 +55,125 @@
         ]
       }
     },
+    "/api/v1/auth/free-registrations": {
+      "post": {
+        "description": "Membuat akun tanpa pesanan dan tanpa enrollment, lalu mengirim tautan pembuktian alamat email. Sengaja bukan checkout berharga nol: pesanan PAID adalah definisi anggota berbayar, sehingga paket Rp 0 akan memberi akses penuh (ADR-032).",
+        "operationId": "AuthController_daftarGratis",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FreeRegistrationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Selalu sama, terdaftar atau tidak.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FreeRegistrationResponseDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mendaftar gratis tanpa pembayaran",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/email-verifications": {
+      "post": {
+        "operationId": "AuthController_verifikasiEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/EmailVerifiedResponseDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Membuktikan alamat email dengan token sekali pakai",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/forgot-password": {
       "post": {
         "operationId": "AuthController_forgotPassword",
@@ -13733,6 +13852,7 @@
               "LESSON_LOCKED",
               "LESSON_ALREADY_COMPLETED",
               "MEMBERSHIP_REQUIRED",
+              "EMAIL_NOT_VERIFIED",
               "IDEMPOTENCY_CONFLICT",
               "DISCUSSION_LOCKED",
               "FILE_NOT_AVAILABLE",
@@ -13819,6 +13939,69 @@
           "token",
           "password",
           "passwordConfirmation"
+        ]
+      },
+      "FreeRegistrationResponseDto": {
+        "type": "object",
+        "properties": {
+          "registered": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "registered"
+        ]
+      },
+      "FreeRegistrationDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "example": "pelajar@akademionline.id"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12
+          },
+          "passwordConfirmation": {
+            "type": "string",
+            "minLength": 12
+          }
+        },
+        "required": [
+          "fullName",
+          "email",
+          "password",
+          "passwordConfirmation"
+        ]
+      },
+      "EmailVerifiedResponseDto": {
+        "type": "object",
+        "properties": {
+          "verified": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "verified"
+        ]
+      },
+      "VerifyEmailDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
         ]
       },
       "ForgotPasswordResponseDto": {

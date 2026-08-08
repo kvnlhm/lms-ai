@@ -280,6 +280,15 @@ await browserClient().POST('/api/v1/registration/checkout', {
           </div>
         ) : null}
 
+        {/* Jalan gratis diletakkan di bawah tombol bayar, bukan bersaing
+            dengannya di kepala halaman: yang sudah siap membayar tidak perlu
+            ditawari alternatif, sedangkan yang ragu tetap menemukan sesuatu
+            selain menutup tab. */}
+        <p className="regFreeHint">
+          Belum siap? <a href="/daftar-gratis">Daftar gratis dulu</a> untuk melihat katalog dan
+          materi contoh.
+        </p>
+
         <p className="regLoginHint">
           Sudah punya akun? <a href="/login">Masuk di sini</a>
         </p>
