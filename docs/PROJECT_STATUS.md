@@ -7,8 +7,8 @@ tersimpan di mana pun kecuali di kepala orang yang baru saja mengerjakannya:
 keadaan produksi hari ini, apa yang sudah ditutup, dan apa yang sengaja
 dibiarkan terbuka beserta alasannya.
 
-Terakhir diperbarui: **7 Agustus 2026**, setelah field Mulai tampil selalu
-terlihat pada form tambah pengumuman, deployment **242** terverifikasi.
+Terakhir diperbarui: **8 Agustus 2026**, setelah hapus kursus tersedia langsung
+dari daftar kursus Master, deployment **256** terverifikasi.
 
 ---
 
@@ -806,6 +806,17 @@ rujukan dari sesi lama tetap dapat ditemukan.
     pun lampiran, sehingga Docker belum benar-benar membuat volumenya. Checkpoint
     7 Agustus 05:25 mencatat `volume_dicari_tapi_hilang: tidak ada` dan memuat
     `community-attachment-data.tar.gz`. Jangan diangkat lagi sebagai temuan.
+15. **Hapus kursus tersedia dari daftar, bukan hanya dari editornya** — `bf1373c`,
+    deployment 256. Di luar backlog, datang dari laporan pemiliknya.
+
+    Endpoint dan audit log-nya sudah ada sejak awal; yang hilang hanya tombolnya
+    di `/master/courses`, sehingga membuang satu kursus menuntut membukanya lebih
+    dulu. Konfirmasi, permintaan hapus, dan tawaran hapus paksa saat server
+    menolak 409 dipindahkan ke `apps/web/app/master/courses/hapus-kursus.tsx`
+    yang dipakai daftar maupun editor — peringatan sekeras itu tidak boleh punya
+    dua salinan yang dapat menyimpang diam-diam. Yang terjadi sesudahnya sengaja
+    berbeda: editor berpindah karena halamannya ikut hilang, daftar memuat ulang
+    dirinya.
 
 Tiga koreksi yang perlu diingat supaya tidak diulang sebagai "temuan":
 
