@@ -484,6 +484,27 @@ karena origin yang tidak diizinkan membuat GSI menolak render), console bersih,
 dan `POST /auth/google` dengan token palsu membalas 401 tanpa menambah satu pun
 baris `users`.
 
+Dua cacat tampilan menyusul, keduanya hanya terlihat di halaman sungguhan dan
+dilaporkan pemiliknya lewat tangkapan layar (diperbaiki pada `9ae1acc`,
+deployment 247):
+
+- **Tombol Google tidak ikut tema.** Ia selalu dirender varian `outline` yang
+  berlatar putih, sedangkan tema bawaan proyek gelap. Sekarang mengikuti tema —
+  `filled_black` saat gelap, `outline` saat terang, `shape: 'pill'` menyamai
+  `--r-pill`. Tombolnya hidup di dalam **iframe milik Google**, jadi ia tidak
+  ikut berubah saat tema diganti; `data-theme` pada elemen root diamati
+  `MutationObserver` dan tombolnya dirender ulang. Wadahnya harus dikosongkan
+  lebih dulu — `renderButton` **menambahkan**, bukan mengganti, jadi tanpa itu
+  berganti tema meninggalkan dua tombol bertumpuk. Sudah diuji dengan menekan
+  tombol temanya: jumlah iframe tetap satu.
+- **`.notice` adalah `display:flex`.** Anak inline apa pun di dalamnya menjadi
+  flex item tersendiri dengan jarak 12px, sehingga satu kalimat terpecah
+  menjadi kolom-kolom dan alamat email patah di tengah kata. Yang menaruh teks
+  campuran di dalam `.notice` harus membungkusnya dalam satu elemen lebih dulu.
+- `/register` **tidak punya tombol tema**, jadi ia murni mengikuti
+  `prefers-color-scheme`. Untuk mengujinya di browser otomatis:
+  `agent-browser set media dark`.
+
 ---
 
 ## 2. Cara bekerja di mesin ini
