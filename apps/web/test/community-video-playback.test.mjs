@@ -58,6 +58,9 @@ test('video postingan memakai pemutar kustom, bukan kontrol bawaan peramban', as
   assert.match(lampiran, /courseVideoPlayer postVideoPlayer/);
   assert.match(lampiran, /courseVideoControls/);
   assert.match(lampiran, /courseVideoSeek/);
+  // Pengaturan kecepatan memakai panel yang sama dengan pemutar pelajaran.
+  assert.match(lampiran, /courseVideoSettingsPanel/);
+  assert.match(lampiran, /playbackRate/);
   // Video Bunny tidak boleh kembali memakai `controls` bawaan.
   assert.doesNotMatch(lampiran, /<video\s+ref=\{videoRef\}[^>]*\scontrols/);
 });

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, FileText, Maximize, Minimize, Pause, Play, Volume, VolumeOff, X } from '../components/icons';
+import { ArrowLeft, ArrowRight, FileText, Maximize, Minimize, Pause, Play, Settings, Volume, VolumeOff, X } from '../components/icons';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 export type LampiranPost = {
@@ -16,6 +16,9 @@ export function ukuranTerbaca(bytes: string | number): string {
 }
 
 const alamat = (id: string) => `/api/v1/community/attachments/${id}`;
+
+/** Sama dengan pemutar pelajaran, supaya pilihannya tidak berbeda antar tempat. */
+const KECEPATAN = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 /**
  * Lampiran di dalam kartu postingan.
@@ -118,6 +121,8 @@ function VideoPenyedia({ item }: { item: LampiranPost }) {
   const [durasi, setDurasi] = useState(0);
   const [bisu, setBisu] = useState(false);
   const [penuh, setPenuh] = useState(false);
+  const [kecepatan, setKecepatan] = useState(1);
+  const [panelTerbuka, setPanelTerbuka] = useState(false);
   // URL-nya bertanda tangan dan bermasa berlaku, jadi ia dapat berganti tanpa
   // videonya berganti. Memasang ulang pemutar setiap kali tandatangannya
   // diperbarui akan melempar tontonan kembali ke detik nol; yang menentukan
@@ -147,6 +152,15 @@ function VideoPenyedia({ item }: { item: LampiranPost }) {
 
     return () => { dibatalkan = true; hls?.destroy(); };
   }, [item.id, siap]);
+
+  useEffect(() => {
+    if (!panelTerbuka) return;
+    const tutup = (event: MouseEvent) => {
+      if (!(event.target as Element).closest('.courseVideoSettings')) setPanelTerbuka(false);
+    };
+    document.addEventListener('pointerdown', tutup);
+    return () => document.removeEventListener('pointerdown', tutup);
+  }, [panelTerbuka]);
 
   useEffect(() => {
     // Keluar layar penuh lewat Escape tidak melewati tombol kita.
@@ -229,6 +243,30 @@ function VideoPenyedia({ item }: { item: LampiranPost }) {
           >
             {bisu ? <VolumeOff size={18} /> : <Volume size={18} />}
           </button>
+          <div className="courseVideoSettings">
+            <button type="button" aria-label="Pengaturan video" aria-expanded={panelTerbuka} onClick={() => setPanelTerbuka((nilai) => !nilai)}>
+              <Settings size={18} />
+            </button>
+            {panelTerbuka ? (
+              <div className="courseVideoSettingsPanel">
+                <label>
+                  <span>Kecepatan</span>
+                  <select
+                    value={kecepatan}
+                    onChange={(event) => {
+                      const nilai = Number(event.target.value);
+                      setKecepatan(nilai);
+                      if (videoRef.current) videoRef.current.playbackRate = nilai;
+                    }}
+                  >
+                    {KECEPATAN.map((nilai) => (
+                      <option key={nilai} value={nilai}>{nilai === 1 ? 'Normal' : `${nilai}×`}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
+          </div>
           <button type="button" onClick={layarPenuh} aria-label={penuh ? 'Keluar layar penuh' : 'Layar penuh'}>
             {penuh ? <Minimize size={18} /> : <Maximize size={18} />}
           </button>
