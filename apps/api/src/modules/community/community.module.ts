@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
+import { VideoModule } from '../video/video.module';
 import { CommunityService } from './application/community.service';
 import { CommunityAdminController } from './presentation/community-admin.controller';
 import { CommunityController } from './presentation/community.controller';
 import { CommunityAttachmentService } from './application/community-attachment.service';
 
 @Module({
+  // Diimpor untuk memperoleh `VIDEO_PROVISIONER`. Yang dipakai portnya,
+  // bukan klien penyedianya; lihat ADR-013.
+  imports: [VideoModule],
   controllers: [CommunityController, CommunityAdminController],
   providers: [CommunityService, CommunityAttachmentService],
   // Diekspor untuk `StorageModule`, yang menyusun larik pemulih unggahan

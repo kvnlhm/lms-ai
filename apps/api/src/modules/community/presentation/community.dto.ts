@@ -181,6 +181,29 @@ export class CommunityAttachmentDto {
   video!: CommunityAttachmentVideoDto | null;
 }
 
+export class SiapkanVideoLampiranDto {
+  @ApiProperty({ description: 'Nama berkas asli, hanya untuk ditampilkan.' })
+  @IsString() @MinLength(1) @MaxLength(255)
+  originalName!: string;
+
+  @ApiProperty({ description: 'Ukuran berkas dalam byte, diperiksa terhadap batas sebelum izin unggah diterbitkan.' })
+  @IsInt() @Min(1)
+  sizeBytes!: number;
+}
+
+export class TiketUnggahVideoDto {
+  @ApiProperty() videoId!: string;
+  @ApiProperty() libraryId!: string;
+  @ApiProperty() signature!: string;
+  @ApiProperty() expires!: number;
+  @ApiProperty() endpoint!: string;
+}
+
+export class SiapkanVideoLampiranResponseDto {
+  @ApiProperty({ type: () => CommunityAttachmentDto }) attachment!: CommunityAttachmentDto;
+  @ApiProperty({ type: () => TiketUnggahVideoDto }) tiket!: TiketUnggahVideoDto;
+}
+
 export class CommunityAttachmentVideoDto {
   @ApiProperty({ description: 'CREATED, UPLOADING, PROCESSING, AVAILABLE, atau FAILED.' }) status!: string;
   @ApiProperty({ type: String, nullable: true, description: 'URL playlist HLS bertanda tangan dan bermasa berlaku. Null selama videonya belum siap.' })

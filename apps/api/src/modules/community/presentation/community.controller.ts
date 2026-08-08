@@ -8,7 +8,7 @@ import type { AuthenticatedUser } from '../../identity/domain/session';
 import { CurrentUser, RequirePermissions } from '../../identity/presentation/decorators';
 import { CommunityService } from '../application/community.service';
 import { CommunityAttachmentService } from '../application/community-attachment.service';
-import { CommunityAttachmentDto, CommunityChannelDto, CommunityChecklistItemDto, CommunityChecklistResultDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPollDto, CommunityPollVoteDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityChecklistDto, SetCommunityPinnedDto } from './community.dto';
+import { CommunityAttachmentDto, CommunityChannelDto, CommunityChecklistItemDto, CommunityChecklistResultDto, CommunityCommentDto, CommunityPageQueryDto, CommunityPollDto, CommunityPollVoteDto, CommunityPostBodyDto, CommunityPostDto, CommunityReactionResultDto, SetCommunityChecklistDto, SetCommunityPinnedDto, SiapkanVideoLampiranDto, SiapkanVideoLampiranResponseDto } from './community.dto';
 
 /** Pemegang izin moderasi diskusi; dipakai berulang di controller ini. */
 function moderator(user: AuthenticatedUser): boolean {
@@ -76,6 +76,19 @@ export class CommunityController {
   uploadDraftAttachment(@CurrentUser() user: AuthenticatedUser, @Req() request: Request) {
     const rawLength = request.header('content-length');
     return this.attachments.uploadDraft(user.id, request, request.header('content-type'), request.header('x-file-name') ?? 'lampiran', rawLength ? Number.parseInt(rawLength, 10) : undefined);
+  }
+
+  @Put('attachments/video') @HttpCode(201)
+  @ApiOperation({
+    summary: 'Menyiapkan lampiran video: izin unggah langsung ke penyedia',
+    description:
+      'Byte videonya tidak melewati server ini. Peramban mengunggah langsung ke ' +
+      'penyedia memakai tiket yang dikembalikan, lalu lampirannya disebut pada ' +
+      '`attachmentIds` saat postingannya diterbitkan.',
+  })
+  @ApiEnvelope(SiapkanVideoLampiranResponseDto) @ApiErrors(401, 422)
+  siapkanVideoLampiran(@CurrentUser() user: AuthenticatedUser, @Body() dto: SiapkanVideoLampiranDto) {
+    return this.attachments.siapkanVideo(user.id, dto);
   }
 
   @Get('attachments/drafts') @ApiOperation({ summary: 'Memulihkan unggahan composer yang belum diterbitkan' }) @ApiEnvelopeArray(CommunityAttachmentDto) @ApiErrors(401)

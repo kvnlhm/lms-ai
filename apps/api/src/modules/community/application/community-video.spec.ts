@@ -22,7 +22,7 @@ describe('CommunityAttachmentService — lampiran video Bunny', () => {
       }),
     };
     return {
-      value: new CommunityAttachmentService(prisma as never, config as never, { record: jest.fn() } as never),
+      value: new CommunityAttachmentService(prisma as never, config as never, { record: jest.fn() } as never, { siapkanUnggahan: jest.fn(), selaraskan: jest.fn() } as never),
       findMany,
     };
   }

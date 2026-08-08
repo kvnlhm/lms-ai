@@ -35,7 +35,8 @@ describe('CommunityAttachmentService', () => {
       ...overrides,
     };
     const config = { get: jest.fn().mockReturnValue({ communityAttachment: { storagePath: storage, maxUploadBytes: batasByte, maxDraftUploadBytes: batasByte, maxPerPost } }) };
-    return { value: new CommunityAttachmentService(prisma as never, config as never, { record: jest.fn() } as never), prisma, create, deleteMany, count };
+    const penyedia = { siapkanUnggahan: jest.fn(), selaraskan: jest.fn() };
+    return { value: new CommunityAttachmentService(prisma as never, config as never, { record: jest.fn() } as never, penyedia as never), prisma, create, deleteMany, count };
   }
 
   test('menyimpan gambar dengan object key acak, bukan nama dari client', async () => {

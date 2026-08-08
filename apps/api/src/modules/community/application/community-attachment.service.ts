@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CommunityChannelType, type Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
@@ -15,6 +15,7 @@ import { AppError } from '../../../shared/errors/app-error';
 import { AuditService } from '../../../shared/audit/audit.service';
 import { olahGambar } from '../../../shared/storage/image-processing';
 import { bunnySignedUrl } from '../../video/application/video.service';
+import { VIDEO_PROVISIONER, type VideoProvisionerPort } from '../../video/application/video-provisioning.port';
 import type { StaleUploadReconcilerPort } from '../../../shared/storage/stale-upload.port';
 
 const JENIS = new Map([
@@ -51,7 +52,12 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
   private readonly config: AppConfig['communityAttachment'];
   private readonly video: AppConfig['video'];
 
-  constructor(private readonly prisma: PrismaService, config: ConfigService<{ app: AppConfig }, true>, private readonly audit: AuditService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    config: ConfigService<{ app: AppConfig }, true>,
+    private readonly audit: AuditService,
+    @Inject(VIDEO_PROVISIONER) private readonly penyedia: VideoProvisionerPort,
+  ) {
     const app = config.get('app', { infer: true });
     this.config = app.communityAttachment;
     this.video = app.video;
@@ -103,6 +109,53 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
       await rm(join(this.config.storagePath, objectKey), { force: true });
       throw error;
     }
+  }
+
+  /**
+   * Menyiapkan lampiran video: aset di penyedia, izinnya, dan baris drafnya.
+   *
+   * Bytenya tidak pernah melewati VPS ini — peramban mengunggah langsung ke
+   * penyedia memakai tiket yang dikembalikan di sini. Itulah seluruh alasan
+   * memindahkan video keluar, sama seperti yang sudah dilakukan video kursus.
+   *
+   * Batas ukuran diperiksa di sini walau berkasnya tidak lewat sini, karena di
+   * sinilah satu-satunya tempat kita masih memegang keputusan: sesudah tiketnya
+   * keluar, yang menerima unggahan adalah penyedia.
+   */
+  async siapkanVideo(userId: string, input: { originalName: string; sizeBytes: number }) {
+    const batas = this.config.maxDraftUploadBytes;
+    if (!Number.isFinite(input.sizeBytes) || input.sizeBytes < 1 || input.sizeBytes > batas) {
+      throw AppError.validation({ sizeBytes: [`Ukuran video harus antara 1 byte dan ${batas} byte.`] });
+    }
+
+    // Batas yang sama dengan unggahan berkas. Tanpa ini, membuka dan menutup
+    // composer berulang kali adalah cara membuat video tanpa batas di library
+    // penyedia — dan setiap video di sana berbiaya.
+    const menggantung = await this.prisma.communityPostAttachment.count({ where: { uploaderId: userId, postId: null } });
+    if (menggantung >= this.config.maxPerPost) {
+      throw AppError.validation({ file: [`Selesaikan atau buang unggahan yang tertunda dulu; maksimum ${this.config.maxPerPost} berkas.`] });
+    }
+
+    const namaAman = this.namaAman(input.originalName);
+    const { videoAssetId, tiket } = await this.penyedia.siapkanUnggahan({
+      ownerId: userId,
+      title: namaAman,
+      originalName: namaAman,
+    });
+
+    const attachment = await this.prisma.communityPostAttachment.create({
+      data: {
+        postId: null,
+        uploaderId: userId,
+        objectKey: null,
+        videoAssetId,
+        originalName: namaAman,
+        mimeType: 'video/mp4',
+        sizeBytes: BigInt(input.sizeBytes),
+      },
+      select: pilih,
+    });
+    return { attachment: this.sajikan(attachment), tiket };
   }
 
   /** Mengembalikan draf milik penulis agar composer pulih setelah refresh. */

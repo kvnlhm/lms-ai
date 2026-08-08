@@ -7743,6 +7743,71 @@
         ]
       }
     },
+    "/api/v1/community/attachments/video": {
+      "put": {
+        "description": "Byte videonya tidak melewati server ini. Peramban mengunggah langsung ke penyedia memakai tiket yang dikembalikan, lalu lampirannya disebut pada `attachmentIds` saat postingannya diterbitkan.",
+        "operationId": "CommunityController_siapkanVideoLampiran",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiapkanVideoLampiranDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SiapkanVideoLampiranResponseDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Menyiapkan lampiran video: izin unggah langsung ke penyedia",
+        "tags": [
+          "community"
+        ]
+      }
+    },
     "/api/v1/community/attachments/drafts": {
       "get": {
         "operationId": "CommunityController_draftAttachments",
@@ -18849,6 +18914,65 @@
           "nextPostId",
           "position",
           "total"
+        ]
+      },
+      "TiketUnggahVideoDto": {
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "libraryId": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          },
+          "expires": {
+            "type": "number"
+          },
+          "endpoint": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "videoId",
+          "libraryId",
+          "signature",
+          "expires",
+          "endpoint"
+        ]
+      },
+      "SiapkanVideoLampiranResponseDto": {
+        "type": "object",
+        "properties": {
+          "attachment": {
+            "$ref": "#/components/schemas/CommunityAttachmentDto"
+          },
+          "tiket": {
+            "$ref": "#/components/schemas/TiketUnggahVideoDto"
+          }
+        },
+        "required": [
+          "attachment",
+          "tiket"
+        ]
+      },
+      "SiapkanVideoLampiranDto": {
+        "type": "object",
+        "properties": {
+          "originalName": {
+            "type": "string",
+            "description": "Nama berkas asli, hanya untuk ditampilkan."
+          },
+          "sizeBytes": {
+            "type": "number",
+            "description": "Ukuran berkas dalam byte, diperiksa terhadap batas sebelum izin unggah diterbitkan."
+          }
+        },
+        "required": [
+          "originalName",
+          "sizeBytes"
         ]
       },
       "CommunityPollVoteDto": {

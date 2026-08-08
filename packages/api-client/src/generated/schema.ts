@@ -1541,6 +1541,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/community/attachments/video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Menyiapkan lampiran video: izin unggah langsung ke penyedia
+         * @description Byte videonya tidak melewati server ini. Peramban mengunggah langsung ke penyedia memakai tiket yang dikembalikan, lalu lampirannya disebut pada `attachmentIds` saat postingannya diterbitkan.
+         */
+        put: operations["CommunityController_siapkanVideoLampiran"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/community/attachments/drafts": {
         parameters: {
             query?: never;
@@ -4186,6 +4206,23 @@ export interface components {
             nextPostId: string | null;
             position: number;
             total: number;
+        };
+        TiketUnggahVideoDto: {
+            videoId: string;
+            libraryId: string;
+            signature: string;
+            expires: number;
+            endpoint: string;
+        };
+        SiapkanVideoLampiranResponseDto: {
+            attachment: components["schemas"]["CommunityAttachmentDto"];
+            tiket: components["schemas"]["TiketUnggahVideoDto"];
+        };
+        SiapkanVideoLampiranDto: {
+            /** @description Nama berkas asli, hanya untuk ditampilkan. */
+            originalName: string;
+            /** @description Ukuran berkas dalam byte, diperiksa terhadap batas sebelum izin unggah diterbitkan. */
+            sizeBytes: number;
         };
         CommunityPollVoteDto: {
             optionId: string;
@@ -9866,6 +9903,48 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["CommunityAttachmentDto"];
+                        meta: components["schemas"]["ResponseMetaDto"];
+                    };
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    CommunityController_siapkanVideoLampiran: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiapkanVideoLampiranDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SiapkanVideoLampiranResponseDto"];
                         meta: components["schemas"]["ResponseMetaDto"];
                     };
                 };
