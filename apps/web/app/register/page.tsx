@@ -18,12 +18,19 @@ const YANG_DIPELAJARI = [
   'Bikin konten lebih cepat 5–10x tanpa tambah tim',
 ];
 
+/**
+ * Perannya dipisahkan dari keterangannya karena itulah yang dicari pembaca:
+ * ia memindai daftar ini untuk menjawab satu pertanyaan, "apakah saya orang
+ * ini?". Emoji yang dulu dipakai menandai jenis peran memang membawa
+ * informasi itu, tetapi bentuknya berbeda-beda di tiap sistem operasi dan
+ * warnanya bertabrakan dengan palet halaman.
+ */
 const COCOK_UNTUK = [
-  { ikon: '💼', teks: 'Owner & Entrepreneur yang ingin optimasi operasional pakai AI' },
-  { ikon: '📱', teks: 'Social Media Specialist yang butuh konten cepat & efektif' },
-  { ikon: '💻', teks: 'Marketer & Advertiser yang ingin hasil kampanye lebih efisien' },
-  { ikon: '🧑‍💻', teks: 'Mahasiswa yang mau siap kerja dan punya skill masa depan' },
-  { ikon: '🚀', teks: 'Pemula yang ingin kuasai AI dari dasar sampai jago praktik' },
+  { peran: 'Owner & Entrepreneur', lanjutan: 'yang ingin optimasi operasional pakai AI' },
+  { peran: 'Social Media Specialist', lanjutan: 'yang butuh konten cepat & efektif' },
+  { peran: 'Marketer & Advertiser', lanjutan: 'yang ingin hasil kampanye lebih efisien' },
+  { peran: 'Mahasiswa', lanjutan: 'yang mau siap kerja dan punya skill masa depan' },
+  { peran: 'Pemula', lanjutan: 'yang ingin kuasai AI dari dasar sampai jago praktik' },
 ];
 
 const TAUTAN_KONTAK = [
@@ -110,7 +117,7 @@ await client.GET('/api/v1/registration/tiers')
         <ul className="regCheckList">
           {YANG_DIPELAJARI.map((item) => (
             <li key={item}>
-              <span aria-hidden="true">✅</span>
+              <span className="tierCheck" aria-hidden="true">✓</span>
               <span>{item}</span>
             </li>
           ))}
@@ -123,11 +130,11 @@ await client.GET('/api/v1/registration/tiers')
 
       <section className="regSection">
         <h2>Kelas ini cocok untuk siapa?</h2>
-        <ul className="regCheckList">
+        <ul className="regRoleList">
           {COCOK_UNTUK.map((item) => (
-            <li key={item.teks}>
-              <span aria-hidden="true">{item.ikon}</span>
-              <span>{item.teks}</span>
+            <li key={item.peran}>
+              <strong>{item.peran}</strong>
+              <span>{item.lanjutan}</span>
             </li>
           ))}
         </ul>
@@ -169,10 +176,9 @@ await client.GET('/api/v1/registration/tiers')
                   href={tautan.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={tautan.label}
-                  title={tautan.label}
                 >
-                  <Icon size={19} />
+                  <Icon size={18} />
+                  <span>{tautan.label}</span>
                 </a>
             );
           })}

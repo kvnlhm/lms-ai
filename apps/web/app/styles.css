@@ -2775,13 +2775,29 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   display: flex; gap: 12px; align-items: flex-start;
   font-size: 15px; line-height: 1.6;
 }
-.regCheckList li > span:first-child { flex: none; line-height: 1.5; }
+.regCheckList li > .tierCheck { margin-top: 3px; }
 
+/* Daftar peran: yang dipindai pembaca adalah perannya, keterangannya menyusul.
+   Garis rambut antarbaris menyatakan bahwa kelimanya sederajat — pilihan
+   paralel, bukan urutan langkah. */
+.regRoleList { margin: 0; padding: 0; list-style: none; display: grid; }
+.regRoleList li {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px;
+  padding: 13px 2px;
+  font-size: 15px; line-height: 1.55;
+}
+.regRoleList li + li { border-top: 1px solid var(--line-soft); }
+.regRoleList strong { font-weight: 660; letter-spacing: -0.01em; }
+.regRoleList span { color: var(--muted); }
+
+/* Tint dibuat jauh lebih tipis daripada `--accent-soft`: kotak ini menampung
+   kalimat penutup, bukan peringatan, dan warna sekuat itu menariknya ke depan
+   melampaui kartu paket yang seharusnya jadi pusat halaman. */
 .regNote {
-  margin: 0; padding: 15px 17px;
-  border-left: 3px solid var(--accent);
+  margin: 0; padding: 16px 18px;
+  border-left: 2px solid var(--accent);
   border-radius: 0 var(--r-md) var(--r-md) 0;
-  background: var(--accent-soft);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
   color: var(--text-2); font-size: 14px; line-height: 1.7;
 }
 
@@ -2821,7 +2837,10 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 .regContact { gap: 16px; }
 .regContactLinks { display: flex; flex-wrap: wrap; gap: 10px; }
-.regContactLinks .btn { width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: var(--r-pill); }
+/* Ikon tanpa teks tidak memberi tahu ke mana tautannya menuju. Labelnya
+   ditampilkan, bukan disembunyikan di `title` yang tidak muncul di layar
+   sentuh. */
+.regContactLinks .btn { gap: 9px; padding: 10px 17px; border-radius: var(--r-pill); font-size: 14px; }
 
 .regFoot {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
@@ -2833,7 +2852,11 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .regPage { gap: 28px; padding-top: 18px; }
   .regCard { padding: 18px; gap: 22px; }
   .regFaq details > p { padding-left: 17px; }
-  .regContactLinks > .btn { flex: 1; justify-content: center; }
+  /* Ditumpuk satu per baris, bukan dibagi rata tiga. Dengan `flex: 1` ketiga
+     tombol dipaksa selebar sepertiga layar, dan label terpanjang pecah
+     menjadi "Instagr / am" sementara pilnya berubah menjadi oval tinggi. */
+  .regContactLinks { flex-direction: column; }
+  .regContactLinks > .btn { width: 100%; flex: 0 0 auto; justify-content: center; }
   .regFoot { justify-content: center; }
   .regFoot > .btn { width: 100%; justify-content: center; }
 }
