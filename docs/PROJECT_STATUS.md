@@ -504,21 +504,33 @@ deployment 247):
 - `/register` **tidak punya tombol tema**, jadi ia murni mengikuti
   `prefers-color-scheme`. Untuk mengujinya di browser otomatis:
   `agent-browser set media dark`.
-- **Varian personalisasi tombol Google sengaja dimatikan lewat `width: 199`.**
-  Varian itu — yang menyapa pengunjung dengan avatar, nama, dan alamat
-  emailnya — isinya lebih lebar daripada yang dapat ditampung `renderButton`
-  dan terpotong di sisi kanan. Tidak dapat diperbaiki dengan melebarkan:
-  `width` maksimum 400 menurut Google, dan pada 400 pun masih terpotong.
-  Menurut dokumentasinya, varian ini tidak ditampilkan bila lebarnya di bawah
-  200. Karena `width` adalah lebar *minimum* dan tombol standar secara alami
-  207–213 px, angka 199 tidak mengecilkan apa pun.
+- **Tombol Google terpotong di sisi kanan karena reset CSS kita sendiri, bukan
+  karena Google.** `styles.css` baris 201 memasang
+  `img, video, canvas, iframe { max-width: 100% }`. Google merender tombolnya
+  pada iframe selebar **233 px** dengan `margin: -2px -10px` — 10 px transparan
+  di tiap sisi yang ditarik masuk lagi oleh margin negatif itu. Induknya
+  menyusut ke 213 px, `max-width` memangkas iframe-nya ke angka itu, dan karena
+  margin kirinya negatif seluruh 20 px yang hilang jatuh di sisi kanan. Ujung
+  membulat tombolnya terpotong rata. Perbaikannya satu baris:
+  `.googleSignIn iframe{max-width:none}` (`1bdb0cd`).
 
-  Tiga percobaan sebelum ini gagal dan urutannya layak diingat supaya tidak
-  diulang: 320 px terpotong → patokan **dibuang** (`04b9ceb`), yang justru
+  **Empat percobaan sebelumnya keliru karena menyangka Google yang membatasi.**
+  Urutannya: 320 px terpotong → patokan **dibuang** (`04b9ceb`), yang justru
   membuat Google memakai ukuran terkecil 211 px sehingga makin parah →
-  dinaikkan ke maksimum 400 (`cdde8f3`), masih terpotong di kanan. Baru
-  `ff0ff2f` menyelesaikannya dengan mematikan variannya. **`width` adalah
-  minimum: membuangnya mengecilkan, bukan melonggarkan.**
+  dinaikkan ke maksimum 400 (`cdde8f3`), masih terpotong → varian personalisasi
+  dimatikan lewat `width: 199` (`ff0ff2f`), tombolnya jadi standar tetapi
+  ujungnya tetap rata. Baru pemeriksaan `getComputedStyle` pada iframe-nya —
+  yang menunjukkan lebar diminta 233 px tetapi terhitung 213 px — menemukan
+  sebab sesungguhnya. **Pelajarannya: ukur elemennya, jangan menalar dari
+  dokumentasi vendor saja.**
+
+- **`width: 199` tetap dipertahankan**, yang membuat Google memakai tombol
+  standar dan bukan varian personalisasi (ambangnya 200 menurut dokumentasi
+  Google). Varian itu kemungkinan besar ikut sembuh oleh perbaikan `max-width`
+  di atas, karena gejalanya sama persis — terpotong 20 px di kanan. Belum
+  dicoba mengaktifkannya kembali; kalau diinginkan, naikkan angka itu ke 400.
+  Varian personalisasi tidak dapat direproduksi di browser otomatis, jadi
+  perubahan itu hanya dapat diverifikasi pemiliknya.
 - **Varian personalisasi tidak dapat direproduksi di browser otomatis.** Ia
   hanya muncul bila pengunjung punya sesi Google aktif **dan** pernah masuk ke
   situs ini, sehingga setiap pemeriksaan di sini selalu memperoleh varian
