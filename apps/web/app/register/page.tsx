@@ -176,9 +176,10 @@ await client.GET('/api/v1/registration/tiers')
                   href={tautan.href}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={tautan.label}
+                  title={tautan.label}
                 >
-                  <Icon size={18} />
-                  <span>{tautan.label}</span>
+                  <Icon size={19} />
                 </a>
             );
           })}

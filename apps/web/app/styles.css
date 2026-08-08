@@ -2837,10 +2837,15 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
 
 .regContact { gap: 16px; }
 .regContactLinks { display: flex; flex-wrap: wrap; gap: 10px; }
-/* Ikon tanpa teks tidak memberi tahu ke mana tautannya menuju. Labelnya
-   ditampilkan, bukan disembunyikan di `title` yang tidak muncul di layar
-   sentuh. */
-.regContactLinks .btn { gap: 9px; padding: 10px 17px; border-radius: var(--r-pill); font-size: 14px; }
+/* Ikon saja, atas permintaan pemiliknya. Tujuannya tetap disebutkan lewat
+   `aria-label` dan `title` supaya pembaca layar dan hover desktop tidak
+   kehilangan konteks — pada layar sentuh memang tidak muncul, dan itu
+   konsekuensi yang diterima. Ukurannya 44 px, ambang sasaran sentuh yang
+   nyaman. */
+.regContactLinks .btn {
+  width: 44px; height: 44px; padding: 0; justify-content: center;
+  border-radius: var(--r-pill);
+}
 
 .regFoot {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
@@ -2852,11 +2857,9 @@ ul.stack, ol.stack { list-style: none; margin: 0; padding: 0; }
   .regPage { gap: 28px; padding-top: 18px; }
   .regCard { padding: 18px; gap: 22px; }
   .regFaq details > p { padding-left: 17px; }
-  /* Ditumpuk satu per baris, bukan dibagi rata tiga. Dengan `flex: 1` ketiga
-     tombol dipaksa selebar sepertiga layar, dan label terpanjang pecah
-     menjadi "Instagr / am" sementara pilnya berubah menjadi oval tinggi. */
-  .regContactLinks { flex-direction: column; }
-  .regContactLinks > .btn { width: 100%; flex: 0 0 auto; justify-content: center; }
+  /* Sengaja tidak dilebarkan. Aturan lama `flex: 1` memaksa ketiganya selebar
+     sepertiga layar dan mengubah lingkarannya menjadi oval; tiga lingkaran
+     44 px memang muat berdampingan bahkan pada layar tersempit. */
   .regFoot { justify-content: center; }
   .regFoot > .btn { width: 100%; justify-content: center; }
 }
