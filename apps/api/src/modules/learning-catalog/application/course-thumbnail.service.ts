@@ -9,20 +9,27 @@ import { pipeline } from 'node:stream/promises';
 import type { AppConfig } from '../../../config/configuration';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
+import { olahGambar } from '../../../shared/storage/image-processing';
+
+/**
+ * Sisi terpanjang thumbnail sesudah diolah.
+ *
+ * Kartu katalog paling lebar beberapa ratus piksel dan halaman katalog memuat
+ * seluruh kursus sekaligus, jadi setiap megabyte di sini dikalikan jumlah
+ * kartunya. 1200 masih longgar untuk layar 2x.
+ */
+const SISI_MAKS = 1200;
 
 const TYPES = {
   'image/jpeg': {
-    extension: 'jpg',
     signature: (header: Buffer) =>
       header.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])),
   },
   'image/png': {
-    extension: 'png',
     signature: (header: Buffer) =>
       header.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
   },
   'image/webp': {
-    extension: 'webp',
     signature: (header: Buffer) =>
       header.toString('ascii', 0, 4) === 'RIFF' &&
       header.toString('ascii', 8, 12) === 'WEBP',
@@ -64,7 +71,8 @@ export class CourseThumbnailService {
 
     await mkdir(this.config.storagePath, { recursive: true, mode: 0o755 });
     await chmod(this.config.storagePath, 0o755);
-    const filename = `${courseId}-${randomUUID()}.${imageType.extension}`;
+    // Selalu `.webp`: berapa pun yang diunggah, yang disimpan hasil olahan.
+    const filename = `${courseId}-${randomUUID()}.webp`;
     const temporaryPath = join(this.config.storagePath, `${filename}.uploading`);
     const finalPath = join(this.config.storagePath, filename);
     let bytes = 0;
@@ -79,7 +87,7 @@ export class CourseThumbnailService {
     });
 
     try {
-      await pipeline(stream, validator, createWriteStream(temporaryPath, { flags: 'wx', mode: 0o644 }));
+      await pipeline(stream, validator, olahGambar(SISI_MAKS), createWriteStream(temporaryPath, { flags: 'wx', mode: 0o644 }));
       if (bytes !== contentLength || !imageType.signature(header)) {
         throw new Error('Signature file tidak sesuai tipe gambar.');
       }

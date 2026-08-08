@@ -8,11 +8,12 @@ import { join } from 'node:path';
 import type { Readable } from 'node:stream';
 import { PassThrough, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import sharp, { type OutputInfo } from 'sharp';
+import { type OutputInfo } from 'sharp';
 import type { AppConfig } from '../../../config/configuration';
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { AppError } from '../../../shared/errors/app-error';
 import { AuditService } from '../../../shared/audit/audit.service';
+import { olahGambar } from '../../../shared/storage/image-processing';
 import type { StaleUploadReconcilerPort } from '../../../shared/storage/stale-upload.port';
 
 const JENIS = new Map([
@@ -309,12 +310,7 @@ export class CommunityAttachmentService implements StaleUploadReconcilerPort {
       if (awal.length < 16) awal = Buffer.concat([awal, chunk]).subarray(0, 16);
       callback(null, chunk);
     } });
-    // ponytail: satu mutu untuk semua gambar. Tangkapan layar berteks memang
-    // lebih baik dengan `nearLossless`, tetapi itu menuntut penebakan jenis isi
-    // yang belum terbukti perlu di sini.
-    const olah = gambar
-      ? sharp().autoOrient().resize({ width: SISI_MAKS, height: SISI_MAKS, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 })
-      : new PassThrough();
+    const olah = gambar ? olahGambar(SISI_MAKS) : new PassThrough();
     let hasil: OutputInfo | undefined;
     olah.on('info', (info: OutputInfo) => { hasil = info; });
     try {

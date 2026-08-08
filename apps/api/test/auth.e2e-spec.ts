@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import request from 'supertest';
 import { login, prefix, startHarness, type Harness } from './support/harness';
 
@@ -217,10 +218,9 @@ describe('Autentikasi dan session', () => {
 
   it('mengunggah, menyajikan, dan menghapus foto profil tervalidasi', async () => {
     const session = await login(h.server, STUDENT.email, STUDENT.password);
-    const png = Buffer.concat([
-      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-      Buffer.from('avatar-test-content'),
-    ]);
+    // PNG sungguhan: foto profil kini didekode dan dikodekan ulang, jadi isi
+    // yang tidak dapat didekode memang ditolak.
+    const png = await sharp({ create: { width: 900, height: 900, channels: 3, background: '#654321' } }).png().toBuffer();
 
     const uploaded = await request(h.server)
       .put(`${prefix}/auth/me/avatar`)
@@ -230,11 +230,13 @@ describe('Autentikasi dan session', () => {
       .send(png)
       .expect(200);
 
-    expect(uploaded.body.data.avatarUrl).toMatch(/^\/api\/v1\/auth\/avatars\/.+\.png$/);
+    // Yang disimpan selalu WebP, berapa pun yang diunggah.
+    expect(uploaded.body.data.avatarUrl).toMatch(/^\/api\/v1\/auth\/avatars\/.+\.webp$/);
     const avatarPath = uploaded.body.data.avatarUrl as string;
     const image = await request(h.server).get(avatarPath).expect(200);
-    expect(image.headers['content-type']).toMatch(/^image\/png/);
-    expect(image.body).toEqual(png);
+    expect(image.headers['content-type']).toMatch(/^image\/webp/);
+    // Dikecilkan ke 256: avatar tidak pernah tampil lebih dari 40 piksel.
+    await expect(sharp(image.body).metadata()).resolves.toMatchObject({ width: 256, height: 256, format: 'webp' });
 
     await request(h.server)
       .put(`${prefix}/auth/me/avatar`)

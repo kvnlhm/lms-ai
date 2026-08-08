@@ -372,6 +372,42 @@ Yang perlu diingat:
 
 ---
 
+## 1g. Thumbnail kursus dan foto profil ikut diolah
+
+8 Agustus 2026, menyusul 1f. Tanpa migrasi.
+
+Lampiran komunitas selesai, tetapi dua jalur unggah gambar lain masih menyimpan
+mentah — masalah yang sama persis, di tempat lain. Halaman katalog memuat
+seluruh kursus sekaligus, jadi 32 thumbnail sebesar 24 MB adalah 24 MB yang
+diunduh dalam satu kali buka.
+
+- Keputusan tentang format kini berada di satu tempat: `shared/storage/image-processing.ts`
+  mengekspor `olahGambar(sisiMaks)`, dan ketiga service memakainya. Sebelumnya
+  pipeline sharp ditulis inline di lampiran komunitas.
+- Thumbnail kursus dikecilkan ke sisi terpanjang **1200**, foto profil ke
+  **256**. Avatar tampil 29–40 piksel di kartu postingan, jadi 256 sudah longgar
+  untuk layar 3x.
+- Nama berkas keduanya kini selalu `.webp`. Regex `open()` dan `removePrevious()`
+  sudah menerima `webp` sejak semula, jadi tidak ada yang perlu diubah di sana.
+- Field `extension` pada tabel `TYPES` kedua service menjadi mati dan dibuang;
+  yang menentukan ekstensi bukan lagi jenis unggahannya.
+
+Yang perlu diingat:
+
+- **Dua e2e mengunci perilaku lama dan ikut disesuaikan.**
+  `course-authoring.e2e-spec.ts` dan `auth.e2e-spec.ts` mengunggah "PNG" berupa
+  magic byte ditambah teks, lalu menuntut berkas itu tersimpan byte demi byte.
+  Sesudah pengodean ulang, isi semacam itu memang ditolak — keduanya kini
+  memakai PNG sungguhan dan menuntut keluaran WebP pada dimensi yang benar.
+  Kalau suatu saat keduanya merah lagi dengan 422, periksa dulu apakah
+  fixture-nya gambar sungguhan.
+- **Backfill** ada di `apps/api/scripts/backfill-profile-and-thumbnail-images.mjs`,
+  terpisah dari backfill lampiran karena keduanya dirujuk lewat kolom URL
+  (`courses.thumbnail_url`, `users.avatar_url`), bukan kunci objek. Aman diulang
+  — yang sudah `.webp` dilewati — dan punya `--dry-run`.
+
+---
+
 ## 2. Cara bekerja di mesin ini
 
 Sesi Claude berjalan **langsung di VPS produksi**, bukan di laptop. Konsekuensinya

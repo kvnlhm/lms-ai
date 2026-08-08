@@ -1,3 +1,4 @@
+import sharp from 'sharp';
 import request from 'supertest';
 import { login, prefix, startHarness, type Harness } from './support/harness';
 
@@ -134,23 +135,25 @@ describe('Penyusunan kursus oleh Master', () => {
 
   it('mengunggah, mengganti, menyajikan, dan menghapus thumbnail kursus', async () => {
     const courseId = await createCourse(`uji-thumbnail-${Date.now()}`);
-    const png = Buffer.concat([
-      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-      Buffer.from('course-thumbnail-test'),
-    ]);
+    // PNG sungguhan, bukan magic byte ditambah teks: thumbnail kini didekode
+    // dan dikodekan ulang, jadi isi yang tidak dapat didekode memang ditolak.
+    const png = await sharp({ create: { width: 2000, height: 1200, channels: 3, background: '#123456' } }).png().toBuffer();
 
     const uploaded = await asMaster('put', `/admin/courses/${courseId}/thumbnail`)
       .set('Content-Type', 'image/png')
       .send(png)
       .expect(200);
 
+    // Yang disimpan selalu WebP, berapa pun yang diunggah.
     expect(uploaded.body.data.thumbnailUrl).toMatch(
-      /^\/api\/v1\/courses\/thumbnails\/.+\.png$/,
+      /^\/api\/v1\/courses\/thumbnails\/.+\.webp$/,
     );
     const thumbnailPath = uploaded.body.data.thumbnailUrl as string;
     const image = await request(h.server).get(thumbnailPath).expect(200);
-    expect(image.headers['content-type']).toMatch(/^image\/png/);
-    expect(image.body).toEqual(png);
+    expect(image.headers['content-type']).toMatch(/^image\/webp/);
+    // Dikecilkan ke sisi terpanjang 1200 dan jauh lebih ringan dari aslinya.
+    await expect(sharp(image.body).metadata()).resolves.toMatchObject({ width: 1200, height: 720, format: 'webp' });
+    expect(image.body.length).toBeLessThan(png.length);
 
     const detail = await asMaster('get', `/admin/courses/${courseId}`).expect(200);
     expect(detail.body.data.thumbnailUrl).toBe(thumbnailPath);
