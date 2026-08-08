@@ -88,6 +88,19 @@ test('pintasan papan tik pemutar mengikuti kebiasaan YouTube', async () => {
   assert.match(source, /event\.ctrlKey \|\| event\.metaKey \|\| event\.altKey/);
 });
 
+test('angka 10 duduk di bawah ikon maju-mundur, bukan menimpanya', async () => {
+  const css = await read('../app/styles.css');
+
+  // Sebelumnya angkanya `position:absolute` tanpa satu pun offset, jadi ia
+  // mendarat tepat di tengah tombol — menumpuk di atas ikon panah ganda dan
+  // terbaca sebagai coretan, bukan angka.
+  assert.doesNotMatch(css, /\.courseVideoSkip>span\{[^}]*position:absolute/);
+
+  // Ikon di baris atas, angkanya di bawah, keduanya dipadatkan ke tengah.
+  assert.match(css, /\.courseVideoSkip\{[^}]*grid-auto-flow:row/);
+  assert.match(css, /\.courseVideoSkip\{[^}]*align-content:center/);
+});
+
 test('halaman kelola kursus menyediakan menu aksi dan pratinjau langsung', async () => {
   const [listPage, detailPage, editor] = await Promise.all([
     read('../app/master/courses/page.tsx'),
