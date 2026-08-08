@@ -85,6 +85,16 @@ function segarkanKronologis(lama: CommunityPost[], baru: CommunityPost[], total:
   return gabungKronologis(bertahan, baru);
 }
 
+/**
+ * Apakah ada video yang sedang diputar di halaman ini.
+ *
+ * `paused` dan `ended` sudah cukup: video yang sedang menyangga pun terhitung
+ * diputar, dan justru itu saat yang paling buruk untuk menyegarkan umpan.
+ */
+function adaVideoDiputar(): boolean {
+  return [...document.querySelectorAll('video')].some((video) => !video.paused && !video.ended);
+}
+
 export function CommunityFeed({ channels, initialPosts, initialTotal, activeChannelSlug, activeSubchannelSlug, canModerate = false, currentUserId, currentUserName }: {
   channels: CommunityChannel[]; initialPosts: CommunityPost[]; initialTotal?: number; activeChannelSlug?: string; activeSubchannelSlug?: string; canModerate?: boolean; currentUserId?: string; currentUserName?: string;
 }) {
@@ -136,7 +146,12 @@ export function CommunityFeed({ channels, initialPosts, initialTotal, activeChan
     if (!activeChannelSlug || !activeSubchannelSlug) return;
     let disposed = false;
     async function refresh() {
-      if (refreshing.current || document.visibilityState === 'hidden') return;
+      // Menyegarkan umpan saat ada video diputar akan mengganggu tontonan:
+      // daftar postingannya disusun ulang tepat ketika orangnya sedang menonton.
+      // Diperiksa dari DOM, bukan lewat state bersama, supaya pemutar Bunny
+      // maupun video lama yang diputar dari berkas kita sama-sama terhitung
+      // tanpa perlu mendaftarkan diri.
+      if (refreshing.current || document.visibilityState === 'hidden' || adaVideoDiputar()) return;
       refreshing.current = true;
       try {
         const result = await browserClient().GET('/api/v1/community/channels/{channelSlug}/{subchannelSlug}/posts', {
